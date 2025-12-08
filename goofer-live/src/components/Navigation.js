@@ -4,6 +4,7 @@ export default function Navigation({ currentPage, setPage }) {
   const navItems = [
     { id: 'home', label: 'HOME' },
     { id: 'schedule', label: 'SCHEDULE' },
+    { id: 'gamba', label: 'GAMBA' },
     { id: 'vods', label: 'VODS & CLIPS' },
     { id: 'about', label: 'ABOUT' },
   ];

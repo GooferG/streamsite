@@ -16,14 +16,15 @@ export const SCHEDULE = [
     content: 'Yakuza: Like a Dragon Infinite Wealth',
     status: 'regular',
     gameName: 'Like a Dragon: Infinite Wealth', // For IGDB search
-    coverUrl: 'https://images.igdb.com/igdb/image/upload/t_cover_big/co7rmd.jpg', // Hardcoded cover
+    // coverUrl:
+    //   'https://images.igdb.com/igdb/image/upload/t_cover_big/co7rmd.jpg', // Hardcoded cover
   },
   {
     day: 'TUESDAY',
-    time: '7:00 PM - 12:00 AM EST',
-    content: 'Gamba Tuesday + Just Chatting',
+    time: '4:20 PM - 9:00 PM EST',
+    content: 'Games And Chilling',
     status: 'regular',
-    gameName: null, // No specific game
+    gameName: 'PlateUp', // No specific game
   },
   {
     day: 'WEDNESDAY',

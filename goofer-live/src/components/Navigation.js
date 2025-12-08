@@ -4,17 +4,21 @@ export default function Navigation({ currentPage, setPage }) {
   const navItems = [
     { id: 'home', label: 'HOME' },
     { id: 'schedule', label: 'SCHEDULE' },
-    { id: 'gamba', label: 'GAMBA' },
     { id: 'vods', label: 'VODS & CLIPS' },
-    { id: 'about', label: 'ABOUT' },
+    { id: 'gear', label: 'GEAR' },
+    { id: 'gamba', label: 'GAMBA' },
+    { id: 'about', label: 'ABOUT ME' },
   ];
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-black/20 border-b border-emerald-500/10">
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-        <div className="text-2xl font-bold tracking-tighter">
+        <div
+          onClick={() => setPage('home')}
+          className="text-2xl font-bold tracking-tighter cursor-pointer hover:opacity-80 transition-opacity"
+        >
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-purple-400">
-            Goofer LIVE
+            GooferG
           </span>
         </div>
 

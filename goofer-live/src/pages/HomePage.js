@@ -34,14 +34,22 @@ export default function HomePage({
 
   // Get next upcoming stream
   const getNextStream = () => {
-    const daysOfWeek = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRY-DAY', 'SATURDAY'];
+    const daysOfWeek = [
+      'SUNDAY',
+      'MONDAY',
+      'TUESDAY',
+      'WEDNESDAY',
+      'THURSDAY',
+      'FRY-DAY',
+      'SATURDAY',
+    ];
     const today = new Date().getDay();
 
     // Find the next stream (including today if not yet started)
     for (let i = 0; i < 7; i++) {
       const dayIndex = (today + i) % 7;
       const dayName = daysOfWeek[dayIndex];
-      const stream = SCHEDULE.find(s => s.day === dayName);
+      const stream = SCHEDULE.find((s) => s.day === dayName);
 
       if (stream && stream.status !== 'off') {
         return stream;
@@ -102,7 +110,7 @@ export default function HomePage({
   return (
     <div className="pt-20">
       {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-[85vh] flex items-center justify-center overflow-hidden">
         <div
           className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-pulse"
           style={{ animation: 'glow 8s ease-in-out infinite' }}
@@ -220,7 +228,9 @@ export default function HomePage({
                   </div>
                   <div className="flex items-center gap-2 mb-3 text-white/70">
                     <Clock size={16} />
-                    <span className="text-sm font-semibold">{nextStream.time}</span>
+                    <span className="text-sm font-semibold">
+                      {nextStream.time}
+                    </span>
                   </div>
                   <p className="text-white/90 font-medium text-sm">
                     {nextStream.content}

@@ -21,10 +21,10 @@ export default function AboutPage() {
               WHO AM I?
             </h2>
             <p className="text-lg text-white/80 leading-relaxed mb-4">
-              Just a chill streamer bringing good vibes and energy to the
-              internet. I stream a mix of competitive gaming, some gamba
-              sessions for the thrill, and react content where we watch and
-              discuss whatever's trending.
+              Just a chill Brazilian streamer bringing good vibes and energy to
+              the internet. I stream a mix of gaming with friends, going through
+              story games or competitively, some gamba sessions for the thrill,
+              and react content where we watch and discuss whatever's trending.
             </p>
             <p className="text-lg text-white/80 leading-relaxed">
               When I'm not streaming, I'm probably gaming anyway, vibing to
@@ -40,7 +40,7 @@ export default function AboutPage() {
             <div className="space-y-4">
               <ContentItem
                 title="Gaming"
-                description="Valorant, League, and whatever else catches my attention. Always trying to improve and have fun doing it."
+                description="Single Player games like Yakuza, Nioh and Satisfactory, Arc Raiders, and whatever else catches my attention. Always trying to improve and have fun doing it. I also love simulation and management games!"
               />
               <ContentItem
                 title="Gamba"
@@ -48,7 +48,7 @@ export default function AboutPage() {
               />
               <ContentItem
                 title="React & Just Chatting"
-                description="Watching TikToks, Reddit threads, YouTube videos, and just hanging with chat. Most chill part of the stream."
+                description="Reddit threads, YouTube videos, and just hanging with chat. Most chill part of the stream."
               />
             </div>
           </div>
@@ -60,7 +60,7 @@ export default function AboutPage() {
             <p className="text-lg text-white/80 leading-relaxed mb-4">
               The stream is a judgment-free zone. We're here to have fun,
               support each other, and share good energy. Toxicity isn't welcome
-              - just good vibes and good times.
+              - just good vibes and good times. And remember...Don't be a cunt.
             </p>
             <p className="text-lg text-white/80 leading-relaxed">
               Weed friendly, 420 positive, and always keeping it real. Come

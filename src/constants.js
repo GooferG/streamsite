@@ -43,7 +43,7 @@ export const SCHEDULE = [
   {
     day: 'FRY-DAY',
     time: '4:20 PM - 11:00 PM EST',
-    content: 'Late Night Vibes - React Content',
+    content: 'Late Night Vibes - React Content (Movie Night)',
     status: 'special',
     gameName: null, // Just chatting content
   },
@@ -52,7 +52,7 @@ export const SCHEDULE = [
     time: '4:00 PM - 10:00 PM EST',
     content: 'Community Game Day',
     status: 'special',
-    gameName: null, // Variety community games
+    gameName: 'Marbles On Stream', // Variety community games
   },
   {
     day: 'SUNDAY',

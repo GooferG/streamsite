@@ -23,8 +23,8 @@ export default function SchedulePage() {
     },
     { day: 'THURSDAY', time: 'OFF', content: 'Rest Day', status: 'off' },
     {
-      day: 'FRIDAY',
-      time: '8:00 PM - 2:00 AM EST',
+      day: 'FRY-DAY',
+      time: '4:20 PM - 11:00 PM EST',
       content: 'Late Night Vibes - React Content',
       status: 'special',
     },

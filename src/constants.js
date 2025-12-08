@@ -28,10 +28,10 @@ export const SCHEDULE = [
   },
   {
     day: 'WEDNESDAY',
-    time: '6:00 PM - 11:00 PM EST',
+    time: '4:20 PM - 9:00 PM EST',
     content: 'Variety Gaming',
     status: 'regular',
-    gameName: null, // Variety = no specific game
+    gameName: 'TingusGoose', // Variety = no specific game
   },
   {
     day: 'THURSDAY',

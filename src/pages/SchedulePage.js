@@ -1,46 +1,29 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, Clock } from 'lucide-react';
+import { SCHEDULE } from '../constants';
+import { getGameCovers } from '../utils/igdbApi';
 
 export default function SchedulePage() {
-  const schedule = [
-    {
-      day: 'MONDAY',
-      time: '5:00 PM - 11:00 PM EST',
-      content: 'Yakuza: Like a Dragon Infinite Wealth',
-      status: 'regular',
-    },
-    {
-      day: 'TUESDAY',
-      time: '7:00 PM - 12:00 AM EST',
-      content: 'Gamba Tuesday + Just Chatting',
-      status: 'regular',
-    },
-    {
-      day: 'WEDNESDAY',
-      time: '6:00 PM - 11:00 PM EST',
-      content: 'Variety Gaming',
-      status: 'regular',
-    },
-    { day: 'THURSDAY', time: 'OFF', content: 'Rest Day', status: 'off' },
-    {
-      day: 'FRY-DAY',
-      time: '4:20 PM - 11:00 PM EST',
-      content: 'Late Night Vibes - React Content',
-      status: 'special',
-    },
-    {
-      day: 'SATURDAY',
-      time: '4:00 PM - 10:00 PM EST',
-      content: 'Community Game Day',
-      status: 'special',
-    },
-    {
-      day: 'SUNDAY',
-      time: '5:00 PM - 10:00 PM EST',
-      content: 'Chill Sunday - Just Chatting',
-      status: 'regular',
-    },
-  ];
+  const [gameCovers, setGameCovers] = useState({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchGameCovers = async () => {
+      // Get all unique game names from schedule
+      const gameNames = SCHEDULE.map((item) => item.gameName).filter(
+        (name) => name !== null
+      );
+
+      if (gameNames.length > 0) {
+        const covers = await getGameCovers(gameNames);
+        setGameCovers(covers);
+      }
+
+      setLoading(false);
+    };
+
+    fetchGameCovers();
+  }, []);
 
   return (
     <div className="pt-32 pb-24 px-6">
@@ -57,8 +40,14 @@ export default function SchedulePage() {
         </div>
 
         <div className="space-y-4">
-          {schedule.map((item, index) => (
-            <ScheduleItem key={item.day} item={item} delay={index * 50} />
+          {SCHEDULE.map((item, index) => (
+            <ScheduleItem
+              key={item.day}
+              item={item}
+              delay={index * 50}
+              coverUrl={item.gameName ? gameCovers[item.gameName] : null}
+              loading={loading}
+            />
           ))}
         </div>
 
@@ -85,7 +74,7 @@ export default function SchedulePage() {
   );
 }
 
-function ScheduleItem({ item, delay }) {
+function ScheduleItem({ item, delay, coverUrl, loading }) {
   const statusStyles = {
     regular: 'border-emerald-500/20 hover:border-emerald-500/40',
     special: 'border-purple-500/40 hover:border-purple-500/60 bg-purple-900/10',
@@ -99,22 +88,36 @@ function ScheduleItem({ item, delay }) {
       }`}
       style={{ animation: `slideUp 0.6s ease-out ${delay}ms backwards` }}
     >
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-        <div className="flex items-center gap-6">
-          <div className="text-2xl font-black tracking-tighter text-emerald-400 w-32">
-            {item.day}
-          </div>
-          <div className="flex items-center gap-2 text-white/60">
-            <Clock size={18} />
-            <span className="font-bold text-sm">{item.time}</span>
-          </div>
-        </div>
-        <div className="text-lg font-bold">{item.content}</div>
-        {item.status === 'special' && (
-          <div className="px-3 py-1 bg-purple-500/20 border border-purple-500/40 rounded-full text-xs font-bold text-purple-400 w-fit">
-            SPECIAL
+      <div className="flex flex-col md:flex-row md:items-center gap-6">
+        {/* Game Cover Image */}
+        {coverUrl && (
+          <div className="flex-shrink-0">
+            <img
+              src={coverUrl}
+              alt={item.gameName || item.content}
+              className="w-20 h-28 object-cover rounded-lg border-2 border-emerald-500/30"
+            />
           </div>
         )}
+
+        {/* Schedule Info */}
+        <div className="flex-1 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <div className="flex items-center gap-6">
+            <div className="text-2xl font-black tracking-tighter text-emerald-400 w-32">
+              {item.day}
+            </div>
+            <div className="flex items-center gap-2 text-white/60">
+              <Clock size={18} />
+              <span className="font-bold text-sm">{item.time}</span>
+            </div>
+          </div>
+          <div className="text-lg font-bold flex-1">{item.content}</div>
+          {item.status === 'special' && (
+            <div className="px-3 py-1 bg-purple-500/20 border border-purple-500/40 rounded-full text-xs font-bold text-purple-400 w-fit">
+              SPECIAL
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

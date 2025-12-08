@@ -7,6 +7,8 @@ import SchedulePage from './pages/SchedulePage';
 import VodsPage from './pages/VodsPage';
 import AboutPage from './pages/AboutPage';
 import GambaPage from './pages/GambaPage';
+import GearPage from './pages/Gear';
+
 import {
   getTwitchAccessToken,
   getTwitchUserId,
@@ -97,10 +99,12 @@ export default function StreamingSite() {
         streamData={streamData}
         loading={loading}
         clips={clips}
+        videos={videos}
       />
     ),
     schedule: <SchedulePage />,
     vods: <VodsPage videos={videos} clips={clips} loading={loading} />,
+    gear: <GearPage />,
     about: <AboutPage />,
     gamba: <GambaPage />,
   };

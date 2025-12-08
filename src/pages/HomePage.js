@@ -1,9 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, Twitch, Youtube, Twitter, Eye, Film, Users, PlayCircle } from 'lucide-react';
-import { SOCIAL_LINKS } from '../constants';
+import {
+  Calendar,
+  Twitch,
+  Youtube,
+  Twitter,
+  Eye,
+  Film,
+  Users,
+  PlayCircle,
+  Clock,
+} from 'lucide-react';
+import { SOCIAL_LINKS, SCHEDULE } from '../constants';
 import SocialButton from '../components/SocialButton';
 import ClipCard from '../components/ClipCard';
 import StatCard from '../components/StatCard';
+import { getGameCover } from '../utils/igdbApi';
 
 export default function HomePage({
   setPage,
@@ -12,12 +23,47 @@ export default function HomePage({
   streamData,
   loading,
   clips,
+  videos,
 }) {
   const [mounted, setMounted] = useState(false);
+  const [upcomingGameCover, setUpcomingGameCover] = useState(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Get next upcoming stream
+  const getNextStream = () => {
+    const daysOfWeek = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRY-DAY', 'SATURDAY'];
+    const today = new Date().getDay();
+
+    // Find the next stream (including today if not yet started)
+    for (let i = 0; i < 7; i++) {
+      const dayIndex = (today + i) % 7;
+      const dayName = daysOfWeek[dayIndex];
+      const stream = SCHEDULE.find(s => s.day === dayName);
+
+      if (stream && stream.status !== 'off') {
+        return stream;
+      }
+    }
+
+    return SCHEDULE[0]; // Fallback to first stream
+  };
+
+  const nextStream = getNextStream();
+
+  // Fetch game cover for upcoming stream
+  useEffect(() => {
+    const fetchUpcomingGameCover = async () => {
+      if (nextStream?.gameName) {
+        const cover = await getGameCover(nextStream.gameName);
+        setUpcomingGameCover(cover);
+      }
+    };
+
+    fetchUpcomingGameCover();
+  }, [nextStream?.gameName]);
 
   const featuredClips = clips.slice(0, 4).map((clip) => ({
     id: clip.id,
@@ -33,6 +79,25 @@ export default function HomePage({
   }));
 
   const hasClips = featuredClips.length > 0;
+
+  // Get the latest VOD
+  const latestVod = videos && videos.length > 0 ? videos[0] : null;
+
+  const formatDuration = (duration) => {
+    const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+    if (!match) return duration;
+
+    const hours = parseInt(match[1] || 0);
+    const minutes = parseInt(match[2] || 0);
+    const seconds = parseInt(match[3] || 0);
+
+    if (hours > 0) {
+      return `${hours}:${minutes.toString().padStart(2, '0')}:${seconds
+        .toString()
+        .padStart(2, '0')}`;
+    }
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
 
   return (
     <div className="pt-20">
@@ -124,6 +189,52 @@ export default function HomePage({
             />
           </div>
 
+          {/* Upcoming Stream Preview */}
+          <div className="mb-8 max-w-md mx-auto">
+            <div className="p-6 bg-gradient-to-br from-emerald-900/30 to-purple-900/30 border border-emerald-500/30 rounded-xl backdrop-blur-md">
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar size={18} className="text-emerald-400" />
+                <span className="text-sm font-bold tracking-wider text-emerald-400">
+                  UPCOMING STREAM
+                </span>
+              </div>
+
+              <div className="flex gap-4 items-start">
+                {/* Game Cover */}
+                {upcomingGameCover && (
+                  <div className="flex-shrink-0">
+                    <img
+                      src={upcomingGameCover}
+                      alt={nextStream.gameName || nextStream.content}
+                      className="w-20 h-28 object-cover rounded-lg border-2 border-emerald-500/40"
+                    />
+                  </div>
+                )}
+
+                {/* Stream Info */}
+                <div className="flex-1">
+                  <div className="mb-2">
+                    <span className="text-xl font-black tracking-tight text-white">
+                      {nextStream.day}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mb-3 text-white/70">
+                    <Clock size={16} />
+                    <span className="text-sm font-semibold">{nextStream.time}</span>
+                  </div>
+                  <p className="text-white/90 font-medium text-sm">
+                    {nextStream.content}
+                  </p>
+                  {nextStream.status === 'special' && (
+                    <div className="mt-3 inline-block px-3 py-1 bg-purple-500/20 border border-purple-500/40 rounded-full text-xs font-bold text-purple-400">
+                      SPECIAL EVENT
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
           <button
             onClick={() => setPage('schedule')}
             className="group relative px-8 py-4 text-lg font-bold tracking-wider overflow-hidden rounded-lg"
@@ -132,11 +243,98 @@ export default function HomePage({
             <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 to-purple-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl" />
             <span className="relative flex items-center gap-2">
               <Calendar size={20} />
-              VIEW SCHEDULE
+              VIEW FULL SCHEDULE
             </span>
           </button>
         </div>
       </section>
+
+      {/* Latest VOD Section */}
+      {!loading && latestVod && (
+        <section className="py-24 px-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center justify-between mb-12">
+              <h2 className="text-5xl font-black tracking-tighter">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white to-purple-400">
+                  LATEST VOD
+                </span>
+              </h2>
+              <button
+                onClick={() => setPage('vods')}
+                className="text-sm font-bold tracking-wider text-purple-400 hover:text-purple-300 transition-colors flex items-center gap-2 group"
+              >
+                VIEW ALL VODS
+                <span className="transform group-hover:translate-x-1 transition-transform">
+                  →
+                </span>
+              </button>
+            </div>
+
+            <div className="relative group cursor-pointer">
+              <a
+                href={latestVod.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block"
+              >
+                <div className="relative overflow-hidden rounded-xl border border-purple-500/20 bg-gradient-to-br from-purple-900/20 to-emerald-900/20 backdrop-blur-sm transition-all duration-300 group-hover:border-purple-500/40 group-hover:scale-[1.02]">
+                  <div className="aspect-video relative">
+                    <img
+                      src={latestVod.thumbnail_url
+                        .replace('%{width}', '1280')
+                        .replace('%{height}', '720')}
+                      alt={latestVod.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                    {/* Play button overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <div className="w-20 h-20 rounded-full bg-purple-500/90 flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300">
+                        <PlayCircle size={40} className="text-white" />
+                      </div>
+                    </div>
+
+                    {/* Duration badge */}
+                    <div className="absolute bottom-4 right-4 px-3 py-1.5 bg-black/80 rounded-lg text-sm font-bold">
+                      {formatDuration(latestVod.duration)}
+                    </div>
+                  </div>
+
+                  <div className="p-6">
+                    <h3 className="text-2xl font-bold mb-3 line-clamp-2 group-hover:text-purple-400 transition-colors">
+                      {latestVod.title}
+                    </h3>
+                    <div className="flex items-center gap-4 text-sm text-white/60">
+                      <span className="flex items-center gap-1.5">
+                        <Film size={16} />
+                        {latestVod.game_name || 'Various'}
+                      </span>
+                      <span className="flex items-center gap-1.5">
+                        <Eye size={16} />
+                        {latestVod.view_count >= 1000
+                          ? `${(latestVod.view_count / 1000).toFixed(1)}K`
+                          : latestVod.view_count}{' '}
+                        views
+                      </span>
+                      <span>
+                        {new Date(latestVod.created_at).toLocaleDateString(
+                          'en-US',
+                          {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          }
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </a>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Featured Clips Section */}
       <section className="py-24 px-6">

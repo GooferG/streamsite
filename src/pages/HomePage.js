@@ -260,6 +260,9 @@ export default function HomePage({
         </div>
       </section>
 
+      {/* Steam Games Section */}
+      <SteamGames />
+
       {/* Latest VOD Section */}
       {!loading && latestVod && (
         <section className="py-24 px-6">
@@ -391,9 +394,6 @@ export default function HomePage({
           )}
         </div>
       </section>
-
-      {/* Steam Games Section */}
-      <SteamGames />
 
       {/* Quick Stats */}
       <section className="py-24 px-6 bg-black/20 backdrop-blur-sm">

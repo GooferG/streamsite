@@ -24,14 +24,14 @@ export const SCHEDULE = [
     time: '4:20 PM - 9:00 PM EST',
     content: 'Games And Chilling',
     status: 'regular',
-    gameName: 'PlateUp', // No specific game
+    gameName: 'Contraband Police', // No specific game
   },
   {
     day: 'WEDNESDAY',
     time: '4:20 PM - 9:00 PM EST',
     content: 'Variety Gaming',
     status: 'regular',
-    gameName: 'TingusGoose', // Variety = no specific game
+    gameName: 'Arc Raiders', // Variety = no specific game
   },
   {
     day: 'THURSDAY',

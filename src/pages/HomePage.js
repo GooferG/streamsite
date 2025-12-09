@@ -14,6 +14,7 @@ import { SOCIAL_LINKS, SCHEDULE } from '../constants';
 import SocialButton from '../components/SocialButton';
 import ClipCard from '../components/ClipCard';
 import StatCard from '../components/StatCard';
+import SteamGames from '../components/SteamGames';
 import { getGameCover } from '../utils/igdbApi';
 
 export default function HomePage({
@@ -390,6 +391,9 @@ export default function HomePage({
           )}
         </div>
       </section>
+
+      {/* Steam Games Section */}
+      <SteamGames />
 
       {/* Quick Stats */}
       <section className="py-24 px-6 bg-black/20 backdrop-blur-sm">

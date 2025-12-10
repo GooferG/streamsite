@@ -11,6 +11,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { SCHEDULE as DEFAULT_SCHEDULE } from '../constants';
 
 const DAYS = [
   'MONDAY',
@@ -22,7 +23,7 @@ const DAYS = [
   'SUNDAY',
 ];
 
-const STATUS_OPTIONS = ['on', 'off', 'special'];
+const STATUS_OPTIONS = ['on', 'off', 'special', 'regular'];
 
 export default function AdminSchedulePage({ onLogout }) {
   const { logout } = useAuth();
@@ -39,21 +40,16 @@ export default function AdminSchedulePage({ onLogout }) {
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-          setSchedule(docSnap.data().schedule || []);
+          setSchedule(docSnap.data().schedule || DEFAULT_SCHEDULE);
         } else {
-          // Initialize with default empty schedule
-          const defaultSchedule = DAYS.map((day) => ({
-            day,
-            time: '7:00 PM EST',
-            content: '',
-            gameName: '',
-            status: 'off',
-          }));
-          setSchedule(defaultSchedule);
+          // Initialize with default schedule from constants
+          setSchedule(DEFAULT_SCHEDULE);
         }
       } catch (error) {
         console.error('Error loading schedule:', error);
         setMessage({ type: 'error', text: 'Failed to load schedule' });
+        // Use default schedule as fallback
+        setSchedule(DEFAULT_SCHEDULE);
       } finally {
         setLoading(false);
       }

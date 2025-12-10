@@ -1,18 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, Clock } from 'lucide-react';
-import { SCHEDULE } from '../constants';
 import { getGameCovers } from '../utils/igdbApi';
+import { useSchedule } from '../hooks/useSchedule';
 
 export default function SchedulePage() {
+  const { schedule, loading: scheduleLoading } = useSchedule();
   const [gameCovers, setGameCovers] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchGameCovers = async () => {
+      if (scheduleLoading) return;
+
       // Get all unique game names from schedule
-      const gameNames = SCHEDULE.map((item) => item.gameName).filter(
-        (name) => name !== null
-      );
+      const gameNames = schedule
+        .map((item) => item.gameName)
+        .filter((name) => name !== null && name !== '');
 
       if (gameNames.length > 0) {
         const covers = await getGameCovers(gameNames);
@@ -23,7 +26,7 @@ export default function SchedulePage() {
     };
 
     fetchGameCovers();
-  }, []);
+  }, [schedule, scheduleLoading]);
 
   return (
     <div className="pt-32 pb-24 px-6">
@@ -40,7 +43,7 @@ export default function SchedulePage() {
         </div>
 
         <div className="space-y-4">
-          {SCHEDULE.map((item, index) => (
+          {schedule.map((item, index) => (
             <ScheduleItem
               key={item.day}
               item={item}

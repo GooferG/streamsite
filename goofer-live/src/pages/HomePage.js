@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Calendar,
   Twitch,
@@ -10,12 +10,13 @@ import {
   PlayCircle,
   Clock,
 } from 'lucide-react';
-import { SOCIAL_LINKS, SCHEDULE } from '../constants';
+import { SOCIAL_LINKS } from '../constants';
 import SocialButton from '../components/SocialButton';
 import ClipCard from '../components/ClipCard';
 import StatCard from '../components/StatCard';
 import SteamGames from '../components/SteamGames';
 import { getGameCover } from '../utils/igdbApi';
+import { useSchedule } from '../hooks/useSchedule';
 
 export default function HomePage({
   setPage,
@@ -28,13 +29,14 @@ export default function HomePage({
 }) {
   const [mounted, setMounted] = useState(false);
   const [upcomingGameCover, setUpcomingGameCover] = useState(null);
+  const { schedule } = useSchedule();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
   // Get next upcoming stream
-  const getNextStream = () => {
+  const nextStream = useMemo(() => {
     const daysOfWeek = [
       'SUNDAY',
       'MONDAY',
@@ -50,17 +52,15 @@ export default function HomePage({
     for (let i = 0; i < 7; i++) {
       const dayIndex = (today + i) % 7;
       const dayName = daysOfWeek[dayIndex];
-      const stream = SCHEDULE.find((s) => s.day === dayName);
+      const stream = schedule.find((s) => s.day === dayName);
 
       if (stream && stream.status !== 'off') {
         return stream;
       }
     }
 
-    return SCHEDULE[0]; // Fallback to first stream
-  };
-
-  const nextStream = getNextStream();
+    return schedule[0]; // Fallback to first stream
+  }, [schedule]);
 
   // Fetch game cover for upcoming stream
   useEffect(() => {

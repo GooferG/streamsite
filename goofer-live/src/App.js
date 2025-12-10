@@ -8,6 +8,9 @@ import VodsPage from './pages/VodsPage';
 import AboutPage from './pages/AboutPage';
 import GambaPage from './pages/GambaPage';
 import GearPage from './pages/Gear';
+import AdminLoginPage from './pages/AdminLoginPage';
+import AdminSchedulePage from './pages/AdminSchedulePage';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 import {
   getTwitchAccessToken,
@@ -20,7 +23,7 @@ import {
   getGameNames,
 } from './utils/twitchApi';
 
-export default function StreamingSite() {
+function StreamingSiteContent() {
   const [currentPage, setCurrentPage] = useState('home');
   const [isVisible, setIsVisible] = useState(false);
   const [channelData, setChannelData] = useState(null);
@@ -30,6 +33,7 @@ export default function StreamingSite() {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showTVIntro, setShowTVIntro] = useState(true);
+  const { currentUser } = useAuth();
 
   useEffect(() => {
     const initTwitch = async () => {
@@ -107,6 +111,11 @@ export default function StreamingSite() {
     gear: <GearPage />,
     about: <AboutPage />,
     gamba: <GambaPage />,
+    admin: currentUser ? (
+      <AdminSchedulePage onLogout={() => setCurrentPage('home')} />
+    ) : (
+      <AdminLoginPage onLoginSuccess={() => setCurrentPage('admin')} />
+    ),
   };
 
   return (
@@ -194,5 +203,13 @@ export default function StreamingSite() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function StreamingSite() {
+  return (
+    <AuthProvider>
+      <StreamingSiteContent />
+    </AuthProvider>
   );
 }

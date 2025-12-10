@@ -8,6 +8,7 @@ export default function Navigation({ currentPage, setPage }) {
     { id: 'gear', label: 'GEAR' },
     { id: 'gamba', label: 'GAMBA' },
     { id: 'about', label: 'ABOUT ME' },
+    { id: 'admin', label: 'ADMIN' },
   ];
 
   return (

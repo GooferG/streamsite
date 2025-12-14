@@ -73,6 +73,10 @@ function StreamingSiteContent() {
         setStreamData(streamInfo);
         setChannelData({ ...channelInfo, followers: followersCount });
         setLoading(false);
+
+        // Debug: Log stream status
+        console.log('App.js Debug - Stream Info:', streamInfo);
+        console.log('App.js Debug - isLive set to:', !!streamInfo);
       } catch (error) {
         console.error('Error initializing Twitch API:', error);
         setLoading(false);
@@ -94,28 +98,49 @@ function StreamingSiteContent() {
     return () => clearTimeout(timer);
   }, []);
 
-  const pages = {
-    home: (
-      <HomePage
-        setPage={setCurrentPage}
-        channelData={channelData}
-        isLive={isLive}
-        streamData={streamData}
-        loading={loading}
-        clips={clips}
-        videos={videos}
-      />
-    ),
-    schedule: <SchedulePage />,
-    vods: <VodsPage videos={videos} clips={clips} loading={loading} />,
-    gear: <GearPage />,
-    about: <AboutPage />,
-    gamba: <GambaPage />,
-    admin: currentUser ? (
-      <AdminSchedulePage onLogout={() => setCurrentPage('home')} />
-    ) : (
-      <AdminLoginPage onLoginSuccess={() => setCurrentPage('admin')} />
-    ),
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'home':
+        return (
+          <HomePage
+            setPage={setCurrentPage}
+            channelData={channelData}
+            isLive={isLive}
+            streamData={streamData}
+            loading={loading}
+            clips={clips}
+            videos={videos}
+          />
+        );
+      case 'schedule':
+        return <SchedulePage />;
+      case 'vods':
+        return <VodsPage videos={videos} clips={clips} loading={loading} />;
+      case 'gear':
+        return <GearPage />;
+      case 'about':
+        return <AboutPage />;
+      case 'gamba':
+        return <GambaPage />;
+      case 'admin':
+        return currentUser ? (
+          <AdminSchedulePage onLogout={() => setCurrentPage('home')} />
+        ) : (
+          <AdminLoginPage onLoginSuccess={() => setCurrentPage('admin')} />
+        );
+      default:
+        return (
+          <HomePage
+            setPage={setCurrentPage}
+            channelData={channelData}
+            isLive={isLive}
+            streamData={streamData}
+            loading={loading}
+            clips={clips}
+            videos={videos}
+          />
+        );
+    }
   };
 
   return (
@@ -131,7 +156,7 @@ function StreamingSiteContent() {
           isVisible ? 'opacity-100' : 'opacity-0'
         }`}
       >
-        {pages[currentPage]}
+        {renderPage()}
       </main>
 
       <style jsx>{`

@@ -35,6 +35,18 @@ export default function HomePage({
     setMounted(true);
   }, []);
 
+  // Debug: Log isLive and loading status
+  useEffect(() => {
+    console.log(
+      'HomePage Debug - isLive:',
+      isLive,
+      'loading:',
+      loading,
+      'Show Upcoming Stream:',
+      !isLive && !loading
+    );
+  }, [isLive, loading]);
+
   // Get next upcoming stream
   const nextStream = useMemo(() => {
     const daysOfWeek = [
@@ -198,53 +210,60 @@ export default function HomePage({
             />
           </div>
 
-          {/* Upcoming Stream Preview */}
-          <div className="mb-8 max-w-md mx-auto">
-            <div className="p-6 bg-gradient-to-br from-emerald-900/30 to-purple-900/30 border border-emerald-500/30 rounded-xl backdrop-blur-md">
-              <div className="flex items-center gap-2 mb-3">
-                <Calendar size={18} className="text-emerald-400" />
-                <span className="text-sm font-bold tracking-wider text-emerald-400">
-                  UPCOMING STREAM
-                </span>
-              </div>
+          {/* {/* DEBUG BANNER - Remove after testing */}
+          {/* <div className="mb-4 p-4 bg-red-500/20 border border-red-500 rounded text-xs">
+            <strong>Debug Info:</strong> isLive={String(isLive)} | loading={String(loading)} | shouldShow={String(!isLive && !loading)}
+          </div> */}
 
-              <div className="flex gap-4 items-start">
-                {/* Game Cover */}
-                {upcomingGameCover && (
-                  <div className="flex-shrink-0">
-                    <img
-                      src={upcomingGameCover}
-                      alt={nextStream.gameName || nextStream.content}
-                      className="w-20 h-28 object-cover rounded-lg border-2 border-emerald-500/40"
-                    />
-                  </div>
-                )}
+          {/* Upcoming Stream Preview - Only shown when offline */}
+          {!isLive && !loading && (
+            <div className="mb-8 max-w-md mx-auto">
+              <div className="p-6 bg-gradient-to-br from-emerald-900/30 to-purple-900/30 border border-emerald-500/30 rounded-xl backdrop-blur-md">
+                <div className="flex items-center gap-2 mb-3">
+                  <Calendar size={18} className="text-emerald-400" />
+                  <span className="text-sm font-bold tracking-wider text-emerald-400">
+                    UPCOMING STREAM
+                  </span>
+                </div>
 
-                {/* Stream Info */}
-                <div className="flex-1">
-                  <div className="mb-2">
-                    <span className="text-xl font-black tracking-tight text-white">
-                      {nextStream.day}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 mb-3 text-white/70">
-                    <Clock size={16} />
-                    <span className="text-sm font-semibold">
-                      {nextStream.time}
-                    </span>
-                  </div>
-                  <p className="text-white/90 font-medium text-sm">
-                    {nextStream.content}
-                  </p>
-                  {nextStream.status === 'special' && (
-                    <div className="mt-3 inline-block px-3 py-1 bg-purple-500/20 border border-purple-500/40 rounded-full text-xs font-bold text-purple-400">
-                      SPECIAL EVENT
+                <div className="flex gap-4 items-start">
+                  {/* Game Cover */}
+                  {upcomingGameCover && (
+                    <div className="flex-shrink-0">
+                      <img
+                        src={upcomingGameCover}
+                        alt={nextStream.gameName || nextStream.content}
+                        className="w-20 h-28 object-cover rounded-lg border-2 border-emerald-500/40"
+                      />
                     </div>
                   )}
+
+                  {/* Stream Info */}
+                  <div className="flex-1">
+                    <div className="mb-2">
+                      <span className="text-xl font-black tracking-tight text-white">
+                        {nextStream.day}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 mb-3 text-white/70">
+                      <Clock size={16} />
+                      <span className="text-sm font-semibold">
+                        {nextStream.time}
+                      </span>
+                    </div>
+                    <p className="text-white/90 font-medium text-sm">
+                      {nextStream.content}
+                    </p>
+                    {nextStream.status === 'special' && (
+                      <div className="mt-3 inline-block px-3 py-1 bg-purple-500/20 border border-purple-500/40 rounded-full text-xs font-bold text-purple-400">
+                        SPECIAL EVENT
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           <button
             onClick={() => setPage('schedule')}
@@ -259,6 +278,66 @@ export default function HomePage({
           </button>
         </div>
       </section>
+
+      {/* Live Stream Embed - Only shown when live */}
+      {isLive && !loading && (
+        <section className="py-12 px-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="mb-8 text-center">
+              <div className="inline-flex items-center gap-3 px-5 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-full backdrop-blur-sm mb-4">
+                <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                <span className="text-sm font-bold tracking-wider text-emerald-400">
+                  LIVE NOW
+                </span>
+                {streamData?.viewers && (
+                  <>
+                    <div className="w-1 h-1 bg-white/30 rounded-full" />
+                    <div className="flex items-center gap-1.5">
+                      <Eye size={14} className="text-emerald-400" />
+                      <span className="text-sm font-bold tracking-wider text-emerald-400">
+                        {streamData.viewers} watching
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+              <h2 className="text-4xl md:text-5xl font-black tracking-tighter mb-2">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-purple-400">
+                  WATCH LIVE
+                </span>
+              </h2>
+              {streamData?.title && (
+                <p className="text-white/70 text-lg max-w-3xl mx-auto">
+                  {streamData.title}
+                </p>
+              )}
+            </div>
+
+            <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-emerald-500/20 bg-black shadow-2xl">
+              <iframe
+                src={`https://player.twitch.tv/?channel=GooferG&parent=${window.location.hostname}&muted=false`}
+                height="100%"
+                width="100%"
+                allowFullScreen
+                title="Twitch Live Stream"
+                className="absolute inset-0"
+              />
+            </div>
+
+            <div className="mt-4 text-center">
+              <a
+                href={SOCIAL_LINKS.twitch}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-bold transition-all"
+              >
+                <Twitch size={20} />
+                Open in Twitch
+              </a>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* Steam Games Section */}
       <SteamGames />

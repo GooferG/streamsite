@@ -67,7 +67,17 @@ export async function getTwitchStreamInfo(accessToken, userId) {
     }
   );
   const data = await response.json();
-  return data.data[0] || null;
+  const streamInfo = data.data[0] || null;
+
+  // Format stream data to include viewer count in expected format
+  if (streamInfo) {
+    return {
+      ...streamInfo,
+      viewers: streamInfo.viewer_count, // Add viewers field from viewer_count
+    };
+  }
+
+  return null;
 }
 
 export async function getTwitchChannelInfo(accessToken, userId) {

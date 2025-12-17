@@ -339,12 +339,9 @@ export default function HomePage({
         </section>
       )}
 
-      {/* Steam Games Section */}
-      <SteamGames />
-
       {/* Latest VOD Section */}
       {!loading && latestVod && (
-        <section className="py-24 px-6">
+        <section className="px-6">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-12">
               <h2 className="text-5xl font-black tracking-tighter">
@@ -428,6 +425,9 @@ export default function HomePage({
           </div>
         </section>
       )}
+
+      {/* Steam Games Section */}
+      <SteamGames />
 
       {/* Featured Clips Section */}
       <section className="py-24 px-6">

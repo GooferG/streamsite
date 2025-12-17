@@ -3,6 +3,7 @@ import Navigation from './components/Navigation';
 import GrainOverlay from './components/GrainOverlay';
 import TVStaticIntro from './components/TVStaticIntro';
 import Snow from './components/Snow';
+import LiveIndicator from './components/LiveIndicator';
 import HomePage from './pages/HomePage';
 import SchedulePage from './pages/SchedulePage';
 import VodsPage from './pages/VodsPage';
@@ -152,6 +153,8 @@ function StreamingSiteContent() {
       <GrainOverlay />
 
       <Navigation currentPage={currentPage} setPage={setCurrentPage} />
+
+      <LiveIndicator isLive={isLive} streamData={streamData} />
 
       <main
         className={`transition-opacity duration-700 ${

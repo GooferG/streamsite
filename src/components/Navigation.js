@@ -33,7 +33,7 @@ export default function Navigation({ currentPage, setPage }) {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex gap-8 flex-1 ml-36">
+          <div className="hidden md:flex gap-8 ml-auto">
             {navItems.map((item) => {
               const isAdmin = item.id === 'admin';
               const activeColor = isAdmin

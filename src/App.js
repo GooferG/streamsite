@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Navigation from './components/Navigation';
 import GrainOverlay from './components/GrainOverlay';
 import TVStaticIntro from './components/TVStaticIntro';
+import Snow from './components/Snow';
 import HomePage from './pages/HomePage';
 import SchedulePage from './pages/SchedulePage';
 import VodsPage from './pages/VodsPage';
@@ -147,6 +148,7 @@ function StreamingSiteContent() {
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-emerald-950 to-purple-950 text-white">
       {showTVIntro && <TVStaticIntro />}
 
+      <Snow />
       <GrainOverlay />
 
       <Navigation currentPage={currentPage} setPage={setCurrentPage} />

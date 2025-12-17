@@ -130,7 +130,10 @@ export default function AdminSchedulePage({ onLogout }) {
             }`}
           >
             {message.type === 'success' ? (
-              <CheckCircle size={20} className="text-emerald-400 flex-shrink-0" />
+              <CheckCircle
+                size={20}
+                className="text-emerald-400 flex-shrink-0"
+              />
             ) : (
               <AlertCircle size={20} className="text-red-400 flex-shrink-0" />
             )}
@@ -152,7 +155,9 @@ export default function AdminSchedulePage({ onLogout }) {
             >
               <div className="flex items-center gap-3 mb-4">
                 <Calendar size={20} className="text-emerald-400" />
-                <h2 className="text-2xl font-black tracking-tight">{day.day}</h2>
+                <h2 className="text-2xl font-black tracking-tight">
+                  {day.day}
+                </h2>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">

@@ -14,7 +14,7 @@ import {
   X,
   Gamepad2,
 } from 'lucide-react';
-import GameWheel from '../components/GameWheel';
+import SlotPicker from '../components/SlotPicker';
 
 export default function GambaPage() {
   const riskProfiles = {
@@ -29,16 +29,76 @@ export default function GambaPage() {
 
   // Slot providers and their popular games
   const slotProviders = {
-    Pragmatic: ['Sweet Bonanza', 'Gates of Olympus', 'The Dog House', 'Sugar Rush', 'Starlight Princess'],
-    'Play\'n GO': ['Book of Dead', 'Reactoonz', 'Moon Princess', 'Fire Joker', 'Rise of Olympus'],
-    NetEnt: ['Starburst', 'Gonzo\'s Quest', 'Dead or Alive 2', 'Blood Suckers', 'Divine Fortune'],
-    'Push Gaming': ['Jammin\' Jars', 'Razor Shark', 'Fat Rabbit', 'The Shadow Order', 'Jammin\' Jars 2'],
-    'Nolimit City': ['Tombstone RIP', 'San Quentin xWays', 'Mental', 'Fire in the Hole', 'Das xBoot'],
-    Hacksaw: ['Wanted Dead or a Wild', 'Chaos Crew', 'RIP City', 'Le Bandit', 'Cubes 2'],
-    Relax: ['Money Train 2', 'Money Train 3', 'Snake Arena', 'Templar Tumble', 'TNT Tumble'],
-    'Red Tiger': ['Gonzo\'s Quest Megaways', 'Dragon\'s Luck', 'Pirates Plenty', 'Reel King Mega', 'Piggy Riches'],
-    'Big Time Gaming': ['Bonanza Megaways', 'Extra Chilli', 'White Rabbit', 'Danger High Voltage', 'Star Clusters'],
-    Microgaming: ['Immortal Romance', 'Thunderstruck II', 'Mega Moolah', 'Book of Oz', 'Sisters of Oz'],
+    Pragmatic: [
+      'Sweet Bonanza',
+      'Gates of Olympus',
+      'The Dog House',
+      'Sugar Rush',
+      'Starlight Princess',
+    ],
+    "Play'n GO": [
+      'Book of Dead',
+      'Reactoonz',
+      'Moon Princess',
+      'Fire Joker',
+      'Rise of Olympus',
+    ],
+    NetEnt: [
+      'Starburst',
+      "Gonzo's Quest",
+      'Dead or Alive 2',
+      'Blood Suckers',
+      'Divine Fortune',
+    ],
+    'Push Gaming': [
+      "Jammin' Jars",
+      'Razor Shark',
+      'Fat Rabbit',
+      'The Shadow Order',
+      "Jammin' Jars 2",
+    ],
+    'Nolimit City': [
+      'Tombstone RIP',
+      'San Quentin xWays',
+      'Mental',
+      'Fire in the Hole',
+      'Das xBoot',
+    ],
+    Hacksaw: [
+      'Wanted Dead or a Wild',
+      'Chaos Crew',
+      'RIP City',
+      'Le Bandit',
+      'Cubes 2',
+    ],
+    Relax: [
+      'Money Train 2',
+      'Money Train 3',
+      'Snake Arena',
+      'Templar Tumble',
+      'TNT Tumble',
+    ],
+    'Red Tiger': [
+      "Gonzo's Quest Megaways",
+      "Dragon's Luck",
+      'Pirates Plenty',
+      'Reel King Mega',
+      'Piggy Riches',
+    ],
+    'Big Time Gaming': [
+      'Bonanza Megaways',
+      'Extra Chilli',
+      'White Rabbit',
+      'Danger High Voltage',
+      'Star Clusters',
+    ],
+    Microgaming: [
+      'Immortal Romance',
+      'Thunderstruck II',
+      'Mega Moolah',
+      'Book of Oz',
+      'Sisters of Oz',
+    ],
   };
 
   // Initialize state from localStorage or use defaults
@@ -73,13 +133,6 @@ export default function GambaPage() {
   const [activePoll, setActivePoll] = useState(null);
   const [pollHistory, setPollHistory] = useState([]);
 
-  // Game Wheel state
-  const [enabledProviders, setEnabledProviders] = useState(() => {
-    const saved = localStorage.getItem('gamba_enabledProviders');
-    return saved ? JSON.parse(saved) : Object.keys(slotProviders);
-  });
-  const [selectedGame, setSelectedGame] = useState(null);
-
   // Save to localStorage whenever values change
   useEffect(() => {
     localStorage.setItem('gamba_bankroll', bankroll.toString());
@@ -96,23 +149,6 @@ export default function GambaPage() {
   useEffect(() => {
     localStorage.setItem('gamba_stopLoss', stopLoss.toString());
   }, [stopLoss]);
-
-  useEffect(() => {
-    localStorage.setItem('gamba_enabledProviders', JSON.stringify(enabledProviders));
-  }, [enabledProviders]);
-
-  // Get filtered games based on enabled providers
-  const availableGames = useMemo(() => {
-    const games = [];
-    enabledProviders.forEach(provider => {
-      if (slotProviders[provider]) {
-        slotProviders[provider].forEach(game => {
-          games.push(`${game} (${provider})`);
-        });
-      }
-    });
-    return games;
-  }, [enabledProviders, slotProviders]);
 
   const recommendedBet = useMemo(() => {
     const pct = riskProfiles[risk].pct / 100;
@@ -251,22 +287,6 @@ export default function GambaPage() {
     setPollOptions(updated);
   };
 
-  // Game Wheel functions
-  const toggleProvider = (provider) => {
-    if (enabledProviders.includes(provider)) {
-      // Don't allow disabling all providers
-      if (enabledProviders.length > 1) {
-        setEnabledProviders(enabledProviders.filter(p => p !== provider));
-      }
-    } else {
-      setEnabledProviders([...enabledProviders, provider]);
-    }
-  };
-
-  const handleGameChosen = (game) => {
-    setSelectedGame(game);
-  };
-
   return (
     <div className="pt-32 pb-24 px-6">
       <div className="max-w-7xl mx-auto space-y-10">
@@ -304,7 +324,19 @@ export default function GambaPage() {
               }`}
             >
               <ActivityIndicator net={sessionNet} />
-              Live Session Log
+              Bonus Tracker
+            </button>
+
+            <button
+              onClick={() => setActiveTool('wheel')}
+              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
+                activeTool === 'wheel'
+                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
+                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
+              }`}
+            >
+              <Gamepad2 size={18} />
+              Game Wheel
             </button>
             <button
               onClick={() => setActiveTool('poll')}
@@ -316,17 +348,6 @@ export default function GambaPage() {
             >
               <BarChart3 size={18} />
               Viewer Polls
-            </button>
-            <button
-              onClick={() => setActiveTool('wheel')}
-              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
-                activeTool === 'wheel'
-                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
-                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
-              }`}
-            >
-              <Gamepad2 size={18} />
-              Game Wheel
             </button>
           </div>
         </header>
@@ -810,94 +831,25 @@ export default function GambaPage() {
               </div>
             )}
 
-            {/* Game Wheel Tool */}
+            {/* Slot Picker Tool */}
             {activeTool === 'wheel' && (
               <div className="space-y-6">
-                {/* Provider Filter Section */}
                 <div className="p-8 bg-gradient-to-br from-orange-900/20 to-pink-900/20 border border-orange-500/20 rounded-xl backdrop-blur-sm">
                   <div className="mb-6">
                     <div className="flex items-center gap-2 text-orange-300 font-bold mb-2">
                       <Gamepad2 size={18} />
-                      Provider Filters
+                      Advanced Slot Picker
                     </div>
                     <h2 className="text-3xl font-black tracking-tighter">
-                      Select Providers
+                      Find Your Next Slot
                     </h2>
                     <p className="text-white/60">
-                      Choose which slot providers to include in the wheel. At least one must be enabled.
+                      Browse 30+ slots with advanced filters. Search by
+                      provider, volatility, RTP, and more.
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-                    {Object.keys(slotProviders).map((provider) => {
-                      const isEnabled = enabledProviders.includes(provider);
-                      const isLastEnabled = enabledProviders.length === 1 && isEnabled;
-
-                      return (
-                        <button
-                          key={provider}
-                          onClick={() => toggleProvider(provider)}
-                          disabled={isLastEnabled}
-                          className={`px-4 py-3 rounded-lg border text-sm font-bold tracking-wide transition-all duration-200 ${
-                            isEnabled
-                              ? 'bg-gradient-to-r from-orange-500 to-pink-500 border-transparent text-white'
-                              : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:border-orange-400/60'
-                          } ${isLastEnabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                          {provider}
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="mt-4 p-3 rounded-lg bg-orange-500/10 border border-orange-500/20">
-                    <p className="text-sm text-orange-200">
-                      <strong>{enabledProviders.length}</strong> provider{enabledProviders.length !== 1 ? 's' : ''} enabled •
-                      <strong> {availableGames.length}</strong> game{availableGames.length !== 1 ? 's' : ''} in pool
-                    </p>
-                  </div>
-                </div>
-
-                {/* Wheel Section */}
-                <div className="p-8 bg-gradient-to-br from-pink-900/20 to-orange-900/20 border border-pink-500/20 rounded-xl backdrop-blur-sm">
-                  <div className="mb-6">
-                    <div className="flex items-center gap-2 text-pink-300 font-bold mb-2">
-                      <Gamepad2 size={18} />
-                      Spin the Wheel
-                    </div>
-                    <h2 className="text-3xl font-black tracking-tighter">
-                      Random Game Picker
-                    </h2>
-                    <p className="text-white/60">
-                      Let fate decide which slot you play next!
-                    </p>
-                  </div>
-
-                  {availableGames.length > 0 ? (
-                    <div className="flex flex-col items-center">
-                      <GameWheel
-                        games={availableGames}
-                        onGameChosen={handleGameChosen}
-                      />
-
-                      {selectedGame && (
-                        <div className="mt-6 p-6 rounded-lg bg-gradient-to-r from-orange-500/20 to-pink-500/20 border border-orange-500/30 w-full max-w-md">
-                          <p className="text-center text-white/60 text-sm mb-2">
-                            Selected Game
-                          </p>
-                          <p className="text-center text-2xl font-black text-white">
-                            {selectedGame}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <div className="text-center py-12">
-                      <p className="text-white/60">
-                        No games available. Please enable at least one provider.
-                      </p>
-                    </div>
-                  )}
+                  <SlotPicker />
                 </div>
               </div>
             )}

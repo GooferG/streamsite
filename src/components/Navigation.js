@@ -9,6 +9,7 @@ export default function Navigation({ currentPage, setPage }) {
     { id: 'schedule', label: 'SCHEDULE' },
     { id: 'vods', label: 'VODS & CLIPS' },
     { id: 'gear', label: 'GEAR' },
+    { id: 'gear-interactive', label: 'GEAR (NEW)' },
     { id: 'gamba', label: 'GAMBA' },
     { id: 'about', label: 'ABOUT ME' },
     { id: 'admin', label: 'ADMIN' },

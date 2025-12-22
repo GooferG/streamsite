@@ -1,5 +1,16 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Search, Filter, Star, Dice6, TrendingUp, Heart, RefreshCw, ExternalLink, Grid3x3, Ticket } from 'lucide-react';
+import {
+  Search,
+  Filter,
+  Star,
+  Dice6,
+  TrendingUp,
+  Heart,
+  RefreshCw,
+  ExternalLink,
+  Grid3x3,
+  Ticket,
+} from 'lucide-react';
 import SlotMachineWheel from './SlotMachineWheel';
 
 export default function SlotPicker() {
@@ -33,38 +44,45 @@ export default function SlotPicker() {
 
   // Get unique providers
   const providers = useMemo(() => {
-    const providerSet = new Set(games.map(game => game.provider));
+    const providerSet = new Set(games.map((game) => game.provider));
     return Array.from(providerSet).sort();
   }, [games]);
 
   // Filter games
   const filteredGames = useMemo(() => {
-    return games.filter(game => {
-      const matchesSearch = game.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           game.provider.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesProvider = selectedProviders.length === 0 || selectedProviders.includes(game.provider);
-      const matchesVolatility = selectedVolatility === 'all' || game.volatility === selectedVolatility;
-      const matchesRTP = selectedRTP === 'all' ||
-                        (selectedRTP === 'high' && game.rtp >= 96) ||
-                        (selectedRTP === 'medium' && game.rtp >= 94 && game.rtp < 96) ||
-                        (selectedRTP === 'low' && game.rtp < 94);
+    return games.filter((game) => {
+      const matchesSearch =
+        game.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        game.provider.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesProvider =
+        selectedProviders.length === 0 ||
+        selectedProviders.includes(game.provider);
+      const matchesVolatility =
+        selectedVolatility === 'all' || game.volatility === selectedVolatility;
+      const matchesRTP =
+        selectedRTP === 'all' ||
+        (selectedRTP === 'high' && game.rtp >= 96) ||
+        (selectedRTP === 'medium' && game.rtp >= 94 && game.rtp < 96) ||
+        (selectedRTP === 'low' && game.rtp < 94);
 
-      return matchesSearch && matchesProvider && matchesVolatility && matchesRTP;
+      return (
+        matchesSearch && matchesProvider && matchesVolatility && matchesRTP
+      );
     });
   }, [games, searchTerm, selectedProviders, selectedVolatility, selectedRTP]);
 
   const toggleProvider = (provider) => {
-    setSelectedProviders(prev =>
+    setSelectedProviders((prev) =>
       prev.includes(provider)
-        ? prev.filter(p => p !== provider)
+        ? prev.filter((p) => p !== provider)
         : [...prev, provider]
     );
   };
 
   const toggleFavorite = (gameId) => {
-    setFavorites(prev =>
+    setFavorites((prev) =>
       prev.includes(gameId)
-        ? prev.filter(id => id !== gameId)
+        ? prev.filter((id) => id !== gameId)
         : [...prev, gameId]
     );
   };
@@ -86,7 +104,10 @@ export default function SlotPicker() {
     return (
       <div className="flex items-center justify-center py-20">
         <div className="text-center">
-          <RefreshCw className="animate-spin mx-auto mb-4 text-emerald-400" size={40} />
+          <RefreshCw
+            className="animate-spin mx-auto mb-4 text-emerald-400"
+            size={40}
+          />
           <p className="text-white/60">Loading slots...</p>
         </div>
       </div>
@@ -103,7 +124,9 @@ export default function SlotPicker() {
               <p className="text-emerald-400 font-bold text-sm uppercase tracking-wider mb-2">
                 Random Pick
               </p>
-              <h3 className="text-3xl font-black text-white mb-1">{randomPick.name}</h3>
+              <h3 className="text-3xl font-black text-white mb-1">
+                {randomPick.name}
+              </h3>
               <p className="text-white/70">{randomPick.provider}</p>
             </div>
             <button
@@ -159,7 +182,10 @@ export default function SlotPicker() {
       {viewMode === 'grid' && (
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40" size={20} />
+            <Search
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/40"
+              size={20}
+            />
             <input
               type="text"
               placeholder="Search slots or providers..."
@@ -199,7 +225,7 @@ export default function SlotPicker() {
               Providers ({selectedProviders.length} selected)
             </h3>
             <div className="flex flex-wrap gap-2">
-              {providers.map(provider => (
+              {providers.map((provider) => (
                 <button
                   key={provider}
                   onClick={() => toggleProvider(provider)}
@@ -217,9 +243,11 @@ export default function SlotPicker() {
 
           {/* Volatility Filter */}
           <div>
-            <h3 className="text-sm font-bold text-white/70 uppercase tracking-wider mb-3">Volatility</h3>
+            <h3 className="text-sm font-bold text-white/70 uppercase tracking-wider mb-3">
+              Volatility
+            </h3>
             <div className="flex flex-wrap gap-2">
-              {['all', 'low', 'medium', 'high'].map(vol => (
+              {['all', 'low', 'medium', 'high'].map((vol) => (
                 <button
                   key={vol}
                   onClick={() => setSelectedVolatility(vol)}
@@ -237,14 +265,16 @@ export default function SlotPicker() {
 
           {/* RTP Filter */}
           <div>
-            <h3 className="text-sm font-bold text-white/70 uppercase tracking-wider mb-3">RTP Range</h3>
+            <h3 className="text-sm font-bold text-white/70 uppercase tracking-wider mb-3">
+              RTP Range
+            </h3>
             <div className="flex flex-wrap gap-2">
               {[
                 { value: 'all', label: 'All' },
                 { value: 'high', label: 'High (96%+)' },
                 { value: 'medium', label: 'Medium (94-96%)' },
                 { value: 'low', label: 'Low (<94%)' },
-              ].map(rtp => (
+              ].map((rtp) => (
                 <button
                   key={rtp.value}
                   onClick={() => setSelectedRTP(rtp.value)}
@@ -281,14 +311,16 @@ export default function SlotPicker() {
 
           {/* Game Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredGames.map(game => (
+            {filteredGames.map((game) => (
               <div
                 key={game.id}
                 className="group p-4 bg-gradient-to-br from-white/5 to-white/10 border border-white/10 rounded-xl hover:border-emerald-400/60 transition-all duration-300"
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
-                    <h3 className="font-bold text-white mb-1 line-clamp-1">{game.name}</h3>
+                    <h3 className="font-bold text-white mb-1 line-clamp-1">
+                      {game.name}
+                    </h3>
                     <p className="text-sm text-white/60">{game.provider}</p>
                   </div>
                   <button
@@ -297,7 +329,11 @@ export default function SlotPicker() {
                   >
                     <Heart
                       size={18}
-                      className={favorites.includes(game.id) ? 'fill-pink-400 text-pink-400' : 'text-white/40'}
+                      className={
+                        favorites.includes(game.id)
+                          ? 'fill-pink-400 text-pink-400'
+                          : 'text-white/40'
+                      }
                     />
                   </button>
                 </div>
@@ -306,13 +342,15 @@ export default function SlotPicker() {
                   <span className="px-2 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded text-xs font-bold text-emerald-300">
                     {game.rtp}% RTP
                   </span>
-                  <span className={`px-2 py-1 rounded text-xs font-bold capitalize ${
-                    game.volatility === 'high'
-                      ? 'bg-red-500/20 border border-red-500/30 text-red-300'
-                      : game.volatility === 'medium'
-                      ? 'bg-yellow-500/20 border border-yellow-500/30 text-yellow-300'
-                      : 'bg-blue-500/20 border border-blue-500/30 text-blue-300'
-                  }`}>
+                  <span
+                    className={`px-2 py-1 rounded text-xs font-bold capitalize ${
+                      game.volatility === 'high'
+                        ? 'bg-red-500/20 border border-red-500/30 text-red-300'
+                        : game.volatility === 'medium'
+                        ? 'bg-yellow-500/20 border border-yellow-500/30 text-yellow-300'
+                        : 'bg-blue-500/20 border border-blue-500/30 text-blue-300'
+                    }`}
+                  >
                     {game.volatility}
                   </span>
                   {game.maxWin && (
@@ -325,7 +363,10 @@ export default function SlotPicker() {
                 {game.features && game.features.length > 0 && (
                   <div className="flex flex-wrap gap-1 mb-3">
                     {game.features.slice(0, 3).map((feature, idx) => (
-                      <span key={idx} className="px-2 py-0.5 bg-white/5 rounded text-xs text-white/50">
+                      <span
+                        key={idx}
+                        className="px-2 py-0.5 bg-white/5 rounded text-xs text-white/50"
+                      >
                         {feature}
                       </span>
                     ))}
@@ -345,8 +386,12 @@ export default function SlotPicker() {
 
           {filteredGames.length === 0 && (
             <div className="text-center py-20">
-              <p className="text-white/60 text-lg">No slots match your filters</p>
-              <p className="text-white/40 text-sm mt-2">Try adjusting your search or filters</p>
+              <p className="text-white/60 text-lg">
+                No slots match your filters
+              </p>
+              <p className="text-white/40 text-sm mt-2">
+                Try adjusting your search or filters
+              </p>
             </div>
           )}
         </>
@@ -358,44 +403,284 @@ export default function SlotPicker() {
 // Mock game data - Replace this with real API call
 const mockGameData = [
   // Pragmatic Play
-  { id: 1, name: 'Sweet Bonanza', provider: 'Pragmatic Play', rtp: 96.51, volatility: 'high', maxWin: 21100, features: ['Tumble', 'Free Spins', 'Multipliers'] },
-  { id: 2, name: 'Gates of Olympus', provider: 'Pragmatic Play', rtp: 96.50, volatility: 'high', maxWin: 5000, features: ['Tumble', 'Free Spins', 'Multipliers'] },
-  { id: 3, name: 'The Dog House', provider: 'Pragmatic Play', rtp: 96.51, volatility: 'high', maxWin: 6750, features: ['Sticky Wilds', 'Free Spins'] },
-  { id: 4, name: 'Sugar Rush', provider: 'Pragmatic Play', rtp: 96.50, volatility: 'high', maxWin: 5000, features: ['Cluster Pays', 'Multipliers'] },
-  { id: 5, name: 'Starlight Princess', provider: 'Pragmatic Play', rtp: 96.50, volatility: 'high', maxWin: 5000, features: ['Tumble', 'Multipliers'] },
+  {
+    id: 1,
+    name: 'Sweet Bonanza',
+    provider: 'Pragmatic Play',
+    rtp: 96.51,
+    volatility: 'high',
+    maxWin: 21100,
+    features: ['Tumble', 'Free Spins', 'Multipliers'],
+  },
+  {
+    id: 2,
+    name: 'Gates of Olympus',
+    provider: 'Pragmatic Play',
+    rtp: 96.5,
+    volatility: 'high',
+    maxWin: 5000,
+    features: ['Tumble', 'Free Spins', 'Multipliers'],
+  },
+  {
+    id: 3,
+    name: 'The Dog House',
+    provider: 'Pragmatic Play',
+    rtp: 96.51,
+    volatility: 'high',
+    maxWin: 6750,
+    features: ['Sticky Wilds', 'Free Spins'],
+  },
+  {
+    id: 4,
+    name: 'Sugar Rush',
+    provider: 'Pragmatic Play',
+    rtp: 96.5,
+    volatility: 'high',
+    maxWin: 5000,
+    features: ['Cluster Pays', 'Multipliers'],
+  },
+  {
+    id: 5,
+    name: 'Starlight Princess',
+    provider: 'Pragmatic Play',
+    rtp: 96.5,
+    volatility: 'high',
+    maxWin: 5000,
+    features: ['Tumble', 'Multipliers'],
+  },
 
   // Play'n GO
-  { id: 6, name: 'Book of Dead', provider: 'Play\'n GO', rtp: 96.21, volatility: 'high', maxWin: 5000, features: ['Expanding Symbols', 'Free Spins'] },
-  { id: 7, name: 'Reactoonz', provider: 'Play\'n GO', rtp: 96.51, volatility: 'high', maxWin: 4570, features: ['Cluster Pays', 'Quantum Features'] },
-  { id: 8, name: 'Moon Princess', provider: 'Play\'n GO', rtp: 96.50, volatility: 'high', maxWin: 5000, features: ['Cascade', 'Girl Power'] },
-  { id: 9, name: 'Fire Joker', provider: 'Play\'n GO', rtp: 96.15, volatility: 'medium', maxWin: 800, features: ['Wheel of Multipliers'] },
-  { id: 10, name: 'Rise of Olympus', provider: 'Play\'n GO', rtp: 96.50, volatility: 'high', maxWin: 5000, features: ['Cascade', 'God Powers'] },
+  {
+    id: 6,
+    name: 'Book of Dead',
+    provider: "Play'n GO",
+    rtp: 96.21,
+    volatility: 'high',
+    maxWin: 5000,
+    features: ['Expanding Symbols', 'Free Spins'],
+  },
+  {
+    id: 7,
+    name: 'Reactoonz',
+    provider: "Play'n GO",
+    rtp: 96.51,
+    volatility: 'high',
+    maxWin: 4570,
+    features: ['Cluster Pays', 'Quantum Features'],
+  },
+  {
+    id: 8,
+    name: 'Moon Princess',
+    provider: "Play'n GO",
+    rtp: 96.5,
+    volatility: 'high',
+    maxWin: 5000,
+    features: ['Cascade', 'Girl Power'],
+  },
+  {
+    id: 9,
+    name: 'Fire Joker',
+    provider: "Play'n GO",
+    rtp: 96.15,
+    volatility: 'medium',
+    maxWin: 800,
+    features: ['Wheel of Multipliers'],
+  },
+  {
+    id: 10,
+    name: 'Rise of Olympus',
+    provider: "Play'n GO",
+    rtp: 96.5,
+    volatility: 'high',
+    maxWin: 5000,
+    features: ['Cascade', 'God Powers'],
+  },
 
   // NetEnt
-  { id: 11, name: 'Starburst', provider: 'NetEnt', rtp: 96.09, volatility: 'low', maxWin: 500, features: ['Expanding Wilds', 'Re-Spins'] },
-  { id: 12, name: 'Gonzo\'s Quest', provider: 'NetEnt', rtp: 95.97, volatility: 'medium', maxWin: 2500, features: ['Avalanche', 'Multipliers'] },
-  { id: 13, name: 'Dead or Alive 2', provider: 'NetEnt', rtp: 96.80, volatility: 'high', maxWin: 111111, features: ['Sticky Wilds', 'Free Spins'] },
-  { id: 14, name: 'Blood Suckers', provider: 'NetEnt', rtp: 98.00, volatility: 'low', maxWin: 900, features: ['Free Spins', 'Bonus Game'] },
-  { id: 15, name: 'Divine Fortune', provider: 'NetEnt', rtp: 96.59, volatility: 'medium', maxWin: 0, features: ['Jackpot', 'Free Spins'] },
+  {
+    id: 11,
+    name: 'Starburst',
+    provider: 'NetEnt',
+    rtp: 96.09,
+    volatility: 'low',
+    maxWin: 500,
+    features: ['Expanding Wilds', 'Re-Spins'],
+  },
+  {
+    id: 12,
+    name: "Gonzo's Quest",
+    provider: 'NetEnt',
+    rtp: 95.97,
+    volatility: 'medium',
+    maxWin: 2500,
+    features: ['Avalanche', 'Multipliers'],
+  },
+  {
+    id: 13,
+    name: 'Dead or Alive 2',
+    provider: 'NetEnt',
+    rtp: 96.8,
+    volatility: 'high',
+    maxWin: 111111,
+    features: ['Sticky Wilds', 'Free Spins'],
+  },
+  {
+    id: 14,
+    name: 'Blood Suckers',
+    provider: 'NetEnt',
+    rtp: 98.0,
+    volatility: 'low',
+    maxWin: 900,
+    features: ['Free Spins', 'Bonus Game'],
+  },
+  {
+    id: 15,
+    name: 'Divine Fortune',
+    provider: 'NetEnt',
+    rtp: 96.59,
+    volatility: 'medium',
+    maxWin: 0,
+    features: ['Jackpot', 'Free Spins'],
+  },
 
   // Nolimit City
-  { id: 16, name: 'Tombstone RIP', provider: 'Nolimit City', rtp: 96.08, volatility: 'high', maxWin: 300000, features: ['xNudge', 'xWays'] },
-  { id: 17, name: 'San Quentin xWays', provider: 'Nolimit City', rtp: 96.03, volatility: 'high', maxWin: 150000, features: ['xWays', 'Split Symbols'] },
-  { id: 18, name: 'Mental', provider: 'Nolimit City', rtp: 96.06, volatility: 'high', maxWin: 66666, features: ['xNudge', 'Fire Frame'] },
-  { id: 19, name: 'Fire in the Hole', provider: 'Nolimit City', rtp: 96.06, volatility: 'high', maxWin: 60000, features: ['xBomb', 'Collapsing Symbols'] },
-  { id: 20, name: 'Das xBoot', provider: 'Nolimit City', rtp: 96.03, volatility: 'high', maxWin: 55200, features: ['xWays', 'Collapsing Symbols'] },
+  {
+    id: 16,
+    name: 'Tombstone RIP',
+    provider: 'Nolimit City',
+    rtp: 96.08,
+    volatility: 'high',
+    maxWin: 300000,
+    features: ['xNudge', 'xWays'],
+  },
+  {
+    id: 17,
+    name: 'San Quentin xWays',
+    provider: 'Nolimit City',
+    rtp: 96.03,
+    volatility: 'high',
+    maxWin: 150000,
+    features: ['xWays', 'Split Symbols'],
+  },
+  {
+    id: 18,
+    name: 'Mental',
+    provider: 'Nolimit City',
+    rtp: 96.06,
+    volatility: 'high',
+    maxWin: 66666,
+    features: ['xNudge', 'Fire Frame'],
+  },
+  {
+    id: 19,
+    name: 'Fire in the Hole',
+    provider: 'Nolimit City',
+    rtp: 96.06,
+    volatility: 'high',
+    maxWin: 60000,
+    features: ['xBomb', 'Collapsing Symbols'],
+  },
+  {
+    id: 20,
+    name: 'Das xBoot',
+    provider: 'Nolimit City',
+    rtp: 96.03,
+    volatility: 'high',
+    maxWin: 55200,
+    features: ['xWays', 'Collapsing Symbols'],
+  },
 
   // Hacksaw Gaming
-  { id: 21, name: 'Wanted Dead or a Wild', provider: 'Hacksaw Gaming', rtp: 96.38, volatility: 'high', maxWin: 12500, features: ['Sticky Wilds', 'Duel at Dawn'] },
-  { id: 22, name: 'Chaos Crew', provider: 'Hacksaw Gaming', rtp: 96.30, volatility: 'high', maxWin: 10000, features: ['Mystery Symbols', 'Free Spins'] },
-  { id: 23, name: 'RIP City', provider: 'Hacksaw Gaming', rtp: 96.20, volatility: 'high', maxWin: 10000, features: ['Payout Multiplier', 'Wild Hunt'] },
-  { id: 24, name: 'Le Bandit', provider: 'Hacksaw Gaming', rtp: 96.32, volatility: 'high', maxWin: 10000, features: ['Walking Wilds', 'Walking Wild Multiplier'] },
-  { id: 25, name: 'Cubes 2', provider: 'Hacksaw Gaming', rtp: 96.37, volatility: 'high', maxWin: 5000, features: ['Cluster Pays', 'Multipliers'] },
+  {
+    id: 21,
+    name: 'Wanted Dead or a Wild',
+    provider: 'Hacksaw Gaming',
+    rtp: 96.38,
+    volatility: 'high',
+    maxWin: 12500,
+    features: ['Sticky Wilds', 'Duel at Dawn'],
+  },
+  {
+    id: 22,
+    name: 'Chaos Crew',
+    provider: 'Hacksaw Gaming',
+    rtp: 96.3,
+    volatility: 'high',
+    maxWin: 10000,
+    features: ['Mystery Symbols', 'Free Spins'],
+  },
+  {
+    id: 23,
+    name: 'RIP City',
+    provider: 'Hacksaw Gaming',
+    rtp: 96.2,
+    volatility: 'high',
+    maxWin: 10000,
+    features: ['Payout Multiplier', 'Wild Hunt'],
+  },
+  {
+    id: 24,
+    name: 'Le Bandit',
+    provider: 'Hacksaw Gaming',
+    rtp: 96.32,
+    volatility: 'high',
+    maxWin: 10000,
+    features: ['Walking Wilds', 'Walking Wild Multiplier'],
+  },
+  {
+    id: 25,
+    name: 'Cubes 2',
+    provider: 'Hacksaw Gaming',
+    rtp: 96.37,
+    volatility: 'high',
+    maxWin: 5000,
+    features: ['Cluster Pays', 'Multipliers'],
+  },
 
   // Relax Gaming
-  { id: 26, name: 'Money Train 2', provider: 'Relax Gaming', rtp: 96.40, volatility: 'high', maxWin: 50000, features: ['Bonus Game', 'Persistent Symbols'] },
-  { id: 27, name: 'Money Train 3', provider: 'Relax Gaming', rtp: 96.10, volatility: 'high', maxWin: 100000, features: ['Bonus Game', 'Persistent Symbols'] },
-  { id: 28, name: 'Snake Arena', provider: 'Relax Gaming', rtp: 96.23, volatility: 'high', maxWin: 5814, features: ['Snake Spins', 'Bonus Game'] },
-  { id: 29, name: 'Templar Tumble', provider: 'Relax Gaming', rtp: 96.25, volatility: 'high', maxWin: 15000, features: ['Tumble', 'Mystery Symbols'] },
-  { id: 30, name: 'TNT Tumble', provider: 'Relax Gaming', rtp: 96.30, volatility: 'high', maxWin: 46656, features: ['Tumble', 'Expanding Grid'] },
+  {
+    id: 26,
+    name: 'Money Train 2',
+    provider: 'Relax Gaming',
+    rtp: 96.4,
+    volatility: 'high',
+    maxWin: 50000,
+    features: ['Bonus Game', 'Persistent Symbols'],
+  },
+  {
+    id: 27,
+    name: 'Money Train 3',
+    provider: 'Relax Gaming',
+    rtp: 96.1,
+    volatility: 'high',
+    maxWin: 100000,
+    features: ['Bonus Game', 'Persistent Symbols'],
+  },
+  {
+    id: 28,
+    name: 'Snake Arena',
+    provider: 'Relax Gaming',
+    rtp: 96.23,
+    volatility: 'high',
+    maxWin: 5814,
+    features: ['Snake Spins', 'Bonus Game'],
+  },
+  {
+    id: 29,
+    name: 'Templar Tumble',
+    provider: 'Relax Gaming',
+    rtp: 96.25,
+    volatility: 'high',
+    maxWin: 15000,
+    features: ['Tumble', 'Mystery Symbols'],
+  },
+  {
+    id: 30,
+    name: 'TNT Tumble',
+    provider: 'Relax Gaming',
+    rtp: 96.3,
+    volatility: 'high',
+    maxWin: 46656,
+    features: ['Tumble', 'Expanding Grid'],
+  },
 ];

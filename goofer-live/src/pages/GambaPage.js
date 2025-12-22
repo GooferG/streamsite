@@ -1,13 +1,10 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   Wallet,
   Target,
   Flame,
   ShieldCheck,
-  TrendingUp,
-  TrendingDown,
   RefreshCcw,
-  Timer,
   ExternalLink,
   BarChart3,
   Plus,
@@ -27,80 +24,6 @@ export default function GambaPage() {
     },
   };
 
-  // Slot providers and their popular games
-  const slotProviders = {
-    Pragmatic: [
-      'Sweet Bonanza',
-      'Gates of Olympus',
-      'The Dog House',
-      'Sugar Rush',
-      'Starlight Princess',
-    ],
-    "Play'n GO": [
-      'Book of Dead',
-      'Reactoonz',
-      'Moon Princess',
-      'Fire Joker',
-      'Rise of Olympus',
-    ],
-    NetEnt: [
-      'Starburst',
-      "Gonzo's Quest",
-      'Dead or Alive 2',
-      'Blood Suckers',
-      'Divine Fortune',
-    ],
-    'Push Gaming': [
-      "Jammin' Jars",
-      'Razor Shark',
-      'Fat Rabbit',
-      'The Shadow Order',
-      "Jammin' Jars 2",
-    ],
-    'Nolimit City': [
-      'Tombstone RIP',
-      'San Quentin xWays',
-      'Mental',
-      'Fire in the Hole',
-      'Das xBoot',
-    ],
-    Hacksaw: [
-      'Wanted Dead or a Wild',
-      'Chaos Crew',
-      'RIP City',
-      'Le Bandit',
-      'Cubes 2',
-    ],
-    Relax: [
-      'Money Train 2',
-      'Money Train 3',
-      'Snake Arena',
-      'Templar Tumble',
-      'TNT Tumble',
-    ],
-    'Red Tiger': [
-      "Gonzo's Quest Megaways",
-      "Dragon's Luck",
-      'Pirates Plenty',
-      'Reel King Mega',
-      'Piggy Riches',
-    ],
-    'Big Time Gaming': [
-      'Bonanza Megaways',
-      'Extra Chilli',
-      'White Rabbit',
-      'Danger High Voltage',
-      'Star Clusters',
-    ],
-    Microgaming: [
-      'Immortal Romance',
-      'Thunderstruck II',
-      'Mega Moolah',
-      'Book of Oz',
-      'Sisters of Oz',
-    ],
-  };
-
   // Initialize state from localStorage or use defaults
   const [bankroll, setBankroll] = useState(() => {
     const saved = localStorage.getItem('gamba_bankroll');
@@ -112,20 +35,19 @@ export default function GambaPage() {
     return saved || 'steady';
   });
 
-  const [goal, setGoal] = useState(() => {
-    const saved = localStorage.getItem('gamba_goal');
-    return saved ? Number(saved) : 250;
-  });
-
-  const [stopLoss, setStopLoss] = useState(() => {
+  const [stopLoss] = useState(() => {
     const saved = localStorage.getItem('gamba_stopLoss');
     return saved ? Number(saved) : 200;
   });
 
-  const [entries, setEntries] = useState([]);
-  const [amountInput, setAmountInput] = useState('');
-  const [noteInput, setNoteInput] = useState('');
-  const [activeTool, setActiveTool] = useState('bankroll'); // 'bankroll', 'session', 'poll', or 'wheel'
+  const [activeTool, setActiveTool] = useState('hunt'); // 'hunt', 'poll', or 'wheel'
+
+  // Bonus Hunt state
+  const [huntName, setHuntName] = useState('');
+  const [startingBalance, setStartingBalance] = useState(0);
+  const [bonuses, setBonuses] = useState([]);
+  const [bonusGameInput, setBonusGameInput] = useState('');
+  const [bonusCostInput, setBonusCostInput] = useState('');
 
   // Poll state
   const [pollQuestion, setPollQuestion] = useState('');
@@ -142,90 +64,77 @@ export default function GambaPage() {
     localStorage.setItem('gamba_risk', risk);
   }, [risk]);
 
-  useEffect(() => {
-    localStorage.setItem('gamba_goal', goal.toString());
-  }, [goal]);
-
-  useEffect(() => {
-    localStorage.setItem('gamba_stopLoss', stopLoss.toString());
-  }, [stopLoss]);
-
   const recommendedBet = useMemo(() => {
     const pct = riskProfiles[risk].pct / 100;
     const raw = bankroll * pct;
     return Math.max(1, Math.round(raw * 100) / 100);
   }, [bankroll, risk, riskProfiles]);
 
-  const sessionNet = useMemo(
-    () =>
-      entries.reduce(
-        (total, entry) =>
-          entry.type === 'win' ? total + entry.amount : total - entry.amount,
-        0
-      ),
-    [entries]
+  // Bonus Hunt calculations
+  const totalBonusCost = useMemo(
+    () => bonuses.reduce((sum, bonus) => sum + bonus.cost, 0),
+    [bonuses]
   );
 
-  const status =
-    sessionNet >= goal
-      ? { label: 'Goal hit — lock it in', tone: 'text-emerald-400' }
-      : sessionNet <= -stopLoss
-      ? { label: 'Stop-loss hit — step away', tone: 'text-red-400' }
-      : { label: 'In session', tone: 'text-white/60' };
+  const breakEvenPercentage = useMemo(() => {
+    if (totalBonusCost === 0) return 0;
+    return ((totalBonusCost / totalBonusCost) * 100).toFixed(1);
+  }, [totalBonusCost]);
 
-  const rangeProgress =
-    goal + stopLoss === 0
-      ? 50
-      : Math.min(
-          100,
-          Math.max(0, ((sessionNet + stopLoss) / (goal + stopLoss)) * 100)
-        );
+  const profitPercentage = useMemo(() => {
+    if (totalBonusCost === 0) return 0;
+    const profitTarget = totalBonusCost * 1.2; // 20% profit
+    return ((profitTarget / totalBonusCost) * 100).toFixed(1);
+  }, [totalBonusCost]);
 
-  const quickAdjustments = [10, 25, 50, 100];
-
-  const addEntry = (type, value, quickNote) => {
-    const amount =
-      typeof value === 'number' ? value : parseFloat(value || amountInput);
-
-    if (Number.isNaN(amount) || amount <= 0) return;
+  // Bonus Hunt functions
+  const addBonus = () => {
+    if (
+      !bonusGameInput.trim() ||
+      !bonusCostInput ||
+      Number(bonusCostInput) <= 0
+    )
+      return;
 
     const makeId = () =>
       typeof crypto !== 'undefined' && crypto.randomUUID
         ? crypto.randomUUID()
         : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 
-    setEntries((prev) => [
+    setBonuses((prev) => [
       ...prev,
       {
         id: makeId(),
-        type,
-        amount: Math.round(amount * 100) / 100,
-        note: quickNote || noteInput || 'Logged manually',
-        at: new Date().toLocaleTimeString([], {
-          hour: '2-digit',
-          minute: '2-digit',
-        }),
+        game: bonusGameInput,
+        cost: Number(bonusCostInput),
+        result: 0,
+        opened: false,
       },
     ]);
-    setAmountInput('');
-    setNoteInput('');
+    setBonusGameInput('');
+    setBonusCostInput('');
   };
 
-  const resetSession = () => {
-    setEntries([]);
-    setAmountInput('');
-    setNoteInput('');
+  const removeBonus = (id) => {
+    setBonuses((prev) => prev.filter((bonus) => bonus.id !== id));
   };
 
-  const resetBankrollSettings = () => {
-    setBankroll(750);
-    setRisk('steady');
-    setGoal(250);
-    setStopLoss(200);
-    localStorage.removeItem('gamba_bankroll');
-    localStorage.removeItem('gamba_risk');
-    localStorage.removeItem('gamba_goal');
-    localStorage.removeItem('gamba_stopLoss');
+  const updateBonusResult = (id, result) => {
+    setBonuses((prev) =>
+      prev.map((bonus) =>
+        bonus.id === id
+          ? { ...bonus, result: Number(result), opened: true }
+          : bonus
+      )
+    );
+  };
+
+  const resetHunt = () => {
+    setHuntName('');
+    setStartingBalance(0);
+    setBonuses([]);
+    setBonusGameInput('');
+    setBonusCostInput('');
   };
 
   // Poll functions
@@ -305,28 +214,16 @@ export default function GambaPage() {
           {/* Tool Selection Buttons */}
           <div className="flex justify-center gap-4 pt-4 flex-wrap">
             <button
-              onClick={() => setActiveTool('bankroll')}
+              onClick={() => setActiveTool('hunt')}
               className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
-                activeTool === 'bankroll'
+                activeTool === 'hunt'
                   ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
                   : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
               }`}
             >
-              <ShieldCheck size={18} />
-              Bankroll & Bet Sizing
+              <Target size={18} />
+              Bonus Hunt
             </button>
-            <button
-              onClick={() => setActiveTool('session')}
-              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
-                activeTool === 'session'
-                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
-                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-purple-400/60'
-              }`}
-            >
-              <ActivityIndicator net={sessionNet} />
-              Bonus Tracker
-            </button>
-
             <button
               onClick={() => setActiveTool('wheel')}
               className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
@@ -354,25 +251,25 @@ export default function GambaPage() {
 
         <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2 space-y-6">
-            {/* Bankroll & Bet Sizing Tool */}
-            {activeTool === 'bankroll' && (
+            {/* Bonus Hunt Tracker */}
+            {activeTool === 'hunt' && (
               <div className="p-8 bg-gradient-to-br from-emerald-900/20 to-purple-900/20 border border-emerald-500/20 rounded-xl backdrop-blur-sm">
                 <div className="flex items-start justify-between gap-4 mb-6">
                   <div>
                     <div className="flex items-center gap-2 text-emerald-400 font-bold mb-2">
-                      <ShieldCheck size={18} />
-                      Session Guardrails
+                      <Target size={18} />
+                      Bonus Hunt Tracker
                     </div>
                     <h2 className="text-3xl font-black tracking-tighter">
-                      Bankroll & Bet Sizing
+                      Track Your Bonus Hunt
                     </h2>
                     <p className="text-white/60">
-                      Set risk, stop-loss, and goals before spinning. Stick to
-                      the script live.
+                      Add bonuses, track costs, and see what percentage you need
+                      to break even or profit.
                     </p>
                   </div>
                   <button
-                    onClick={resetBankrollSettings}
+                    onClick={resetHunt}
                     className="flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60 transition-all"
                   >
                     <RefreshCcw size={14} />
@@ -380,254 +277,131 @@ export default function GambaPage() {
                   </button>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <label className="block text-sm text-white/60">
-                      Bankroll (live)
-                    </label>
-                    <div className="flex items-center gap-3">
-                      <div className="p-3 bg-white/5 rounded-lg border border-white/10">
-                        <Wallet className="text-emerald-400" size={18} />
-                      </div>
-                      <input
-                        type="number"
-                        value={bankroll}
-                        onChange={(e) =>
-                          setBankroll(Number(e.target.value) || 0)
-                        }
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-2">
-                      {Object.entries(riskProfiles).map(([key, profile]) => (
-                        <button
-                          key={key}
-                          onClick={() => setRisk(key)}
-                          className={`px-3 py-2 rounded-lg border text-sm font-bold tracking-wide transition-all duration-200 ${
-                            risk === key
-                              ? 'bg-gradient-to-r from-emerald-500 to-purple-500 border-transparent text-white'
-                              : 'bg-white/5 border-white/10 text-white/60 hover:text-white'
-                          }`}
-                        >
-                          {profile.label}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-xs text-white/50">
-                      {riskProfiles[risk].note}. Keep chat aware of limits and
-                      call out breaks.
-                    </p>
-                  </div>
-
-                  <div className="space-y-4">
-                    <GuardrailInput
-                      icon={<Target size={16} />}
-                      label="Profit Goal"
-                      value={goal}
-                      onChange={(e) => setGoal(Number(e.target.value) || 0)}
-                    />
-                    <GuardrailInput
-                      icon={<Flame size={16} />}
-                      label="Stop-Loss"
-                      value={stopLoss}
-                      onChange={(e) => setStopLoss(Number(e.target.value) || 0)}
-                    />
-
-                    <div className="p-4 rounded-lg border border-white/10 bg-white/5 flex items-center justify-between">
-                      <div>
-                        <p className="text-sm text-white/60">
-                          Suggested Bet Size
-                        </p>
-                        <p className="text-2xl font-black tracking-tight text-emerald-400">
-                          ${recommendedBet.toLocaleString()}
-                        </p>
-                        <p className="text-xs text-white/40">
-                          {(riskProfiles[risk].pct / 100).toLocaleString(
-                            undefined,
-                            {
-                              style: 'percent',
-                              minimumFractionDigits: 1,
-                            }
-                          )}{' '}
-                          of bankroll
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-white/60">Break cadence</p>
-                        <div className="flex items-center gap-2 font-bold">
-                          <Timer size={16} className="text-purple-300" />
-                          <span>5m every 40m</span>
-                        </div>
-                        <p className="text-xs text-white/40">
-                          Announce timers on stream
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Live Session Log Tool */}
-            {activeTool === 'session' && (
-              <div className="p-8 bg-gradient-to-br from-purple-900/20 to-emerald-900/20 border border-purple-500/20 rounded-xl backdrop-blur-sm">
-                <div className="flex items-start justify-between gap-4 mb-6">
+                {/* Hunt Details */}
+                <div className="grid md:grid-cols-2 gap-4 mb-6">
                   <div>
-                    <div className="flex items-center gap-2 text-purple-300 font-bold mb-2">
-                      <ActivityIndicator net={sessionNet} />
-                      Session Tracker
-                    </div>
-                    <h2 className="text-3xl font-black tracking-tighter">
-                      Live Session Log
-                    </h2>
-                    <p className="text-white/60">
-                      Fast add wins/losses, track net, and call out when to walk
-                      away.
-                    </p>
+                    <label className="block text-sm text-white/60 mb-2">
+                      Hunt Name
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="e.g., Friday Night Hunt"
+                      value={huntName}
+                      onChange={(e) => setHuntName(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
+                    />
                   </div>
-                  <button
-                    onClick={resetSession}
-                    className="flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60 transition-all"
-                  >
-                    <RefreshCcw size={14} />
-                    RESET
-                  </button>
-                </div>
-
-                <div className="grid md:grid-cols-3 gap-4 mb-6">
-                  <StatCard
-                    icon={<TrendingUp size={16} />}
-                    label="Net Position"
-                    value={`$${sessionNet.toLocaleString()}`}
-                    tone={
-                      sessionNet > 0
-                        ? 'text-emerald-400'
-                        : sessionNet < 0
-                        ? 'text-red-400'
-                        : 'text-white'
-                    }
-                  />
-                  <StatCard
-                    icon={<Target size={16} />}
-                    label="Profit Goal"
-                    value={`$${goal.toLocaleString()}`}
-                    tone="text-white"
-                  />
-                  <StatCard
-                    icon={<Flame size={16} />}
-                    label="Stop-Loss"
-                    value={`-$${stopLoss.toLocaleString()}`}
-                    tone="text-white"
-                  />
-                </div>
-
-                <div className="mb-6">
-                  <div className="flex items-center justify-between text-sm text-white/60 mb-2">
-                    <span>
-                      Status:{' '}
-                      <span className={status.tone}>{status.label}</span>
-                    </span>
-                    <span>{Math.round(rangeProgress)}% to range limits</span>
-                  </div>
-                  <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden border border-white/10">
-                    <div
-                      className={`h-full bg-gradient-to-r ${
-                        sessionNet >= 0
-                          ? 'from-emerald-500 to-purple-500'
-                          : 'from-red-500 to-purple-500'
-                      } transition-all duration-500`}
-                      style={{ width: `${rangeProgress}%` }}
+                  <div>
+                    <label className="block text-sm text-white/60 mb-2">
+                      Starting Balance
+                    </label>
+                    <input
+                      type="number"
+                      placeholder="0"
+                      value={startingBalance || ''}
+                      onChange={(e) =>
+                        setStartingBalance(Number(e.target.value) || 0)
+                      }
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
                     />
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-4">
-                  <div className="md:col-span-2 space-y-3">
-                    <div className="flex flex-wrap gap-2">
-                      {quickAdjustments.map((value) => (
-                        <QuickAdjustButtons
-                          key={value}
-                          value={value}
-                          onWin={() =>
-                            addEntry('win', value, `Quick +${value}`)
-                          }
-                          onLoss={() =>
-                            addEntry('loss', value, `Quick -${value}`)
-                          }
-                        />
+                {/* Stats Cards */}
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+                    <p className="text-xs text-white/60 mb-1">Total Cost</p>
+                    <p className="text-2xl font-black text-white">
+                      ${totalBonusCost.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
+                    <p className="text-xs text-emerald-400 mb-1">Break Even</p>
+                    <p className="text-2xl font-black text-emerald-300">
+                      {breakEvenPercentage}%
+                    </p>
+                  </div>
+                  <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
+                    <p className="text-xs text-purple-400 mb-1">Profit (20%)</p>
+                    <p className="text-2xl font-black text-purple-300">
+                      {profitPercentage}%
+                    </p>
+                  </div>
+                </div>
+
+                {/* Add Bonus Form */}
+                <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded-lg">
+                  <h3 className="text-sm font-bold text-white/70 mb-3">
+                    Add Bonus
+                  </h3>
+                  <div className="grid sm:grid-cols-3 gap-3">
+                    <input
+                      type="text"
+                      placeholder="Game name"
+                      value={bonusGameInput}
+                      onChange={(e) => setBonusGameInput(e.target.value)}
+                      className="sm:col-span-2 bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
+                    />
+                    <input
+                      type="number"
+                      placeholder="Cost"
+                      value={bonusCostInput}
+                      onChange={(e) => setBonusCostInput(e.target.value)}
+                      className="bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
+                    />
+                  </div>
+                  <button
+                    onClick={addBonus}
+                    className="w-full mt-3 px-4 py-3 rounded-lg bg-gradient-to-r from-emerald-500 to-purple-500 text-white font-bold hover:from-emerald-600 hover:to-purple-600 transition-all flex items-center justify-center gap-2"
+                  >
+                    <Plus size={18} />
+                    Add Bonus
+                  </button>
+                </div>
+
+                {/* Bonuses List */}
+                <div className="space-y-3">
+                  <h3 className="text-sm font-bold text-white/70">
+                    Bonuses ({bonuses.length})
+                  </h3>
+                  {bonuses.length === 0 ? (
+                    <div className="text-center py-8 text-white/50">
+                      No bonuses added yet. Add your first bonus above!
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {bonuses.map((bonus) => (
+                        <div
+                          key={bonus.id}
+                          className="p-4 bg-white/5 border border-white/10 rounded-lg flex items-center justify-between gap-4"
+                        >
+                          <div className="flex-1">
+                            <p className="font-bold text-white">{bonus.game}</p>
+                            <p className="text-sm text-white/60">
+                              Cost: ${bonus.cost.toLocaleString()}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              placeholder="Result"
+                              value={bonus.result || ''}
+                              onChange={(e) =>
+                                updateBonusResult(bonus.id, e.target.value)
+                              }
+                              className="w-24 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
+                            />
+                            <button
+                              onClick={() => removeBonus(bonus.id)}
+                              className="p-2 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        </div>
                       ))}
                     </div>
-
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      <input
-                        type="number"
-                        placeholder="Amount"
-                        value={amountInput}
-                        onChange={(e) => setAmountInput(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Note (optional)"
-                        value={noteInput}
-                        onChange={(e) => setNoteInput(e.target.value)}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
-                      />
-                    </div>
-
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => addEntry('win')}
-                        className="flex-1 px-4 py-3 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-100 font-bold hover:bg-emerald-500/30 transition-all"
-                      >
-                        Log Win
-                      </button>
-                      <button
-                        onClick={() => addEntry('loss')}
-                        className="flex-1 px-4 py-3 rounded-lg bg-red-500/20 border border-red-500/40 text-red-100 font-bold hover:bg-red-500/30 transition-all"
-                      >
-                        Log Loss
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="bg-white/5 border border-white/10 rounded-lg p-4 space-y-3 max-h-72 overflow-y-auto">
-                    {entries.length === 0 ? (
-                      <p className="text-white/50 text-sm">
-                        No entries yet. Add wins/losses to track the run live.
-                      </p>
-                    ) : (
-                      entries
-                        .slice()
-                        .reverse()
-                        .map((entry) => (
-                          <div
-                            key={entry.id}
-                            className="flex items-start justify-between p-3 rounded-lg bg-black/30 border border-white/5"
-                          >
-                            <div>
-                              <p
-                                className={`font-bold ${
-                                  entry.type === 'win'
-                                    ? 'text-emerald-300'
-                                    : 'text-red-300'
-                                }`}
-                              >
-                                {entry.type === 'win' ? '+$' : '-$'}
-                                {entry.amount.toLocaleString()}
-                              </p>
-                              <p className="text-xs text-white/50">
-                                {entry.note}
-                              </p>
-                            </div>
-                            <span className="text-xs text-white/40">
-                              {entry.at}
-                            </span>
-                          </div>
-                        ))
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
             )}
@@ -856,6 +630,64 @@ export default function GambaPage() {
           </div>
 
           <div className="space-y-6">
+            {/* Compact Bankroll & Bet Sizing */}
+            {activeTool === 'hunt' && (
+              <div className="p-6 bg-gradient-to-br from-blue-900/20 to-emerald-900/20 border border-blue-500/20 rounded-xl backdrop-blur-sm space-y-4">
+                <div className="flex items-center gap-2 text-blue-300 font-bold mb-2">
+                  <Wallet size={16} />
+                  Bankroll & Bet Sizing
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-xs text-white/60 mb-2">
+                      Current Bankroll
+                    </label>
+                    <input
+                      type="number"
+                      value={bankroll}
+                      onChange={(e) => setBankroll(Number(e.target.value) || 0)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs text-white/60 mb-2">
+                      Risk Profile
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      {Object.entries(riskProfiles).map(([key, profile]) => (
+                        <button
+                          key={key}
+                          onClick={() => setRisk(key)}
+                          className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
+                            risk === key
+                              ? 'bg-blue-500/30 border border-blue-400/60 text-blue-200'
+                              : 'bg-white/5 border border-white/10 text-white/60 hover:text-white'
+                          }`}
+                        >
+                          {profile.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-xs text-white/50 mt-2">
+                      {riskProfiles[risk].note}
+                    </p>
+                  </div>
+
+                  <div className="pt-3 border-t border-white/10">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-xs text-white/60">Recommended Bet</span>
+                      <span className="text-xs text-white/40">{riskProfiles[risk].pct}% of bankroll</span>
+                    </div>
+                    <div className="text-2xl font-black text-emerald-300">
+                      ${recommendedBet.toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="p-6 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm space-y-4">
               <div className="flex items-center gap-2 text-emerald-300 font-bold">
                 <ShieldCheck size={16} />
@@ -930,58 +762,6 @@ export default function GambaPage() {
   );
 }
 
-function GuardrailInput({ icon, label, value, onChange }) {
-  return (
-    <div className="space-y-2">
-      <label className="block text-sm text-white/60">{label}</label>
-      <div className="flex items-center gap-3">
-        <div className="p-3 bg-white/5 rounded-lg border border-white/10">
-          {icon}
-        </div>
-        <input
-          type="number"
-          value={value}
-          onChange={onChange}
-          className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
-        />
-      </div>
-    </div>
-  );
-}
-
-function StatCard({ icon, label, value, tone }) {
-  return (
-    <div className="p-4 rounded-lg border border-white/10 bg-white/5">
-      <div className="flex items-center gap-2 text-white/60 text-xs uppercase tracking-widest">
-        {icon}
-        {label}
-      </div>
-      <div className={`text-2xl font-black tracking-tight mt-1 ${tone}`}>
-        {value}
-      </div>
-    </div>
-  );
-}
-
-function QuickAdjustButtons({ value, onWin, onLoss }) {
-  return (
-    <div className="flex overflow-hidden rounded-lg border border-white/10">
-      <button
-        onClick={onWin}
-        className="px-3 py-2 bg-emerald-500/20 text-emerald-100 text-sm font-bold hover:bg-emerald-500/30 transition-all"
-      >
-        +${value}
-      </button>
-      <button
-        onClick={onLoss}
-        className="px-3 py-2 bg-red-500/20 text-red-100 text-sm font-bold hover:bg-red-500/30 transition-all"
-      >
-        -${value}
-      </button>
-    </div>
-  );
-}
-
 function PromptItem({ title, detail }) {
   return (
     <div className="p-3 rounded-lg bg-black/30 border border-white/5">
@@ -1003,10 +783,4 @@ function ResourceLink({ title, description, href }) {
       <p className="text-white/60 text-sm">{description}</p>
     </a>
   );
-}
-
-function ActivityIndicator({ net }) {
-  if (net > 0) return <TrendingUp size={16} />;
-  if (net < 0) return <TrendingDown size={16} />;
-  return <RefreshCcw size={16} />;
 }

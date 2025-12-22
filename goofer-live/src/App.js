@@ -10,6 +10,7 @@ import VodsPage from './pages/VodsPage';
 import AboutPage from './pages/AboutPage';
 import GambaPage from './pages/GambaPage';
 import GearPage from './pages/Gear';
+import GearInteractive from './pages/GearInteractive';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminSchedulePage from './pages/AdminSchedulePage';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -120,6 +121,8 @@ function StreamingSiteContent() {
         return <VodsPage videos={videos} clips={clips} loading={loading} />;
       case 'gear':
         return <GearPage />;
+      case 'gear-interactive':
+        return <GearInteractive />;
       case 'about':
         return <AboutPage />;
       case 'gamba':

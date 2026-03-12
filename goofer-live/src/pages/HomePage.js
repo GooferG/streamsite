@@ -222,7 +222,7 @@ export default function HomePage({
                 <div className="flex items-center gap-2 mb-3">
                   <Calendar size={18} className="text-emerald-400" />
                   <span className="text-sm font-bold tracking-wider text-emerald-400">
-                    UPCOMING STREAM
+                    UPCOMING STREAM!
                   </span>
                 </div>
 

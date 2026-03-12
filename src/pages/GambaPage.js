@@ -15,9 +15,17 @@ import SlotPicker from '../components/SlotPicker';
 
 export default function GambaPage() {
   const riskProfiles = {
-    chill: { label: 'Chill', divisor: 5000, note: 'Low variance, longer sessions' },
+    chill: {
+      label: 'Chill',
+      divisor: 5000,
+      note: 'Low variance, longer sessions',
+    },
     steady: { label: 'Steady', divisor: 3000, note: 'Default stream pace' },
-    spicy: { label: 'Spicy', divisor: 1000, note: 'High volatility — set strict stops' },
+    spicy: {
+      label: 'Spicy',
+      divisor: 1000,
+      note: 'High volatility — set strict stops',
+    },
   };
 
   // Initialize state from localStorage or use defaults
@@ -673,8 +681,12 @@ export default function GambaPage() {
 
                   <div className="pt-3 border-t border-white/10">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-white/60">Recommended Bet</span>
-                      <span className="text-xs text-white/40">bankroll ÷ {riskProfiles[risk].divisor.toLocaleString()}</span>
+                      <span className="text-xs text-white/60">
+                        Recommended Bet
+                      </span>
+                      <span className="text-xs text-white/40">
+                        bankroll ÷ {riskProfiles[risk].divisor.toLocaleString()}
+                      </span>
                     </div>
                     <div className="text-2xl font-black text-emerald-300">
                       ${recommendedBet.toLocaleString()}

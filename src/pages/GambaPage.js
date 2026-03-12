@@ -15,13 +15,9 @@ import SlotPicker from '../components/SlotPicker';
 
 export default function GambaPage() {
   const riskProfiles = {
-    chill: { label: 'Chill', pct: 0.5, note: 'Max 0.5% per spin/hand' },
-    steady: { label: 'Steady', pct: 1, note: 'Default stream pace' },
-    spicy: {
-      label: 'Spicy',
-      pct: 2,
-      note: 'High volatility — set strict stops',
-    },
+    chill: { label: 'Chill', divisor: 5000, note: 'Low variance, longer sessions' },
+    steady: { label: 'Steady', divisor: 3000, note: 'Default stream pace' },
+    spicy: { label: 'Spicy', divisor: 1000, note: 'High volatility — set strict stops' },
   };
 
   // Initialize state from localStorage or use defaults
@@ -65,10 +61,10 @@ export default function GambaPage() {
   }, [risk]);
 
   const recommendedBet = useMemo(() => {
-    const pct = riskProfiles[risk].pct / 100;
-    const raw = bankroll * pct;
-    return Math.max(1, Math.round(raw * 100) / 100);
-  }, [bankroll, risk, riskProfiles]);
+    const divisor = riskProfiles[risk].divisor;
+    const raw = bankroll / divisor;
+    return Math.max(0.01, Math.round(raw * 100) / 100);
+  }, [bankroll, risk]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Bonus Hunt calculations
   const totalBonusCost = useMemo(
@@ -678,7 +674,7 @@ export default function GambaPage() {
                   <div className="pt-3 border-t border-white/10">
                     <div className="flex items-center justify-between mb-1">
                       <span className="text-xs text-white/60">Recommended Bet</span>
-                      <span className="text-xs text-white/40">{riskProfiles[risk].pct}% of bankroll</span>
+                      <span className="text-xs text-white/40">bankroll ÷ {riskProfiles[risk].divisor.toLocaleString()}</span>
                     </div>
                     <div className="text-2xl font-black text-emerald-300">
                       ${recommendedBet.toLocaleString()}

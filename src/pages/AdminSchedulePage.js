@@ -13,15 +13,6 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { SCHEDULE as DEFAULT_SCHEDULE } from '../constants';
 
-const DAYS = [
-  'MONDAY',
-  'TUESDAY',
-  'WEDNESDAY',
-  'THURSDAY',
-  'FRY-DAY',
-  'SATURDAY',
-  'SUNDAY',
-];
 
 const STATUS_OPTIONS = ['on', 'off', 'special', 'regular'];
 

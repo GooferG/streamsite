@@ -4,10 +4,8 @@ import {
   Filter,
   Star,
   Dice6,
-  TrendingUp,
   Heart,
   RefreshCw,
-  ExternalLink,
   Grid3x3,
   Ticket,
 } from 'lucide-react';

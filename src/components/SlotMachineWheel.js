@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Play, RotateCcw } from 'lucide-react';
 
 export default function SlotMachineWheel({ games }) {
@@ -6,7 +6,7 @@ export default function SlotMachineWheel({ games }) {
   const [selectedGame, setSelectedGame] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const wheelRef = useRef(null);
-  const [spinDuration, setSpinDuration] = useState(0);
+  const [, setSpinDuration] = useState(0);
 
   // Create extended list for smooth scrolling effect
   const extendedGames = [...games, ...games, ...games, ...games, ...games];

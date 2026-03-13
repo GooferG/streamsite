@@ -1,5 +1,14 @@
 import { useState } from 'react';
-import { Monitor, Keyboard, Mouse, Headphones, Mic, Camera, Cpu, Zap } from 'lucide-react';
+import {
+  Monitor,
+  Keyboard,
+  Mouse,
+  Headphones,
+  Mic,
+  Camera,
+  Cpu,
+  Zap,
+} from 'lucide-react';
 
 export default function GearInteractive() {
   const [hoveredItem, setHoveredItem] = useState(null);
@@ -95,7 +104,9 @@ export default function GearInteractive() {
                   <h3 className="text-xl font-black text-white">
                     {gearData[hoveredItem].brand}
                   </h3>
-                  <p className="text-sm text-white/60">{gearData[hoveredItem].model}</p>
+                  <p className="text-sm text-white/60">
+                    {gearData[hoveredItem].model}
+                  </p>
                 </div>
               </div>
 
@@ -292,7 +303,9 @@ export default function GearInteractive() {
               }`}
             >
               <div className="flex flex-col items-center gap-2">
-                <div className={`text-white/60 ${hoveredItem === key ? 'text-emerald-400' : ''}`}>
+                <div
+                  className={`text-white/60 ${hoveredItem === key ? 'text-emerald-400' : ''}`}
+                >
                   {item.icon}
                 </div>
                 <p className="text-xs font-bold text-white/60 text-center">
@@ -311,19 +324,30 @@ export default function GearInteractive() {
           <ol className="space-y-3 text-white/70">
             <li className="flex gap-3">
               <span className="text-emerald-400 font-bold">1.</span>
-              <span>Take a high-quality photo of your desk setup (16:9 ratio recommended)</span>
+              <span>
+                Take a high-quality photo of your desk setup (16:9 ratio
+                recommended)
+              </span>
             </li>
             <li className="flex gap-3">
               <span className="text-emerald-400 font-bold">2.</span>
-              <span>Replace the placeholder image in the code with your photo</span>
+              <span>
+                Replace the placeholder image in the code with your photo
+              </span>
             </li>
             <li className="flex gap-3">
               <span className="text-emerald-400 font-bold">3.</span>
-              <span>Adjust the SVG hotspot coordinates (x, y, width, height) to match your gear positions</span>
+              <span>
+                Adjust the SVG hotspot coordinates (x, y, width, height) to
+                match your gear positions
+              </span>
             </li>
             <li className="flex gap-3">
               <span className="text-emerald-400 font-bold">4.</span>
-              <span>Update the gearData object with your actual gear specs and prices</span>
+              <span>
+                Update the gearData object with your actual gear specs and
+                prices
+              </span>
             </li>
           </ol>
         </div>

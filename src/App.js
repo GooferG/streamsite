@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import GrainOverlay from './components/GrainOverlay';
 import TVStaticIntro from './components/TVStaticIntro';
@@ -28,7 +29,8 @@ import {
 } from './utils/twitchApi';
 
 function StreamingSiteContent() {
-  const [currentPage, setCurrentPage] = useState('home');
+  const navigate = useNavigate();
+  const location = useLocation();
   const [isVisible, setIsVisible] = useState(false);
   const [channelData, setChannelData] = useState(null);
   const [isLive, setIsLive] = useState(false);
@@ -38,6 +40,9 @@ function StreamingSiteContent() {
   const [loading, setLoading] = useState(true);
   const [showTVIntro, setShowTVIntro] = useState(true);
   const { currentUser } = useAuth();
+
+  // Derive current page id from URL for nav highlighting
+  const currentPage = location.pathname.replace('/', '') || 'home';
 
   useEffect(() => {
     const initTwitch = async () => {
@@ -78,7 +83,6 @@ function StreamingSiteContent() {
         setChannelData({ ...channelInfo, followers: followersCount });
         setLoading(false);
 
-        // Debug: Log stream status
         console.log('App.js Debug - Stream Info:', streamInfo);
         console.log('App.js Debug - isLive set to:', !!streamInfo);
       } catch (error) {
@@ -102,55 +106,6 @@ function StreamingSiteContent() {
     return () => clearTimeout(timer);
   }, []);
 
-  const renderPage = () => {
-    switch (currentPage) {
-      case 'home':
-        return (
-          <HomePage
-            setPage={setCurrentPage}
-            channelData={channelData}
-            isLive={isLive}
-            streamData={streamData}
-            loading={loading}
-            clips={clips}
-            videos={videos}
-          />
-        );
-      case 'schedule':
-        return <SchedulePage />;
-      case 'vods':
-        return <VodsPage videos={videos} clips={clips} loading={loading} />;
-      case 'gear':
-        return <GearPage />;
-      case 'gear-interactive':
-        return <GearInteractive />;
-      case 'about':
-        return <AboutPage />;
-      case 'bonus-hunts':
-        return <BonusHuntsPage />;
-      case 'gamba':
-        return <GambaPage />;
-      case 'admin':
-        return currentUser ? (
-          <AdminSchedulePage onLogout={() => setCurrentPage('home')} />
-        ) : (
-          <AdminLoginPage onLoginSuccess={() => setCurrentPage('admin')} />
-        );
-      default:
-        return (
-          <HomePage
-            setPage={setCurrentPage}
-            channelData={channelData}
-            isLive={isLive}
-            streamData={streamData}
-            loading={loading}
-            clips={clips}
-            videos={videos}
-          />
-        );
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-emerald-950 to-purple-950 text-white">
       {showTVIntro && <TVStaticIntro />}
@@ -158,84 +113,65 @@ function StreamingSiteContent() {
       <Snow />
       <GrainOverlay />
 
-      <Navigation currentPage={currentPage} setPage={setCurrentPage} />
+      <Navigation currentPage={currentPage} setPage={(id) => navigate(id === 'home' ? '/' : `/${id}`)} />
 
       <LiveIndicator isLive={isLive} streamData={streamData} />
 
-      <main
-        className={`transition-opacity duration-700 ${
-          isVisible ? 'opacity-100' : 'opacity-0'
-        }`}
-      >
-        {renderPage()}
+      <main className={`transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+        <Routes>
+          <Route path="/" element={
+            <HomePage
+              setPage={(id) => navigate(id === 'home' ? '/' : `/${id}`)}
+              channelData={channelData}
+              isLive={isLive}
+              streamData={streamData}
+              loading={loading}
+              clips={clips}
+              videos={videos}
+            />
+          } />
+          <Route path="/schedule" element={<SchedulePage />} />
+          <Route path="/vods" element={<VodsPage videos={videos} clips={clips} loading={loading} />} />
+          <Route path="/gear" element={<GearPage />} />
+          <Route path="/gear-interactive" element={<GearInteractive />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/bonus-hunts" element={<BonusHuntsPage />} />
+          <Route path="/gamba" element={<GambaPage />} />
+          <Route path="/admin" element={
+            currentUser
+              ? <AdminSchedulePage onLogout={() => navigate('/')} />
+              : <AdminLoginPage onLoginSuccess={() => navigate('/admin')} />
+          } />
+        </Routes>
       </main>
 
       <style jsx>{`
         @keyframes grain {
-          0%,
-          100% {
-            transform: translate(0, 0);
-          }
-          10% {
-            transform: translate(-5%, -10%);
-          }
-          20% {
-            transform: translate(-15%, 5%);
-          }
-          30% {
-            transform: translate(7%, -25%);
-          }
-          40% {
-            transform: translate(-5%, 25%);
-          }
-          50% {
-            transform: translate(-15%, 10%);
-          }
-          60% {
-            transform: translate(15%, 0%);
-          }
-          70% {
-            transform: translate(0%, 15%);
-          }
-          80% {
-            transform: translate(3%, 35%);
-          }
-          90% {
-            transform: translate(-10%, 10%);
-          }
+          0%, 100% { transform: translate(0, 0); }
+          10% { transform: translate(-5%, -10%); }
+          20% { transform: translate(-15%, 5%); }
+          30% { transform: translate(7%, -25%); }
+          40% { transform: translate(-5%, 25%); }
+          50% { transform: translate(-15%, 10%); }
+          60% { transform: translate(15%, 0%); }
+          70% { transform: translate(0%, 15%); }
+          80% { transform: translate(3%, 35%); }
+          90% { transform: translate(-10%, 10%); }
         }
 
         @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-20px);
-          }
+          0%, 100% { transform: translateY(0px); }
+          50% { transform: translateY(-20px); }
         }
 
         @keyframes glow {
-          0%,
-          100% {
-            opacity: 0.5;
-            filter: blur(20px);
-          }
-          50% {
-            opacity: 0.8;
-            filter: blur(30px);
-          }
+          0%, 100% { opacity: 0.5; filter: blur(20px); }
+          50% { opacity: 0.8; filter: blur(30px); }
         }
 
         @keyframes slideUp {
-          from {
-            transform: translateY(30px);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
+          from { transform: translateY(30px); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
         }
       `}</style>
     </div>

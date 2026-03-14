@@ -9,6 +9,7 @@ import SchedulePage from './pages/SchedulePage';
 import VodsPage from './pages/VodsPage';
 import AboutPage from './pages/AboutPage';
 import GambaPage from './pages/GambaPage';
+import BonusHuntsPage from './pages/BonusHunts';
 import GearPage from './pages/Gear';
 import GearInteractive from './pages/GearInteractive';
 import AdminLoginPage from './pages/AdminLoginPage';
@@ -125,6 +126,8 @@ function StreamingSiteContent() {
         return <GearInteractive />;
       case 'about':
         return <AboutPage />;
+      case 'bonus-hunts':
+        return <BonusHuntsPage />;
       case 'gamba':
         return <GambaPage />;
       case 'admin':

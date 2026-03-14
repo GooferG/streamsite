@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
 import { Target, TrendingUp, TrendingDown, Minus, ChevronDown, ChevronUp, RefreshCcw } from 'lucide-react';
 
-const API_KEY = 'bnt_b493e9020cf2ecb1e4a8043cb1ea1941a8555a1fa2c90e62f411b6cdb0aba14c';
-const BASE_URL = process.env.NODE_ENV === 'development' ? '' : 'https://bonushunt.gg';
-
 async function fetchHunts() {
-  const res = await fetch(`${BASE_URL}/api/public/hunts`, {
-    headers: { 'Authorization': `Bearer ${API_KEY}` },
-  });
+  const url = process.env.NODE_ENV === 'development'
+    ? '/api/public/hunts'
+    : '/api/bonus-hunts?path=hunts';
+  const res = await fetch(url, process.env.NODE_ENV === 'development'
+    ? { headers: { Authorization: `Bearer bnt_b493e9020cf2ecb1e4a8043cb1ea1941a8555a1fa2c90e62f411b6cdb0aba14c` } }
+    : {}
+  );
   if (!res.ok) throw new Error(`Failed to fetch hunts: ${res.status}`);
   return res.json();
 }

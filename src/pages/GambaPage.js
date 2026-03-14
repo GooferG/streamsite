@@ -10,6 +10,9 @@ import {
   Plus,
   X,
   Gamepad2,
+  Users,
+  Pencil,
+  Check,
 } from 'lucide-react';
 import SlotPicker from '../components/SlotPicker';
 
@@ -44,7 +47,20 @@ export default function GambaPage() {
     return saved ? Number(saved) : 200;
   });
 
-  const [activeTool, setActiveTool] = useState('hunt'); // 'hunt', 'poll', or 'wheel'
+  const [activeTool, setActiveTool] = useState('hunt'); // 'hunt', 'poll', 'wheel', or 'equity'
+
+  // Equity Tracker state
+  const [equityPlayers, setEquityPlayers] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('equity_players')) || []; } catch { return []; }
+  });
+  const [equityHuntEnd, setEquityHuntEnd] = useState(() => {
+    const saved = localStorage.getItem('equity_hunt_end');
+    return saved ? Number(saved) : 0;
+  });
+  const [equityNameInput, setEquityNameInput] = useState('');
+  const [equityRainbetInput, setEquityRainbetInput] = useState('');
+  const [equityAmountInput, setEquityAmountInput] = useState('');
+  const [equityPicksInput, setEquityPicksInput] = useState(['', '', '', '']);
 
   // Bonus Hunt state
   const [huntName, setHuntName] = useState('');
@@ -139,6 +155,67 @@ export default function GambaPage() {
     setBonuses([]);
     setBonusGameInput('');
     setBonusCostInput('');
+  };
+
+  // Equity Tracker persistence
+  useEffect(() => {
+    localStorage.setItem('equity_players', JSON.stringify(equityPlayers));
+  }, [equityPlayers]);
+
+  useEffect(() => {
+    localStorage.setItem('equity_hunt_end', equityHuntEnd.toString());
+  }, [equityHuntEnd]);
+
+  const equityTotalIn = useMemo(
+    () => equityPlayers.reduce((sum, p) => sum + p.amount, 0),
+    [equityPlayers]
+  );
+
+  const addEquityPlayer = () => {
+    if (!equityNameInput.trim() || !equityAmountInput || Number(equityAmountInput) <= 0) return;
+    setEquityPlayers(prev => [...prev, {
+      id: Date.now(),
+      name: equityNameInput.trim(),
+      rainbet: equityRainbetInput.trim(),
+      amount: Number(equityAmountInput),
+      picks: equityPicksInput.filter(p => p.trim()),
+    }]);
+    setEquityNameInput('');
+    setEquityRainbetInput('');
+    setEquityAmountInput('');
+    setEquityPicksInput(['', '', '', '']);
+  };
+
+  const removeEquityPlayer = (id) => setEquityPlayers(prev => prev.filter(p => p.id !== id));
+
+  const [editingEquityId, setEditingEquityId] = useState(null);
+  const [editFields, setEditFields] = useState({});
+
+  const startEdit = (player) => {
+    setEditingEquityId(player.id);
+    setEditFields({
+      name: player.name,
+      rainbet: player.rainbet,
+      amount: player.amount,
+      picks: [...player.picks, '', '', '', ''].slice(0, 4),
+    });
+  };
+
+  const saveEdit = (id) => {
+    if (!editFields.name?.trim() || !editFields.amount || Number(editFields.amount) <= 0) return;
+    setEquityPlayers(prev => prev.map(p => p.id === id ? {
+      ...p,
+      name: editFields.name.trim(),
+      rainbet: editFields.rainbet.trim(),
+      amount: Number(editFields.amount),
+      picks: editFields.picks.filter(pk => pk.trim()),
+    } : p));
+    setEditingEquityId(null);
+  };
+
+  const resetEquity = () => {
+    setEquityPlayers([]);
+    setEquityHuntEnd(0);
   };
 
   // Poll functions
@@ -249,6 +326,17 @@ export default function GambaPage() {
             >
               <BarChart3 size={18} />
               Viewer Polls
+            </button>
+            <button
+              onClick={() => setActiveTool('equity')}
+              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
+                activeTool === 'equity'
+                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
+                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
+              }`}
+            >
+              <Users size={18} />
+              Equity Tracker
             </button>
           </div>
         </header>
@@ -606,6 +694,249 @@ export default function GambaPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Equity Tracker Tool */}
+            {activeTool === 'equity' && (
+              <div className="space-y-6">
+                <div className="p-8 bg-gradient-to-br from-emerald-900/20 to-blue-900/20 border border-emerald-500/20 rounded-xl backdrop-blur-sm">
+                  <div className="flex items-start justify-between gap-4 mb-6">
+                    <div>
+                      <div className="flex items-center gap-2 text-emerald-400 font-bold mb-2">
+                        <Users size={18} />
+                        Equity Tracker
+                      </div>
+                      <h2 className="text-3xl font-black tracking-tighter">Hunt Equity</h2>
+                      <p className="text-white/60">Track who's in, their % of the pot, slot picks, and payout.</p>
+                    </div>
+                    <button
+                      onClick={resetEquity}
+                      className="flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg border border-white/10 text-white/60 hover:text-white hover:border-red-400/60 transition-all"
+                    >
+                      <RefreshCcw size={14} />
+                      RESET
+                    </button>
+                  </div>
+
+                  {/* Summary Stats */}
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+                      <p className="text-xs text-white/50 mb-1">Total In</p>
+                      <p className="text-2xl font-black text-white">${equityTotalIn.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    </div>
+                    <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
+                      <p className="text-xs text-white/50 mb-1">Hunt End</p>
+                      <input
+                        type="number"
+                        placeholder="0.00"
+                        value={equityHuntEnd || ''}
+                        onChange={(e) => setEquityHuntEnd(Number(e.target.value) || 0)}
+                        className="w-full bg-transparent text-2xl font-black text-yellow-300 focus:outline-none placeholder-white/20"
+                      />
+                    </div>
+                    <div className={`p-4 border rounded-lg ${equityHuntEnd - equityTotalIn >= 0 ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
+                      <p className="text-xs text-white/50 mb-1">Net P/L</p>
+                      <p className={`text-2xl font-black ${equityHuntEnd - equityTotalIn >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
+                        {equityHuntEnd > 0
+                          ? `${equityHuntEnd - equityTotalIn >= 0 ? '+' : ''}$${(equityHuntEnd - equityTotalIn).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                          : '—'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Add Player Form */}
+                  <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded-lg space-y-3">
+                    <h3 className="text-sm font-bold text-white/70">Add Player</h3>
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <input
+                        type="text"
+                        placeholder="Name (e.g. Walker)"
+                        value={equityNameInput}
+                        onChange={(e) => setEquityNameInput(e.target.value)}
+                        className="bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
+                      />
+                      <input
+                        type="text"
+                        placeholder="Rainbet username"
+                        value={equityRainbetInput}
+                        onChange={(e) => setEquityRainbetInput(e.target.value)}
+                        className="bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
+                      />
+                    </div>
+                    <input
+                      type="number"
+                      placeholder="Amount in ($)"
+                      value={equityAmountInput}
+                      onChange={(e) => setEquityAmountInput(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
+                    />
+                    <div>
+                      <p className="text-xs text-white/50 mb-2">Slot Picks (up to 4)</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {equityPicksInput.map((pick, i) => (
+                          <input
+                            key={i}
+                            type="text"
+                            placeholder={`Pick ${i + 1}`}
+                            value={pick}
+                            onChange={(e) => {
+                              const updated = [...equityPicksInput];
+                              updated[i] = e.target.value;
+                              setEquityPicksInput(updated);
+                            }}
+                            className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
+                          />
+                        ))}
+                      </div>
+                    </div>
+                    <button
+                      onClick={addEquityPlayer}
+                      className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-bold hover:from-emerald-600 hover:to-blue-600 transition-all flex items-center justify-center gap-2"
+                    >
+                      <Plus size={18} />
+                      Add Player
+                    </button>
+                  </div>
+
+                  {/* Players Table */}
+                  {equityPlayers.length === 0 ? (
+                    <p className="text-center text-white/40 py-8">No players added yet.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {equityPlayers.map((player) => {
+                        const pct = equityTotalIn > 0 ? (player.amount / equityTotalIn) * 100 : 0;
+                        const payout = equityHuntEnd > 0 ? (pct / 100) * equityHuntEnd : null;
+                        const pl = payout != null ? payout - player.amount : null;
+                        const isEditing = editingEquityId === player.id;
+
+                        return (
+                          <div key={player.id} className="p-4 bg-white/5 border border-white/10 rounded-lg">
+                            {isEditing ? (
+                              <div className="space-y-3">
+                                <div className="grid sm:grid-cols-2 gap-3">
+                                  <input
+                                    type="text"
+                                    value={editFields.name}
+                                    onChange={(e) => setEditFields(f => ({ ...f, name: e.target.value }))}
+                                    placeholder="Name"
+                                    className="bg-white/5 border border-emerald-400/40 rounded-lg px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={editFields.rainbet}
+                                    onChange={(e) => setEditFields(f => ({ ...f, rainbet: e.target.value }))}
+                                    placeholder="Rainbet username"
+                                    className="bg-white/5 border border-emerald-400/40 rounded-lg px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
+                                  />
+                                </div>
+                                <input
+                                  type="number"
+                                  value={editFields.amount}
+                                  onChange={(e) => setEditFields(f => ({ ...f, amount: e.target.value }))}
+                                  placeholder="Amount in ($)"
+                                  className="w-full bg-white/5 border border-emerald-400/40 rounded-lg px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
+                                />
+                                <div className="grid grid-cols-2 gap-2">
+                                  {editFields.picks.map((pick, i) => (
+                                    <input
+                                      key={i}
+                                      type="text"
+                                      value={pick}
+                                      onChange={(e) => {
+                                        const updated = [...editFields.picks];
+                                        updated[i] = e.target.value;
+                                        setEditFields(f => ({ ...f, picks: updated }));
+                                      }}
+                                      placeholder={`Pick ${i + 1}`}
+                                      className="bg-white/5 border border-emerald-400/40 rounded-lg px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
+                                    />
+                                  ))}
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => saveEdit(player.id)}
+                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 font-bold text-sm transition-all"
+                                  >
+                                    <Check size={14} /> Save
+                                  </button>
+                                  <button
+                                    onClick={() => setEditingEquityId(null)}
+                                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white/50 hover:text-white text-sm transition-all"
+                                  >
+                                    Cancel
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="flex items-start justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <p className="font-black text-white">{player.name}</p>
+                                      {player.rainbet && (
+                                        <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded px-2 py-0.5">
+                                          {player.rainbet}
+                                        </span>
+                                      )}
+                                    </div>
+                                    {player.picks.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {player.picks.map((pick, i) => (
+                                          <span key={i} className="text-xs text-white/50 bg-white/5 rounded px-2 py-0.5">{pick}</span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="flex gap-1.5 flex-shrink-0">
+                                    <button
+                                      onClick={() => startEdit(player)}
+                                      className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-white/50 hover:text-white hover:border-emerald-400/60 transition-all"
+                                    >
+                                      <Pencil size={14} />
+                                    </button>
+                                    <button
+                                      onClick={() => removeEquityPlayer(player.id)}
+                                      className="p-1.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all"
+                                    >
+                                      <X size={14} />
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="grid grid-cols-4 gap-3 mt-3 pt-3 border-t border-white/5">
+                                  <div>
+                                    <p className="text-xs text-white/40">In For</p>
+                                    <p className="font-bold text-white text-sm">${player.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-white/40">Equity %</p>
+                                    <p className="font-bold text-purple-300 text-sm">{pct.toFixed(2)}%</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-white/40">Payout</p>
+                                    <p className="font-bold text-yellow-300 text-sm">{payout != null ? `$${payout.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}</p>
+                                  </div>
+                                  <div>
+                                    <p className="text-xs text-white/40">P/L</p>
+                                    <p className={`font-bold text-sm ${pl == null ? 'text-white/40' : pl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                                      {pl != null ? `${pl >= 0 ? '+' : ''}$${pl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
+                                    </p>
+                                  </div>
+                                </div>
+                                <div className="mt-2 h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 transition-all duration-500"
+                                    style={{ width: `${pct}%` }}
+                                  />
+                                </div>
+                              </>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 

@@ -1,8 +1,9 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const BONUS_HUNT_API_KEY = 'bnt_b493e9020cf2ecb1e4a8043cb1ea1941a8555a1fa2c90e62f411b6cdb0aba14c';
-const SLOTS_API_KEY = 'Vxqf1SnCumEuSoo4ucj6CYtzqUTypMjt2kCS0sQWkfHnrNFmsV';
+const SLOTS_API_KEY  = 'Vxqf1SnCumEuSoo4ucj6CYtzqUTypMjt2kCS0sQWkfHnrNFmsV';
 const SLOTS_BASE_URL = 'https://slotslaunch.com/api';
+const SLOTS_ORIGIN   = 'goofer.tv';
 
 module.exports = function (app) {
   // Dev proxy for direct /api/public calls
@@ -44,10 +45,10 @@ module.exports = function (app) {
       return res.status(400).json({ error: 'Invalid path' });
     }
     try {
-      const upstreamParams = new URLSearchParams(rest).toString();
-      const upstreamUrl = `${SLOTS_BASE_URL}/${path}${upstreamParams ? '?' + upstreamParams : ''}`;
+      const upstreamParams = new URLSearchParams({ token: SLOTS_API_KEY, ...rest }).toString();
+      const upstreamUrl = `${SLOTS_BASE_URL}/${path}?${upstreamParams}`;
       const upstream = await fetch(upstreamUrl, {
-        headers: { Authorization: `Bearer ${SLOTS_API_KEY}`, Accept: 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Origin': SLOTS_ORIGIN },
       });
       const data = await upstream.json();
       res.status(upstream.status).json(data);

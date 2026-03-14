@@ -1,9 +1,8 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
   Search,
   Filter,
   Dice6,
-  RefreshCw,
   Play,
   RotateCcw,
   ChevronDown,
@@ -13,31 +12,32 @@ import {
   TrendingUp,
   ImageOff,
 } from 'lucide-react';
+import rawSlots from '../data/slots';
 
-// ─── Shared fetch helper ────────────────────────────────────────────────────
-async function fetchSlots(params = {}) {
-  const qs = new URLSearchParams(params).toString();
-  const res = await fetch(`/api/slots?${qs}`);
-  if (!res.ok) throw new Error(`slots API error: ${res.status}`);
-  return res.json();
-}
+// Normalise local DB entries to the same shape the UI expects
+const ALL_SLOTS = rawSlots.map((g) => ({
+  id: g.id,
+  slug: String(g.id),
+  name: g.name,
+  providerName: g.provider,
+  providerSlug: g.provider.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+  thumbnail: g.image,
+  rtp: g.rtp ?? null,
+  volatility: g.volatility ?? null,
+  bonusBuy: Boolean(g.bonusBuy),
+  megaways: Boolean(g.megaways),
+  progressive: Boolean(g.progressive),
+}));
 
-// ─── Normalise a raw API game object to a clean internal shape ───────────────
-function normalizeGame(g) {
-  return {
-    id: g.id,
-    slug: g.slug ?? String(g.id),
-    name: g.name ?? 'Unknown',
-    providerName: g.provider?.name ?? (typeof g.provider === 'string' ? g.provider : 'Unknown'),
-    providerSlug: g.provider?.slug ?? (typeof g.provider === 'string' ? g.provider : ''),
-    thumbnail: g.thumbnail ?? g.image ?? g.logo ?? null,
-    rtp: g.rtp != null ? Number(g.rtp) : null,
-    volatility: g.volatility ?? null,
-    bonusBuy: Boolean(g.bonus_buy ?? g.bonusBuy),
-    megaways: Boolean(g.megaways),
-    progressive: Boolean(g.progressive),
-  };
-}
+// Unique sorted provider list derived from the database
+const ALL_PROVIDERS = Array.from(
+  new Map(
+    ALL_SLOTS.map((g) => [
+      g.providerSlug,
+      { name: g.providerName, slug: g.providerSlug, thumbnail: null },
+    ])
+  ).values()
+).sort((a, b) => a.name.localeCompare(b.name));
 
 // ─── Volatility badge ────────────────────────────────────────────────────────
 function VolatilityBadge({ value }) {
@@ -47,9 +47,12 @@ function VolatilityBadge({ value }) {
     medium: 'bg-yellow-500/20 border-yellow-500/30 text-yellow-300',
     low: 'bg-blue-500/20 border-blue-500/30 text-blue-300',
   };
-  const cls = styles[value?.toLowerCase()] ?? 'bg-white/10 border-white/20 text-white/60';
+  const cls =
+    styles[value?.toLowerCase()] ?? 'bg-white/10 border-white/20 text-white/60';
   return (
-    <span className={`px-2 py-0.5 border rounded text-xs font-bold capitalize ${cls}`}>
+    <span
+      className={`px-2 py-0.5 border rounded text-xs font-bold capitalize ${cls}`}
+    >
       {value}
     </span>
   );
@@ -60,7 +63,9 @@ function SlotImage({ src, alt, className }) {
   const [errored, setErrored] = useState(false);
   if (!src || errored) {
     return (
-      <div className={`flex items-center justify-center bg-gradient-to-br from-white/5 to-white/10 ${className}`}>
+      <div
+        className={`flex items-center justify-center bg-gradient-to-br from-white/5 to-white/10 ${className}`}
+      >
         <ImageOff size={24} className="text-white/20" />
       </div>
     );
@@ -79,19 +84,6 @@ function SlotImage({ src, alt, className }) {
 // ─── Root component ──────────────────────────────────────────────────────────
 export default function SlotPicker() {
   const [activeTab, setActiveTab] = useState('search');
-  const [providers, setProviders] = useState([]);
-  const [providersLoading, setProvidersLoading] = useState(true);
-
-  useEffect(() => {
-    setProvidersLoading(true);
-    fetchSlots({ path: 'providers', per_page: 150 })
-      .then(data => {
-        const list = data?.data ?? data ?? [];
-        setProviders(list.map(p => ({ name: p.name, slug: p.slug, thumbnail: p.thumbnail ?? p.logo ?? null })));
-      })
-      .catch(() => setProviders([]))
-      .finally(() => setProvidersLoading(false));
-  }, []);
 
   return (
     <div className="space-y-6">
@@ -129,7 +121,7 @@ export default function SlotPicker() {
         {[
           { id: 'search', label: 'Slot Search', icon: <Search size={16} /> },
           { id: 'picker', label: 'Slot Picker', icon: <Dice6 size={16} /> },
-        ].map(t => (
+        ].map((t) => (
           <button
             key={t.id}
             onClick={() => setActiveTab(t.id)}
@@ -144,8 +136,8 @@ export default function SlotPicker() {
         ))}
       </div>
 
-      {activeTab === 'search' && <SlotSearch providers={providers} providersLoading={providersLoading} />}
-      {activeTab === 'picker' && <SlotRandomizer providers={providers} providersLoading={providersLoading} />}
+      {activeTab === 'search' && <SlotSearch />}
+      {activeTab === 'picker' && <SlotRandomizer />}
     </div>
   );
 }
@@ -153,92 +145,92 @@ export default function SlotPicker() {
 // ═══════════════════════════════════════════════════════════════════════════
 // SLOT SEARCH
 // ═══════════════════════════════════════════════════════════════════════════
-function SlotSearch({ providers, providersLoading }) {
-  const [searchTerm, setSearchTerm]         = useState('');
-  const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [filterBonusBuy, setFilterBonusBuy]   = useState(false);
-  const [filterMegaways, setFilterMegaways]   = useState(false);
+function SlotSearch() {
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterBonusBuy, setFilterBonusBuy] = useState(false);
+  const [filterMegaways, setFilterMegaways] = useState(false);
   const [filterProgressive, setFilterProgressive] = useState(false);
-  const [volatility, setVolatility]           = useState('all');
+  const [volatility, setVolatility] = useState('all');
   const [selectedProviders, setSelectedProviders] = useState([]);
   const [providerDropdownOpen, setProviderDropdownOpen] = useState(false);
-  const [page, setPage]         = useState(1);
-  const [games, setGames]       = useState([]);
-  const [total, setTotal]       = useState(0);
-  const [loading, setLoading]   = useState(false);
-  const [loadingMore, setLoadingMore] = useState(false);
-  const [error, setError]       = useState(null);
-  const debounceRef  = useRef(null);
-  const dropdownRef  = useRef(null);
+  const [visibleCount, setVisibleCount] = useState(24);
+  const dropdownRef = useRef(null);
   const PER_PAGE = 24;
 
-  // Debounce search input
-  const handleSearchChange = (e) => {
-    setSearchTerm(e.target.value);
-    clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setDebouncedSearch(e.target.value), 350);
-  };
+  // Filter entirely in-memory
+  const filteredGames = useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    return ALL_SLOTS.filter((g) => {
+      if (
+        term &&
+        !g.name.toLowerCase().includes(term) &&
+        !g.providerName.toLowerCase().includes(term)
+      )
+        return false;
+      if (filterBonusBuy && !g.bonusBuy) return false;
+      if (filterMegaways && !g.megaways) return false;
+      if (filterProgressive && !g.progressive) return false;
+      if (volatility !== 'all' && g.volatility !== volatility) return false;
+      if (
+        selectedProviders.length > 0 &&
+        !selectedProviders.includes(g.providerSlug)
+      )
+        return false;
+      return true;
+    });
+  }, [
+    searchTerm,
+    filterBonusBuy,
+    filterMegaways,
+    filterProgressive,
+    volatility,
+    selectedProviders,
+  ]);
 
-  // Reset to page 1 when filters change (not page itself)
-  const filtersKey = `${debouncedSearch}|${filterBonusBuy}|${filterMegaways}|${filterProgressive}|${volatility}|${selectedProviders.join(',')}`;
-  const prevFiltersKey = useRef(filtersKey);
-  useEffect(() => {
-    if (prevFiltersKey.current !== filtersKey) {
-      prevFiltersKey.current = filtersKey;
-      setPage(1);
-      setGames([]);
-    }
-  }, [filtersKey]);
+  // Reset visible count when filters change
+  const prevFiltered = useRef(filteredGames);
+  if (prevFiltered.current !== filteredGames) {
+    prevFiltered.current = filteredGames;
+    setVisibleCount(PER_PAGE);
+  }
 
-  // Fetch games
-  useEffect(() => {
-    let cancelled = false;
-    const isFirstPage = page === 1;
-    if (isFirstPage) setLoading(true); else setLoadingMore(true);
-    setError(null);
+  const visibleGames = filteredGames.slice(0, visibleCount);
 
-    const params = new URLSearchParams({ path: 'games', per_page: PER_PAGE, page, published: 1 });
-    if (debouncedSearch) params.set('search', debouncedSearch);
-    if (filterBonusBuy) params.set('bonus_buy', 1);
-    if (filterMegaways) params.set('megaways', 1);
-    if (filterProgressive) params.set('progressive', 1);
-    if (volatility !== 'all') params.set('volatility', volatility);
-    selectedProviders.forEach(slug => params.append('provider[]', slug));
-
-    fetch(`/api/slots?${params}`)
-      .then(r => { if (!r.ok) throw new Error(`${r.status}`); return r.json(); })
-      .then(data => {
-        if (cancelled) return;
-        const raw = data?.data ?? (Array.isArray(data) ? data : []);
-        const normalized = raw.map(normalizeGame);
-        setGames(prev => isFirstPage ? normalized : [...prev, ...normalized]);
-        setTotal(data?.total ?? data?.meta?.total ?? normalized.length);
-      })
-      .catch(e => { if (!cancelled) setError(e.message); })
-      .finally(() => { if (!cancelled) { setLoading(false); setLoadingMore(false); } });
-
-    return () => { cancelled = true; };
-  }, [debouncedSearch, filterBonusBuy, filterMegaways, filterProgressive, volatility, selectedProviders, page]); // eslint-disable-line react-hooks/exhaustive-deps
+  const handleSearchChange = (e) => setSearchTerm(e.target.value);
 
   // Close provider dropdown on outside click
   useEffect(() => {
-    const handler = (e) => { if (dropdownRef.current && !dropdownRef.current.contains(e.target)) setProviderDropdownOpen(false); };
+    const handler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target))
+        setProviderDropdownOpen(false);
+    };
     if (providerDropdownOpen) document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, [providerDropdownOpen]);
 
   const toggleProvider = (slug) => {
-    setSelectedProviders(prev => prev.includes(slug) ? prev.filter(s => s !== slug) : [...prev, slug]);
+    setSelectedProviders((prev) =>
+      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug]
+    );
   };
 
-  const activeFilters = [filterBonusBuy, filterMegaways, filterProgressive, volatility !== 'all', selectedProviders.length > 0].filter(Boolean).length;
+  const activeFilters = [
+    filterBonusBuy,
+    filterMegaways,
+    filterProgressive,
+    volatility !== 'all',
+    selectedProviders.length > 0,
+  ].filter(Boolean).length;
 
   return (
     <div className="space-y-5">
       {/* Search bar + filter row */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30" size={18} />
+          <Search
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30"
+            size={18}
+          />
           <input
             type="text"
             placeholder="Search slots..."
@@ -251,7 +243,7 @@ function SlotSearch({ providers, providersLoading }) {
         {/* Provider dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
-            onClick={() => setProviderDropdownOpen(o => !o)}
+            onClick={() => setProviderDropdownOpen((o) => !o)}
             className={`flex items-center gap-2 px-4 py-3 rounded-lg border text-sm font-bold transition-all whitespace-nowrap ${
               selectedProviders.length > 0
                 ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
@@ -259,8 +251,13 @@ function SlotSearch({ providers, providersLoading }) {
             }`}
           >
             <Filter size={15} />
-            {selectedProviders.length > 0 ? `${selectedProviders.length} providers` : 'All Providers'}
-            <ChevronDown size={14} className={`transition-transform ${providerDropdownOpen ? 'rotate-180' : ''}`} />
+            {selectedProviders.length > 0
+              ? `${selectedProviders.length} providers`
+              : 'All Providers'}
+            <ChevronDown
+              size={14}
+              className={`transition-transform ${providerDropdownOpen ? 'rotate-180' : ''}`}
+            />
           </button>
 
           {providerDropdownOpen && (
@@ -273,24 +270,28 @@ function SlotSearch({ providers, providersLoading }) {
                   Clear selection
                 </button>
               )}
-              {providersLoading ? (
-                <p className="text-xs text-white/40 px-3 py-4 text-center">Loading providers...</p>
-              ) : (
-                providers.map(p => (
-                  <label key={p.slug} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={selectedProviders.includes(p.slug)}
-                      onChange={() => toggleProvider(p.slug)}
-                      className="accent-emerald-400"
+              {ALL_PROVIDERS.map((p) => (
+                <label
+                  key={p.slug}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selectedProviders.includes(p.slug)}
+                    onChange={() => toggleProvider(p.slug)}
+                    className="accent-emerald-400"
+                  />
+                  {p.thumbnail && (
+                    <img
+                      src={p.thumbnail}
+                      alt={p.name}
+                      className="w-5 h-5 object-contain rounded"
+                      onError={(e) => (e.target.style.display = 'none')}
                     />
-                    {p.thumbnail && (
-                      <img src={p.thumbnail} alt={p.name} className="w-5 h-5 object-contain rounded" onError={e => e.target.style.display = 'none'} />
-                    )}
-                    <span className="text-sm text-white/80">{p.name}</span>
-                  </label>
-                ))
-              )}
+                  )}
+                  <span className="text-sm text-white/80">{p.name}</span>
+                </label>
+              ))}
             </div>
           )}
         </div>
@@ -299,10 +300,25 @@ function SlotSearch({ providers, providersLoading }) {
       {/* Feature + volatility filters */}
       <div className="flex flex-wrap gap-2">
         {[
-          { label: 'Bonus Buy', icon: <Zap size={12} />, active: filterBonusBuy, toggle: () => setFilterBonusBuy(v => !v) },
-          { label: 'Megaways', icon: <Layers size={12} />, active: filterMegaways, toggle: () => setFilterMegaways(v => !v) },
-          { label: 'Progressive', icon: <TrendingUp size={12} />, active: filterProgressive, toggle: () => setFilterProgressive(v => !v) },
-        ].map(f => (
+          {
+            label: 'Bonus Buy',
+            icon: <Zap size={12} />,
+            active: filterBonusBuy,
+            toggle: () => setFilterBonusBuy((v) => !v),
+          },
+          {
+            label: 'Megaways',
+            icon: <Layers size={12} />,
+            active: filterMegaways,
+            toggle: () => setFilterMegaways((v) => !v),
+          },
+          {
+            label: 'Progressive',
+            icon: <TrendingUp size={12} />,
+            active: filterProgressive,
+            toggle: () => setFilterProgressive((v) => !v),
+          },
+        ].map((f) => (
           <button
             key={f.label}
             onClick={f.toggle}
@@ -317,7 +333,7 @@ function SlotSearch({ providers, providersLoading }) {
         ))}
 
         <div className="flex items-center gap-1 ml-auto">
-          {['all', 'low', 'medium', 'high'].map(v => (
+          {['all', 'low', 'medium', 'high'].map((v) => (
             <button
               key={v}
               onClick={() => setVolatility(v)}
@@ -336,9 +352,18 @@ function SlotSearch({ providers, providersLoading }) {
       {/* Active filter count */}
       {activeFilters > 0 && (
         <div className="flex items-center gap-2">
-          <span className="text-xs text-white/40">{activeFilters} filter{activeFilters !== 1 ? 's' : ''} active</span>
+          <span className="text-xs text-white/40">
+            {activeFilters} filter{activeFilters !== 1 ? 's' : ''} active
+          </span>
           <button
-            onClick={() => { setFilterBonusBuy(false); setFilterMegaways(false); setFilterProgressive(false); setVolatility('all'); setSelectedProviders([]); setDebouncedSearch(''); setSearchTerm(''); }}
+            onClick={() => {
+              setFilterBonusBuy(false);
+              setFilterMegaways(false);
+              setFilterProgressive(false);
+              setVolatility('all');
+              setSelectedProviders([]);
+              setSearchTerm('');
+            }}
             className="flex items-center gap-1 text-xs text-white/40 hover:text-white transition-colors"
           >
             <X size={12} /> Clear all
@@ -347,38 +372,16 @@ function SlotSearch({ providers, providersLoading }) {
       )}
 
       {/* Results count */}
-      {!loading && !error && (
-        <p className="text-xs text-white/40">
-          {games.length > 0 ? `Showing ${games.length} of ${total} slots` : ''}
-        </p>
-      )}
-
-      {/* Error */}
-      {error && (
-        <div className="text-center py-12 text-red-400 text-sm">
-          Failed to load slots: {error}
-        </div>
-      )}
-
-      {/* Skeletons on first load */}
-      {loading && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="rounded-xl overflow-hidden border border-white/5">
-              <div className="skeleton-shimmer aspect-video" />
-              <div className="p-3 space-y-2">
-                <div className="skeleton-shimmer h-4 rounded w-3/4" />
-                <div className="skeleton-shimmer h-3 rounded w-1/2" />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      <p className="text-xs text-white/40">
+        {filteredGames.length > 0
+          ? `Showing ${visibleGames.length} of ${filteredGames.length} slots`
+          : ''}
+      </p>
 
       {/* Game grid */}
-      {!loading && games.length > 0 && (
+      {visibleGames.length > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {games.map((game, idx) => (
+          {visibleGames.map((game, idx) => (
             <div
               key={`${game.slug}-${idx}`}
               className="group bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-emerald-500/40 transition-all duration-200"
@@ -391,7 +394,9 @@ function SlotSearch({ providers, providersLoading }) {
                 />
               </div>
               <div className="p-3 space-y-2">
-                <p className="font-bold text-white text-sm leading-tight line-clamp-1">{game.name}</p>
+                <p className="font-bold text-white text-sm leading-tight line-clamp-1">
+                  {game.name}
+                </p>
                 <p className="text-xs text-white/50">{game.providerName}</p>
                 <div className="flex flex-wrap gap-1">
                   {game.rtp != null && (
@@ -402,9 +407,24 @@ function SlotSearch({ providers, providersLoading }) {
                   <VolatilityBadge value={game.volatility} />
                 </div>
                 <div className="flex flex-wrap gap-1">
-                  {game.bonusBuy && <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-purple-500/20 border border-purple-500/30 rounded text-xs text-purple-300"><Zap size={10} />BB</span>}
-                  {game.megaways && <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-500/20 border border-blue-500/30 rounded text-xs text-blue-300"><Layers size={10} />MW</span>}
-                  {game.progressive && <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-yellow-500/20 border border-yellow-500/30 rounded text-xs text-yellow-300"><TrendingUp size={10} />PROG</span>}
+                  {game.bonusBuy && (
+                    <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-purple-500/20 border border-purple-500/30 rounded text-xs text-purple-300">
+                      <Zap size={10} />
+                      BB
+                    </span>
+                  )}
+                  {game.megaways && (
+                    <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-500/20 border border-blue-500/30 rounded text-xs text-blue-300">
+                      <Layers size={10} />
+                      MW
+                    </span>
+                  )}
+                  {game.progressive && (
+                    <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-yellow-500/20 border border-yellow-500/30 rounded text-xs text-yellow-300">
+                      <TrendingUp size={10} />
+                      PROG
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -413,23 +433,23 @@ function SlotSearch({ providers, providersLoading }) {
       )}
 
       {/* Empty state */}
-      {!loading && !error && games.length === 0 && (
+      {filteredGames.length === 0 && (
         <div className="text-center py-20">
           <p className="text-white/50">No slots match your filters.</p>
-          <p className="text-white/30 text-sm mt-1">Try adjusting your search or clearing filters.</p>
+          <p className="text-white/30 text-sm mt-1">
+            Try adjusting your search or clearing filters.
+          </p>
         </div>
       )}
 
       {/* Load more */}
-      {!loading && !error && games.length < total && (
+      {visibleCount < filteredGames.length && (
         <div className="flex justify-center pt-2">
           <button
-            onClick={() => setPage(p => p + 1)}
-            disabled={loadingMore}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/40 font-bold text-sm transition-all disabled:opacity-50"
+            onClick={() => setVisibleCount((c) => c + PER_PAGE)}
+            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/40 font-bold text-sm transition-all"
           >
-            {loadingMore ? <RefreshCw size={16} className="animate-spin" /> : null}
-            {loadingMore ? 'Loading…' : 'Load More'}
+            Load More
           </button>
         </div>
       )}
@@ -440,70 +460,34 @@ function SlotSearch({ providers, providersLoading }) {
 // ═══════════════════════════════════════════════════════════════════════════
 // SLOT RANDOMIZER / PICKER
 // ═══════════════════════════════════════════════════════════════════════════
-function SlotRandomizer({ providers, providersLoading }) {
-  const [gamePool, setGamePool]         = useState([]);
-  const [poolLoading, setPoolLoading]   = useState(false);
-  const [poolError, setPoolError]       = useState(null);
-  const [poolProgress, setPoolProgress] = useState(0);
+function SlotRandomizer() {
   const [excludedProviders, setExcludedProviders] = useState(new Set());
-  const [filterBonusBuyOnly, setFilterBonusBuyOnly]   = useState(false);
-  const [filterMegawaysOnly, setFilterMegawaysOnly]   = useState(false);
-  const [isSpinning, setIsSpinning]     = useState(false);
+  const [filterBonusBuyOnly, setFilterBonusBuyOnly] = useState(false);
+  const [filterMegawaysOnly, setFilterMegawaysOnly] = useState(false);
+  const [isSpinning, setIsSpinning] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
-  const wheelRef   = useRef(null);
-  const poolFetched = useRef(false);
+  const wheelRef = useRef(null);
 
-  const ITEM_HEIGHT = 120; // px — matches h-[120px] on reel items
-  const CYCLES      = 5;
-  const SPIN_MS     = 4200;
+  const ITEM_HEIGHT = 120;
+  const CYCLES = 5;
+  const SPIN_MS = 4200;
 
-  // Fetch entire game pool when this tab first mounts
-  useEffect(() => {
-    if (poolFetched.current) return;
-    poolFetched.current = true;
-    setPoolLoading(true);
-
-    async function fetchAll() {
-      const PER_PAGE = 150;
-      let all = [];
-      let page = 1;
-
-      try {
-        while (true) {
-          const data = await fetchSlots({ path: 'games', per_page: PER_PAGE, page, published: 1 });
-          const batch = (data?.data ?? (Array.isArray(data) ? data : [])).map(normalizeGame);
-          all = [...all, ...batch];
-          const totalCount = data?.total ?? data?.meta?.total ?? batch.length;
-          setPoolProgress(Math.min(100, Math.round((all.length / totalCount) * 100)));
-          if (all.length >= totalCount || batch.length < PER_PAGE) break;
-          page++;
-        }
-        setGamePool(all);
-      } catch (e) {
-        setPoolError(e.message);
-      } finally {
-        setPoolLoading(false);
-      }
-    }
-
-    fetchAll();
-  }, []);
-
-  // Filtered candidate pool
+  // Filtered candidate pool from local database
   const candidates = useMemo(() => {
-    return gamePool.filter(g => {
+    return ALL_SLOTS.filter((g) => {
       if (excludedProviders.has(g.providerSlug)) return false;
       if (filterBonusBuyOnly && !g.bonusBuy) return false;
       if (filterMegawaysOnly && !g.megaways) return false;
       return true;
     });
-  }, [gamePool, excludedProviders, filterBonusBuyOnly, filterMegawaysOnly]);
+  }, [excludedProviders, filterBonusBuyOnly, filterMegawaysOnly]);
 
   const toggleProvider = useCallback((slug) => {
-    setExcludedProviders(prev => {
+    setExcludedProviders((prev) => {
       const next = new Set(prev);
-      if (next.has(slug)) next.delete(slug); else next.add(slug);
+      if (next.has(slug)) next.delete(slug);
+      else next.add(slug);
       return next;
     });
   }, []);
@@ -523,7 +507,12 @@ function SlotRandomizer({ providers, providersLoading }) {
     setSelectedGame(null);
 
     const randomIndex = Math.floor(Math.random() * candidates.length);
-    const finalOffset = (CYCLES * candidates.length + randomIndex) * ITEM_HEIGHT;
+    // Center the picked item in the 360px window:
+    // window center = 180px, item center = ITEM_HEIGHT/2 = 60px
+    // subtract the difference so the item sits in the middle of the selection window
+    const WINDOW_CENTER = 180;
+    const finalOffset =
+      (CYCLES * candidates.length + randomIndex) * ITEM_HEIGHT - (WINDOW_CENTER - ITEM_HEIGHT / 2);
 
     if (wheelRef.current) {
       // Reset position first (critical — forces browser reflow before animating)
@@ -552,29 +541,14 @@ function SlotRandomizer({ providers, providersLoading }) {
 
   return (
     <div className="space-y-6">
-      {/* Loading pool */}
-      {poolLoading && (
-        <div className="flex flex-col items-center justify-center py-16 gap-4">
-          <RefreshCw size={32} className="animate-spin text-emerald-400" />
-          <p className="text-white/60 text-sm">Loading game library… {poolProgress}%</p>
-          <div className="w-48 h-1.5 bg-white/10 rounded-full overflow-hidden">
-            <div className="h-full bg-gradient-to-r from-emerald-500 to-purple-500 transition-all duration-300" style={{ width: `${poolProgress}%` }} />
-          </div>
-        </div>
-      )}
-
-      {poolError && (
-        <p className="text-center text-red-400 text-sm py-8">Failed to load games: {poolError}</p>
-      )}
-
-      {!poolLoading && !poolError && (
+      {
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Left: Reel + Spin */}
           <div className="lg:col-span-2 space-y-6">
             {/* Feature toggles */}
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => setFilterBonusBuyOnly(v => !v)}
+                onClick={() => setFilterBonusBuyOnly((v) => !v)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-bold transition-all ${
                   filterBonusBuyOnly
                     ? 'bg-purple-500/20 border-purple-500/40 text-purple-300'
@@ -584,7 +558,7 @@ function SlotRandomizer({ providers, providersLoading }) {
                 <Zap size={14} /> Bonus Buy Only
               </button>
               <button
-                onClick={() => setFilterMegawaysOnly(v => !v)}
+                onClick={() => setFilterMegawaysOnly((v) => !v)}
                 className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-bold transition-all ${
                   filterMegawaysOnly
                     ? 'bg-blue-500/20 border-blue-500/40 text-blue-300'
@@ -599,11 +573,17 @@ function SlotRandomizer({ providers, providersLoading }) {
             </div>
 
             {/* Reel */}
-            <div className="relative rounded-2xl overflow-hidden border-2 border-white/10 bg-gradient-to-br from-zinc-900/60 to-purple-900/30" style={{ height: '360px' }}>
+            <div
+              className="relative rounded-2xl overflow-hidden border-2 border-white/10 bg-gradient-to-br from-zinc-900/60 to-purple-900/30"
+              style={{ height: '360px' }}
+            >
               {/* Fade top */}
               <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-zinc-950 to-transparent z-10 pointer-events-none" />
               {/* Selection window */}
-              <div className="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-10 pointer-events-none" style={{ height: `${ITEM_HEIGHT}px` }}>
+              <div
+                className="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-10 pointer-events-none"
+                style={{ height: `${ITEM_HEIGHT}px` }}
+              >
                 <div className="absolute inset-0 border-y-2 border-emerald-500/70 bg-emerald-500/5" />
                 <div className="absolute left-3 top-1/2 -translate-y-1/2 w-0 h-0 border-t-8 border-b-8 border-r-10 border-t-transparent border-b-transparent border-r-emerald-500/80" />
                 <div className="absolute right-3 top-1/2 -translate-y-1/2 w-0 h-0 border-t-8 border-b-8 border-l-10 border-t-transparent border-b-transparent border-l-emerald-500/80" />
@@ -615,7 +595,11 @@ function SlotRandomizer({ providers, providersLoading }) {
               <div className="absolute inset-0 overflow-hidden">
                 <div
                   ref={wheelRef}
-                  style={{ transition: 'none', transform: 'translateY(0)', willChange: 'transform' }}
+                  style={{
+                    transition: 'none',
+                    transform: 'translateY(0)',
+                    willChange: 'transform',
+                  }}
                 >
                   {candidates.length === 0 ? (
                     <div className="flex items-center justify-center h-[360px] text-white/30 text-sm">
@@ -634,12 +618,28 @@ function SlotRandomizer({ providers, providersLoading }) {
                           className="w-16 h-16 rounded-lg flex-shrink-0"
                         />
                         <div className="min-w-0">
-                          <p className="font-black text-white text-lg leading-tight truncate">{game.name}</p>
-                          <p className="text-sm text-white/50">{game.providerName}</p>
+                          <p className="font-black text-white text-lg leading-tight truncate">
+                            {game.name}
+                          </p>
+                          <p className="text-sm text-white/50">
+                            {game.providerName}
+                          </p>
                           <div className="flex gap-1 mt-1 flex-wrap">
-                            {game.rtp != null && <span className="text-xs text-emerald-400 font-bold">{game.rtp}% RTP</span>}
-                            {game.bonusBuy && <span className="text-xs text-purple-400 font-bold ml-1">· BB</span>}
-                            {game.megaways && <span className="text-xs text-blue-400 font-bold ml-1">· MW</span>}
+                            {game.rtp != null && (
+                              <span className="text-xs text-emerald-400 font-bold">
+                                {game.rtp}% RTP
+                              </span>
+                            )}
+                            {game.bonusBuy && (
+                              <span className="text-xs text-purple-400 font-bold ml-1">
+                                · BB
+                              </span>
+                            )}
+                            {game.megaways && (
+                              <span className="text-xs text-blue-400 font-bold ml-1">
+                                · MW
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -661,14 +661,20 @@ function SlotRandomizer({ providers, providersLoading }) {
                 }`}
               >
                 <span className="flex items-center gap-3">
-                  <Play size={24} className={isSpinning ? 'animate-pulse' : ''} />
+                  <Play
+                    size={24}
+                    className={isSpinning ? 'animate-pulse' : ''}
+                  />
                   {isSpinning ? 'SPINNING…' : 'SPIN'}
                 </span>
               </button>
 
               {selectedGame && !isSpinning && (
                 <button
-                  onClick={() => { resetWheel(); spinWheel(); }}
+                  onClick={() => {
+                    resetWheel();
+                    spinWheel();
+                  }}
                   className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/50 hover:text-white hover:border-emerald-400/40 text-sm font-bold transition-all"
                 >
                   <RotateCcw size={15} /> Spin Again
@@ -679,7 +685,9 @@ function SlotRandomizer({ providers, providersLoading }) {
             {/* Result card */}
             {selectedGame && !isSpinning && (
               <div className="result-appear p-6 rounded-2xl bg-gradient-to-r from-emerald-500/20 to-purple-500/20 border-2 border-emerald-500/50">
-                <p className="text-emerald-400 text-xs font-bold uppercase tracking-widest mb-3">🎰 Selected Slot</p>
+                <p className="text-emerald-400 text-xs font-bold uppercase tracking-widest mb-3">
+                  🎰 Selected Slot
+                </p>
                 <div className="flex gap-5 items-start">
                   <SlotImage
                     src={selectedGame.thumbnail}
@@ -687,31 +695,43 @@ function SlotRandomizer({ providers, providersLoading }) {
                     className="w-24 h-24 rounded-xl flex-shrink-0"
                   />
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-3xl font-black text-white leading-tight">{selectedGame.name}</h3>
-                    <p className="text-white/60 font-bold mt-1">{selectedGame.providerName}</p>
+                    <h3 className="text-3xl font-black text-white leading-tight">
+                      {selectedGame.name}
+                    </h3>
+                    <p className="text-white/60 font-bold mt-1">
+                      {selectedGame.providerName}
+                    </p>
                     <div className="flex flex-wrap gap-2 mt-3">
                       {selectedGame.rtp != null && (
                         <div className="px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-center">
                           <p className="text-xs text-white/50">RTP</p>
-                          <p className="font-bold text-emerald-300">{selectedGame.rtp}%</p>
+                          <p className="font-bold text-emerald-300">
+                            {selectedGame.rtp}%
+                          </p>
                         </div>
                       )}
                       {selectedGame.volatility && (
                         <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-center">
                           <p className="text-xs text-white/50">Volatility</p>
-                          <p className="font-bold text-white capitalize">{selectedGame.volatility}</p>
+                          <p className="font-bold text-white capitalize">
+                            {selectedGame.volatility}
+                          </p>
                         </div>
                       )}
                       {selectedGame.bonusBuy && (
                         <div className="px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-lg text-center">
                           <Zap size={14} className="text-purple-300 mx-auto" />
-                          <p className="text-xs text-purple-300 font-bold">Bonus Buy</p>
+                          <p className="text-xs text-purple-300 font-bold">
+                            Bonus Buy
+                          </p>
                         </div>
                       )}
                       {selectedGame.megaways && (
                         <div className="px-3 py-1.5 bg-blue-500/20 border border-blue-500/30 rounded-lg text-center">
                           <Layers size={14} className="text-blue-300 mx-auto" />
-                          <p className="text-xs text-blue-300 font-bold">Megaways</p>
+                          <p className="text-xs text-blue-300 font-bold">
+                            Megaways
+                          </p>
                         </div>
                       )}
                     </div>
@@ -724,8 +744,12 @@ function SlotRandomizer({ providers, providersLoading }) {
           {/* Right: Provider exclusion list */}
           <div className="space-y-3">
             <div>
-              <p className="text-sm font-bold text-white/60 mb-1">Exclude Providers</p>
-              <p className="text-xs text-white/30">Unchecked providers are excluded from the spin.</p>
+              <p className="text-sm font-bold text-white/60 mb-1">
+                Exclude Providers
+              </p>
+              <p className="text-xs text-white/30">
+                Unchecked providers are excluded from the spin.
+              </p>
             </div>
 
             {excludedProviders.size > 0 && (
@@ -738,32 +762,28 @@ function SlotRandomizer({ providers, providersLoading }) {
             )}
 
             <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1">
-              {providersLoading ? (
-                <p className="text-xs text-white/30 py-4">Loading providers…</p>
-              ) : providers.length === 0 ? (
-                <p className="text-xs text-white/30 py-4">No providers found</p>
-              ) : (
-                providers.map(p => (
-                  <label key={p.slug} className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-all">
-                    <input
-                      type="checkbox"
-                      checked={!excludedProviders.has(p.slug)}
-                      onChange={() => toggleProvider(p.slug)}
-                      className="accent-emerald-400"
-                    />
-                    {p.thumbnail && (
-                      <img src={p.thumbnail} alt={p.name} className="w-5 h-5 object-contain" onError={e => e.target.style.display = 'none'} />
-                    )}
-                    <span className={`text-sm flex-1 ${excludedProviders.has(p.slug) ? 'text-white/25 line-through' : 'text-white/80'}`}>
-                      {p.name}
-                    </span>
-                  </label>
-                ))
-              )}
+              {ALL_PROVIDERS.map((p) => (
+                <label
+                  key={p.slug}
+                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-all"
+                >
+                  <input
+                    type="checkbox"
+                    checked={!excludedProviders.has(p.slug)}
+                    onChange={() => toggleProvider(p.slug)}
+                    className="accent-emerald-400"
+                  />
+                  <span
+                    className={`text-sm flex-1 ${excludedProviders.has(p.slug) ? 'text-white/25 line-through' : 'text-white/80'}`}
+                  >
+                    {p.name}
+                  </span>
+                </label>
+              ))}
             </div>
           </div>
         </div>
-      )}
+      }
 
       {/* Confetti */}
       {showConfetti && (
@@ -776,7 +796,14 @@ function SlotRandomizer({ providers, providersLoading }) {
                 left: `${Math.random() * 100}%`,
                 animationDelay: `${Math.random() * 0.6}s`,
                 borderRadius: Math.random() > 0.5 ? '50%' : '0',
-                backgroundColor: ['#10b981','#a855f7','#eab308','#f97316','#ec4899','#3b82f6'][Math.floor(Math.random() * 6)],
+                backgroundColor: [
+                  '#10b981',
+                  '#a855f7',
+                  '#eab308',
+                  '#f97316',
+                  '#ec4899',
+                  '#3b82f6',
+                ][Math.floor(Math.random() * 6)],
               }}
             />
           ))}

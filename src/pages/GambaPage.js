@@ -47,7 +47,7 @@ export default function GambaPage() {
     return saved ? Number(saved) : 200;
   });
 
-  const [activeTool, setActiveTool] = useState('hunt'); // 'hunt', 'poll', 'wheel', or 'equity'
+  const [activeTool, setActiveTool] = useState('wheel'); // 'wheel', 'equity', 'hunt', or 'poll'
 
   // Equity Tracker state
   const [equityPlayers, setEquityPlayers] = useState(() => {
@@ -295,17 +295,6 @@ export default function GambaPage() {
           {/* Tool Selection Buttons */}
           <div className="flex justify-center gap-4 pt-4 flex-wrap">
             <button
-              onClick={() => setActiveTool('hunt')}
-              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
-                activeTool === 'hunt'
-                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
-                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
-              }`}
-            >
-              <Target size={18} />
-              Bonus Hunt
-            </button>
-            <button
               onClick={() => setActiveTool('wheel')}
               className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
                 activeTool === 'wheel'
@@ -317,17 +306,6 @@ export default function GambaPage() {
               Game Wheel
             </button>
             <button
-              onClick={() => setActiveTool('poll')}
-              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
-                activeTool === 'poll'
-                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
-                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
-              }`}
-            >
-              <BarChart3 size={18} />
-              Viewer Polls
-            </button>
-            <button
               onClick={() => setActiveTool('equity')}
               className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
                 activeTool === 'equity'
@@ -337,6 +315,28 @@ export default function GambaPage() {
             >
               <Users size={18} />
               Equity Tracker
+            </button>
+            <button
+              onClick={() => setActiveTool('hunt')}
+              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
+                activeTool === 'hunt'
+                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
+                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
+              }`}
+            >
+              <Target size={18} />
+              Bonus Hunt
+            </button>
+            <button
+              onClick={() => setActiveTool('poll')}
+              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
+                activeTool === 'poll'
+                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
+                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
+              }`}
+            >
+              <BarChart3 size={18} />
+              Viewer Polls
             </button>
           </div>
         </header>

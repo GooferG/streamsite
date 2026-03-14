@@ -1,5 +1,6 @@
-const API_KEY = 'Vxqf1SnCumEuSoo4ucj6CYtzqUTypMjt2kCS0sQWkfHnrNFmsV';
+const API_KEY  = 'Vxqf1SnCumEuSoo4ucj6CYtzqUTypMjt2kCS0sQWkfHnrNFmsV';
 const BASE_URL = 'https://slotslaunch.com/api';
+const ORIGIN   = 'goofer.tv'; // domain registered in your SlotsLaunch account
 
 // In-memory cache keyed by path + query string
 const cache = {};
@@ -12,18 +13,24 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
-  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
+  if (req.method !== 'GET')
+    return res.status(405).json({ error: 'Method not allowed' });
 
   const { path, ...rest } = req.query;
   if (!path || !ALLOWED_PATHS.includes(path)) {
-    return res.status(400).json({ error: `Invalid path. Use: ${ALLOWED_PATHS.join(', ')}` });
+    return res
+      .status(400)
+      .json({ error: `Invalid path. Use: ${ALLOWED_PATHS.join(', ')}` });
   }
 
-  // Build upstream query string, passing all remaining params through
-  const upstreamParams = new URLSearchParams(rest).toString();
-  const upstreamUrl = `${BASE_URL}/${path}${upstreamParams ? '?' + upstreamParams : ''}`;
-  const cacheKey = path + (upstreamParams ? '|' + upstreamParams : '');
+  // Token goes as a query param, all other params pass through
+  const upstreamParams = new URLSearchParams({ token: API_KEY, ...rest }).toString();
+  const upstreamUrl = `${BASE_URL}/${path}?${upstreamParams}`;
+  const cacheKey = path + '|' + upstreamParams;
 
   // Serve from cache if still fresh
   const cached = cache[cacheKey];
@@ -35,8 +42,9 @@ export default async function handler(req, res) {
   try {
     const upstream = await fetch(upstreamUrl, {
       headers: {
-        Authorization: `Bearer ${API_KEY}`,
-        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Origin': ORIGIN,
       },
     });
 

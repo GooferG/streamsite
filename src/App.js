@@ -3,7 +3,6 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import GrainOverlay from './components/GrainOverlay';
 import TVStaticIntro from './components/TVStaticIntro';
-import Snow from './components/Snow';
 import LiveIndicator from './components/LiveIndicator';
 import HomePage from './pages/HomePage';
 import SchedulePage from './pages/SchedulePage';
@@ -110,8 +109,7 @@ function StreamingSiteContent() {
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-emerald-950 to-purple-950 text-white">
       {showTVIntro && <TVStaticIntro />}
 
-      <Snow />
-      <GrainOverlay />
+<GrainOverlay />
 
       <Navigation currentPage={currentPage} setPage={(id) => navigate(id === 'home' ? '/' : `/${id}`)} />
 

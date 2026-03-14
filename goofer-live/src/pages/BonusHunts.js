@@ -242,6 +242,11 @@ export default function BonusHuntsPage() {
           </div>
         )}
       </div>
+
+      {/* Footer */}
+      <div className="text-center mt-16 text-white/30 text-sm">
+        Want to use this same bonus tracker? <a href="https://bonushunt.gg" target="_blank" rel="noopener noreferrer" className="hover:text-white/60 transition-colors underline underline-offset-2">bonushunt.gg</a>
+      </div>
     </div>
   );
 }

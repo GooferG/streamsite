@@ -203,6 +203,17 @@ export default function BonusHuntsPage() {
           </p>
         </header>
 
+        {/* Active Hunt Widget */}
+        <div className="rounded-xl overflow-hidden border border-white/10">
+          <iframe
+            src="https://bonushunt.gg/widget/1?userId=cmjxkol6401c3jcm59l6fssds"
+            title="Active Bonus Hunt"
+            className="w-full"
+            style={{ height: '500px', border: 'none' }}
+            loading="lazy"
+          />
+        </div>
+
         {/* Hunt List */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-3 text-white/40">

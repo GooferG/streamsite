@@ -123,13 +123,13 @@ export default function HomePage({
   return (
     <div className="pt-20">
       {/* Hero Section */}
-      <section className="relative min-h-[75vh] flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
         {/* Hero background image — extends below section so fade is gradual */}
         <img
-          src="/Flux2_00003_.png"
+          src="/site_banner_v2.png"
           alt=""
-          className="absolute w-full object-cover object-center"
-          style={{ opacity: 0.35, top: 0, height: '130%' }}
+          className="absolute inset-0 w-full h-full object-cover object-center"
+          style={{ opacity: 0.35 }}
         />
         {/* Dark overlay — long soft fade into page background */}
         <div
@@ -221,8 +221,8 @@ export default function HomePage({
             />
             <SocialButton
               icon={<Twitter size={20} />}
-              label="Twitter"
-              color="blue"
+              label="X/Twitter"
+              color="black"
               href={SOCIAL_LINKS.twitter}
             />
           </div>

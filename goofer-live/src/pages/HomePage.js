@@ -121,24 +121,26 @@ export default function HomePage({
   };
 
   return (
-    <div className="pt-20">
+    <div>
       {/* Hero Section */}
-      <section className="relative min-h-[70vh] flex items-center justify-center overflow-hidden">
+      <section className="relative flex items-center justify-center overflow-hidden -mt-[73px]">
         {/* Hero background image — extends below section so fade is gradual */}
         <img
           src="/site_banner_v2.png"
           alt=""
-          className="absolute inset-0 w-full h-full object-cover object-center"
-          style={{ opacity: 0.35 }}
+          className="absolute inset-0 w-full h-full object-cover"
+          style={{ opacity: 0.35, objectPosition: 'center 30%' }}
         />
         {/* Dark overlay — long soft fade into page background */}
         <div
           className="absolute w-full"
           style={{
             top: 0,
-            height: '130%',
+            bottom: 0,
+            position: 'absolute',
+            width: '100%',
             background:
-              'linear-gradient(to bottom, rgba(9,9,11,0.2) 0%, rgba(9,9,11,0.3) 40%, rgba(9,9,11,0.8) 70%, rgba(9,9,11,1) 100%)',
+              'linear-gradient(to bottom, rgba(9,9,11,0) 0%, rgba(9,9,11,0.2) 50%, rgba(9,9,11,0.85) 85%)',
           }}
         />
         <div
@@ -151,7 +153,7 @@ export default function HomePage({
         />
 
         <div
-          className={`relative z-10 text-center px-6 transition-all duration-1000 ${
+          className={`relative z-10 text-center px-6 pt-44 pb-24 transition-all duration-1000 ${
             mounted ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'
           }`}
         >

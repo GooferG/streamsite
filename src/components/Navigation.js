@@ -74,7 +74,7 @@ export default function Navigation({ currentPage, setPage }) {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-white/80 hover:text-emerald-400 transition-colors"
+            className="md:hidden p-2 text-white/80 hover:text-emerald-400 transition-colors ml-auto"
             aria-label="Toggle menu"
           >
             {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}

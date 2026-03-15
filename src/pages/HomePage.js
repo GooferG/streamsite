@@ -124,15 +124,23 @@ export default function HomePage({
     <div className="pt-20">
       {/* Hero Section */}
       <section className="relative min-h-[75vh] flex items-center justify-center overflow-hidden">
-        {/* Hero background image */}
+        {/* Hero background image — extends below section so fade is gradual */}
         <img
           src="/Flux2_00003_.png"
           alt=""
-          className="absolute inset-0 w-full h-full object-cover object-center"
-          style={{ opacity: 0.18 }}
+          className="absolute w-full object-cover object-center"
+          style={{ opacity: 0.35, top: 0, height: '130%' }}
         />
-        {/* Dark overlay for readability */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/40" />
+        {/* Dark overlay — long soft fade into page background */}
+        <div
+          className="absolute w-full"
+          style={{
+            top: 0,
+            height: '130%',
+            background:
+              'linear-gradient(to bottom, rgba(9,9,11,0.2) 0%, rgba(9,9,11,0.3) 40%, rgba(9,9,11,0.8) 70%, rgba(9,9,11,1) 100%)',
+          }}
+        />
         <div
           className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-pulse"
           style={{ animation: 'glow 8s ease-in-out infinite' }}
@@ -350,7 +358,7 @@ export default function HomePage({
 
       {/* Latest VOD Section */}
       {!loading && latestVod && (
-        <section className="px-6">
+        <section className="px-6 my-10">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center justify-between mb-12">
               <h2 className="text-5xl font-black tracking-tighter">

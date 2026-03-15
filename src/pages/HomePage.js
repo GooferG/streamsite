@@ -124,6 +124,15 @@ export default function HomePage({
     <div className="pt-20">
       {/* Hero Section */}
       <section className="relative min-h-[75vh] flex items-center justify-center overflow-hidden">
+        {/* Hero background image */}
+        <img
+          src="/Flux2_00003_.png"
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover object-center"
+          style={{ opacity: 0.18 }}
+        />
+        {/* Dark overlay for readability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/40" />
         <div
           className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-pulse"
           style={{ animation: 'glow 8s ease-in-out infinite' }}

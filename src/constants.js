@@ -1,7 +1,6 @@
 // Twitch Configuration
 export const TWITCH_USERNAME = 'GooferG';
-export const TWITCH_CLIENT_ID = '6t0kocnv2iyqathfkgbn60tit8x12b';
-export const TWITCH_CLIENT_SECRET = '8hmx5yuuk3nrlt74q9wq4os5r9y198';
+export const TWITCH_CLIENT_ID = process.env.REACT_APP_TWITCH_CLIENT_ID || '6t0kocnv2iyqathfkgbn60tit8x12b';
 
 export const SOCIAL_LINKS = {
   twitch: 'https://twitch.tv/GooferG',

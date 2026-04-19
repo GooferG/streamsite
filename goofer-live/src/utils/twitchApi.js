@@ -1,15 +1,7 @@
-import { TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET, TWITCH_USERNAME } from '../constants';
+import { TWITCH_CLIENT_ID, TWITCH_USERNAME } from '../constants';
 
 export async function getTwitchAccessToken() {
-  const response = await fetch('https://id.twitch.tv/oauth2/token', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: new URLSearchParams({
-      client_id: TWITCH_CLIENT_ID,
-      client_secret: TWITCH_CLIENT_SECRET,
-      grant_type: 'client_credentials',
-    }),
-  });
+  const response = await fetch('/api/twitch-token', { method: 'POST' });
   const data = await response.json();
   return data.access_token;
 }

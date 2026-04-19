@@ -12,7 +12,6 @@ import GambaPage from './pages/GambaPage';
 import BonusHuntsPage from './pages/BonusHunts';
 import GearPage from './pages/Gear';
 import GearInteractive from './pages/GearInteractive';
-import AdminLoginPage from './pages/AdminLoginPage';
 import AdminLayout from './components/AdminLayout';
 import AdminHubPage from './pages/AdminHubPage';
 import AdminSchedulePage from './pages/AdminSchedulePage';
@@ -20,7 +19,7 @@ import AdminSuggestionsPage from './pages/AdminSuggestionsPage';
 import TwitchCallbackPage from './pages/TwitchCallbackPage';
 import SuggestPage from './pages/SuggestPage';
 import SuggestOverlay from './pages/SuggestOverlay';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AuthProvider } from './contexts/AuthContext';
 import { TwitchAuthProvider } from './contexts/TwitchAuthContext';
 
 import {
@@ -45,7 +44,7 @@ function StreamingSiteContent() {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showTVIntro, setShowTVIntro] = useState(true);
-  const { currentUser } = useAuth();
+
 
   // Derive current page id from URL for nav highlighting
   const currentPage = location.pathname.replace('/', '') || 'home';

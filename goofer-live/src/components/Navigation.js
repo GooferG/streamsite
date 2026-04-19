@@ -8,8 +8,8 @@ export default function Navigation({ currentPage, setPage }) {
     { id: 'home', label: 'HOME' },
     { id: 'schedule', label: 'SCHEDULE' },
     { id: 'vods', label: 'VODS & CLIPS' },
-    { id: 'gear', label: 'GEAR' },
-    // { id: 'gear-interactive', label: 'GEAR (NEW)' }, // Uncomment this line to add the new gear page
+    // { id: 'gear', label: 'GEAR' },
+    // { id: 'gear-interactive', label: 'GEAR (NEW)' },
     { id: 'bonus-hunts', label: 'BONUS HUNTS' },
     { id: 'gamba', label: 'GAMBA' },
     { id: 'about', label: 'ABOUT ME' },

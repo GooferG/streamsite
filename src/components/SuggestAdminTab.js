@@ -3,10 +3,12 @@ import {
   collection, onSnapshot, orderBy, query,
   updateDoc, deleteDoc, doc, writeBatch
 } from 'firebase/firestore';
-import { Star, X, RefreshCcw, MessageSquarePlus } from 'lucide-react';
+import { Star, X, RefreshCcw, MessageSquarePlus, ExternalLink } from 'lucide-react';
 import { db } from '../config/firebase';
+import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 
 export default function SuggestAdminTab() {
+  const { twitchUser, loginWithTwitch, logout } = useTwitchAuth();
   const [suggestions, setSuggestions] = useState([]);
   const [clearConfirm, setClearConfirm] = useState(false);
 
@@ -73,6 +75,64 @@ export default function SuggestAdminTab() {
               Cancel
             </button>
           </div>
+        )}
+      </div>
+
+      {/* Viewer login / suggestion shortcut */}
+      <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded-lg flex items-center justify-between gap-4 flex-wrap">
+        {twitchUser ? (
+          <>
+            <div className="flex items-center gap-3">
+              {twitchUser.profileImageUrl && (
+                <img src={twitchUser.profileImageUrl} alt="" className="w-8 h-8 rounded-full border border-white/20" />
+              )}
+              <div>
+                <p className="text-sm font-bold text-white">{twitchUser.displayName}</p>
+                <p className="text-xs text-purple-400">Logged in with Twitch</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <a
+                href="/suggest"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-purple-500 text-white font-bold text-sm hover:from-emerald-600 hover:to-purple-600 transition-all"
+              >
+                <ExternalLink size={14} />
+                Suggest a Game
+              </a>
+              <button
+                onClick={logout}
+                className="px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white/50 hover:text-white text-sm transition-all"
+              >
+                Logout
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-white/60">Login with Twitch to submit your own suggestion, or share the link with chat.</p>
+            <div className="flex gap-2 flex-wrap">
+              <button
+                onClick={loginWithTwitch}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-[#9146FF] hover:bg-[#7d2ff7] text-white font-bold text-sm transition-all"
+              >
+                <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
+                </svg>
+                Login with Twitch
+              </button>
+              <a
+                href="/suggest"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-purple-400/60 text-sm font-bold transition-all"
+              >
+                <ExternalLink size={14} />
+                goofer.tv/suggest
+              </a>
+            </div>
+          </>
         )}
       </div>
 

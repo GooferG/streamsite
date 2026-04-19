@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({
-      client_id: process.env.REACT_APP_TWITCH_CLIENT_ID,
+      client_id: process.env.TWITCH_CLIENT_ID,
       client_secret: process.env.TWITCH_CLIENT_SECRET,
       code,
       grant_type: 'authorization_code',
@@ -40,7 +40,7 @@ export default async function handler(req, res) {
 
   const userRes = await fetch('https://api.twitch.tv/helix/users', {
     headers: {
-      'Client-ID': process.env.REACT_APP_TWITCH_CLIENT_ID,
+      'Client-ID': process.env.TWITCH_CLIENT_ID,
       Authorization: `Bearer ${tokenData.access_token}`,
     },
   });

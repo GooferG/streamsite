@@ -10,13 +10,22 @@ export default function TwitchCallbackPage() {
 
   useEffect(() => {
     const code = searchParams.get('code');
+    const twitchError = searchParams.get('error');
+
+    if (twitchError) {
+      setError(`Twitch denied access: ${twitchError}`);
+      return;
+    }
     if (!code) {
       setError('No code returned from Twitch.');
       return;
     }
     signInWithTwitchCode(code)
       .then(() => navigate('/suggest', { replace: true }))
-      .catch(() => setError('Login failed. Please try again.'));
+      .catch((err) => {
+        console.error('Twitch login error:', err);
+        setError(`Login failed: ${err?.message || 'Unknown error'}. Check console for details.`);
+      });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (error) {

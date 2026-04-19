@@ -3,7 +3,9 @@
     "allow": [
       "mcp__claude_ai_Vercel__list_teams",
       "mcp__claude_ai_Vercel__list_deployments",
-      "Bash(curl -s -H \"Authorization: Bearer bnt_b493e9020cf2ecb1e4a8043cb1ea1941a8555a1fa2c90e62f411b6cdb0aba14c\" \"https://bonushunt.gg/api/public/hunts\")"
+      "Bash(curl -s -H \"Authorization: Bearer bnt_b493e9020cf2ecb1e4a8043cb1ea1941a8555a1fa2c90e62f411b6cdb0aba14c\" \"https://bonushunt.gg/api/public/hunts\")",
+      "Bash(npm install *)",
+      "Bash(npm ls *)"
     ]
   }
 }

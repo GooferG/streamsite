@@ -899,7 +899,7 @@ export default function StreamingSite() {
       </TwitchAuthProvider>
     </AuthProvider>
   );
-}
+}npm 
 ```
 
 Add three routes inside the `<Routes>` block in `StreamingSiteContent`, after the existing routes:

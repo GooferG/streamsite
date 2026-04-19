@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Gamepad2, LogOut, Send, Edit2 } from 'lucide-react';
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { Gamepad2, LogOut, Send, Edit2, X } from 'lucide-react';
+import {
+  doc, getDoc, setDoc, deleteDoc, serverTimestamp,
+  collection, onSnapshot, orderBy, query
+} from 'firebase/firestore';
 import { Filter } from 'bad-words';
 import { db } from '../config/firebase';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
@@ -16,7 +19,18 @@ export default function SuggestPage() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
+  const [allSuggestions, setAllSuggestions] = useState([]);
 
+  // Load all suggestions in real-time
+  useEffect(() => {
+    const q = query(collection(db, 'suggestions'), orderBy('createdAt', 'desc'));
+    const unsub = onSnapshot(q, (snap) => {
+      setAllSuggestions(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    });
+    return unsub;
+  }, []);
+
+  // Load this viewer's existing suggestion
   useEffect(() => {
     if (!twitchUser) return;
     const ref = doc(db, 'suggestions', twitchUser.twitchId);
@@ -62,6 +76,18 @@ export default function SuggestPage() {
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      await deleteDoc(doc(db, 'suggestions', twitchUser.twitchId));
+      setExisting(null);
+      setSubmitted(false);
+      setGameName('');
+      setRainbetName('');
+    } catch {
+      setError('Failed to remove suggestion.');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -71,8 +97,8 @@ export default function SuggestPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-emerald-950 to-purple-950 text-white pt-16 pb-24 px-6 flex items-center justify-center">
-      <div className="w-full max-w-md space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-emerald-950 to-purple-950 text-white pt-16 pb-24 px-6">
+      <div className="max-w-md mx-auto space-y-6">
         <div className="text-center space-y-2">
           <div className="flex items-center justify-center gap-2 text-purple-400 font-bold">
             <Gamepad2 size={20} />
@@ -84,7 +110,7 @@ export default function SuggestPage() {
             </span>
           </h1>
           <p className="text-white/60 text-sm">
-            Logged-in viewers can suggest one slot or game for the stream.
+            Login with Twitch to suggest one slot or game for the stream.
           </p>
         </div>
 
@@ -103,6 +129,7 @@ export default function SuggestPage() {
           </div>
         ) : (
           <div className="p-8 bg-gradient-to-br from-emerald-900/20 to-purple-900/20 border border-emerald-500/20 rounded-xl backdrop-blur-sm space-y-6">
+            {/* Viewer identity */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {twitchUser.profileImageUrl && (
@@ -113,39 +140,41 @@ export default function SuggestPage() {
                   <p className="text-xs text-purple-400">Twitch</p>
                 </div>
               </div>
-              <button
-                onClick={logout}
-                className="p-2 rounded-lg bg-white/5 border border-white/10 text-white/50 hover:text-white transition-all"
-              >
+              <button onClick={logout} className="p-2 rounded-lg bg-white/5 border border-white/10 text-white/50 hover:text-white transition-all">
                 <LogOut size={16} />
               </button>
             </div>
 
             {submitted && !editing ? (
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg space-y-1">
                   <p className="text-xs text-emerald-400 font-bold uppercase tracking-wide">Your suggestion</p>
                   <p className="font-black text-white text-xl">{existing?.gameName}</p>
                   {existing?.rainbetName && (
-                    <p className="text-sm text-white/60">
-                      Rainbet: <span className="text-emerald-300">{existing.rainbetName}</span>
-                    </p>
+                    <p className="text-sm text-white/60">Rainbet: <span className="text-emerald-300">{existing.rainbetName}</span></p>
                   )}
                 </div>
-                <button
-                  onClick={() => setEditing(true)}
-                  className="w-full px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:text-white hover:border-emerald-400/60 transition-all flex items-center justify-center gap-2 font-bold"
-                >
-                  <Edit2 size={16} />
-                  Update Suggestion
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setEditing(true)}
+                    className="flex-1 px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:text-white hover:border-emerald-400/60 transition-all flex items-center justify-center gap-2 font-bold"
+                  >
+                    <Edit2 size={16} />
+                    Update
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="px-4 py-3 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all flex items-center gap-2 font-bold"
+                  >
+                    <X size={16} />
+                    Remove
+                  </button>
+                </div>
               </div>
             ) : (
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm text-white/60 mb-2">
-                    Game / Slot Name <span className="text-red-400">*</span>
-                  </label>
+                  <label className="block text-sm text-white/60 mb-2">Game / Slot Name <span className="text-red-400">*</span></label>
                   <input
                     type="text"
                     value={gameName}
@@ -156,9 +185,7 @@ export default function SuggestPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-white/60 mb-2">
-                    Rainbet Username <span className="text-white/40">(optional)</span>
-                  </label>
+                  <label className="block text-sm text-white/60 mb-2">Rainbet Username <span className="text-white/40">(optional)</span></label>
                   <input
                     type="text"
                     value={rainbetName}
@@ -172,12 +199,7 @@ export default function SuggestPage() {
                   {editing && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setEditing(false);
-                        setGameName(existing?.gameName || '');
-                        setRainbetName(existing?.rainbetName || '');
-                        setError('');
-                      }}
+                      onClick={() => { setEditing(false); setGameName(existing?.gameName || ''); setRainbetName(existing?.rainbetName || ''); setError(''); }}
                       className="flex-1 px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white transition-all font-bold"
                     >
                       Cancel
@@ -194,6 +216,41 @@ export default function SuggestPage() {
                 </div>
               </form>
             )}
+          </div>
+        )}
+
+        {/* All suggestions — read-only for everyone */}
+        {allSuggestions.length > 0 && (
+          <div className="space-y-3">
+            <h2 className="text-sm font-bold text-white/50 uppercase tracking-widest">
+              All Suggestions ({allSuggestions.length})
+            </h2>
+            {allSuggestions.map((s) => (
+              <div
+                key={s.id}
+                className={`p-4 rounded-lg border flex items-center gap-3 ${
+                  s.status === 'highlighted'
+                    ? 'bg-emerald-500/10 border-emerald-500/30'
+                    : 'bg-white/5 border-white/10'
+                }`}
+              >
+                {s.profileImageUrl && (
+                  <img src={s.profileImageUrl} alt="" className="w-8 h-8 rounded-full border border-white/20 flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="font-black text-white truncate">{s.gameName}</p>
+                    {s.status === 'highlighted' && (
+                      <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded px-2 py-0.5">PICKED</span>
+                    )}
+                  </div>
+                  <p className="text-xs text-white/50 truncate">
+                    {s.twitchName}
+                    {s.rainbetName ? <span className="text-emerald-400/70"> · {s.rainbetName}</span> : null}
+                  </p>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

@@ -13,7 +13,10 @@ import BonusHuntsPage from './pages/BonusHunts';
 import GearPage from './pages/Gear';
 import GearInteractive from './pages/GearInteractive';
 import AdminLoginPage from './pages/AdminLoginPage';
+import AdminLayout from './components/AdminLayout';
+import AdminHubPage from './pages/AdminHubPage';
 import AdminSchedulePage from './pages/AdminSchedulePage';
+import AdminSuggestionsPage from './pages/AdminSuggestionsPage';
 import TwitchCallbackPage from './pages/TwitchCallbackPage';
 import SuggestPage from './pages/SuggestPage';
 import SuggestOverlay from './pages/SuggestOverlay';
@@ -139,11 +142,11 @@ function StreamingSiteContent() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/bonus-hunts" element={<BonusHuntsPage />} />
           <Route path="/gamba" element={<GambaPage />} />
-          <Route path="/admin" element={
-            currentUser
-              ? <AdminSchedulePage onLogout={() => navigate('/')} />
-              : <AdminLoginPage onLoginSuccess={() => navigate('/admin')} />
-          } />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminHubPage />} />
+            <Route path="schedule" element={<AdminSchedulePage />} />
+            <Route path="suggestions" element={<AdminSuggestionsPage />} />
+          </Route>
           <Route path="/suggest" element={<SuggestPage />} />
           <Route path="/twitch-callback" element={<TwitchCallbackPage />} />
           <Route path="/suggest-overlay" element={<SuggestOverlay />} />

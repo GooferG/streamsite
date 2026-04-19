@@ -6,7 +6,6 @@ import {
   ShieldCheck,
   RefreshCcw,
   ExternalLink,
-  BarChart3,
   Plus,
   X,
   Gamepad2,
@@ -72,12 +71,6 @@ export default function GambaPage() {
   const [bonuses, setBonuses] = useState([]);
   const [bonusGameInput, setBonusGameInput] = useState('');
   const [bonusCostInput, setBonusCostInput] = useState('');
-
-  // Poll state
-  const [pollQuestion, setPollQuestion] = useState('');
-  const [pollOptions, setPollOptions] = useState(['', '', '']);
-  const [activePoll, setActivePoll] = useState(null);
-  const [pollHistory, setPollHistory] = useState([]);
 
   // Save to localStorage whenever values change
   useEffect(() => {
@@ -222,65 +215,6 @@ export default function GambaPage() {
     setEquityHuntEnd(0);
   };
 
-  // Poll functions
-  const createPoll = () => {
-    if (!pollQuestion.trim()) return;
-    const validOptions = pollOptions.filter((opt) => opt.trim() !== '');
-    if (validOptions.length < 2) return;
-
-    const newPoll = {
-      id: Date.now(),
-      question: pollQuestion,
-      options: validOptions.map((opt, idx) => ({
-        id: idx,
-        text: opt,
-        votes: 0,
-      })),
-      createdAt: new Date().toLocaleTimeString([], {
-        hour: '2-digit',
-        minute: '2-digit',
-      }),
-    };
-
-    setActivePoll(newPoll);
-    setPollQuestion('');
-    setPollOptions(['', '', '']);
-  };
-
-  const vote = (optionId) => {
-    if (!activePoll) return;
-    setActivePoll({
-      ...activePoll,
-      options: activePoll.options.map((opt) =>
-        opt.id === optionId ? { ...opt, votes: opt.votes + 1 } : opt
-      ),
-    });
-  };
-
-  const endPoll = () => {
-    if (!activePoll) return;
-    setPollHistory([activePoll, ...pollHistory]);
-    setActivePoll(null);
-  };
-
-  const addPollOption = () => {
-    if (pollOptions.length < 6) {
-      setPollOptions([...pollOptions, '']);
-    }
-  };
-
-  const removePollOption = (index) => {
-    if (pollOptions.length > 2) {
-      setPollOptions(pollOptions.filter((_, i) => i !== index));
-    }
-  };
-
-  const updatePollOption = (index, value) => {
-    const updated = [...pollOptions];
-    updated[index] = value;
-    setPollOptions(updated);
-  };
-
   return (
     <div className="pt-32 pb-24 px-6">
       <div className="max-w-7xl mx-auto space-y-10">
@@ -332,34 +266,21 @@ export default function GambaPage() {
               Bonus Hunt
             </button>
             <button
-              onClick={() => setActiveTool('poll')}
+              onClick={() => setActiveTool('suggest')}
               className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
-                activeTool === 'poll'
+                activeTool === 'suggest'
                   ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
                   : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
               }`}
             >
-              <BarChart3 size={18} />
-              Viewer Polls
+              <MessageSquarePlus size={18} />
+              Suggestions
             </button>
-            {currentUser && (
-              <button
-                onClick={() => setActiveTool('suggest')}
-                className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
-                  activeTool === 'suggest'
-                    ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
-                    : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
-                }`}
-              >
-                <MessageSquarePlus size={18} />
-                Suggestions
-              </button>
-            )}
           </div>
         </header>
 
-        <div className="grid lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6">
+          <div className="space-y-6">
             {/* Bonus Hunt Tracker */}
             {activeTool === 'hunt' && (
               <div className="p-8 bg-gradient-to-br from-emerald-900/20 to-purple-900/20 border border-emerald-500/20 rounded-xl backdrop-blur-sm">
@@ -515,204 +436,7 @@ export default function GambaPage() {
               </div>
             )}
 
-            {/* Viewer Polls Tool */}
-            {activeTool === 'poll' && (
-              <div className="space-y-6">
-                {/* Create Poll Section */}
-                {!activePoll && (
-                  <div className="p-8 bg-gradient-to-br from-blue-900/20 to-purple-900/20 border border-blue-500/20 rounded-xl backdrop-blur-sm">
-                    <div className="mb-6">
-                      <div className="flex items-center gap-2 text-blue-300 font-bold mb-2">
-                        <BarChart3 size={18} />
-                        Create Poll
-                      </div>
-                      <h2 className="text-3xl font-black tracking-tighter">
-                        Viewer Poll Creator
-                      </h2>
-                      <p className="text-white/60">
-                        Let your viewers vote on which slot to play next.
-                      </p>
-                    </div>
 
-                    <div className="space-y-4">
-                      <div>
-                        <label className="block text-sm text-white/60 mb-2">
-                          Poll Question
-                        </label>
-                        <input
-                          type="text"
-                          value={pollQuestion}
-                          onChange={(e) => setPollQuestion(e.target.value)}
-                          placeholder="e.g., Which slot should we play next?"
-                          className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-blue-400 focus:outline-none"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block text-sm text-white/60 mb-2">
-                          Options (2-6)
-                        </label>
-                        <div className="space-y-2">
-                          {pollOptions.map((option, index) => (
-                            <div key={index} className="flex gap-2">
-                              <input
-                                type="text"
-                                value={option}
-                                onChange={(e) =>
-                                  updatePollOption(index, e.target.value)
-                                }
-                                placeholder={`Option ${index + 1}`}
-                                className="flex-1 bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-blue-400 focus:outline-none"
-                              />
-                              {pollOptions.length > 2 && (
-                                <button
-                                  onClick={() => removePollOption(index)}
-                                  className="px-3 py-2 rounded-lg bg-red-500/20 border border-red-500/40 text-red-100 hover:bg-red-500/30 transition-all"
-                                >
-                                  <X size={16} />
-                                </button>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-
-                        {pollOptions.length < 6 && (
-                          <button
-                            onClick={addPollOption}
-                            className="mt-3 flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-blue-400/60 transition-all"
-                          >
-                            <Plus size={16} />
-                            Add Option
-                          </button>
-                        )}
-                      </div>
-
-                      <button
-                        onClick={createPoll}
-                        disabled={
-                          !pollQuestion.trim() ||
-                          pollOptions.filter((opt) => opt.trim()).length < 2
-                        }
-                        className="w-full px-6 py-4 rounded-lg bg-gradient-to-r from-blue-500 to-purple-500 text-white font-bold hover:from-blue-600 hover:to-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        Start Poll
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                {/* Active Poll Section */}
-                {activePoll && (
-                  <div className="p-8 bg-gradient-to-br from-purple-900/20 to-blue-900/20 border border-purple-500/20 rounded-xl backdrop-blur-sm">
-                    <div className="flex items-start justify-between gap-4 mb-6">
-                      <div>
-                        <div className="flex items-center gap-2 text-purple-300 font-bold mb-2">
-                          <BarChart3 size={18} />
-                          Active Poll
-                        </div>
-                        <h2 className="text-3xl font-black tracking-tighter">
-                          {activePoll.question}
-                        </h2>
-                        <p className="text-white/60">
-                          Started at {activePoll.createdAt}
-                        </p>
-                      </div>
-                      <button
-                        onClick={endPoll}
-                        className="flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg border border-white/10 text-white/60 hover:text-white hover:border-red-400/60 transition-all"
-                      >
-                        <RefreshCcw size={14} />
-                        END POLL
-                      </button>
-                    </div>
-
-                    <div className="space-y-3">
-                      {activePoll.options.map((option) => {
-                        const totalVotes = activePoll.options.reduce(
-                          (sum, opt) => sum + opt.votes,
-                          0
-                        );
-                        const percentage =
-                          totalVotes > 0
-                            ? ((option.votes / totalVotes) * 100).toFixed(1)
-                            : 0;
-
-                        return (
-                          <div
-                            key={option.id}
-                            className="p-4 rounded-lg bg-white/5 border border-white/10 hover:border-purple-400/60 transition-all cursor-pointer"
-                            onClick={() => vote(option.id)}
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <span className="font-bold text-white">
-                                {option.text}
-                              </span>
-                              <div className="flex items-center gap-4">
-                                <span className="text-purple-300 font-bold">
-                                  {percentage}%
-                                </span>
-                                <span className="text-white/60 text-sm">
-                                  {option.votes} votes
-                                </span>
-                              </div>
-                            </div>
-                            <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
-                              <div
-                                className="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-500"
-                                style={{ width: `${percentage}%` }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    <div className="mt-6 p-4 rounded-lg bg-blue-500/10 border border-blue-500/20">
-                      <p className="text-sm text-blue-200">
-                        <strong>Stream Tip:</strong> Click an option to manually
-                        add a vote, or integrate with Twitch chat commands for
-                        automatic voting.
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {/* Poll History */}
-                {pollHistory.length > 0 && !activePoll && (
-                  <div className="p-6 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm">
-                    <h3 className="text-xl font-bold mb-4">Recent Polls</h3>
-                    <div className="space-y-3">
-                      {pollHistory.slice(0, 3).map((poll) => {
-                        const winner = poll.options.reduce((prev, current) =>
-                          current.votes > prev.votes ? current : prev
-                        );
-                        const totalVotes = poll.options.reduce(
-                          (sum, opt) => sum + opt.votes,
-                          0
-                        );
-
-                        return (
-                          <div
-                            key={poll.id}
-                            className="p-4 rounded-lg bg-black/30 border border-white/5"
-                          >
-                            <p className="font-bold text-white mb-1">
-                              {poll.question}
-                            </p>
-                            <p className="text-sm text-emerald-300">
-                              Winner: {winner.text} ({winner.votes} votes)
-                            </p>
-                            <p className="text-xs text-white/50">
-                              {poll.createdAt} • {totalVotes} total votes
-                            </p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Equity Tracker Tool */}
             {activeTool === 'equity' && (
@@ -958,7 +682,7 @@ export default function GambaPage() {
             )}
 
             {/* Suggestions Admin Tab — admin only */}
-            {activeTool === 'suggest' && currentUser && <SuggestAdminTab />}
+            {activeTool === 'suggest' && <SuggestAdminTab />}
 
             {/* Slot Picker Tool */}
             {activeTool === 'wheel' && (
@@ -984,20 +708,17 @@ export default function GambaPage() {
             )}
           </div>
 
-          <div className="space-y-6">
-            {/* Compact Bankroll & Bet Sizing */}
+          {/* Bottom info strip */}
+          <div className="grid md:grid-cols-3 gap-6 pt-4 border-t border-white/10">
             {activeTool === 'hunt' && (
               <div className="p-6 bg-gradient-to-br from-blue-900/20 to-emerald-900/20 border border-blue-500/20 rounded-xl backdrop-blur-sm space-y-4">
                 <div className="flex items-center gap-2 text-blue-300 font-bold mb-2">
                   <Wallet size={16} />
                   Bankroll & Bet Sizing
                 </div>
-
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs text-white/60 mb-2">
-                      Current Bankroll
-                    </label>
+                    <label className="block text-xs text-white/60 mb-2">Current Bankroll</label>
                     <input
                       type="number"
                       value={bankroll}
@@ -1005,11 +726,8 @@ export default function GambaPage() {
                       className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
                     />
                   </div>
-
                   <div>
-                    <label className="block text-xs text-white/60 mb-2">
-                      Risk Profile
-                    </label>
+                    <label className="block text-xs text-white/60 mb-2">Risk Profile</label>
                     <div className="grid grid-cols-3 gap-2">
                       {Object.entries(riskProfiles).map(([key, profile]) => (
                         <button
@@ -1025,23 +743,14 @@ export default function GambaPage() {
                         </button>
                       ))}
                     </div>
-                    <p className="text-xs text-white/50 mt-2">
-                      {riskProfiles[risk].note}
-                    </p>
+                    <p className="text-xs text-white/50 mt-2">{riskProfiles[risk].note}</p>
                   </div>
-
                   <div className="pt-3 border-t border-white/10">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-white/60">
-                        Recommended Bet
-                      </span>
-                      <span className="text-xs text-white/40">
-                        bankroll ÷ {riskProfiles[risk].divisor.toLocaleString()}
-                      </span>
+                      <span className="text-xs text-white/60">Recommended Bet</span>
+                      <span className="text-xs text-white/40">bankroll ÷ {riskProfiles[risk].divisor.toLocaleString()}</span>
                     </div>
-                    <div className="text-2xl font-black text-emerald-300">
-                      ${recommendedBet.toLocaleString()}
-                    </div>
+                    <div className="text-2xl font-black text-emerald-300">${recommendedBet.toLocaleString()}</div>
                   </div>
                 </div>
               </div>
@@ -1053,16 +762,11 @@ export default function GambaPage() {
                 Responsible Play
               </div>
               <p className="text-white/70 text-sm">
-                Gamba is entertainment and entertainment ONLY. Set limits, take
-                breaks, and mute if you feel tilted. Chat should hear your plan
-                before each session.
+                Gamba is entertainment and entertainment ONLY. Set limits, take breaks, and mute if you feel tilted. Chat should hear your plan before each session.
               </p>
               <ul className="space-y-2 text-sm text-white/60">
                 <li>ƒ?› Cash-out when goal is hit twice in a row.</li>
-                <li>
-                  ƒ?› If down {stopLoss > 0 ? `$${stopLoss}` : 'your stop-loss'}
-                  , call it.
-                </li>
+                <li>ƒ?› If down {stopLoss > 0 ? `$${stopLoss}` : 'your stop-loss'}, call it.</li>
                 <li>ƒ?› Hydrate + 5 minute walk every 40 minutes.</li>
                 <li>ƒ?› No late-night redeposits.</li>
               </ul>
@@ -1074,22 +778,10 @@ export default function GambaPage() {
                 Stream Segment Prompts
               </div>
               <div className="space-y-2 text-sm text-white/70">
-                <PromptItem
-                  title="Warmup"
-                  detail="Low-volatility slots, show bet sizing overlay."
-                />
-                <PromptItem
-                  title="Heat Check"
-                  detail="1-2 higher stakes buys, stop if net goes red twice."
-                />
-                <PromptItem
-                  title="Cooldown"
-                  detail="Switch to high RTP game / react content for 15m."
-                />
-                <PromptItem
-                  title="Viewer Picks"
-                  detail="Run a poll with 3 games you pre-approved."
-                />
+                <PromptItem title="Warmup" detail="Low-volatility slots, show bet sizing overlay." />
+                <PromptItem title="Heat Check" detail="1-2 higher stakes buys, stop if net goes red twice." />
+                <PromptItem title="Cooldown" detail="Switch to high RTP game / react content for 15m." />
+                <PromptItem title="Viewer Picks" detail="Run a poll with 3 games you pre-approved." />
               </div>
             </div>
 

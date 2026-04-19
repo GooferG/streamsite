@@ -17,8 +17,10 @@ import {
 } from 'lucide-react';
 import SlotPicker from '../components/SlotPicker';
 import SuggestAdminTab from '../components/SuggestAdminTab';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function GambaPage() {
+  const { currentUser } = useAuth();
   const riskProfiles = {
     chill: {
       label: 'Chill',
@@ -340,17 +342,19 @@ export default function GambaPage() {
               <BarChart3 size={18} />
               Viewer Polls
             </button>
-            <button
-              onClick={() => setActiveTool('suggest')}
-              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
-                activeTool === 'suggest'
-                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
-                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
-              }`}
-            >
-              <MessageSquarePlus size={18} />
-              Suggestions
-            </button>
+            {currentUser && (
+              <button
+                onClick={() => setActiveTool('suggest')}
+                className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
+                  activeTool === 'suggest'
+                    ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
+                    : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
+                }`}
+              >
+                <MessageSquarePlus size={18} />
+                Suggestions
+              </button>
+            )}
           </div>
         </header>
 
@@ -953,8 +957,8 @@ export default function GambaPage() {
               </div>
             )}
 
-            {/* Suggestions Admin Tab */}
-            {activeTool === 'suggest' && <SuggestAdminTab />}
+            {/* Suggestions Admin Tab — admin only */}
+            {activeTool === 'suggest' && currentUser && <SuggestAdminTab />}
 
             {/* Slot Picker Tool */}
             {activeTool === 'wheel' && (

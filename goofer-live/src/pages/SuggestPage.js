@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Gamepad2, LogOut, Send, Edit2 } from 'lucide-react';
 import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
-import Filter from 'bad-words';
+import { Filter } from 'bad-words';
 import { db } from '../config/firebase';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 

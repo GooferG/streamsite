@@ -14,7 +14,11 @@ import GearPage from './pages/Gear';
 import GearInteractive from './pages/GearInteractive';
 import AdminLoginPage from './pages/AdminLoginPage';
 import AdminSchedulePage from './pages/AdminSchedulePage';
+import TwitchCallbackPage from './pages/TwitchCallbackPage';
+import SuggestPage from './pages/SuggestPage';
+import SuggestOverlay from './pages/SuggestOverlay';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { TwitchAuthProvider } from './contexts/TwitchAuthContext';
 
 import {
   getTwitchAccessToken,
@@ -140,6 +144,9 @@ function StreamingSiteContent() {
               ? <AdminSchedulePage onLogout={() => navigate('/')} />
               : <AdminLoginPage onLoginSuccess={() => navigate('/admin')} />
           } />
+          <Route path="/suggest" element={<SuggestPage />} />
+          <Route path="/twitch-callback" element={<TwitchCallbackPage />} />
+          <Route path="/suggest-overlay" element={<SuggestOverlay />} />
         </Routes>
       </main>
 
@@ -179,7 +186,9 @@ function StreamingSiteContent() {
 export default function StreamingSite() {
   return (
     <AuthProvider>
-      <StreamingSiteContent />
+      <TwitchAuthProvider>
+        <StreamingSiteContent />
+      </TwitchAuthProvider>
     </AuthProvider>
   );
 }

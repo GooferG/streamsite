@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import GrainOverlay from './components/GrainOverlay';
 import TVStaticIntro from './components/TVStaticIntro';
@@ -10,7 +10,6 @@ import VodsPage from './pages/VodsPage';
 import AboutPage from './pages/AboutPage';
 import GambaPage from './pages/GambaPage';
 import GamingPage from './pages/GamingPage';
-import BonusHuntsPage from './pages/BonusHunts';
 import GearPage from './pages/Gear';
 import GearInteractive from './pages/GearInteractive';
 import AdminLayout from './components/AdminLayout';
@@ -48,7 +47,7 @@ function StreamingSiteContent() {
 
 
   // Derive current page id from URL for nav highlighting
-  const currentPage = location.pathname.replace('/', '') || 'home';
+  const currentPage = location.pathname.split('/').filter(Boolean)[0] || 'home';
 
   useEffect(() => {
     const initTwitch = async () => {
@@ -140,8 +139,14 @@ function StreamingSiteContent() {
           <Route path="/gear" element={<GearPage />} />
           <Route path="/gear-interactive" element={<GearInteractive />} />
           <Route path="/about" element={<AboutPage />} />
-          <Route path="/bonus-hunts" element={<BonusHuntsPage />} />
-          <Route path="/gamba" element={<GambaPage />} />
+          <Route path="/gamba" element={<GambaPage />}>
+            <Route index element={<Navigate to="/gamba/wheel" replace />} />
+            <Route path="wheel" element={null} />
+            <Route path="equity" element={null} />
+            <Route path="hunt" element={null} />
+            <Route path="suggest" element={null} />
+            <Route path="bonus-hunts" element={null} />
+          </Route>
           <Route path="/gaming" element={<GamingPage />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminHubPage />} />

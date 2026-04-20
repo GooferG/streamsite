@@ -10,7 +10,6 @@ export default function Navigation({ currentPage, setPage }) {
     { id: 'vods', label: 'VODS & CLIPS' },
     // { id: 'gear', label: 'GEAR' },
     // { id: 'gear-interactive', label: 'GEAR (NEW)' },
-    { id: 'bonus-hunts', label: 'BONUS HUNTS' },
     { id: 'gamba', label: 'GAMBA' },
     { id: 'gaming', label: 'GAMING' },
     { id: 'about', label: 'ABOUT ME' },

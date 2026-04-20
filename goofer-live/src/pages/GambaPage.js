@@ -1,4 +1,6 @@
 import { useMemo, useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import BonusHuntsPage from './BonusHunts';
 import {
   Wallet,
   Target,
@@ -18,6 +20,10 @@ import SlotPicker from '../components/SlotPicker';
 import SuggestAdminTab from '../components/SuggestAdminTab';
 
 export default function GambaPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const activeTool = location.pathname.split('/')[2] || 'wheel';
+  const setActiveTool = (tool) => navigate(`/gamba/${tool}`);
   const riskProfiles = {
     chill: {
       label: 'Chill',
@@ -48,7 +54,6 @@ export default function GambaPage() {
     return saved ? Number(saved) : 200;
   });
 
-  const [activeTool, setActiveTool] = useState('wheel'); // 'wheel', 'equity', 'hunt', or 'poll'
 
   // Equity Tracker state
   const [equityPlayers, setEquityPlayers] = useState(() => {
@@ -273,6 +278,17 @@ export default function GambaPage() {
             >
               <MessageSquarePlus size={18} />
               Suggestions
+            </button>
+            <button
+              onClick={() => setActiveTool('bonus-hunts')}
+              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
+                activeTool === 'bonus-hunts'
+                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
+                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
+              }`}
+            >
+              <Target size={18} />
+              Bonus Hunts
             </button>
           </div>
         </header>
@@ -681,6 +697,9 @@ export default function GambaPage() {
 
             {/* Suggestions Admin Tab — admin only */}
             {activeTool === 'suggest' && <SuggestAdminTab />}
+
+            {/* Bonus Hunts */}
+            {activeTool === 'bonus-hunts' && <BonusHuntsPage />}
 
             {/* Slot Picker Tool */}
             {activeTool === 'wheel' && (

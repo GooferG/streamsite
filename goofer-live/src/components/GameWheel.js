@@ -84,8 +84,8 @@ export default function GameWheel({ games }) {
               )}
             </div>
             {spinning && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-1 h-16 bg-emerald-400/80 rounded-full shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
+              <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                <div className="w-10 h-10 border-4 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
               </div>
             )}
           </>

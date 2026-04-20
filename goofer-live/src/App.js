@@ -9,6 +9,7 @@ import SchedulePage from './pages/SchedulePage';
 import VodsPage from './pages/VodsPage';
 import AboutPage from './pages/AboutPage';
 import GambaPage from './pages/GambaPage';
+import GamingPage from './pages/GamingPage';
 import BonusHuntsPage from './pages/BonusHunts';
 import GearPage from './pages/Gear';
 import GearInteractive from './pages/GearInteractive';
@@ -141,6 +142,7 @@ function StreamingSiteContent() {
           <Route path="/about" element={<AboutPage />} />
           <Route path="/bonus-hunts" element={<BonusHuntsPage />} />
           <Route path="/gamba" element={<GambaPage />} />
+          <Route path="/gaming" element={<GamingPage />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminHubPage />} />
             <Route path="schedule" element={<AdminSchedulePage />} />

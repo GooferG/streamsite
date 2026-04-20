@@ -16,10 +16,8 @@ import {
 } from 'lucide-react';
 import SlotPicker from '../components/SlotPicker';
 import SuggestAdminTab from '../components/SuggestAdminTab';
-import { useAuth } from '../contexts/AuthContext';
 
 export default function GambaPage() {
-  const { currentUser } = useAuth();
   const riskProfiles = {
     chill: {
       label: 'Chill',

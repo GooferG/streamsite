@@ -1,5 +1,14 @@
 import { useState, useMemo } from 'react';
-import { Plus, X, RefreshCcw, Target, Users, DollarSign, TrendingUp, TrendingDown } from 'lucide-react';
+import {
+  Plus,
+  X,
+  RefreshCcw,
+  Target,
+  Users,
+  DollarSign,
+  TrendingUp,
+  TrendingDown,
+} from 'lucide-react';
 
 const LS_KEY = 'hunt_tracker';
 
@@ -42,7 +51,9 @@ function fmtX(val) {
 export default function HuntTracker() {
   const saved = load();
   const [startBalance, setStartBalance] = useState(saved?.startBalance ?? '');
-  const [finishBalance, setFinishBalance] = useState(saved?.finishBalance ?? '');
+  const [finishBalance, setFinishBalance] = useState(
+    saved?.finishBalance ?? ''
+  );
   const [bonuses, setBonuses] = useState(saved?.bonuses ?? []);
   const [gamblers, setGamblers] = useState(saved?.gamblers ?? []);
   const [bannedSlots, setBannedSlots] = useState(saved?.bannedSlots ?? '');
@@ -55,52 +66,103 @@ export default function HuntTracker() {
   const [gamblerInInput, setGamblerInInput] = useState('');
 
   function persist(patch) {
-    const next = { startBalance, finishBalance, bonuses, gamblers, bannedSlots, ...patch };
+    const next = {
+      startBalance,
+      finishBalance,
+      bonuses,
+      gamblers,
+      bannedSlots,
+      ...patch,
+    };
     save(next);
   }
 
-  function updateStart(v) { setStartBalance(v); persist({ startBalance: v }); }
-  function updateFinish(v) { setFinishBalance(v); persist({ finishBalance: v }); }
-  function updateBanned(v) { setBannedSlots(v); persist({ bannedSlots: v }); }
+  function updateStart(v) {
+    setStartBalance(v);
+    persist({ startBalance: v });
+  }
+  function updateFinish(v) {
+    setFinishBalance(v);
+    persist({ finishBalance: v });
+  }
+  function updateBanned(v) {
+    setBannedSlots(v);
+    persist({ bannedSlots: v });
+  }
 
   function addBonus() {
     if (!slotInput.trim()) return;
-    const bonus = { id: makeId(), slot: slotInput.trim(), stake: Number(stakeInput) || 0, win: Number(winInput) || 0 };
+    const bonus = {
+      id: makeId(),
+      slot: slotInput.trim(),
+      stake: Number(stakeInput) || 0,
+      win: Number(winInput) || 0,
+    };
     const next = [...bonuses, bonus];
     setBonuses(next);
     persist({ bonuses: next });
-    setSlotInput(''); setStakeInput(''); setWinInput('');
+    setSlotInput('');
+    setStakeInput('');
+    setWinInput('');
   }
 
   function removeBonus(id) {
-    const next = bonuses.filter(b => b.id !== id);
+    const next = bonuses.filter((b) => b.id !== id);
     setBonuses(next);
     persist({ bonuses: next });
   }
 
   function addGambler() {
-    if (!gamblerNameInput.trim() || !gamblerInInput || Number(gamblerInInput) <= 0) return;
+    if (
+      !gamblerNameInput.trim() ||
+      !gamblerInInput ||
+      Number(gamblerInInput) <= 0
+    )
+      return;
     if (gamblers.length >= 10) return;
-    const next = [...gamblers, { id: makeId(), name: gamblerNameInput.trim(), inFor: Number(gamblerInInput) }];
+    const next = [
+      ...gamblers,
+      {
+        id: makeId(),
+        name: gamblerNameInput.trim(),
+        inFor: Number(gamblerInInput),
+      },
+    ];
     setGamblers(next);
     persist({ gamblers: next });
-    setGamblerNameInput(''); setGamblerInInput('');
+    setGamblerNameInput('');
+    setGamblerInInput('');
   }
 
   function removeGambler(id) {
-    const next = gamblers.filter(g => g.id !== id);
+    const next = gamblers.filter((g) => g.id !== id);
     setGamblers(next);
     persist({ gamblers: next });
   }
 
   function resetAll() {
-    if (!window.confirm('Reset hunt? This clears all bonuses, gamblers, and balances.')) return;
-    setStartBalance(''); setFinishBalance(''); setBonuses([]); setGamblers([]); setBannedSlots('');
+    if (
+      !window.confirm(
+        'Reset hunt? This clears all bonuses, gamblers, and balances.'
+      )
+    )
+      return;
+    setStartBalance('');
+    setFinishBalance('');
+    setBonuses([]);
+    setGamblers([]);
+    setBannedSlots('');
     localStorage.removeItem(LS_KEY);
   }
 
-  const totalStakes = useMemo(() => bonuses.reduce((s, b) => s + b.stake, 0), [bonuses]);
-  const totalWins = useMemo(() => bonuses.reduce((s, b) => s + b.win, 0), [bonuses]);
+  const totalStakes = useMemo(
+    () => bonuses.reduce((s, b) => s + b.stake, 0),
+    [bonuses]
+  );
+  const totalWins = useMemo(
+    () => bonuses.reduce((s, b) => s + b.win, 0),
+    [bonuses]
+  );
   const reqX = useMemo(() => {
     if (totalStakes === 0 || !startBalance) return null;
     return Number(startBalance) / totalStakes;
@@ -112,19 +174,31 @@ export default function HuntTracker() {
   }, [finishBalance, startBalance]);
 
   const wlMultiplier = useMemo(() => {
-    if (finishBalance === '' || !startBalance || Number(startBalance) === 0) return null;
+    if (finishBalance === '' || !startBalance || Number(startBalance) === 0)
+      return null;
     return Number(finishBalance) / Number(startBalance);
   }, [finishBalance, startBalance]);
 
-  const totalBuyIns = useMemo(() => gamblers.reduce((s, g) => s + g.inFor, 0), [gamblers]);
+  const totalBuyIns = useMemo(
+    () => gamblers.reduce((s, g) => s + g.inFor, 0),
+    [gamblers]
+  );
 
-  const gamblerRows = useMemo(() => gamblers.map(g => {
-    const pct = totalBuyIns > 0 ? (g.inFor / totalBuyIns) * 100 : 0;
-    const payout = finishBalance !== '' && totalBuyIns > 0 ? (pct / 100) * Number(finishBalance) : null;
-    return { ...g, pct, payout };
-  }), [gamblers, totalBuyIns, finishBalance]);
+  const gamblerRows = useMemo(
+    () =>
+      gamblers.map((g) => {
+        const pct = totalBuyIns > 0 ? (g.inFor / totalBuyIns) * 100 : 0;
+        const payout =
+          finishBalance !== '' && totalBuyIns > 0
+            ? (pct / 100) * Number(finishBalance)
+            : null;
+        return { ...g, pct, payout };
+      }),
+    [gamblers, totalBuyIns, finishBalance]
+  );
 
-  const inputCls = 'bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none placeholder-white/20';
+  const inputCls =
+    'bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none placeholder-white/20';
 
   return (
     <div className="space-y-6">
@@ -136,8 +210,12 @@ export default function HuntTracker() {
               <Target size={18} />
               Hunt Tracker
             </div>
-            <h2 className="text-3xl font-black tracking-tighter">Bonus Hunt Tracker</h2>
-            <p className="text-white/60">Log bonuses, track stats, split payouts among the squad.</p>
+            <h2 className="text-3xl font-black tracking-tighter">
+              Bonus Hunt Tracker
+            </h2>
+            <p className="text-white/60">
+              Log bonuses, track stats, split payouts among the squad.
+            </p>
           </div>
           <button
             onClick={resetAll}
@@ -150,10 +228,11 @@ export default function HuntTracker() {
 
         {/* Two-column layout */}
         <div className="grid lg:grid-cols-2 gap-6">
-
           {/* LEFT — Bonus List */}
           <div className="space-y-4">
-            <h3 className="text-sm font-bold text-white/70 uppercase tracking-widest">Bonus List</h3>
+            <h3 className="text-sm font-bold text-white/70 uppercase tracking-widest">
+              Bonus List
+            </h3>
 
             {/* Add bonus row */}
             <div className="p-4 bg-white/5 border border-white/10 rounded-lg space-y-3">
@@ -161,8 +240,8 @@ export default function HuntTracker() {
                 type="text"
                 placeholder="Slot name"
                 value={slotInput}
-                onChange={e => setSlotInput(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addBonus()}
+                onChange={(e) => setSlotInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addBonus()}
                 className={`w-full ${inputCls}`}
               />
               <div className="grid grid-cols-2 gap-2">
@@ -170,16 +249,16 @@ export default function HuntTracker() {
                   type="number"
                   placeholder="Stake ($)"
                   value={stakeInput}
-                  onChange={e => setStakeInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addBonus()}
+                  onChange={(e) => setStakeInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addBonus()}
                   className={inputCls}
                 />
                 <input
                   type="number"
                   placeholder="Win ($)"
                   value={winInput}
-                  onChange={e => setWinInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addBonus()}
+                  onChange={(e) => setWinInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addBonus()}
                   className={inputCls}
                 />
               </div>
@@ -194,7 +273,9 @@ export default function HuntTracker() {
 
             {/* Bonus table */}
             {bonuses.length === 0 ? (
-              <p className="text-center text-white/30 py-8 text-sm">No bonuses yet.</p>
+              <p className="text-center text-white/30 py-8 text-sm">
+                No bonuses yet.
+              </p>
             ) : (
               <div className="rounded-lg border border-white/10 overflow-hidden">
                 <table className="w-full text-sm">
@@ -208,14 +289,25 @@ export default function HuntTracker() {
                     </tr>
                   </thead>
                   <tbody>
-                    {bonuses.map(b => {
+                    {bonuses.map((b) => {
                       const x = b.stake > 0 ? b.win / b.stake : null;
                       return (
-                        <tr key={b.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                          <td className="px-3 py-2.5 font-medium text-white truncate max-w-[120px]">{b.slot}</td>
-                          <td className="px-3 py-2.5 text-right text-white/70">{fmt(b.stake)}</td>
-                          <td className="px-3 py-2.5 text-right text-white/70">{fmt(b.win)}</td>
-                          <td className={`px-3 py-2.5 text-right font-bold ${x != null && x >= (reqX ?? 0) ? 'text-emerald-400' : 'text-white/50'}`}>
+                        <tr
+                          key={b.id}
+                          className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                        >
+                          <td className="px-3 py-2.5 font-medium text-white truncate max-w-[120px]">
+                            {b.slot}
+                          </td>
+                          <td className="px-3 py-2.5 text-right text-white/70">
+                            {fmt(b.stake)}
+                          </td>
+                          <td className="px-3 py-2.5 text-right text-white/70">
+                            {fmt(b.win)}
+                          </td>
+                          <td
+                            className={`px-3 py-2.5 text-right font-bold ${x != null && x >= (reqX ?? 0) ? 'text-emerald-400' : 'text-white/50'}`}
+                          >
                             {x != null ? fmtX(x) : '—'}
                           </td>
                           <td className="px-2 py-2.5">
@@ -232,9 +324,15 @@ export default function HuntTracker() {
                   </tbody>
                   <tfoot>
                     <tr className="border-t border-white/10 text-white/50 text-xs">
-                      <td className="px-3 py-2 font-bold text-white/40">TOTALS</td>
-                      <td className="px-3 py-2 text-right font-bold text-white/60">{fmt(totalStakes)}</td>
-                      <td className="px-3 py-2 text-right font-bold text-white/60">{fmt(totalWins)}</td>
+                      <td className="px-3 py-2 font-bold text-white/40">
+                        TOTALS
+                      </td>
+                      <td className="px-3 py-2 text-right font-bold text-white/60">
+                        {fmt(totalStakes)}
+                      </td>
+                      <td className="px-3 py-2 text-right font-bold text-white/60">
+                        {fmt(totalWins)}
+                      </td>
                       <td colSpan={2} />
                     </tr>
                   </tfoot>
@@ -245,7 +343,6 @@ export default function HuntTracker() {
 
           {/* RIGHT — Stats & Split */}
           <div className="space-y-4">
-
             {/* Hunt Financials */}
             <div className="p-4 bg-white/5 border border-white/10 rounded-lg space-y-3">
               <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm mb-1">
@@ -255,22 +352,26 @@ export default function HuntTracker() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs text-white/50 mb-1">Start Balance</label>
+                  <label className="block text-xs text-white/50 mb-1">
+                    Start Balance
+                  </label>
                   <input
                     type="number"
                     placeholder="0.00"
                     value={startBalance}
-                    onChange={e => updateStart(e.target.value)}
+                    onChange={(e) => updateStart(e.target.value)}
                     className={`w-full ${inputCls}`}
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-white/50 mb-1">Finish Balance</label>
+                  <label className="block text-xs text-white/50 mb-1">
+                    Finish Balance
+                  </label>
                   <input
                     type="number"
                     placeholder="0.00"
                     value={finishBalance}
-                    onChange={e => updateFinish(e.target.value)}
+                    onChange={(e) => updateFinish(e.target.value)}
                     className={`w-full ${inputCls}`}
                   />
                 </div>
@@ -280,10 +381,18 @@ export default function HuntTracker() {
                 <StatCell
                   label="Profit"
                   value={
-                    profit == null ? '—' :
-                    <span className={profit >= 0 ? 'text-emerald-400' : 'text-red-400'}>
-                      {profit >= 0 ? '+' : ''}{fmt(profit)}
-                    </span>
+                    profit == null ? (
+                      '—'
+                    ) : (
+                      <span
+                        className={
+                          profit >= 0 ? 'text-emerald-400' : 'text-red-400'
+                        }
+                      >
+                        {profit >= 0 ? '+' : ''}
+                        {fmt(profit)}
+                      </span>
+                    )
                   }
                 />
                 <StatCell
@@ -292,12 +401,13 @@ export default function HuntTracker() {
                 />
                 <StatCell
                   label="W/L Multiplier"
-                  value={wlMultiplier != null ? fmtX(Math.round(wlMultiplier * 100) / 100) : '—'}
+                  value={
+                    wlMultiplier != null
+                      ? fmtX(Math.round(wlMultiplier * 100) / 100)
+                      : '—'
+                  }
                 />
-                <StatCell
-                  label="Total Wins"
-                  value={fmt(totalWins)}
-                />
+                <StatCell label="Total Wins" value={fmt(totalWins)} />
               </div>
             </div>
 
@@ -314,16 +424,16 @@ export default function HuntTracker() {
                   type="text"
                   placeholder="Name"
                   value={gamblerNameInput}
-                  onChange={e => setGamblerNameInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addGambler()}
+                  onChange={(e) => setGamblerNameInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addGambler()}
                   className={`flex-1 ${inputCls}`}
                 />
                 <input
                   type="number"
                   placeholder="In for ($)"
                   value={gamblerInInput}
-                  onChange={e => setGamblerInInput(e.target.value)}
-                  onKeyDown={e => e.key === 'Enter' && addGambler()}
+                  onChange={(e) => setGamblerInInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addGambler()}
                   className={`w-28 ${inputCls}`}
                 />
                 <button
@@ -336,7 +446,9 @@ export default function HuntTracker() {
               </div>
 
               {gamblers.length === 0 ? (
-                <p className="text-center text-white/30 py-4 text-sm">No gamblers added.</p>
+                <p className="text-center text-white/30 py-4 text-sm">
+                  No gamblers added.
+                </p>
               ) : (
                 <div className="rounded-lg border border-white/10 overflow-hidden">
                   <table className="w-full text-sm">
@@ -350,12 +462,23 @@ export default function HuntTracker() {
                       </tr>
                     </thead>
                     <tbody>
-                      {gamblerRows.map(g => (
-                        <tr key={g.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                          <td className="px-3 py-2.5 font-medium text-white">{g.name}</td>
-                          <td className="px-3 py-2.5 text-right text-white/70">{fmt(g.inFor)}</td>
-                          <td className="px-3 py-2.5 text-right text-purple-300 font-bold">{g.pct.toFixed(2)}%</td>
-                          <td className={`px-3 py-2.5 text-right font-bold ${g.payout != null ? (g.payout >= g.inFor ? 'text-emerald-400' : 'text-red-400') : 'text-white/30'}`}>
+                      {gamblerRows.map((g) => (
+                        <tr
+                          key={g.id}
+                          className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                        >
+                          <td className="px-3 py-2.5 font-medium text-white">
+                            {g.name}
+                          </td>
+                          <td className="px-3 py-2.5 text-right text-white/70">
+                            {fmt(g.inFor)}
+                          </td>
+                          <td className="px-3 py-2.5 text-right text-purple-300 font-bold">
+                            {g.pct.toFixed(2)}%
+                          </td>
+                          <td
+                            className={`px-3 py-2.5 text-right font-bold ${g.payout != null ? (g.payout >= g.inFor ? 'text-emerald-400' : 'text-red-400') : 'text-white/30'}`}
+                          >
                             {g.payout != null ? fmt(g.payout) : '—'}
                           </td>
                           <td className="px-2 py-2.5">
@@ -371,11 +494,19 @@ export default function HuntTracker() {
                     </tbody>
                     <tfoot>
                       <tr className="border-t border-white/10 text-xs">
-                        <td className="px-3 py-2 font-bold text-white/40">TOTAL</td>
-                        <td className="px-3 py-2 text-right font-bold text-white/60">{fmt(totalBuyIns)}</td>
-                        <td className="px-3 py-2 text-right font-bold text-white/60">100.00%</td>
+                        <td className="px-3 py-2 font-bold text-white/40">
+                          TOTAL
+                        </td>
                         <td className="px-3 py-2 text-right font-bold text-white/60">
-                          {finishBalance !== '' ? fmt(Number(finishBalance)) : '—'}
+                          {fmt(totalBuyIns)}
+                        </td>
+                        <td className="px-3 py-2 text-right font-bold text-white/60">
+                          100.00%
+                        </td>
+                        <td className="px-3 py-2 text-right font-bold text-white/60">
+                          {finishBalance !== ''
+                            ? fmt(Number(finishBalance))
+                            : '—'}
                         </td>
                         <td />
                       </tr>
@@ -394,7 +525,7 @@ export default function HuntTracker() {
               <textarea
                 placeholder="List slots to avoid (e.g. Gates of Olympus, Sweet Bonanza...)"
                 value={bannedSlots}
-                onChange={e => updateBanned(e.target.value)}
+                onChange={(e) => updateBanned(e.target.value)}
                 rows={3}
                 className={`w-full ${inputCls} resize-none`}
               />

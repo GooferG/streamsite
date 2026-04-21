@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import {
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  useLocation,
+} from 'react-router-dom';
 import Navigation from './components/Navigation';
 import GrainOverlay from './components/GrainOverlay';
 import TVStaticIntro from './components/TVStaticIntro';
@@ -44,7 +50,6 @@ function StreamingSiteContent() {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showTVIntro, setShowTVIntro] = useState(true);
-
 
   // Derive current page id from URL for nav highlighting
   const currentPage = location.pathname.split('/').filter(Boolean)[0] || 'home';
@@ -115,32 +120,48 @@ function StreamingSiteContent() {
     <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-emerald-950 to-purple-950 text-white">
       {showTVIntro && <TVStaticIntro />}
 
-<GrainOverlay />
+      <GrainOverlay />
 
-      <Navigation currentPage={currentPage} setPage={(id) => navigate(id === 'home' ? '/' : `/${id}`)} />
+      <Navigation
+        currentPage={currentPage}
+        setPage={(id) => navigate(id === 'home' ? '/' : `/${id}`)}
+      />
 
       <LiveIndicator isLive={isLive} streamData={streamData} />
 
-      <main className={`transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'}`}>
+      <main
+        className={`transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+      >
         <Routes>
-          <Route path="/" element={
-            <HomePage
-              setPage={(id) => navigate(id === 'home' ? '/' : `/${id}`)}
-              channelData={channelData}
-              isLive={isLive}
-              streamData={streamData}
-              loading={loading}
-              clips={clips}
-              videos={videos}
-            />
-          } />
+          <Route
+            path="/"
+            element={
+              <HomePage
+                setPage={(id) => navigate(id === 'home' ? '/' : `/${id}`)}
+                channelData={channelData}
+                isLive={isLive}
+                streamData={streamData}
+                loading={loading}
+                clips={clips}
+                videos={videos}
+              />
+            }
+          />
           <Route path="/schedule" element={<SchedulePage />} />
-          <Route path="/vods" element={<VodsPage videos={videos} clips={clips} loading={loading} />} />
+          <Route
+            path="/vods"
+            element={
+              <VodsPage videos={videos} clips={clips} loading={loading} />
+            }
+          />
           <Route path="/gear" element={<GearPage />} />
           <Route path="/gear-interactive" element={<GearInteractive />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/gamba" element={<GambaPage />}>
-            <Route index element={<Navigate to="/gamba/hunt-tracker" replace />} />
+            <Route
+              index
+              element={<Navigate to="/gamba/hunt-tracker" replace />}
+            />
             <Route path="wheel" element={null} />
             <Route path="equity" element={null} />
             <Route path="hunt" element={null} />
@@ -162,31 +183,70 @@ function StreamingSiteContent() {
 
       <style jsx>{`
         @keyframes grain {
-          0%, 100% { transform: translate(0, 0); }
-          10% { transform: translate(-5%, -10%); }
-          20% { transform: translate(-15%, 5%); }
-          30% { transform: translate(7%, -25%); }
-          40% { transform: translate(-5%, 25%); }
-          50% { transform: translate(-15%, 10%); }
-          60% { transform: translate(15%, 0%); }
-          70% { transform: translate(0%, 15%); }
-          80% { transform: translate(3%, 35%); }
-          90% { transform: translate(-10%, 10%); }
+          0%,
+          100% {
+            transform: translate(0, 0);
+          }
+          10% {
+            transform: translate(-5%, -10%);
+          }
+          20% {
+            transform: translate(-15%, 5%);
+          }
+          30% {
+            transform: translate(7%, -25%);
+          }
+          40% {
+            transform: translate(-5%, 25%);
+          }
+          50% {
+            transform: translate(-15%, 10%);
+          }
+          60% {
+            transform: translate(15%, 0%);
+          }
+          70% {
+            transform: translate(0%, 15%);
+          }
+          80% {
+            transform: translate(3%, 35%);
+          }
+          90% {
+            transform: translate(-10%, 10%);
+          }
         }
 
         @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
+          0%,
+          100% {
+            transform: translateY(0px);
+          }
+          50% {
+            transform: translateY(-20px);
+          }
         }
 
         @keyframes glow {
-          0%, 100% { opacity: 0.5; filter: blur(20px); }
-          50% { opacity: 0.8; filter: blur(30px); }
+          0%,
+          100% {
+            opacity: 0.5;
+            filter: blur(20px);
+          }
+          50% {
+            opacity: 0.8;
+            filter: blur(30px);
+          }
         }
 
         @keyframes slideUp {
-          from { transform: translateY(30px); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
+          from {
+            transform: translateY(30px);
+            opacity: 0;
+          }
+          to {
+            transform: translateY(0);
+            opacity: 1;
+          }
         }
       `}</style>
     </div>

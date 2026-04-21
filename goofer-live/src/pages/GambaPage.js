@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import BonusHuntsPage from './BonusHunts';
+import HuntTracker from '../components/HuntTracker';
 import {
   Wallet,
   Target,
@@ -236,48 +237,15 @@ export default function GambaPage() {
           {/* Tool Selection Buttons */}
           <div className="flex justify-center gap-4 pt-4 flex-wrap">
             <button
-              onClick={() => setActiveTool('wheel')}
+              onClick={() => setActiveTool('hunt-tracker')}
               className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
-                activeTool === 'wheel'
-                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
-                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
-              }`}
-            >
-              <Gamepad2 size={18} />
-              Game Wheel
-            </button>
-            <button
-              onClick={() => setActiveTool('equity')}
-              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
-                activeTool === 'equity'
-                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
-                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
-              }`}
-            >
-              <Users size={18} />
-              Equity Tracker
-            </button>
-            <button
-              onClick={() => setActiveTool('hunt')}
-              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
-                activeTool === 'hunt'
+                activeTool === 'hunt-tracker'
                   ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
                   : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
               }`}
             >
               <Target size={18} />
-              Bonus Hunt
-            </button>
-            <button
-              onClick={() => setActiveTool('suggest')}
-              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
-                activeTool === 'suggest'
-                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
-                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
-              }`}
-            >
-              <MessageSquarePlus size={18} />
-              Suggestions
+              Hunt Tracker
             </button>
             <button
               onClick={() => setActiveTool('bonus-hunts')}
@@ -290,416 +258,41 @@ export default function GambaPage() {
               <Target size={18} />
               Bonus Hunts
             </button>
+            <button
+              onClick={() => setActiveTool('wheel')}
+              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
+                activeTool === 'wheel'
+                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
+                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
+              }`}
+            >
+              <Gamepad2 size={18} />
+              Slot Picker
+            </button>
+            <button
+              onClick={() => setActiveTool('suggest')}
+              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
+                activeTool === 'suggest'
+                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
+                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
+              }`}
+            >
+              <MessageSquarePlus size={18} />
+              Suggestions
+            </button>
           </div>
         </header>
 
         <div className="space-y-6">
           <div className="space-y-6">
-            {/* Bonus Hunt Tracker */}
-            {activeTool === 'hunt' && (
-              <div className="p-8 bg-gradient-to-br from-emerald-900/20 to-purple-900/20 border border-emerald-500/20 rounded-xl backdrop-blur-sm">
-                <div className="flex items-start justify-between gap-4 mb-6">
-                  <div>
-                    <div className="flex items-center gap-2 text-emerald-400 font-bold mb-2">
-                      <Target size={18} />
-                      Bonus Hunt Tracker
-                    </div>
-                    <h2 className="text-3xl font-black tracking-tighter">
-                      Track Your Bonus Hunt
-                    </h2>
-                    <p className="text-white/60">
-                      Add bonuses, track costs, and see what percentage you need
-                      to break even or profit.
-                    </p>
-                  </div>
-                  <button
-                    onClick={resetHunt}
-                    className="flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60 transition-all"
-                  >
-                    <RefreshCcw size={14} />
-                    RESET
-                  </button>
-                </div>
-
-                {/* Hunt Details */}
-                <div className="grid md:grid-cols-2 gap-4 mb-6">
-                  <div>
-                    <label className="block text-sm text-white/60 mb-2">
-                      Hunt Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="e.g., Friday Night Hunt"
-                      value={huntName}
-                      onChange={(e) => setHuntName(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-white/60 mb-2">
-                      Starting Balance
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="0"
-                      value={startingBalance || ''}
-                      onChange={(e) =>
-                        setStartingBalance(Number(e.target.value) || 0)
-                      }
-                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
-                    />
-                  </div>
-                </div>
-
-                {/* Stats Cards */}
-                <div className="grid grid-cols-3 gap-4 mb-6">
-                  <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
-                    <p className="text-xs text-white/60 mb-1">Total Cost</p>
-                    <p className="text-2xl font-black text-white">
-                      ${totalBonusCost.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg">
-                    <p className="text-xs text-emerald-400 mb-1">Break Even</p>
-                    <p className="text-2xl font-black text-emerald-300">
-                      {breakEvenPercentage}%
-                    </p>
-                  </div>
-                  <div className="p-4 bg-purple-500/10 border border-purple-500/30 rounded-lg">
-                    <p className="text-xs text-purple-400 mb-1">Profit (20%)</p>
-                    <p className="text-2xl font-black text-purple-300">
-                      {profitPercentage}%
-                    </p>
-                  </div>
-                </div>
-
-                {/* Add Bonus Form */}
-                <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded-lg">
-                  <h3 className="text-sm font-bold text-white/70 mb-3">
-                    Add Bonus
-                  </h3>
-                  <div className="grid sm:grid-cols-3 gap-3">
-                    <input
-                      type="text"
-                      placeholder="Game name"
-                      value={bonusGameInput}
-                      onChange={(e) => setBonusGameInput(e.target.value)}
-                      className="sm:col-span-2 bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
-                    />
-                    <input
-                      type="number"
-                      placeholder="Cost"
-                      value={bonusCostInput}
-                      onChange={(e) => setBonusCostInput(e.target.value)}
-                      className="bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
-                    />
-                  </div>
-                  <button
-                    onClick={addBonus}
-                    className="w-full mt-3 px-4 py-3 rounded-lg bg-gradient-to-r from-emerald-500 to-purple-500 text-white font-bold hover:from-emerald-600 hover:to-purple-600 transition-all flex items-center justify-center gap-2"
-                  >
-                    <Plus size={18} />
-                    Add Bonus
-                  </button>
-                </div>
-
-                {/* Bonuses List */}
-                <div className="space-y-3">
-                  <h3 className="text-sm font-bold text-white/70">
-                    Bonuses ({bonuses.length})
-                  </h3>
-                  {bonuses.length === 0 ? (
-                    <div className="text-center py-8 text-white/50">
-                      No bonuses added yet. Add your first bonus above!
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {bonuses.map((bonus) => (
-                        <div
-                          key={bonus.id}
-                          className="p-4 bg-white/5 border border-white/10 rounded-lg flex items-center justify-between gap-4"
-                        >
-                          <div className="flex-1">
-                            <p className="font-bold text-white">{bonus.game}</p>
-                            <p className="text-sm text-white/60">
-                              Cost: ${bonus.cost.toLocaleString()}
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              placeholder="Result"
-                              value={bonus.result || ''}
-                              onChange={(e) =>
-                                updateBonusResult(bonus.id, e.target.value)
-                              }
-                              className="w-24 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-                            />
-                            <button
-                              onClick={() => removeBonus(bonus.id)}
-                              className="p-2 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all"
-                            >
-                              <X size={16} />
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-
-
-            {/* Equity Tracker Tool */}
-            {activeTool === 'equity' && (
-              <div className="space-y-6">
-                <div className="p-8 bg-gradient-to-br from-emerald-900/20 to-blue-900/20 border border-emerald-500/20 rounded-xl backdrop-blur-sm">
-                  <div className="flex items-start justify-between gap-4 mb-6">
-                    <div>
-                      <div className="flex items-center gap-2 text-emerald-400 font-bold mb-2">
-                        <Users size={18} />
-                        Equity Tracker
-                      </div>
-                      <h2 className="text-3xl font-black tracking-tighter">Hunt Equity</h2>
-                      <p className="text-white/60">Track who's in, their % of the pot, slot picks, and payout.</p>
-                    </div>
-                    <button
-                      onClick={resetEquity}
-                      className="flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg border border-white/10 text-white/60 hover:text-white hover:border-red-400/60 transition-all"
-                    >
-                      <RefreshCcw size={14} />
-                      RESET
-                    </button>
-                  </div>
-
-                  {/* Summary Stats */}
-                  <div className="grid grid-cols-3 gap-4 mb-6">
-                    <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
-                      <p className="text-xs text-white/50 mb-1">Total In</p>
-                      <p className="text-2xl font-black text-white">${equityTotalIn.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    </div>
-                    <div className="p-4 bg-white/5 border border-white/10 rounded-lg">
-                      <p className="text-xs text-white/50 mb-1">Hunt End</p>
-                      <input
-                        type="number"
-                        placeholder="0.00"
-                        value={equityHuntEnd || ''}
-                        onChange={(e) => setEquityHuntEnd(Number(e.target.value) || 0)}
-                        className="w-full bg-transparent text-2xl font-black text-yellow-300 focus:outline-none placeholder-white/20"
-                      />
-                    </div>
-                    <div className={`p-4 border rounded-lg ${equityHuntEnd - equityTotalIn >= 0 ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'}`}>
-                      <p className="text-xs text-white/50 mb-1">Net P/L</p>
-                      <p className={`text-2xl font-black ${equityHuntEnd - equityTotalIn >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
-                        {equityHuntEnd > 0
-                          ? `${equityHuntEnd - equityTotalIn >= 0 ? '+' : ''}$${(equityHuntEnd - equityTotalIn).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                          : '—'}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Add Player Form */}
-                  <div className="mb-6 p-4 bg-white/5 border border-white/10 rounded-lg space-y-3">
-                    <h3 className="text-sm font-bold text-white/70">Add Player</h3>
-                    <div className="grid sm:grid-cols-2 gap-3">
-                      <input
-                        type="text"
-                        placeholder="Name (e.g. Walker)"
-                        value={equityNameInput}
-                        onChange={(e) => setEquityNameInput(e.target.value)}
-                        className="bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
-                      />
-                      <input
-                        type="text"
-                        placeholder="Rainbet username"
-                        value={equityRainbetInput}
-                        onChange={(e) => setEquityRainbetInput(e.target.value)}
-                        className="bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
-                      />
-                    </div>
-                    <input
-                      type="number"
-                      placeholder="Amount in ($)"
-                      value={equityAmountInput}
-                      onChange={(e) => setEquityAmountInput(e.target.value)}
-                      className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
-                    />
-                    <div>
-                      <p className="text-xs text-white/50 mb-2">Slot Picks (up to 4)</p>
-                      <div className="grid grid-cols-2 gap-2">
-                        {equityPicksInput.map((pick, i) => (
-                          <input
-                            key={i}
-                            type="text"
-                            placeholder={`Pick ${i + 1}`}
-                            value={pick}
-                            onChange={(e) => {
-                              const updated = [...equityPicksInput];
-                              updated[i] = e.target.value;
-                              setEquityPicksInput(updated);
-                            }}
-                            className="bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-                          />
-                        ))}
-                      </div>
-                    </div>
-                    <button
-                      onClick={addEquityPlayer}
-                      className="w-full px-4 py-3 rounded-lg bg-gradient-to-r from-emerald-500 to-blue-500 text-white font-bold hover:from-emerald-600 hover:to-blue-600 transition-all flex items-center justify-center gap-2"
-                    >
-                      <Plus size={18} />
-                      Add Player
-                    </button>
-                  </div>
-
-                  {/* Players Table */}
-                  {equityPlayers.length === 0 ? (
-                    <p className="text-center text-white/40 py-8">No players added yet.</p>
-                  ) : (
-                    <div className="space-y-3">
-                      {equityPlayers.map((player) => {
-                        const pct = equityTotalIn > 0 ? (player.amount / equityTotalIn) * 100 : 0;
-                        const payout = equityHuntEnd > 0 ? (pct / 100) * equityHuntEnd : null;
-                        const pl = payout != null ? payout - player.amount : null;
-                        const isEditing = editingEquityId === player.id;
-
-                        return (
-                          <div key={player.id} className="p-4 bg-white/5 border border-white/10 rounded-lg">
-                            {isEditing ? (
-                              <div className="space-y-3">
-                                <div className="grid sm:grid-cols-2 gap-3">
-                                  <input
-                                    type="text"
-                                    value={editFields.name}
-                                    onChange={(e) => setEditFields(f => ({ ...f, name: e.target.value }))}
-                                    placeholder="Name"
-                                    className="bg-white/5 border border-emerald-400/40 rounded-lg px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-                                  />
-                                  <input
-                                    type="text"
-                                    value={editFields.rainbet}
-                                    onChange={(e) => setEditFields(f => ({ ...f, rainbet: e.target.value }))}
-                                    placeholder="Rainbet username"
-                                    className="bg-white/5 border border-emerald-400/40 rounded-lg px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-                                  />
-                                </div>
-                                <input
-                                  type="number"
-                                  value={editFields.amount}
-                                  onChange={(e) => setEditFields(f => ({ ...f, amount: e.target.value }))}
-                                  placeholder="Amount in ($)"
-                                  className="w-full bg-white/5 border border-emerald-400/40 rounded-lg px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-                                />
-                                <div className="grid grid-cols-2 gap-2">
-                                  {editFields.picks.map((pick, i) => (
-                                    <input
-                                      key={i}
-                                      type="text"
-                                      value={pick}
-                                      onChange={(e) => {
-                                        const updated = [...editFields.picks];
-                                        updated[i] = e.target.value;
-                                        setEditFields(f => ({ ...f, picks: updated }));
-                                      }}
-                                      placeholder={`Pick ${i + 1}`}
-                                      className="bg-white/5 border border-emerald-400/40 rounded-lg px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none"
-                                    />
-                                  ))}
-                                </div>
-                                <div className="flex gap-2">
-                                  <button
-                                    onClick={() => saveEdit(player.id)}
-                                    className="flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 font-bold text-sm transition-all"
-                                  >
-                                    <Check size={14} /> Save
-                                  </button>
-                                  <button
-                                    onClick={() => setEditingEquityId(null)}
-                                    className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-white/5 border border-white/10 text-white/50 hover:text-white text-sm transition-all"
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              </div>
-                            ) : (
-                              <>
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                      <p className="font-black text-white">{player.name}</p>
-                                      {player.rainbet && (
-                                        <span className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded px-2 py-0.5">
-                                          {player.rainbet}
-                                        </span>
-                                      )}
-                                    </div>
-                                    {player.picks.length > 0 && (
-                                      <div className="flex flex-wrap gap-1 mt-1">
-                                        {player.picks.map((pick, i) => (
-                                          <span key={i} className="text-xs text-white/50 bg-white/5 rounded px-2 py-0.5">{pick}</span>
-                                        ))}
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div className="flex gap-1.5 flex-shrink-0">
-                                    <button
-                                      onClick={() => startEdit(player)}
-                                      className="p-1.5 rounded-lg bg-white/5 border border-white/10 text-white/50 hover:text-white hover:border-emerald-400/60 transition-all"
-                                    >
-                                      <Pencil size={14} />
-                                    </button>
-                                    <button
-                                      onClick={() => removeEquityPlayer(player.id)}
-                                      className="p-1.5 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all"
-                                    >
-                                      <X size={14} />
-                                    </button>
-                                  </div>
-                                </div>
-                                <div className="grid grid-cols-4 gap-3 mt-3 pt-3 border-t border-white/5">
-                                  <div>
-                                    <p className="text-xs text-white/40">In For</p>
-                                    <p className="font-bold text-white text-sm">${player.amount.toLocaleString('en-US', { minimumFractionDigits: 2 })}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-white/40">Equity %</p>
-                                    <p className="font-bold text-purple-300 text-sm">{pct.toFixed(2)}%</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-white/40">Payout</p>
-                                    <p className="font-bold text-yellow-300 text-sm">{payout != null ? `$${payout.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}</p>
-                                  </div>
-                                  <div>
-                                    <p className="text-xs text-white/40">P/L</p>
-                                    <p className={`font-bold text-sm ${pl == null ? 'text-white/40' : pl >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
-                                      {pl != null ? `${pl >= 0 ? '+' : ''}$${pl.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '—'}
-                                    </p>
-                                  </div>
-                                </div>
-                                <div className="mt-2 h-1.5 w-full bg-white/10 rounded-full overflow-hidden">
-                                  <div
-                                    className="h-full bg-gradient-to-r from-emerald-500 to-blue-500 transition-all duration-500"
-                                    style={{ width: `${pct}%` }}
-                                  />
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
             {/* Suggestions Admin Tab — admin only */}
             {activeTool === 'suggest' && <SuggestAdminTab />}
 
             {/* Bonus Hunts */}
             {activeTool === 'bonus-hunts' && <BonusHuntsPage />}
+
+            {/* Hunt Tracker */}
+            {activeTool === 'hunt-tracker' && <HuntTracker />}
 
             {/* Slot Picker Tool */}
             {activeTool === 'wheel' && (
@@ -727,52 +320,6 @@ export default function GambaPage() {
 
           {/* Bottom info strip */}
           <div className="grid md:grid-cols-3 gap-6 pt-4 border-t border-white/10">
-            {activeTool === 'hunt' && (
-              <div className="p-6 bg-gradient-to-br from-blue-900/20 to-emerald-900/20 border border-blue-500/20 rounded-xl backdrop-blur-sm space-y-4">
-                <div className="flex items-center gap-2 text-blue-300 font-bold mb-2">
-                  <Wallet size={16} />
-                  Bankroll & Bet Sizing
-                </div>
-                <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs text-white/60 mb-2">Current Bankroll</label>
-                    <input
-                      type="number"
-                      value={bankroll}
-                      onChange={(e) => setBankroll(Number(e.target.value) || 0)}
-                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-blue-400 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-white/60 mb-2">Risk Profile</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {Object.entries(riskProfiles).map(([key, profile]) => (
-                        <button
-                          key={key}
-                          onClick={() => setRisk(key)}
-                          className={`px-3 py-2 rounded-lg text-xs font-bold transition-all ${
-                            risk === key
-                              ? 'bg-blue-500/30 border border-blue-400/60 text-blue-200'
-                              : 'bg-white/5 border border-white/10 text-white/60 hover:text-white'
-                          }`}
-                        >
-                          {profile.label}
-                        </button>
-                      ))}
-                    </div>
-                    <p className="text-xs text-white/50 mt-2">{riskProfiles[risk].note}</p>
-                  </div>
-                  <div className="pt-3 border-t border-white/10">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs text-white/60">Recommended Bet</span>
-                      <span className="text-xs text-white/40">bankroll ÷ {riskProfiles[risk].divisor.toLocaleString()}</span>
-                    </div>
-                    <div className="text-2xl font-black text-emerald-300">${recommendedBet.toLocaleString()}</div>
-                  </div>
-                </div>
-              </div>
-            )}
-
             <div className="p-6 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm space-y-4">
               <div className="flex items-center gap-2 text-emerald-300 font-bold">
                 <ShieldCheck size={16} />

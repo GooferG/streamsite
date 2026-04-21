@@ -140,12 +140,13 @@ function StreamingSiteContent() {
           <Route path="/gear-interactive" element={<GearInteractive />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/gamba" element={<GambaPage />}>
-            <Route index element={<Navigate to="/gamba/wheel" replace />} />
+            <Route index element={<Navigate to="/gamba/hunt-tracker" replace />} />
             <Route path="wheel" element={null} />
             <Route path="equity" element={null} />
             <Route path="hunt" element={null} />
             <Route path="suggest" element={null} />
             <Route path="bonus-hunts" element={null} />
+            <Route path="hunt-tracker" element={null} />
           </Route>
           <Route path="/gaming" element={<GamingPage />} />
           <Route path="/admin" element={<AdminLayout />}>

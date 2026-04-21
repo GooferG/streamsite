@@ -78,7 +78,7 @@ export default function SteamGames() {
                   alt={game.name}
                   className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
                   onError={(e) => {
-                    e.target.src = `https://via.placeholder.com/460x215/1a1a2e/ffffff?text=${encodeURIComponent(game.name)}`;
+                    e.target.style.display = 'none';
                   }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />

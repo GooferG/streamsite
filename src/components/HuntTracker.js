@@ -6,7 +6,6 @@ import {
   Target,
   Users,
   DollarSign,
-  TrendingUp,
   TrendingDown,
 } from 'lucide-react';
 
@@ -23,14 +22,6 @@ function load() {
 function save(state) {
   localStorage.setItem(LS_KEY, JSON.stringify(state));
 }
-
-const defaultState = {
-  startBalance: '',
-  finishBalance: '',
-  bonuses: [],
-  gamblers: [],
-  bannedSlots: '',
-};
 
 function makeId() {
   return typeof crypto !== 'undefined' && crypto.randomUUID

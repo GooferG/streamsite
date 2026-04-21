@@ -1,20 +1,12 @@
-import { useMemo, useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import BonusHuntsPage from './BonusHunts';
 import HuntTracker from '../components/HuntTracker';
 import {
-  Wallet,
   Target,
   Flame,
   ShieldCheck,
-  RefreshCcw,
   ExternalLink,
-  Plus,
-  X,
   Gamepad2,
-  Users,
-  Pencil,
-  Check,
   MessageSquarePlus,
 } from 'lucide-react';
 import SlotPicker from '../components/SlotPicker';
@@ -25,199 +17,6 @@ export default function GambaPage() {
   const location = useLocation();
   const activeTool = location.pathname.split('/')[2] || 'wheel';
   const setActiveTool = (tool) => navigate(`/gamba/${tool}`);
-  const riskProfiles = {
-    chill: {
-      label: 'Chill',
-      divisor: 5000,
-      note: 'Low variance, longer sessions',
-    },
-    steady: { label: 'Steady', divisor: 3000, note: 'Default stream pace' },
-    spicy: {
-      label: 'Spicy',
-      divisor: 1000,
-      note: 'High volatility — set strict stops',
-    },
-  };
-
-  // Initialize state from localStorage or use defaults
-  const [bankroll, setBankroll] = useState(() => {
-    const saved = localStorage.getItem('gamba_bankroll');
-    return saved ? Number(saved) : 750;
-  });
-
-  const [risk, setRisk] = useState(() => {
-    const saved = localStorage.getItem('gamba_risk');
-    return saved || 'steady';
-  });
-
-  const [stopLoss] = useState(() => {
-    const saved = localStorage.getItem('gamba_stopLoss');
-    return saved ? Number(saved) : 200;
-  });
-
-
-  // Equity Tracker state
-  const [equityPlayers, setEquityPlayers] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('equity_players')) || []; } catch { return []; }
-  });
-  const [equityHuntEnd, setEquityHuntEnd] = useState(() => {
-    const saved = localStorage.getItem('equity_hunt_end');
-    return saved ? Number(saved) : 0;
-  });
-  const [equityNameInput, setEquityNameInput] = useState('');
-  const [equityRainbetInput, setEquityRainbetInput] = useState('');
-  const [equityAmountInput, setEquityAmountInput] = useState('');
-  const [equityPicksInput, setEquityPicksInput] = useState(['', '', '', '']);
-
-  // Bonus Hunt state
-  const [huntName, setHuntName] = useState('');
-  const [startingBalance, setStartingBalance] = useState(0);
-  const [bonuses, setBonuses] = useState([]);
-  const [bonusGameInput, setBonusGameInput] = useState('');
-  const [bonusCostInput, setBonusCostInput] = useState('');
-
-  // Save to localStorage whenever values change
-  useEffect(() => {
-    localStorage.setItem('gamba_bankroll', bankroll.toString());
-  }, [bankroll]);
-
-  useEffect(() => {
-    localStorage.setItem('gamba_risk', risk);
-  }, [risk]);
-
-  const recommendedBet = useMemo(() => {
-    const divisor = riskProfiles[risk].divisor;
-    const raw = bankroll / divisor;
-    return Math.max(0.01, Math.round(raw * 100) / 100);
-  }, [bankroll, risk]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Bonus Hunt calculations
-  const totalBonusCost = useMemo(
-    () => bonuses.reduce((sum, bonus) => sum + bonus.cost, 0),
-    [bonuses]
-  );
-
-  const breakEvenPercentage = useMemo(() => {
-    if (totalBonusCost === 0) return 0;
-    return ((totalBonusCost / totalBonusCost) * 100).toFixed(1);
-  }, [totalBonusCost]);
-
-  const profitPercentage = useMemo(() => {
-    if (totalBonusCost === 0) return 0;
-    const profitTarget = totalBonusCost * 1.2; // 20% profit
-    return ((profitTarget / totalBonusCost) * 100).toFixed(1);
-  }, [totalBonusCost]);
-
-  // Bonus Hunt functions
-  const addBonus = () => {
-    if (
-      !bonusGameInput.trim() ||
-      !bonusCostInput ||
-      Number(bonusCostInput) <= 0
-    )
-      return;
-
-    const makeId = () =>
-      typeof crypto !== 'undefined' && crypto.randomUUID
-        ? crypto.randomUUID()
-        : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-    setBonuses((prev) => [
-      ...prev,
-      {
-        id: makeId(),
-        game: bonusGameInput,
-        cost: Number(bonusCostInput),
-        result: 0,
-        opened: false,
-      },
-    ]);
-    setBonusGameInput('');
-    setBonusCostInput('');
-  };
-
-  const removeBonus = (id) => {
-    setBonuses((prev) => prev.filter((bonus) => bonus.id !== id));
-  };
-
-  const updateBonusResult = (id, result) => {
-    setBonuses((prev) =>
-      prev.map((bonus) =>
-        bonus.id === id
-          ? { ...bonus, result: Number(result), opened: true }
-          : bonus
-      )
-    );
-  };
-
-  const resetHunt = () => {
-    setHuntName('');
-    setStartingBalance(0);
-    setBonuses([]);
-    setBonusGameInput('');
-    setBonusCostInput('');
-  };
-
-  // Equity Tracker persistence
-  useEffect(() => {
-    localStorage.setItem('equity_players', JSON.stringify(equityPlayers));
-  }, [equityPlayers]);
-
-  useEffect(() => {
-    localStorage.setItem('equity_hunt_end', equityHuntEnd.toString());
-  }, [equityHuntEnd]);
-
-  const equityTotalIn = useMemo(
-    () => equityPlayers.reduce((sum, p) => sum + p.amount, 0),
-    [equityPlayers]
-  );
-
-  const addEquityPlayer = () => {
-    if (!equityNameInput.trim() || !equityAmountInput || Number(equityAmountInput) <= 0) return;
-    setEquityPlayers(prev => [...prev, {
-      id: Date.now(),
-      name: equityNameInput.trim(),
-      rainbet: equityRainbetInput.trim(),
-      amount: Number(equityAmountInput),
-      picks: equityPicksInput.filter(p => p.trim()),
-    }]);
-    setEquityNameInput('');
-    setEquityRainbetInput('');
-    setEquityAmountInput('');
-    setEquityPicksInput(['', '', '', '']);
-  };
-
-  const removeEquityPlayer = (id) => setEquityPlayers(prev => prev.filter(p => p.id !== id));
-
-  const [editingEquityId, setEditingEquityId] = useState(null);
-  const [editFields, setEditFields] = useState({});
-
-  const startEdit = (player) => {
-    setEditingEquityId(player.id);
-    setEditFields({
-      name: player.name,
-      rainbet: player.rainbet,
-      amount: player.amount,
-      picks: [...player.picks, '', '', '', ''].slice(0, 4),
-    });
-  };
-
-  const saveEdit = (id) => {
-    if (!editFields.name?.trim() || !editFields.amount || Number(editFields.amount) <= 0) return;
-    setEquityPlayers(prev => prev.map(p => p.id === id ? {
-      ...p,
-      name: editFields.name.trim(),
-      rainbet: editFields.rainbet.trim(),
-      amount: Number(editFields.amount),
-      picks: editFields.picks.filter(pk => pk.trim()),
-    } : p));
-    setEditingEquityId(null);
-  };
-
-  const resetEquity = () => {
-    setEquityPlayers([]);
-    setEquityHuntEnd(0);
-  };
 
   return (
     <div className="pt-32 pb-24 px-6">
@@ -330,7 +129,7 @@ export default function GambaPage() {
               </p>
               <ul className="space-y-2 text-sm text-white/60">
                 <li>ƒ?› Cash-out when goal is hit twice in a row.</li>
-                <li>ƒ?› If down {stopLoss > 0 ? `$${stopLoss}` : 'your stop-loss'}, call it.</li>
+                <li>ƒ?› If down your stop-loss, call it.</li>
                 <li>ƒ?› Hydrate + 5 minute walk every 40 minutes.</li>
                 <li>ƒ?› No late-night redeposits.</li>
               </ul>

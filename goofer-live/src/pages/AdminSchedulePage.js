@@ -40,6 +40,9 @@ export default function AdminSchedulePage() {
     setSaving(true);
     setMessage(null);
     try {
+      const { auth } = await import('../config/firebase');
+      const user = auth.currentUser;
+      console.log('Auth user:', user?.email, '| uid:', user?.uid, '| token email:', (await user?.getIdTokenResult())?.claims?.email);
       await setDoc(doc(db, 'settings', 'schedule'), { schedule, updatedAt: new Date().toISOString() });
       setMessage({ type: 'success', text: 'Schedule saved successfully!' });
     } catch (error) {

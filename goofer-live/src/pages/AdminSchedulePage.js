@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Calendar, Clock, Gamepad2, AlertCircle, CheckCircle } from 'lucide-react';
+import GameAutocomplete from '../components/GameAutocomplete';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { SCHEDULE as DEFAULT_SCHEDULE } from '../constants';
@@ -131,10 +132,9 @@ export default function AdminSchedulePage() {
                 <label className="block text-sm text-white/60 mb-2">
                   <Gamepad2 size={13} className="inline mr-1" />Game Name (optional)
                 </label>
-                <input
-                  type="text"
+                <GameAutocomplete
                   value={day.gameName || ''}
-                  onChange={(e) => handleFieldChange(index, 'gameName', e.target.value)}
+                  onChange={(val) => handleFieldChange(index, 'gameName', val)}
                   placeholder="Fortnite, Valorant, etc."
                   className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
                 />

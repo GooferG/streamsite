@@ -51,7 +51,6 @@ export default function HuntTracker() {
 
   const [slotInput, setSlotInput] = useState('');
   const [stakeInput, setStakeInput] = useState('');
-  const [winInput, setWinInput] = useState('');
 
   const [gamblerNameInput, setGamblerNameInput] = useState('');
   const [gamblerInInput, setGamblerInInput] = useState('');
@@ -87,18 +86,25 @@ export default function HuntTracker() {
       id: makeId(),
       slot: slotInput.trim(),
       stake: Number(stakeInput) || 0,
-      win: Number(winInput) || 0,
+      win: 0,
     };
     const next = [...bonuses, bonus];
     setBonuses(next);
     persist({ bonuses: next });
     setSlotInput('');
     setStakeInput('');
-    setWinInput('');
   }
 
   function removeBonus(id) {
     const next = bonuses.filter((b) => b.id !== id);
+    setBonuses(next);
+    persist({ bonuses: next });
+  }
+
+  function updateBonusWin(id, val) {
+    const next = bonuses.map((b) =>
+      b.id === id ? { ...b, win: Number(val) || 0 } : b
+    );
     setBonuses(next);
     persist({ bonuses: next });
   }
@@ -235,24 +241,14 @@ export default function HuntTracker() {
                 onKeyDown={(e) => e.key === 'Enter' && addBonus()}
                 className={`w-full ${inputCls}`}
               />
-              <div className="grid grid-cols-2 gap-2">
-                <input
-                  type="number"
-                  placeholder="Stake ($)"
-                  value={stakeInput}
-                  onChange={(e) => setStakeInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && addBonus()}
-                  className={inputCls}
-                />
-                <input
-                  type="number"
-                  placeholder="Win ($)"
-                  value={winInput}
-                  onChange={(e) => setWinInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && addBonus()}
-                  className={inputCls}
-                />
-              </div>
+              <input
+                type="number"
+                placeholder="Stake ($)"
+                value={stakeInput}
+                onChange={(e) => setStakeInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addBonus()}
+                className={`w-full ${inputCls}`}
+              />
               <button
                 onClick={addBonus}
                 className="w-full px-4 py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-purple-500 text-white font-bold text-sm hover:from-emerald-600 hover:to-purple-600 transition-all flex items-center justify-center gap-2"
@@ -293,8 +289,14 @@ export default function HuntTracker() {
                           <td className="px-3 py-2.5 text-right text-white/70">
                             {fmt(b.stake)}
                           </td>
-                          <td className="px-3 py-2.5 text-right text-white/70">
-                            {fmt(b.win)}
+                          <td className="px-2 py-1.5 text-right">
+                            <input
+                              type="number"
+                              value={b.win || ''}
+                              onChange={(e) => updateBonusWin(b.id, e.target.value)}
+                              placeholder="—"
+                              className="w-24 bg-white/5 border border-white/10 rounded px-2 py-1 text-sm text-right focus:border-emerald-400 focus:outline-none placeholder-white/20"
+                            />
                           </td>
                           <td
                             className={`px-3 py-2.5 text-right font-bold ${x != null && x >= (reqX ?? 0) ? 'text-emerald-400' : 'text-white/50'}`}

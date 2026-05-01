@@ -7,6 +7,7 @@ import {
   Users,
   DollarSign,
   TrendingDown,
+  Download,
 } from 'lucide-react';
 import SlotAutocomplete from './SlotAutocomplete';
 
@@ -138,6 +139,180 @@ export default function HuntTracker() {
     persist({ gamblers: next });
   }
 
+  const [downloading, setDownloading] = useState(false);
+
+  function downloadImage() {
+    if (gamblers.length === 0) {
+      alert('Add at least one gambler before downloading.');
+      return;
+    }
+    setDownloading(true);
+    try {
+      const scale = 2;
+      const W = 720;
+      const padding = 40;
+      const headerH = 110;
+      const colHeaderH = 40;
+      const rowH = 48;
+      const totalRowH = 56;
+      const footerH = 50;
+      const H = headerH + colHeaderH + rowH * gamblers.length + totalRowH + footerH + padding * 2;
+
+      const canvas = document.createElement('canvas');
+      canvas.width = W * scale;
+      canvas.height = H * scale;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(scale, scale);
+
+      // Background
+      const bg = ctx.createLinearGradient(0, 0, W, H);
+      bg.addColorStop(0, '#0a0e1a');
+      bg.addColorStop(1, '#1a0e1f');
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+
+      // Card border
+      ctx.strokeStyle = 'rgba(168, 85, 247, 0.4)';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(padding / 2, padding / 2, W - padding, H - padding);
+
+      // Header
+      let y = padding + 10;
+      ctx.fillStyle = '#a855f7';
+      ctx.font = 'bold 14px system-ui, -apple-system, sans-serif';
+      ctx.fillText('GAMBLER SPLIT', padding, y);
+
+      y += 28;
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 32px system-ui, -apple-system, sans-serif';
+      ctx.fillText('Bonus Hunt Equity', padding, y);
+
+      y += 24;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.font = '13px system-ui, -apple-system, sans-serif';
+      const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+      ctx.fillText(dateStr, padding, y);
+
+      // Hunt totals (if any)
+      if (finishBalance !== '' && totalBuyIns > 0) {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+        ctx.font = 'bold 13px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(`Hunt End: ${fmt(Number(finishBalance))}`, W - padding, y);
+        ctx.textAlign = 'left';
+      }
+
+      // Column headers
+      y = padding + headerH;
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+      ctx.font = 'bold 11px system-ui, -apple-system, sans-serif';
+      const cols = {
+        name: padding,
+        inFor: W * 0.45,
+        pct: W * 0.65,
+        payout: W - padding,
+      };
+      ctx.fillText('NAME', cols.name, y);
+      ctx.textAlign = 'right';
+      ctx.fillText('IN FOR', cols.inFor, y);
+      ctx.fillText('%', cols.pct, y);
+      ctx.fillText('PAYOUT', cols.payout, y);
+      ctx.textAlign = 'left';
+
+      // Header underline
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(padding, y + 12);
+      ctx.lineTo(W - padding, y + 12);
+      ctx.stroke();
+
+      // Rows
+      y += colHeaderH;
+      gamblerRows.forEach((g, i) => {
+        const rowY = y + i * rowH;
+
+        // Alternating row bg
+        if (i % 2 === 0) {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+          ctx.fillRect(padding - 8, rowY - rowH + 12, W - padding * 2 + 16, rowH);
+        }
+
+        // Name
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 16px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(g.name, cols.name, rowY);
+
+        // In For
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.font = '15px system-ui, -apple-system, sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(fmt(g.inFor), cols.inFor, rowY);
+
+        // %
+        ctx.fillStyle = '#c084fc';
+        ctx.font = 'bold 15px system-ui, -apple-system, sans-serif';
+        ctx.fillText(`${g.pct.toFixed(2)}%`, cols.pct, rowY);
+
+        // Payout
+        if (g.payout != null) {
+          ctx.fillStyle = g.payout >= g.inFor ? '#34d399' : '#f87171';
+          ctx.font = 'bold 15px system-ui, -apple-system, sans-serif';
+          ctx.fillText(fmt(g.payout), cols.payout, rowY);
+        } else {
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+          ctx.font = '15px system-ui, -apple-system, sans-serif';
+          ctx.fillText('—', cols.payout, rowY);
+        }
+      });
+
+      // Total row
+      const totalY = y + gamblers.length * rowH + 12;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.beginPath();
+      ctx.moveTo(padding, totalY - 16);
+      ctx.lineTo(W - padding, totalY - 16);
+      ctx.stroke();
+
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+      ctx.font = 'bold 13px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText('TOTAL', cols.name, totalY + 16);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 16px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(fmt(totalBuyIns), cols.inFor, totalY + 16);
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+      ctx.fillText('100.00%', cols.pct, totalY + 16);
+      if (finishBalance !== '') {
+        ctx.fillStyle = '#fbbf24';
+        ctx.fillText(fmt(Number(finishBalance)), cols.payout, totalY + 16);
+      } else {
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
+        ctx.fillText('—', cols.payout, totalY + 16);
+      }
+
+      // Footer
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+      ctx.font = '11px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('goofer.tv · Bonus Hunt Tracker', W / 2, H - padding);
+
+      // Download
+      const link = document.createElement('a');
+      link.download = `gambler-split-${new Date().toISOString().slice(0, 10)}.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error('Render failed:', err);
+      alert('Failed to render image.');
+    } finally {
+      setDownloading(false);
+    }
+  }
+
   function resetAll() {
     if (
       !window.confirm(
@@ -215,13 +390,23 @@ export default function HuntTracker() {
               Log bonuses, track stats, split payouts among the squad.
             </p>
           </div>
-          <button
-            onClick={resetAll}
-            className="flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg border border-white/10 text-white/60 hover:text-white hover:border-red-400/60 transition-all"
-          >
-            <RefreshCcw size={14} />
-            RESET
-          </button>
+          <div className="flex items-center gap-2" data-html2canvas-ignore="true">
+            <button
+              onClick={downloadImage}
+              disabled={downloading}
+              className="flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg border border-emerald-500/30 text-emerald-300 hover:text-white hover:border-emerald-400 hover:bg-emerald-500/10 transition-all disabled:opacity-50"
+            >
+              <Download size={14} />
+              {downloading ? 'SAVING…' : 'DOWNLOAD'}
+            </button>
+            <button
+              onClick={resetAll}
+              className="flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg border border-white/10 text-white/60 hover:text-white hover:border-red-400/60 transition-all"
+            >
+              <RefreshCcw size={14} />
+              RESET
+            </button>
+          </div>
         </div>
 
         {/* Two-column layout */}

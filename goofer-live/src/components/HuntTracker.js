@@ -56,6 +56,7 @@ export default function HuntTracker() {
 
   const [gamblerNameInput, setGamblerNameInput] = useState('');
   const [gamblerInInput, setGamblerInInput] = useState('');
+  const [editingGamblerId, setEditingGamblerId] = useState(null);
 
   function persist(patch) {
     const next = {
@@ -135,6 +136,16 @@ export default function HuntTracker() {
 
   function removeGambler(id) {
     const next = gamblers.filter((g) => g.id !== id);
+    setGamblers(next);
+    persist({ gamblers: next });
+  }
+
+  function updateGamblerInFor(id, value) {
+    const num = value === '' ? 0 : Number(value);
+    if (Number.isNaN(num) || num < 0) return;
+    const next = gamblers.map((g) =>
+      g.id === id ? { ...g, inFor: num } : g
+    );
     setGamblers(next);
     persist({ gamblers: next });
   }
@@ -649,7 +660,33 @@ export default function HuntTracker() {
                             {g.name}
                           </td>
                           <td className="px-3 py-2.5 text-right text-white/70">
-                            {fmt(g.inFor)}
+                            {editingGamblerId === g.id ? (
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                autoFocus
+                                value={g.inFor}
+                                onChange={(e) =>
+                                  updateGamblerInFor(g.id, e.target.value)
+                                }
+                                onBlur={() => setEditingGamblerId(null)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter' || e.key === 'Escape')
+                                    setEditingGamblerId(null);
+                                }}
+                                className="w-24 bg-black/30 border border-purple-400/50 rounded px-2 py-1 text-right text-white/80 focus:outline-none focus:bg-black/40"
+                              />
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => setEditingGamblerId(g.id)}
+                                title="Click to edit"
+                                className="px-2 py-1 rounded text-right text-white/70 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+                              >
+                                {fmt(g.inFor)}
+                              </button>
+                            )}
                           </td>
                           <td className="px-3 py-2.5 text-right text-purple-300 font-bold">
                             {g.pct.toFixed(2)}%

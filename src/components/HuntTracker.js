@@ -8,6 +8,7 @@ import {
   DollarSign,
   TrendingDown,
 } from 'lucide-react';
+import SlotAutocomplete from './SlotAutocomplete';
 
 const LS_KEY = 'hunt_tracker';
 
@@ -233,13 +234,12 @@ export default function HuntTracker() {
 
             {/* Add bonus row */}
             <div className="p-4 bg-white/5 border border-white/10 rounded-lg space-y-3">
-              <input
-                type="text"
-                placeholder="Slot name"
+              <SlotAutocomplete
                 value={slotInput}
-                onChange={(e) => setSlotInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && addBonus()}
+                onChange={setSlotInput}
+                placeholder="Slot name"
                 className={`w-full ${inputCls}`}
+                onKeyDown={(e) => e.key === 'Enter' && addBonus()}
               />
               <input
                 type="number"

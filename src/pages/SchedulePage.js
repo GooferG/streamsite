@@ -186,6 +186,36 @@ function ScheduleRow({ item, coverUrl, isToday, isOff, isSpecial }) {
   );
 }
 
+function DarkWeekNotice() {
+  return (
+    <div className="border-t border-b border-white/8 py-16 sm:py-24">
+      <div className="flex flex-col items-center text-center gap-6">
+        <div className="w-24 h-32 sm:w-28 sm:h-36 overflow-hidden bg-zinc-card border border-white/8">
+          <StaticPattern />
+        </div>
+        <div className="flex items-center gap-2 text-[10px] font-bold tracking-eyebrow-lg text-white/40 font-mono">
+          <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
+          <span>OFF AIR</span>
+          <span className="text-white/15">·</span>
+          <span>SIGNAL DARK</span>
+        </div>
+        <h2
+          className="font-black leading-[0.9] tracking-[-0.03em] text-white-body"
+          style={{
+            fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+            fontSize: 'clamp(1.75rem, 5vw, 2.75rem)',
+          }}
+        >
+          No streams scheduled<br />this week.
+        </h2>
+        <p className="max-w-md text-sm sm:text-base text-white/50 leading-relaxed">
+          The tower is quiet. Check back soon — or follow on Twitch for live alerts when the signal returns.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function LoadingRow() {
   return (
     <div className="grid grid-cols-[64px_88px_1fr] sm:grid-cols-[80px_112px_1fr_auto] gap-4 sm:gap-6 items-center py-5 border-t border-white/8">
@@ -240,6 +270,10 @@ export default function SchedulePage() {
 
   const todayIndex = now.getDay();
   const isLoading = scheduleLoading || coversLoading;
+  const allDark =
+    !isLoading &&
+    orderedSchedule.length > 0 &&
+    orderedSchedule.every((item) => item.status === 'off');
 
   return (
     <div className="relative pt-32 pb-32 px-6 sm:px-10">
@@ -285,24 +319,28 @@ export default function SchedulePage() {
 
         {/* Schedule grid */}
         <section aria-label="Weekly schedule">
-          {isLoading
-            ? Array.from({ length: 7 }).map((_, i) => <LoadingRow key={i} />)
-            : orderedSchedule.map((item) => {
-                const isToday = DAY_INDEX[item.day] === todayIndex;
-                const isOff = item.status === 'off';
-                const isSpecial = item.status === 'special';
-                return (
-                  <ScheduleRow
-                    key={item.day}
-                    item={item}
-                    coverUrl={item.gameName ? gameCovers[item.gameName] : null}
-                    isToday={isToday}
-                    isOff={isOff}
-                    isSpecial={isSpecial}
-                  />
-                );
-              })}
-          <div className="border-t border-white/8" />
+          {isLoading ? (
+            Array.from({ length: 7 }).map((_, i) => <LoadingRow key={i} />)
+          ) : allDark ? (
+            <DarkWeekNotice />
+          ) : (
+            orderedSchedule.map((item) => {
+              const isToday = DAY_INDEX[item.day] === todayIndex;
+              const isOff = item.status === 'off';
+              const isSpecial = item.status === 'special';
+              return (
+                <ScheduleRow
+                  key={item.day}
+                  item={item}
+                  coverUrl={item.gameName ? gameCovers[item.gameName] : null}
+                  isToday={isToday}
+                  isOff={isOff}
+                  isSpecial={isSpecial}
+                />
+              );
+            })
+          )}
+          {!allDark && <div className="border-t border-white/8" />}
         </section>
 
         {/* Footer note — minimal, no card */}

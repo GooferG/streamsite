@@ -1,14 +1,130 @@
 import { useState, useEffect } from 'react';
-import { Gamepad2, LogOut, Send, Edit2, X } from 'lucide-react';
+import { LogOut, Send, Edit2, X, Check } from 'lucide-react';
 import {
-  doc, getDoc, setDoc, deleteDoc, serverTimestamp,
-  collection, onSnapshot, orderBy, query
+  doc,
+  getDoc,
+  setDoc,
+  deleteDoc,
+  serverTimestamp,
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
 } from 'firebase/firestore';
 import { Filter } from 'bad-words';
 import { db } from '../config/firebase';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 
 const filter = new Filter();
+
+const inputCls =
+  'w-full bg-zinc-broadcast/60 border border-white/10 px-4 py-3 text-sm text-white-body placeholder:text-white/25 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';
+
+function useNowTimestamp() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return now;
+}
+
+function formatTimecode(d) {
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
+}
+
+function StatusBar({ label, value, tone = 'emerald' }) {
+  const color =
+    tone === 'orange'
+      ? 'text-orange-admin bg-orange-admin'
+      : 'text-emerald-signal bg-emerald-signal';
+  return (
+    <div
+      className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
+      >
+      <span className={`inline-flex items-center gap-2 ${color.split(' ')[0]}`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${color.split(' ')[1]}`} />
+        <span>{label}</span>
+      </span>
+      {value && (
+        <>
+          <span className="text-white/15">·</span>
+          <span className="text-white/45">CHANNEL</span>
+          <span className="text-white/70 tracking-eyebrow-lg">{value}</span>
+        </>
+      )}
+    </div>
+  );
+}
+
+function SuggestionRow({ suggestion, index, isMine }) {
+  const highlighted = suggestion.status === 'highlighted';
+  const tape = String(index + 1).padStart(3, '0');
+
+  return (
+    <div
+      className={`grid grid-cols-[auto_1fr_auto] gap-3 items-center px-4 py-2.5 border-t transition-colors duration-150 ${
+        highlighted
+          ? 'border-emerald-signal/30 bg-emerald-signal/5'
+          : isMine
+            ? 'border-white/12 bg-zinc-card/30'
+            : 'border-white/8'
+      }`}
+    >
+      <div className="flex items-center gap-2.5">
+        <span
+          className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums ${
+            highlighted ? 'text-emerald-signal' : 'text-white/30'
+          } font-mono`}
+      >
+          #{tape}
+        </span>
+        {suggestion.profileImageUrl && (
+          <img
+            src={suggestion.profileImageUrl}
+            alt=""
+            className="w-7 h-7 rounded-full border border-white/15 flex-shrink-0"
+          />
+        )}
+      </div>
+
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 flex-wrap">
+          <p className="font-bold text-white-body text-sm leading-tight truncate">
+            {suggestion.gameName}
+          </p>
+          {isMine && (
+            <span
+              className="px-1.5 py-0.5 text-[9px] font-bold tracking-eyebrow-md text-white/55 border border-white/20 font-mono"
+      >
+              YOU
+            </span>
+          )}
+        </div>
+        <p
+          className="mt-0.5 text-[10px] tracking-eyebrow-sm uppercase text-white/40 truncate font-mono"
+      >
+          {suggestion.twitchName}
+          {suggestion.rainbetName ? (
+            <span className="text-emerald-signal/60"> · {suggestion.rainbetName}</span>
+          ) : null}
+        </p>
+      </div>
+
+      {highlighted && (
+        <span
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-bold tracking-eyebrow-md text-emerald-signal border border-emerald-signal/40 flex-shrink-0 font-mono"
+      >
+          <Check size={9} aria-hidden="true" />
+          PICKED
+        </span>
+      )}
+    </div>
+  );
+}
 
 export default function SuggestPage() {
   const { twitchUser, loading, loginWithTwitch, logout } = useTwitchAuth();
@@ -20,8 +136,8 @@ export default function SuggestPage() {
   const [error, setError] = useState('');
   const [editing, setEditing] = useState(false);
   const [allSuggestions, setAllSuggestions] = useState([]);
+  const now = useNowTimestamp();
 
-  // Load all suggestions in real-time
   useEffect(() => {
     const q = query(collection(db, 'suggestions'), orderBy('createdAt', 'desc'));
     const unsub = onSnapshot(q, (snap) => {
@@ -30,7 +146,6 @@ export default function SuggestPage() {
     return unsub;
   }, []);
 
-  // Load this viewer's existing suggestion
   useEffect(() => {
     if (!twitchUser) return;
     const ref = doc(db, 'suggestions', twitchUser.twitchId);
@@ -50,8 +165,10 @@ export default function SuggestPage() {
     setError('');
     const trimmed = gameName.trim();
     if (!trimmed) return setError('Game name is required.');
-    if (trimmed.length > 100) return setError('Game name must be 100 characters or less.');
-    if (filter.isProfane(trimmed)) return setError('That game name contains disallowed words. Please keep it clean.');
+    if (trimmed.length > 100)
+      return setError('Game name must be 100 characters or less.');
+    if (filter.isProfane(trimmed))
+      return setError('That game name contains disallowed words. Please keep it clean.');
 
     setSubmitting(true);
     try {
@@ -66,7 +183,11 @@ export default function SuggestPage() {
         createdAt: existing?.createdAt || serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      setExisting({ ...existing, gameName: trimmed, rainbetName: rainbetName.trim() || null });
+      setExisting({
+        ...existing,
+        gameName: trimmed,
+        rainbetName: rainbetName.trim() || null,
+      });
       setSubmitted(true);
       setEditing(false);
     } catch {
@@ -90,128 +211,256 @@ export default function SuggestPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-zinc-broadcast">
+        <span
+          className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
+      >
+          Tuning…
+        </span>
       </div>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-emerald-950 to-purple-950 text-white pt-16 pb-24 px-6">
-      <div className="max-w-md mx-auto space-y-6">
-        <div className="text-center space-y-2">
-          <div className="flex items-center justify-center gap-2 text-purple-400 font-bold">
-            <Gamepad2 size={20} />
-            GOOFER.TV
-          </div>
-          <h1 className="text-4xl font-black tracking-tighter">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-purple-400">
-              Suggest a Game
-            </span>
-          </h1>
-          <p className="text-white/60 text-sm">
-            Login with Twitch to suggest one slot or game for the stream.
-          </p>
-        </div>
+  const pickedCount = allSuggestions.filter(
+    (s) => s.status === 'highlighted'
+  ).length;
 
+  return (
+    <div className="relative min-h-screen pt-20 pb-20 px-4 sm:px-6 bg-zinc-broadcast text-white-body">
+      {/* Scanline overlay */}
+      <div
+        className="pointer-events-none fixed inset-0 opacity-[0.05] mix-blend-screen motion-reduce:hidden z-0"
+        aria-hidden="true"
+        style={{
+          backgroundImage:
+            'repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(255,255,255,0.6) 2px, rgba(255,255,255,0.6) 3px)',
+        }}
+      />
+
+      <div className="relative z-10 max-w-md mx-auto space-y-5">
+        {/* Slate header */}
+        <header>
+          <div
+            className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono"
+      >
+            <span className="inline-flex items-center gap-2">
+              <span className="relative flex w-1.5 h-1.5">
+                <span className="absolute inset-0 rounded-full bg-emerald-signal motion-safe:animate-ping opacity-50" />
+                <span className="relative w-1.5 h-1.5 rounded-full bg-emerald-signal" />
+              </span>
+              <span className="text-emerald-signal">VIEWER FEED</span>
+            </span>
+            <span className="text-white/20">·</span>
+            <span>GOOFER.TV</span>
+            <span className="text-white/20">·</span>
+            <span className="text-white/30 tabular-nums">{formatTimecode(now)}</span>
+          </div>
+
+          <h1
+            className="font-black leading-[0.85] tracking-[-0.035em] text-white-body"
+            style={{
+              fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+              fontSize: 'clamp(2.5rem, 9vw, 3.5rem)',
+            }}
+          >
+            <span className="block">Suggest a</span>
+            <span className="block text-emerald-signal">game.</span>
+          </h1>
+
+          <p className="mt-4 text-sm text-white/60 leading-relaxed">
+            Log in with Twitch to drop one slot or game onto the broadcast queue.
+          </p>
+        </header>
+
+        {/* Auth gate */}
         {!twitchUser ? (
-          <div className="p-8 bg-gradient-to-br from-purple-900/20 to-emerald-900/20 border border-purple-500/20 rounded-xl backdrop-blur-sm text-center space-y-4">
-            <p className="text-white/70">Login with your Twitch account to suggest a game.</p>
-            <button
-              onClick={loginWithTwitch}
-              className="w-full px-6 py-4 rounded-lg bg-[#9146FF] hover:bg-[#7d2ff7] text-white font-bold transition-all flex items-center justify-center gap-3"
-            >
-              <svg viewBox="0 0 24 24" className="w-5 h-5 fill-current" xmlns="http://www.w3.org/2000/svg">
-                <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/>
-              </svg>
-              Login with Twitch
-            </button>
+          <div className="border border-white/8 bg-zinc-card/30">
+            <StatusBar label="Access required" value="GG-VIEWER" tone="orange" />
+            <div className="px-5 py-6 space-y-4">
+              <p className="text-sm text-white/70">
+                Sign in with your Twitch account to drop a suggestion. One entry
+                per viewer.
+              </p>
+              <button
+                type="button"
+                onClick={loginWithTwitch}
+                className="w-full inline-flex items-center justify-center gap-3 px-4 py-3 bg-purple-gamba hover:bg-purple-bright text-white-body transition-colors duration-150"
+              >
+                <svg
+                  viewBox="0 0 24 24"
+                  className="w-4 h-4 fill-current"
+                  xmlns="http://www.w3.org/2000/svg"
+                  aria-hidden="true"
+                >
+                  <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z" />
+                </svg>
+                <span
+                  className="text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+                  Sign in with Twitch
+                </span>
+              </button>
+            </div>
           </div>
         ) : (
-          <div className="p-8 bg-gradient-to-br from-emerald-900/20 to-purple-900/20 border border-emerald-500/20 rounded-xl backdrop-blur-sm space-y-6">
-            {/* Viewer identity */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
+          <div className="border border-white/8 bg-zinc-card/30">
+            <StatusBar
+              label={submitted && !editing ? 'Logged' : 'Compose'}
+              value={twitchUser.displayName?.toUpperCase()}
+            />
+
+            {/* Viewer identity strip */}
+            <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-white/8 bg-zinc-broadcast/40">
+              <div className="flex items-center gap-3 min-w-0">
                 {twitchUser.profileImageUrl && (
-                  <img src={twitchUser.profileImageUrl} alt="" className="w-9 h-9 rounded-full border border-white/20" />
+                  <img
+                    src={twitchUser.profileImageUrl}
+                    alt=""
+                    className="w-9 h-9 rounded-full border border-white/15 flex-shrink-0"
+                  />
                 )}
-                <div>
-                  <p className="font-bold text-white">{twitchUser.displayName}</p>
-                  <p className="text-xs text-purple-400">Twitch</p>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-white-body truncate">
+                    {twitchUser.displayName}
+                  </p>
+                  <p
+                    className="text-[10px] font-bold tracking-eyebrow-md uppercase text-emerald-signal/80 font-mono"
+      >
+                    Twitch · Authenticated
+                  </p>
                 </div>
               </div>
-              <button onClick={logout} className="p-2 rounded-lg bg-white/5 border border-white/10 text-white/50 hover:text-white transition-all">
-                <LogOut size={16} />
+              <button
+                type="button"
+                onClick={logout}
+                className="p-2 border border-white/10 text-white/55 hover:text-white-body hover:border-white/25 transition-colors duration-150"
+                aria-label="Sign out"
+              >
+                <LogOut size={14} aria-hidden="true" />
               </button>
             </div>
 
+            {/* Body — submitted view */}
             {submitted && !editing ? (
-              <div className="space-y-3">
-                <div className="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-lg space-y-1">
-                  <p className="text-xs text-emerald-400 font-bold uppercase tracking-wide">Your suggestion</p>
-                  <p className="font-black text-white text-xl">{existing?.gameName}</p>
+              <div className="px-4 py-5 space-y-4">
+                <div>
+                  <p
+                    className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal mb-2 font-mono"
+      >
+                    Your entry
+                  </p>
+                  <p className="text-2xl font-black text-white-body tracking-tight leading-tight">
+                    {existing?.gameName}
+                  </p>
                   {existing?.rainbetName && (
-                    <p className="text-sm text-white/60">Rainbet: <span className="text-emerald-300">{existing.rainbetName}</span></p>
+                    <p
+                      className="mt-1 text-[11px] tracking-eyebrow uppercase text-white/45 font-mono"
+      >
+                      Rainbet ·{' '}
+                      <span className="text-emerald-signal/80">{existing.rainbetName}</span>
+                    </p>
                   )}
                 </div>
+
                 <div className="flex gap-2">
                   <button
+                    type="button"
                     onClick={() => setEditing(true)}
-                    className="flex-1 px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white/70 hover:text-white hover:border-emerald-400/60 transition-all flex items-center justify-center gap-2 font-bold"
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 border border-white/10 text-white/70 hover:text-white-body hover:border-emerald-signal/40 transition-colors duration-150"
                   >
-                    <Edit2 size={16} />
-                    Update
+                    <Edit2 size={13} aria-hidden="true" />
+                    <span
+                      className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+                      Update
+                    </span>
                   </button>
                   <button
+                    type="button"
                     onClick={handleDelete}
-                    className="px-4 py-3 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all flex items-center gap-2 font-bold"
+                    className="inline-flex items-center gap-2 px-3 py-2.5 border border-red-destructive/40 text-red-destructive hover:bg-red-destructive/10 transition-colors duration-150"
                   >
-                    <X size={16} />
-                    Remove
+                    <X size={13} aria-hidden="true" />
+                    <span
+                      className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+                      Remove
+                    </span>
                   </button>
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-sm text-white/60 mb-2">Game / Slot Name <span className="text-red-400">*</span></label>
+              <form onSubmit={handleSubmit} className="px-4 py-5 space-y-4">
+                <label className="block">
+                  <span
+                    className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono"
+      >
+                    Game / slot name{' '}
+                    <span className="text-emerald-signal">*</span>
+                  </span>
                   <input
                     type="text"
                     value={gameName}
                     onChange={(e) => setGameName(e.target.value)}
-                    placeholder="e.g. Gates of Olympus"
+                    placeholder="Gates of Olympus"
                     maxLength={100}
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
+                    className={inputCls}
                   />
-                </div>
-                <div>
-                  <label className="block text-sm text-white/60 mb-2">Rainbet Username <span className="text-white/40">(optional)</span></label>
+                </label>
+                <label className="block">
+                  <span
+                    className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono"
+      >
+                    Rainbet username{' '}
+                    <span className="text-white/30">· optional</span>
+                  </span>
                   <input
                     type="text"
                     value={rainbetName}
                     onChange={(e) => setRainbetName(e.target.value)}
                     placeholder="Your Rainbet username"
-                    className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
+                    className={inputCls}
                   />
-                </div>
-                {error && <p className="text-red-400 text-sm">{error}</p>}
-                <div className="flex gap-3">
+                </label>
+
+                {error && (
+                  <p
+                    className="text-[11px] font-bold tracking-eyebrow uppercase text-red-destructive font-mono"
+      >
+                    {error}
+                  </p>
+                )}
+
+                <div className="flex gap-2 pt-1">
                   {editing && (
                     <button
                       type="button"
-                      onClick={() => { setEditing(false); setGameName(existing?.gameName || ''); setRainbetName(existing?.rainbetName || ''); setError(''); }}
-                      className="flex-1 px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white transition-all font-bold"
+                      onClick={() => {
+                        setEditing(false);
+                        setGameName(existing?.gameName || '');
+                        setRainbetName(existing?.rainbetName || '');
+                        setError('');
+                      }}
+                      className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
                     >
-                      Cancel
+                      <span
+                        className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+                        Cancel
+                      </span>
                     </button>
                   )}
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-emerald-500 to-purple-500 text-white font-bold hover:from-emerald-600 hover:to-purple-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-50"
                   >
-                    <Send size={16} />
-                    {submitting ? 'Submitting...' : editing ? 'Update' : 'Submit'}
+                    <Send size={13} aria-hidden="true" />
+                    <span
+                      className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+                      {submitting ? 'Sending…' : editing ? 'Update' : 'Submit'}
+                    </span>
                   </button>
                 </div>
               </form>
@@ -219,40 +468,48 @@ export default function SuggestPage() {
           </div>
         )}
 
-        {/* All suggestions — read-only for everyone */}
+        {/* All suggestions feed */}
         {allSuggestions.length > 0 && (
-          <div className="space-y-3">
-            <h2 className="text-sm font-bold text-white/50 uppercase tracking-widest">
-              All Suggestions ({allSuggestions.length})
-            </h2>
-            {allSuggestions.map((s) => (
-              <div
-                key={s.id}
-                className={`p-4 rounded-lg border flex items-center gap-3 ${
-                  s.status === 'highlighted'
-                    ? 'bg-emerald-500/10 border-emerald-500/30'
-                    : 'bg-white/5 border-white/10'
-                }`}
-              >
-                {s.profileImageUrl && (
-                  <img src={s.profileImageUrl} alt="" className="w-8 h-8 rounded-full border border-white/20 flex-shrink-0" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <p className="font-black text-white truncate">{s.gameName}</p>
-                    {s.status === 'highlighted' && (
-                      <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded px-2 py-0.5">PICKED</span>
-                    )}
-                  </div>
-                  <p className="text-xs text-white/50 truncate">
-                    {s.twitchName}
-                    {s.rainbetName ? <span className="text-emerald-400/70"> · {s.rainbetName}</span> : null}
-                  </p>
-                </div>
-              </div>
-            ))}
+          <div className="border border-white/8 bg-zinc-card/30">
+            <div
+              className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
+      >
+              <span className="text-white/55">Queue</span>
+              <span className="text-white/15">·</span>
+              <span className="text-white/45">TOTAL</span>
+              <span className="text-white/70 tabular-nums tracking-eyebrow-lg">
+                {String(allSuggestions.length).padStart(3, '0')}
+              </span>
+              <span className="text-white/15">·</span>
+              <span className="text-white/45">PICKED</span>
+              <span className="text-emerald-signal tabular-nums tracking-eyebrow-lg">
+                {String(pickedCount).padStart(3, '0')}
+              </span>
+            </div>
+            <div>
+              {allSuggestions.map((s, i) => (
+                <SuggestionRow
+                  key={s.id}
+                  suggestion={s}
+                  index={i}
+                  isMine={twitchUser && s.twitchId === twitchUser.twitchId}
+                />
+              ))}
+              <div className="border-t border-white/8" />
+            </div>
           </div>
         )}
+
+        {/* Footer */}
+        <footer
+          className="pt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[10px] uppercase tracking-eyebrow-lg text-white/30 font-mono"
+      >
+          <span>END OF FEED</span>
+          <span className="text-white/15">·</span>
+          <span className="text-emerald-signal/70 tabular-nums">
+            {formatTimecode(now)}
+          </span>
+        </footer>
       </div>
     </div>
   );

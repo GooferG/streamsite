@@ -4,8 +4,53 @@ module.exports = {
     "./src/**/*.{js,jsx,ts,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      colors: {
+        'emerald-signal': '#10b981',
+        'emerald-bright': '#34d399',
+        'emerald-pale': '#a7f3d0',
+        'emerald-haze': '#064e3b',
+        'purple-gamba': '#a855f7',
+        'purple-bright': '#c084fc',
+        'purple-haze': '#581c87',
+        'orange-admin': '#f97316',
+        'orange-bright': '#fb923c',
+        'red-destructive': '#ef4444',
+        'zinc-broadcast': '#09090b',
+        'zinc-card': '#18181b',
+        'zinc-elevated': '#27272a',
+        'white-body': '#fafafa',
+        'white-muted': '#a1a1aa',
+      },
+      fontFamily: {
+        mono: ['source-code-pro', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+      },
+      letterSpacing: {
+        'eyebrow-xs': '0.15em',
+        'eyebrow-sm': '0.18em',
+        'eyebrow': '0.22em',
+        'eyebrow-md': '0.28em',
+        'eyebrow-lg': '0.32em',
+      },
+      keyframes: {
+        grain: {
+          '0%, 100%': { transform: 'translate(0, 0)' },
+          '10%': { transform: 'translate(-5%, -10%)' },
+          '20%': { transform: 'translate(-15%, 5%)' },
+          '30%': { transform: 'translate(7%, -25%)' },
+          '40%': { transform: 'translate(-5%, 25%)' },
+          '50%': { transform: 'translate(-15%, 10%)' },
+          '60%': { transform: 'translate(15%, 0%)' },
+          '70%': { transform: 'translate(0%, 15%)' },
+          '80%': { transform: 'translate(3%, 35%)' },
+          '90%': { transform: 'translate(-10%, 10%)' },
+        },
+        glow: {
+          '0%, 100%': { opacity: '0.5', filter: 'blur(20px)' },
+          '50%': { opacity: '0.8', filter: 'blur(30px)' },
+        },
+      },
+    },
   },
   plugins: [],
 }
-

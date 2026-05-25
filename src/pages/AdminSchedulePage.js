@@ -1,11 +1,120 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Calendar, Clock, Gamepad2, AlertCircle, CheckCircle } from 'lucide-react';
+import {
+  Save,
+  Clock,
+  Gamepad2,
+  AlertCircle,
+  CheckCircle,
+  RefreshCcw,
+} from 'lucide-react';
 import GameAutocomplete from '../components/GameAutocomplete';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { SCHEDULE as DEFAULT_SCHEDULE } from '../constants';
 
 const STATUS_OPTIONS = ['on', 'off', 'special', 'regular'];
+
+const inputCls =
+  'w-full bg-zinc-broadcast/60 border border-white/10 px-3 py-2.5 text-sm text-white-body placeholder:text-white/25 focus:border-orange-admin/70 focus:outline-none transition-colors duration-150';
+
+const STATUS_ACCENT = {
+  regular: { dot: 'bg-emerald-signal', text: 'text-emerald-signal', label: 'REGULAR' },
+  on: { dot: 'bg-emerald-signal', text: 'text-emerald-signal', label: 'ON' },
+  special: { dot: 'bg-purple-gamba', text: 'text-purple-bright', label: 'SPECIAL' },
+  off: { dot: 'bg-white/30', text: 'text-white/45', label: 'DARK' },
+};
+
+function FieldLabel({ icon: Icon, children, code }) {
+  return (
+    <span
+      className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-eyebrow-md text-white/50 mb-1.5 font-mono"
+      >
+      {code && (
+        <span className="text-orange-admin tabular-nums">{code}</span>
+      )}
+      {Icon && <Icon size={11} aria-hidden="true" className="opacity-80" />}
+      <span>{children}</span>
+    </span>
+  );
+}
+
+function DayPanel({ day, index, onChange }) {
+  const accent = STATUS_ACCENT[day.status] || STATUS_ACCENT.regular;
+  const dayCode = String(index + 1).padStart(2, '0');
+
+  return (
+    <div className="border border-white/8 bg-zinc-card/30">
+      {/* Day header strip */}
+      <div
+        className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
+      >
+        <span className={`inline-flex items-center gap-2 ${accent.text}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${accent.dot}`} />
+          <span>{accent.label}</span>
+        </span>
+        <span className="text-white/15">·</span>
+        <span className="text-white/45">DAY</span>
+        <span className="text-white/70 tabular-nums tracking-eyebrow-lg">
+          {dayCode}
+        </span>
+        <span className="ml-auto text-white-body text-sm font-bold tracking-tight tabular-nums">
+          {day.day}
+        </span>
+      </div>
+
+      {/* Fields */}
+      <div className="grid md:grid-cols-2 gap-4 px-4 py-4">
+        <label className="block">
+          <FieldLabel icon={Clock} code="01">
+            Time
+          </FieldLabel>
+          <input
+            type="text"
+            value={day.time}
+            onChange={(e) => onChange(index, 'time', e.target.value)}
+            placeholder="7:00 PM EST"
+            className={inputCls}
+          />
+        </label>
+        <label className="block">
+          <FieldLabel code="02">Status</FieldLabel>
+          <select
+            value={day.status}
+            onChange={(e) => onChange(index, 'status', e.target.value)}
+            className={inputCls}
+          >
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s} value={s}>
+                {s.charAt(0).toUpperCase() + s.slice(1)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="block">
+          <FieldLabel code="03">Content description</FieldLabel>
+          <input
+            type="text"
+            value={day.content}
+            onChange={(e) => onChange(index, 'content', e.target.value)}
+            placeholder="Gaming, Gambling, Just Chatting"
+            className={inputCls}
+          />
+        </label>
+        <label className="block">
+          <FieldLabel icon={Gamepad2} code="04">
+            Game name · optional
+          </FieldLabel>
+          <GameAutocomplete
+            value={day.gameName || ''}
+            onChange={(val) => onChange(index, 'gameName', val)}
+            placeholder="Fortnite, Valorant…"
+            className={inputCls}
+          />
+        </label>
+      </div>
+    </div>
+  );
+}
 
 export default function AdminSchedulePage() {
   const [schedule, setSchedule] = useState([]);
@@ -18,10 +127,14 @@ export default function AdminSchedulePage() {
       try {
         const docRef = doc(db, 'settings', 'schedule');
         const docSnap = await getDoc(docRef);
-        setSchedule(docSnap.exists() ? (docSnap.data().schedule || DEFAULT_SCHEDULE) : DEFAULT_SCHEDULE);
+        setSchedule(
+          docSnap.exists()
+            ? docSnap.data().schedule || DEFAULT_SCHEDULE
+            : DEFAULT_SCHEDULE
+        );
       } catch (error) {
         console.error('Error loading schedule:', error);
-        setMessage({ type: 'error', text: 'Failed to load schedule' });
+        setMessage({ type: 'error', text: 'Failed to load schedule.' });
         setSchedule(DEFAULT_SCHEDULE);
       } finally {
         setLoading(false);
@@ -40,11 +153,14 @@ export default function AdminSchedulePage() {
     setSaving(true);
     setMessage(null);
     try {
-      await setDoc(doc(db, 'settings', 'schedule'), { schedule, updatedAt: new Date().toISOString() });
-      setMessage({ type: 'success', text: 'Schedule saved successfully!' });
+      await setDoc(doc(db, 'settings', 'schedule'), {
+        schedule,
+        updatedAt: new Date().toISOString(),
+      });
+      setMessage({ type: 'success', text: 'Schedule saved.' });
     } catch (error) {
       console.error('Error saving schedule:', error);
-      setMessage({ type: 'error', text: 'Failed to save schedule' });
+      setMessage({ type: 'error', text: 'Failed to save schedule.' });
     } finally {
       setSaving(false);
     }
@@ -52,106 +168,136 @@ export default function AdminSchedulePage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-10 h-10 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
+      <div className="p-8 max-w-4xl mx-auto">
+        <div className="border border-white/8 bg-zinc-card/30 py-16 flex flex-col items-center gap-3">
+          <RefreshCcw
+            size={20}
+            className="text-white/40 animate-spin"
+            aria-hidden="true"
+          />
+          <p
+            className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
+      >
+            Loading schedule…
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm mb-2">
-          <Calendar size={16} />
-          SCHEDULE
-        </div>
-        <h1 className="text-4xl font-black tracking-tighter">
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-purple-400">
-            Stream Schedule
+    <div className="p-6 sm:p-8 max-w-4xl mx-auto">
+      {/* Slate header */}
+      <header className="mb-8">
+        <div
+          className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono"
+      >
+          <span className="inline-flex items-center gap-2 text-orange-admin">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
+            <span>PROGRAMMING DESK</span>
           </span>
-        </h1>
-        <p className="text-white/50 mt-1">Changes reflect on the public schedule page immediately.</p>
-      </div>
+          <span className="text-white/20">·</span>
+          <span>MODULE</span>
+          <span className="text-white/70 tracking-eyebrow-lg">SCH</span>
+          <span className="text-white/20">·</span>
+          <span className="text-white/30 tabular-nums">
+            {String(schedule.length).padStart(2, '0')} DAYS
+          </span>
+        </div>
 
+        <h1
+          className="font-black leading-[0.85] tracking-[-0.035em] text-white-body"
+          style={{
+            fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+            fontSize: 'clamp(2.25rem, 6vw, 3.25rem)',
+          }}
+        >
+          <span className="block">Stream</span>
+          <span className="block text-orange-admin">schedule.</span>
+        </h1>
+
+        <p className="mt-4 text-sm text-white/55 max-w-md leading-relaxed">
+          Changes go live on the public schedule page immediately on save.
+        </p>
+      </header>
+
+      {/* Message */}
       {message && (
-        <div className={`mb-6 p-4 rounded-lg border flex items-center gap-3 ${
-          message.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30' : 'bg-red-500/10 border-red-500/30'
-        }`}>
-          {message.type === 'success'
-            ? <CheckCircle size={18} className="text-emerald-400 flex-shrink-0" />
-            : <AlertCircle size={18} className="text-red-400 flex-shrink-0" />}
-          <p className={`text-sm ${message.type === 'success' ? 'text-emerald-200' : 'text-red-200'}`}>
-            {message.text}
-          </p>
+        <div
+          className={`mb-6 flex items-center gap-3 px-4 py-3 border ${
+            message.type === 'success'
+              ? 'border-emerald-signal/40 bg-emerald-signal/5'
+              : 'border-red-destructive/40 bg-red-destructive/5'
+          }`}
+          role="status"
+        >
+          {message.type === 'success' ? (
+            <CheckCircle
+              size={16}
+              className="text-emerald-signal flex-shrink-0"
+              aria-hidden="true"
+            />
+          ) : (
+            <AlertCircle
+              size={16}
+              className="text-red-destructive flex-shrink-0"
+              aria-hidden="true"
+            />
+          )}
+          <div className="min-w-0">
+            <div
+              className={`text-[10px] font-bold tracking-eyebrow-md uppercase mb-0.5 ${
+                message.type === 'success'
+                  ? 'text-emerald-signal'
+                  : 'text-red-destructive/80'
+              }`}
+              
+            >
+              {message.type === 'success' ? 'Saved' : 'Save failed'}
+            </div>
+            <p className="text-sm text-white/80">{message.text}</p>
+          </div>
         </div>
       )}
 
+      {/* Day panels */}
       <div className="space-y-4 mb-8">
         {schedule.map((day, index) => (
-          <div key={day.day} className="p-6 bg-gradient-to-br from-emerald-900/20 to-purple-900/20 border border-emerald-500/20 rounded-xl backdrop-blur-sm">
-            <div className="flex items-center gap-2 mb-4">
-              <Calendar size={18} className="text-emerald-400" />
-              <h2 className="text-xl font-black tracking-tight">{day.day}</h2>
-            </div>
-            <div className="grid md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-white/60 mb-2">
-                  <Clock size={13} className="inline mr-1" />Time
-                </label>
-                <input
-                  type="text"
-                  value={day.time}
-                  onChange={(e) => handleFieldChange(index, 'time', e.target.value)}
-                  placeholder="7:00 PM EST"
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-white/60 mb-2">Status</label>
-                <select
-                  value={day.status}
-                  onChange={(e) => handleFieldChange(index, 'status', e.target.value)}
-                  className="w-full bg-zinc-900 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
-                >
-                  {STATUS_OPTIONS.map((s) => (
-                    <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm text-white/60 mb-2">Content Description</label>
-                <input
-                  type="text"
-                  value={day.content}
-                  onChange={(e) => handleFieldChange(index, 'content', e.target.value)}
-                  placeholder="Gaming, Gambling, Just Chatting"
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-white/60 mb-2">
-                  <Gamepad2 size={13} className="inline mr-1" />Game Name (optional)
-                </label>
-                <GameAutocomplete
-                  value={day.gameName || ''}
-                  onChange={(val) => handleFieldChange(index, 'gameName', val)}
-                  placeholder="Fortnite, Valorant, etc."
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
-                />
-              </div>
-            </div>
-          </div>
+          <DayPanel
+            key={day.day}
+            day={day}
+            index={index}
+            onChange={handleFieldChange}
+          />
         ))}
       </div>
 
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="w-full px-6 py-4 rounded-lg bg-gradient-to-r from-emerald-500 to-purple-500 text-white font-bold hover:from-emerald-600 hover:to-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+      {/* Save bar */}
+      <div className="border border-white/8 bg-zinc-card/30">
+        <div
+          className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
       >
-        <Save size={20} />
-        {saving ? 'Saving...' : 'Save Schedule'}
-      </button>
+          <span className="inline-flex items-center gap-2 text-orange-admin">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
+            <span>Commit changes</span>
+          </span>
+        </div>
+        <div className="px-4 py-4">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={saving}
+            className="w-full inline-flex items-center justify-center gap-3 px-6 py-3 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Save size={16} aria-hidden="true" />
+            <span
+              className="text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+              {saving ? 'Saving…' : 'Save schedule'}
+            </span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

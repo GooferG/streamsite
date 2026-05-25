@@ -29,7 +29,6 @@ const ALL_SLOTS = rawSlots.map((g) => ({
   progressive: Boolean(g.progressive),
 }));
 
-// Unique sorted provider list derived from the database
 const ALL_PROVIDERS = Array.from(
   new Map(
     ALL_SLOTS.map((g) => [
@@ -39,34 +38,47 @@ const ALL_PROVIDERS = Array.from(
   ).values()
 ).sort((a, b) => a.name.localeCompare(b.name));
 
-// ─── Volatility badge ────────────────────────────────────────────────────────
-function VolatilityBadge({ value }) {
-  if (!value) return null;
+// ─── Mono badge primitives ───────────────────────────────────────────────────
+function MonoBadge({ children, tone = 'neutral' }) {
   const styles = {
-    high: 'bg-red-500/20 border-red-500/30 text-red-300',
-    medium: 'bg-yellow-500/20 border-yellow-500/30 text-yellow-300',
-    low: 'bg-blue-500/20 border-blue-500/30 text-blue-300',
+    emerald: 'border-emerald-signal/50 text-emerald-signal',
+    purple: 'border-purple-gamba/50 text-purple-bright',
+    orange: 'border-orange-admin/50 text-orange-admin',
+    red: 'border-red-destructive/50 text-red-destructive',
+    yellow: 'border-yellow-500/50 text-yellow-400',
+    neutral: 'border-white/20 text-white/65',
   };
-  const cls =
-    styles[value?.toLowerCase()] ?? 'bg-white/10 border-white/20 text-white/60';
   return (
     <span
-      className={`px-2 py-0.5 border rounded text-xs font-bold capitalize ${cls}`}
-    >
-      {value}
+      className={`inline-flex items-center gap-1 px-1.5 py-0.5 border text-[10px] font-bold tracking-eyebrow uppercase ${styles[tone]} font-mono`}
+      >
+      {children}
     </span>
   );
 }
 
-// ─── Slot image with fallback ─────────────────────────────────────────────────
+function VolatilityBadge({ value }) {
+  if (!value) return null;
+  const tone =
+    value?.toLowerCase() === 'high'
+      ? 'red'
+      : value?.toLowerCase() === 'medium'
+        ? 'yellow'
+        : value?.toLowerCase() === 'low'
+          ? 'neutral'
+          : 'neutral';
+  return <MonoBadge tone={tone}>{value}</MonoBadge>;
+}
+
+// ─── Slot image with fallback ────────────────────────────────────────────────
 function SlotImage({ src, alt, className }) {
   const [errored, setErrored] = useState(false);
   if (!src || errored) {
     return (
       <div
-        className={`flex items-center justify-center bg-gradient-to-br from-white/5 to-white/10 ${className}`}
+        className={`flex items-center justify-center bg-zinc-broadcast/60 border border-white/8 ${className}`}
       >
-        <ImageOff size={24} className="text-white/20" />
+        <ImageOff size={20} className="text-white/20" aria-hidden="true" />
       </div>
     );
   }
@@ -86,7 +98,7 @@ export default function SlotPicker() {
   const [activeTab, setActiveTab] = useState('search');
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <style>{`
         @keyframes shimmer {
           0%   { background-position: -200% 0; }
@@ -101,39 +113,72 @@ export default function SlotPicker() {
           background-size: 200% 100%;
           animation: shimmer 1.6s infinite;
         }
-        @keyframes result-appear {
-          from { opacity: 0; transform: scale(0.96) translateY(12px); }
-          to   { opacity: 1; transform: scale(1)   translateY(0);    }
+        @keyframes signal-acquired {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: translateY(0); }
         }
-        .result-appear { animation: result-appear 0.4s ease-out forwards; }
+        .signal-acquired { animation: signal-acquired 0.35s ease-out forwards; }
+        @keyframes signal-pulse {
+          0%, 100% { opacity: 0.55; }
+          50%      { opacity: 1; }
+        }
+        .signal-pulse { animation: signal-pulse 1.4s ease-in-out infinite; }
         @keyframes confetti-fall {
           0%   { transform: translateY(-100vh) rotate(0deg);   opacity: 1; }
           100% { transform: translateY(100vh)  rotate(720deg); opacity: 0; }
         }
         .confetti-particle {
-          position: absolute; width: 10px; height: 10px; top: -10px;
+          position: absolute; width: 8px; height: 8px; top: -10px;
           animation: confetti-fall 3s ease-in forwards;
+        }
+        @keyframes tune-scan {
+          0%   { transform: translateY(-100%); }
+          100% { transform: translateY(100%); }
+        }
+        .tune-scan-line {
+          background: linear-gradient(
+            to bottom,
+            transparent 0%,
+            rgba(16, 185, 129, 0.18) 50%,
+            transparent 100%
+          );
+          animation: tune-scan 0.9s linear infinite;
         }
       `}</style>
 
-      {/* Tab toggle */}
-      <div className="flex p-1 bg-white/5 border border-white/10 rounded-xl w-fit gap-1">
+      {/* Mode toggle — broadcast tab strip */}
+      <div className="inline-flex border border-white/8 bg-zinc-card/30">
         {[
-          { id: 'search', label: 'Slot Search', icon: <Search size={16} /> },
-          { id: 'picker', label: 'Slot Picker', icon: <Dice6 size={16} /> },
-        ].map((t) => (
-          <button
-            key={t.id}
-            onClick={() => setActiveTab(t.id)}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg font-bold text-sm transition-all duration-200 ${
-              activeTab === t.id
-                ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow'
-                : 'text-white/50 hover:text-white'
-            }`}
-          >
-            {t.icon} {t.label}
-          </button>
-        ))}
+          { id: 'search', label: 'Catalog', code: 'CAT', icon: Search },
+          { id: 'picker', label: 'Slot Spinner', code: 'SPN', icon: Dice6 },
+        ].map((t, i) => {
+          const Icon = t.icon;
+          const isActive = activeTab === t.id;
+          return (
+            <button
+              key={t.id}
+              type="button"
+              onClick={() => setActiveTab(t.id)}
+              className={`flex items-center gap-2.5 px-4 py-2.5 transition-colors duration-150 ${
+                i > 0 ? 'border-l border-white/8' : ''
+              } ${
+                isActive
+                  ? 'bg-zinc-card text-white-body'
+                  : 'text-white/55 hover:text-white-body hover:bg-zinc-card/50'
+              }`}
+            >
+              <span
+                className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums ${
+                  isActive ? 'text-emerald-signal' : 'text-white/30'
+                } font-mono`}
+      >
+                {t.code}
+              </span>
+              <Icon size={14} aria-hidden="true" className="opacity-80" />
+              <span className="text-sm font-bold tracking-tight">{t.label}</span>
+            </button>
+          );
+        })}
       </div>
 
       {activeTab === 'search' && <SlotSearch />}
@@ -143,7 +188,7 @@ export default function SlotPicker() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SLOT SEARCH
+// CATALOG (search)
 // ═══════════════════════════════════════════════════════════════════════════
 function SlotSearch() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -157,7 +202,6 @@ function SlotSearch() {
   const dropdownRef = useRef(null);
   const PER_PAGE = 24;
 
-  // Filter entirely in-memory
   const filteredGames = useMemo(() => {
     const term = searchTerm.toLowerCase();
     return ALL_SLOTS.filter((g) => {
@@ -187,7 +231,6 @@ function SlotSearch() {
     selectedProviders,
   ]);
 
-  // Reset visible count when filters change
   const prevFiltered = useRef(filteredGames);
   if (prevFiltered.current !== filteredGames) {
     prevFiltered.current = filteredGames;
@@ -196,9 +239,6 @@ function SlotSearch() {
 
   const visibleGames = filteredGames.slice(0, visibleCount);
 
-  const handleSearchChange = (e) => setSearchTerm(e.target.value);
-
-  // Close provider dropdown on outside click
   useEffect(() => {
     const handler = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target))
@@ -222,73 +262,75 @@ function SlotSearch() {
     selectedProviders.length > 0,
   ].filter(Boolean).length;
 
+  const inputCls =
+    'bg-zinc-broadcast/60 border border-white/10 px-3 py-2.5 text-sm text-white-body placeholder:text-white/25 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';
+
   return (
     <div className="space-y-5">
-      {/* Search bar + filter row */}
+      {/* Search bar + provider dropdown */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-white/30"
-            size={18}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35"
+            size={16}
+            aria-hidden="true"
           />
           <input
             type="text"
-            placeholder="Search slots..."
+            placeholder="Search catalog…"
             value={searchTerm}
-            onChange={handleSearchChange}
-            className="w-full pl-10 pr-4 py-3 bg-white/5 border border-white/10 rounded-lg focus:border-emerald-400 focus:outline-none text-sm"
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className={`w-full pl-10 pr-4 ${inputCls}`}
           />
         </div>
 
-        {/* Provider dropdown */}
         <div className="relative" ref={dropdownRef}>
           <button
+            type="button"
             onClick={() => setProviderDropdownOpen((o) => !o)}
-            className={`flex items-center gap-2 px-4 py-3 rounded-lg border text-sm font-bold transition-all whitespace-nowrap ${
+            className={`inline-flex items-center gap-2 px-3.5 py-2.5 border transition-colors duration-150 whitespace-nowrap ${
               selectedProviders.length > 0
-                ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
-                : 'bg-white/5 border-white/10 text-white/60 hover:text-white'
+                ? 'bg-emerald-signal/10 border-emerald-signal/40 text-emerald-signal'
+                : 'border-white/10 text-white/65 hover:text-white-body hover:border-white/25'
             }`}
           >
-            <Filter size={15} />
-            {selectedProviders.length > 0
-              ? `${selectedProviders.length} providers`
-              : 'All Providers'}
+            <Filter size={13} aria-hidden="true" />
+            <span
+              className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+              {selectedProviders.length > 0
+                ? `${selectedProviders.length} providers`
+                : 'All providers'}
+            </span>
             <ChevronDown
-              size={14}
+              size={13}
               className={`transition-transform ${providerDropdownOpen ? 'rotate-180' : ''}`}
+              aria-hidden="true"
             />
           </button>
 
           {providerDropdownOpen && (
-            <div className="absolute top-full mt-2 left-0 z-50 w-64 max-h-72 overflow-y-auto bg-zinc-900 border border-white/10 rounded-xl shadow-2xl p-2">
+            <div className="absolute top-full mt-2 left-0 z-50 w-64 max-h-72 overflow-y-auto bg-zinc-broadcast border border-white/10 p-2 shadow-2xl">
               {selectedProviders.length > 0 && (
                 <button
+                  type="button"
                   onClick={() => setSelectedProviders([])}
-                  className="w-full text-left px-3 py-2 text-xs text-white/40 hover:text-white transition-colors mb-1"
-                >
+                  className="w-full text-left px-3 py-2 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 hover:text-emerald-signal transition-colors mb-1 border-b border-white/5 font-mono"
+      >
                   Clear selection
                 </button>
               )}
               {ALL_PROVIDERS.map((p) => (
                 <label
                   key={p.slug}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer"
+                  className="flex items-center gap-3 px-3 py-2 hover:bg-zinc-card/60 cursor-pointer"
                 >
                   <input
                     type="checkbox"
                     checked={selectedProviders.includes(p.slug)}
                     onChange={() => toggleProvider(p.slug)}
-                    className="accent-emerald-400"
+                    className="accent-emerald-signal"
                   />
-                  {p.thumbnail && (
-                    <img
-                      src={p.thumbnail}
-                      alt={p.name}
-                      className="w-5 h-5 object-contain rounded"
-                      onError={(e) => (e.target.style.display = 'none')}
-                    />
-                  )}
                   <span className="text-sm text-white/80">{p.name}</span>
                 </label>
               ))}
@@ -297,159 +339,178 @@ function SlotSearch() {
         </div>
       </div>
 
-      {/* Feature + volatility filters */}
+      {/* Feature toggles + volatility */}
       <div className="flex flex-wrap gap-2">
         {[
-          {
-            label: 'Bonus Buy',
-            icon: <Zap size={12} />,
-            active: filterBonusBuy,
-            toggle: () => setFilterBonusBuy((v) => !v),
-          },
-          {
-            label: 'Megaways',
-            icon: <Layers size={12} />,
-            active: filterMegaways,
-            toggle: () => setFilterMegaways((v) => !v),
-          },
-          {
-            label: 'Progressive',
-            icon: <TrendingUp size={12} />,
-            active: filterProgressive,
-            toggle: () => setFilterProgressive((v) => !v),
-          },
-        ].map((f) => (
-          <button
-            key={f.label}
-            onClick={f.toggle}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-bold transition-all ${
-              f.active
-                ? 'bg-purple-500/20 border-purple-500/40 text-purple-300'
-                : 'bg-white/5 border-white/10 text-white/50 hover:text-white'
-            }`}
-          >
-            {f.icon} {f.label}
-          </button>
-        ))}
+          { label: 'Bonus buy', icon: Zap, active: filterBonusBuy, toggle: () => setFilterBonusBuy((v) => !v), tone: 'purple' },
+          { label: 'Megaways', icon: Layers, active: filterMegaways, toggle: () => setFilterMegaways((v) => !v), tone: 'purple' },
+          { label: 'Progressive', icon: TrendingUp, active: filterProgressive, toggle: () => setFilterProgressive((v) => !v), tone: 'purple' },
+        ].map((f) => {
+          const Icon = f.icon;
+          return (
+            <button
+              key={f.label}
+              type="button"
+              onClick={f.toggle}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 border text-[10px] font-bold tracking-eyebrow-md uppercase transition-colors duration-150 ${
+                f.active
+                  ? 'border-purple-gamba/50 text-purple-bright bg-purple-gamba/10'
+                  : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
+              } font-mono`}
+      >
+              <Icon size={11} aria-hidden="true" />
+              {f.label}
+            </button>
+          );
+        })}
 
-        <div className="flex items-center gap-1 ml-auto">
+        <div className="flex items-center gap-1.5 ml-auto">
           {['all', 'low', 'medium', 'high'].map((v) => (
             <button
               key={v}
+              type="button"
               onClick={() => setVolatility(v)}
-              className={`px-3 py-1.5 rounded-lg border text-xs font-bold capitalize transition-all ${
+              className={`px-2.5 py-1.5 border text-[10px] font-bold tracking-eyebrow-md uppercase transition-colors duration-150 ${
                 volatility === v
-                  ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
-                  : 'bg-white/5 border-white/10 text-white/50 hover:text-white'
-              }`}
-            >
-              {v === 'all' ? 'All Vol.' : v}
+                  ? 'border-emerald-signal/50 text-emerald-signal bg-emerald-signal/10'
+                  : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
+              } font-mono`}
+      >
+              {v === 'all' ? 'All vol.' : v}
             </button>
           ))}
         </div>
       </div>
 
-      {/* Active filter count */}
-      {activeFilters > 0 && (
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-white/40">
-            {activeFilters} filter{activeFilters !== 1 ? 's' : ''} active
+      {/* Filter / result strip */}
+      <div
+        className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
+      >
+        <span>
+          Showing{' '}
+          <span className="text-white/70 tabular-nums">
+            {String(visibleGames.length).padStart(3, '0')}
           </span>
-          <button
-            onClick={() => {
-              setFilterBonusBuy(false);
-              setFilterMegaways(false);
-              setFilterProgressive(false);
-              setVolatility('all');
-              setSelectedProviders([]);
-              setSearchTerm('');
-            }}
-            className="flex items-center gap-1 text-xs text-white/40 hover:text-white transition-colors"
-          >
-            <X size={12} /> Clear all
-          </button>
-        </div>
-      )}
-
-      {/* Results count */}
-      <p className="text-xs text-white/40">
-        {filteredGames.length > 0
-          ? `Showing ${visibleGames.length} of ${filteredGames.length} slots`
-          : ''}
-      </p>
+          {' / '}
+          <span className="text-white/70 tabular-nums">
+            {String(filteredGames.length).padStart(3, '0')}
+          </span>
+        </span>
+        {activeFilters > 0 && (
+          <>
+            <span className="text-white/15">·</span>
+            <span>
+              <span className="text-emerald-signal tabular-nums">
+                {String(activeFilters).padStart(2, '0')}
+              </span>{' '}
+              filter{activeFilters !== 1 ? 's' : ''} active
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setFilterBonusBuy(false);
+                setFilterMegaways(false);
+                setFilterProgressive(false);
+                setVolatility('all');
+                setSelectedProviders([]);
+                setSearchTerm('');
+              }}
+              className="inline-flex items-center gap-1.5 text-white/40 hover:text-emerald-signal transition-colors"
+            >
+              <X size={11} aria-hidden="true" /> Clear all
+            </button>
+          </>
+        )}
+      </div>
 
       {/* Game grid */}
       {visibleGames.length > 0 && (
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {visibleGames.map((game, idx) => (
-            <div
-              key={`${game.slug}-${idx}`}
-              className="group bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-emerald-500/40 transition-all duration-200"
-            >
-              <div className="aspect-video overflow-hidden">
-                <SlotImage
-                  src={game.thumbnail}
-                  alt={game.name}
-                  className="w-full h-full group-hover:scale-105 transition-transform duration-300"
-                />
-              </div>
-              <div className="p-3 space-y-2">
-                <p className="font-bold text-white text-sm leading-tight line-clamp-1">
-                  {game.name}
-                </p>
-                <p className="text-xs text-white/50">{game.providerName}</p>
-                <div className="flex flex-wrap gap-1">
-                  {game.rtp != null && (
-                    <span className="px-1.5 py-0.5 bg-emerald-500/20 border border-emerald-500/30 rounded text-xs font-bold text-emerald-300">
-                      {game.rtp}% RTP
-                    </span>
-                  )}
-                  <VolatilityBadge value={game.volatility} />
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {visibleGames.map((game, idx) => {
+            const tape = String(idx + 1).padStart(3, '0');
+            return (
+              <div
+                key={`${game.slug}-${idx}`}
+                className="group border border-white/8 bg-zinc-card/40 hover:border-emerald-signal/40 transition-colors duration-200 overflow-hidden"
+              >
+                <div className="relative aspect-video overflow-hidden">
+                  <SlotImage
+                    src={game.thumbnail}
+                    alt={game.name}
+                    className="w-full h-full"
+                  />
+                  <div
+                    className="absolute top-2 left-2 px-1.5 py-0.5 bg-zinc-broadcast/80 text-emerald-signal text-[10px] font-bold tracking-eyebrow font-mono"
+      >
+                    #{tape}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-1">
-                  {game.bonusBuy && (
-                    <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-purple-500/20 border border-purple-500/30 rounded text-xs text-purple-300">
-                      <Zap size={10} />
-                      BB
-                    </span>
-                  )}
-                  {game.megaways && (
-                    <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-blue-500/20 border border-blue-500/30 rounded text-xs text-blue-300">
-                      <Layers size={10} />
-                      MW
-                    </span>
-                  )}
-                  {game.progressive && (
-                    <span className="flex items-center gap-0.5 px-1.5 py-0.5 bg-yellow-500/20 border border-yellow-500/30 rounded text-xs text-yellow-300">
-                      <TrendingUp size={10} />
-                      PROG
-                    </span>
-                  )}
+                <div className="p-3 space-y-2">
+                  <div>
+                    <p className="font-bold text-white-body text-sm leading-tight line-clamp-1">
+                      {game.name}
+                    </p>
+                    <p
+                      className="text-[10px] tracking-eyebrow-sm uppercase text-white/40 truncate mt-0.5 font-mono"
+      >
+                      {game.providerName}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {game.rtp != null && (
+                      <MonoBadge tone="emerald">{game.rtp}% RTP</MonoBadge>
+                    )}
+                    <VolatilityBadge value={game.volatility} />
+                    {game.bonusBuy && (
+                      <MonoBadge tone="purple">
+                        <Zap size={9} aria-hidden="true" /> BB
+                      </MonoBadge>
+                    )}
+                    {game.megaways && (
+                      <MonoBadge tone="purple">
+                        <Layers size={9} aria-hidden="true" /> MW
+                      </MonoBadge>
+                    )}
+                    {game.progressive && (
+                      <MonoBadge tone="yellow">
+                        <TrendingUp size={9} aria-hidden="true" /> PROG
+                      </MonoBadge>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
       {/* Empty state */}
       {filteredGames.length === 0 && (
-        <div className="text-center py-20">
-          <p className="text-white/50">No slots match your filters.</p>
-          <p className="text-white/30 text-sm mt-1">
-            Try adjusting your search or clearing filters.
+        <div
+          className="text-center py-16 border border-white/8 bg-zinc-card/30 font-mono"
+      >
+          <p className="text-[11px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2">
+            No signal
+          </p>
+          <p className="text-sm text-white/55">
+            No slots match the current filters.
           </p>
         </div>
       )}
 
       {/* Load more */}
       {visibleCount < filteredGames.length && (
-        <div className="flex justify-center pt-2">
+        <div className="flex justify-center pt-1">
           <button
+            type="button"
             onClick={() => setVisibleCount((c) => c + PER_PAGE)}
-            className="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/40 font-bold text-sm transition-all"
+            className="inline-flex items-center gap-2 px-5 py-2.5 border border-white/10 text-white/65 hover:text-white-body hover:border-emerald-signal/40 transition-colors duration-150"
           >
-            Load More
+            <span
+              className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+              Load more
+            </span>
           </button>
         </div>
       )}
@@ -458,7 +519,7 @@ function SlotSearch() {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SLOT RANDOMIZER / PICKER
+// SIGNAL LOCK (randomizer)
 // ═══════════════════════════════════════════════════════════════════════════
 function SlotRandomizer() {
   const [excludedProviders, setExcludedProviders] = useState(new Set());
@@ -473,7 +534,6 @@ function SlotRandomizer() {
   const CYCLES = 5;
   const SPIN_MS = 4200;
 
-  // Filtered candidate pool from local database
   const candidates = useMemo(() => {
     return ALL_SLOTS.filter((g) => {
       if (excludedProviders.has(g.providerSlug)) return false;
@@ -507,20 +567,15 @@ function SlotRandomizer() {
     setSelectedGame(null);
 
     const randomIndex = Math.floor(Math.random() * candidates.length);
-    // Center the picked item in the 360px window:
-    // window center = 180px, item center = ITEM_HEIGHT/2 = 60px
-    // subtract the difference so the item sits in the middle of the selection window
     const WINDOW_CENTER = 180;
     const finalOffset =
-      (CYCLES * candidates.length + randomIndex) * ITEM_HEIGHT - (WINDOW_CENTER - ITEM_HEIGHT / 2);
+      (CYCLES * candidates.length + randomIndex) * ITEM_HEIGHT -
+      (WINDOW_CENTER - ITEM_HEIGHT / 2);
 
     if (wheelRef.current) {
-      // Reset position first (critical — forces browser reflow before animating)
       wheelRef.current.style.transition = 'none';
       wheelRef.current.style.transform = 'translateY(0)';
-      wheelRef.current.getBoundingClientRect(); // force reflow
-
-      // Now animate with strong deceleration
+      wheelRef.current.getBoundingClientRect();
       wheelRef.current.style.transition = `transform ${SPIN_MS}ms cubic-bezier(0.05, 0.8, 0.1, 1)`;
       wheelRef.current.style.transform = `translateY(-${finalOffset}px)`;
     }
@@ -533,261 +588,404 @@ function SlotRandomizer() {
     }, SPIN_MS);
   };
 
-  // Build extended reel items (candidates repeated CYCLES+1 times for smooth scroll)
   const reelItems = useMemo(() => {
     if (candidates.length === 0) return [];
     return Array.from({ length: CYCLES + 1 }, () => candidates).flat();
   }, [candidates]);
 
   return (
-    <div className="space-y-6">
-      {
-        <div className="grid lg:grid-cols-3 gap-6">
-          {/* Left: Reel + Spin */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Feature toggles */}
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setFilterBonusBuyOnly((v) => !v)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-bold transition-all ${
-                  filterBonusBuyOnly
-                    ? 'bg-purple-500/20 border-purple-500/40 text-purple-300'
-                    : 'bg-white/5 border-white/10 text-white/50 hover:text-white'
+    <div className="grid lg:grid-cols-3 gap-6">
+      {/* Left — reel + spin */}
+      <div className="lg:col-span-2 space-y-5">
+        {/* Eligibility strip */}
+        <div
+          className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 border border-white/8 bg-zinc-card/30 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+          <span className="inline-flex items-center gap-2 text-emerald-signal">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
+            <span>SCANNER READY</span>
+          </span>
+          <span className="text-white/15">·</span>
+          <span className="text-white/45">CANDIDATES</span>
+          <span className="text-white/75 tabular-nums">
+            {String(candidates.length).padStart(3, '0')}
+          </span>
+          <div className="ml-auto flex gap-2">
+            <button
+              type="button"
+              onClick={() => setFilterBonusBuyOnly((v) => !v)}
+              className={`inline-flex items-center gap-1.5 px-2 py-1 border transition-colors duration-150 ${
+                filterBonusBuyOnly
+                  ? 'border-purple-gamba/50 text-purple-bright bg-purple-gamba/10'
+                  : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
+              }`}
+            >
+              <Zap size={10} aria-hidden="true" />
+              <span className="text-[10px] tracking-eyebrow-md">BB only</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFilterMegawaysOnly((v) => !v)}
+              className={`inline-flex items-center gap-1.5 px-2 py-1 border transition-colors duration-150 ${
+                filterMegawaysOnly
+                  ? 'border-purple-gamba/50 text-purple-bright bg-purple-gamba/10'
+                  : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
+              }`}
+            >
+              <Layers size={10} aria-hidden="true" />
+              <span className="text-[10px] tracking-eyebrow-md">MW only</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Reel container — broadcast scanner */}
+        <div className="relative border border-white/10 bg-zinc-broadcast overflow-hidden">
+          {/* Scanline atmosphere */}
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-screen motion-reduce:hidden z-20"
+            aria-hidden="true"
+            style={{
+              backgroundImage:
+                'repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(255,255,255,0.6) 2px, rgba(255,255,255,0.6) 3px)',
+            }}
+          />
+
+          {/* Tuning scan line — only while spinning */}
+          {isSpinning && (
+            <div
+              className="pointer-events-none absolute inset-0 z-30 overflow-hidden motion-reduce:hidden"
+              aria-hidden="true"
+            >
+              <div className="tune-scan-line absolute inset-x-0 h-32" />
+            </div>
+          )}
+
+          {/* Signal Lock label */}
+          <div
+            className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-3 py-2 border-b border-white/8 bg-zinc-broadcast/80 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+            <span
+              className={`inline-flex items-center gap-2 ${
+                isSpinning ? 'text-orange-admin signal-pulse' : 'text-emerald-signal'
+              }`}
+            >
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  isSpinning ? 'bg-orange-admin' : 'bg-emerald-signal'
                 }`}
+              />
+              <span>{isSpinning ? 'Tuning…' : 'Signal lock'}</span>
+            </span>
+            <span className="text-white/30">REEL · GG-04</span>
+          </div>
+
+          <div className="relative" style={{ height: '360px' }}>
+            {/* Fade top */}
+            <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-zinc-broadcast to-transparent z-10 pointer-events-none" />
+
+            {/* Selection window */}
+            <div
+              className="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-10 pointer-events-none"
+              style={{ height: `${ITEM_HEIGHT}px` }}
+            >
+              <div className="absolute inset-0 border-y border-emerald-signal/70 bg-emerald-signal/5" />
+              <span
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 text-emerald-signal font-bold text-xl leading-none"
+                
+                aria-hidden="true"
               >
-                <Zap size={14} /> Bonus Buy Only
-              </button>
-              <button
-                onClick={() => setFilterMegawaysOnly((v) => !v)}
-                className={`flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-bold transition-all ${
-                  filterMegawaysOnly
-                    ? 'bg-blue-500/20 border-blue-500/40 text-blue-300'
-                    : 'bg-white/5 border-white/10 text-white/50 hover:text-white'
-                }`}
+                [
+              </span>
+              <span
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-emerald-signal font-bold text-xl leading-none"
+                
+                aria-hidden="true"
               >
-                <Layers size={14} /> Megaways Only
-              </button>
-              <span className="ml-auto text-xs text-white/30 self-center">
-                {candidates.length} eligible slots
+                ]
               </span>
             </div>
 
-            {/* Reel */}
-            <div
-              className="relative rounded-2xl overflow-hidden border-2 border-white/10 bg-gradient-to-br from-zinc-900/60 to-purple-900/30"
-              style={{ height: '360px' }}
-            >
-              {/* Fade top */}
-              <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-zinc-950 to-transparent z-10 pointer-events-none" />
-              {/* Selection window */}
-              <div
-                className="absolute top-1/2 left-0 right-0 -translate-y-1/2 z-10 pointer-events-none"
-                style={{ height: `${ITEM_HEIGHT}px` }}
-              >
-                <div className="absolute inset-0 border-y-2 border-emerald-500/70 bg-emerald-500/5" />
-                <div className="absolute left-3 top-1/2 -translate-y-1/2 w-0 h-0 border-t-8 border-b-8 border-r-10 border-t-transparent border-b-transparent border-r-emerald-500/80" />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 w-0 h-0 border-t-8 border-b-8 border-l-10 border-t-transparent border-b-transparent border-l-emerald-500/80" />
-              </div>
-              {/* Fade bottom */}
-              <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-zinc-950 to-transparent z-10 pointer-events-none" />
+            {/* Fade bottom */}
+            <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-zinc-broadcast to-transparent z-10 pointer-events-none" />
 
-              {/* Reel track */}
-              <div className="absolute inset-0 overflow-hidden">
-                <div
-                  ref={wheelRef}
-                  style={{
-                    transition: 'none',
-                    transform: 'translateY(0)',
-                    willChange: 'transform',
-                  }}
-                >
-                  {candidates.length === 0 ? (
-                    <div className="flex items-center justify-center h-[360px] text-white/30 text-sm">
-                      No slots match — adjust your filters
-                    </div>
-                  ) : (
-                    reelItems.map((game, i) => (
-                      <div
-                        key={`${game.slug}-${i}`}
-                        className="flex items-center gap-4 px-6 border-b border-white/5"
-                        style={{ height: `${ITEM_HEIGHT}px` }}
-                      >
-                        <SlotImage
-                          src={game.thumbnail}
-                          alt={game.name}
-                          className="w-16 h-16 rounded-lg flex-shrink-0"
-                        />
-                        <div className="min-w-0">
-                          <p className="font-black text-white text-lg leading-tight truncate">
-                            {game.name}
-                          </p>
-                          <p className="text-sm text-white/50">
-                            {game.providerName}
-                          </p>
-                          <div className="flex gap-1 mt-1 flex-wrap">
-                            {game.rtp != null && (
-                              <span className="text-xs text-emerald-400 font-bold">
-                                {game.rtp}% RTP
-                              </span>
-                            )}
-                            {game.bonusBuy && (
-                              <span className="text-xs text-purple-400 font-bold ml-1">
-                                · BB
-                              </span>
-                            )}
-                            {game.megaways && (
-                              <span className="text-xs text-blue-400 font-bold ml-1">
-                                · MW
-                              </span>
-                            )}
-                          </div>
+            {/* Reel track */}
+            <div className="absolute inset-0 overflow-hidden">
+              <div
+                ref={wheelRef}
+                style={{
+                  transition: 'none',
+                  transform: 'translateY(0)',
+                  willChange: 'transform',
+                }}
+              >
+                {candidates.length === 0 ? (
+                  <div
+                    className="flex flex-col items-center justify-center h-[360px] text-white/30 gap-2 font-mono"
+      >
+                    <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40">
+                      No signal
+                    </span>
+                    <span className="text-sm text-white/55">
+                      Adjust filters to acquire candidates.
+                    </span>
+                  </div>
+                ) : (
+                  reelItems.map((game, i) => (
+                    <div
+                      key={`${game.slug}-${i}`}
+                      className="flex items-center gap-4 px-5 border-b border-white/5"
+                      style={{ height: `${ITEM_HEIGHT}px` }}
+                    >
+                      <SlotImage
+                        src={game.thumbnail}
+                        alt={game.name}
+                        className="w-16 h-16 flex-shrink-0 border border-white/8"
+                      />
+                      <div className="min-w-0">
+                        <p className="font-bold text-white-body text-base leading-tight truncate">
+                          {game.name}
+                        </p>
+                        <p
+                          className="text-[10px] tracking-eyebrow-sm uppercase text-white/45 truncate mt-0.5 font-mono"
+      >
+                          {game.providerName}
+                        </p>
+                        <div
+                          className="flex gap-2 mt-1 flex-wrap text-[10px] font-bold tracking-eyebrow-sm uppercase font-mono"
+      >
+                          {game.rtp != null && (
+                            <span className="text-emerald-signal tabular-nums">
+                              {game.rtp}% RTP
+                            </span>
+                          )}
+                          {game.bonusBuy && (
+                            <span className="text-purple-bright">BB</span>
+                          )}
+                          {game.megaways && (
+                            <span className="text-purple-bright">MW</span>
+                          )}
                         </div>
                       </div>
-                    ))
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Tune controls */}
+        <div className="flex flex-col items-center gap-3">
+          <button
+            type="button"
+            onClick={spinWheel}
+            disabled={isSpinning || candidates.length === 0}
+            className={`group relative inline-flex items-center gap-3 px-10 sm:px-14 py-4 transition-colors duration-200 disabled:opacity-40 disabled:cursor-not-allowed overflow-hidden ${
+              isSpinning
+                ? 'bg-orange-admin/15 border border-orange-admin/40 text-orange-admin'
+                : 'bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright border border-emerald-signal'
+            }`}
+          >
+            <Play size={18} aria-hidden="true" className={isSpinning ? 'signal-pulse' : ''} />
+            <span
+              className="text-sm font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+              {isSpinning ? 'Tuning…' : 'Tune'}
+            </span>
+            {!isSpinning && (
+              <span
+                className="text-sm font-bold tracking-eyebrow-lg opacity-70"
+                
+                aria-hidden="true"
+              >
+                →
+              </span>
+            )}
+          </button>
+
+          {selectedGame && !isSpinning && (
+            <button
+              type="button"
+              onClick={() => {
+                resetWheel();
+                spinWheel();
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2 border border-white/10 text-white/60 hover:text-white-body hover:border-emerald-signal/40 transition-colors duration-150"
+            >
+              <RotateCcw size={13} aria-hidden="true" />
+              <span
+                className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+                Tune again
+              </span>
+            </button>
+          )}
+        </div>
+
+        {/* Signal acquired panel */}
+        {selectedGame && !isSpinning && (
+          <div className="relative overflow-hidden border border-emerald-signal/40 bg-zinc-card/40 signal-acquired">
+            {/* Atmospheric glow behind reveal */}
+            <div
+              className="pointer-events-none absolute -top-20 -right-20 w-64 h-64 rounded-full bg-emerald-signal/15 blur-3xl motion-reduce:hidden"
+              aria-hidden="true"
+            />
+            <div
+              className="pointer-events-none absolute inset-0 opacity-[0.04] mix-blend-screen motion-reduce:hidden"
+              aria-hidden="true"
+              style={{
+                backgroundImage:
+                  'repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(255,255,255,0.6) 2px, rgba(255,255,255,0.6) 3px)',
+              }}
+            />
+
+            <div
+              className="relative flex items-center gap-2 px-4 py-2 border-b border-white/8 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+              <span className="relative flex w-1.5 h-1.5">
+                <span className="absolute inset-0 rounded-full bg-emerald-signal motion-safe:animate-ping opacity-50" />
+                <span className="relative w-1.5 h-1.5 rounded-full bg-emerald-signal" />
+              </span>
+              <span className="text-emerald-signal">Broadcast signal acquired</span>
+            </div>
+
+            <div className="relative p-5 sm:p-6 flex gap-5 items-start">
+              <SlotImage
+                src={selectedGame.thumbnail}
+                alt={selectedGame.name}
+                className="w-24 h-24 flex-shrink-0 border border-white/10"
+              />
+              <div className="flex-1 min-w-0">
+                <p
+                  className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono"
+      >
+                  Now tuned to
+                </p>
+                <h3
+                  className="text-2xl sm:text-3xl font-black text-white-body tracking-tight leading-tight"
+                  style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}
+                >
+                  {selectedGame.name}
+                </h3>
+                <p
+                  className="text-[10px] tracking-eyebrow uppercase text-white/50 mt-1.5 font-mono"
+      >
+                  {selectedGame.providerName}
+                </p>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
+                  {selectedGame.rtp != null && (
+                    <div className="px-2.5 py-1.5 border border-emerald-signal/40 bg-emerald-signal/5">
+                      <p
+                        className="text-[9px] font-bold tracking-eyebrow-md uppercase text-white/45 font-mono"
+      >
+                        RTP
+                      </p>
+                      <p className="font-bold text-emerald-signal tabular-nums mt-0.5">
+                        {selectedGame.rtp}%
+                      </p>
+                    </div>
+                  )}
+                  {selectedGame.volatility && (
+                    <div className="px-2.5 py-1.5 border border-white/10 bg-zinc-broadcast/40">
+                      <p
+                        className="text-[9px] font-bold tracking-eyebrow-md uppercase text-white/45 font-mono"
+      >
+                        Volatility
+                      </p>
+                      <p className="font-bold text-white-body capitalize mt-0.5">
+                        {selectedGame.volatility}
+                      </p>
+                    </div>
+                  )}
+                  {selectedGame.bonusBuy && (
+                    <div className="px-2.5 py-1.5 border border-purple-gamba/40 bg-purple-gamba/5">
+                      <p
+                        className="text-[9px] font-bold tracking-eyebrow-md uppercase text-white/45 font-mono"
+      >
+                        Bonus buy
+                      </p>
+                      <p
+                        className="font-bold text-purple-bright mt-0.5 font-mono"
+      >
+                        AVAILABLE
+                      </p>
+                    </div>
+                  )}
+                  {selectedGame.megaways && (
+                    <div className="px-2.5 py-1.5 border border-purple-gamba/40 bg-purple-gamba/5">
+                      <p
+                        className="text-[9px] font-bold tracking-eyebrow-md uppercase text-white/45 font-mono"
+      >
+                        Megaways
+                      </p>
+                      <p
+                        className="font-bold text-purple-bright mt-0.5 font-mono"
+      >
+                        ENABLED
+                      </p>
+                    </div>
                   )}
                 </div>
               </div>
             </div>
-
-            {/* Spin / Reset buttons */}
-            <div className="flex flex-col items-center gap-3">
-              <button
-                onClick={spinWheel}
-                disabled={isSpinning || candidates.length === 0}
-                className={`group relative px-14 py-5 rounded-2xl font-black text-xl tracking-widest transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
-                  isSpinning
-                    ? 'bg-gradient-to-r from-gray-600 to-gray-700 text-white/60'
-                    : 'bg-gradient-to-r from-emerald-500 to-purple-500 hover:from-emerald-400 hover:to-purple-400 text-white shadow-lg hover:shadow-emerald-500/30 hover:shadow-2xl hover:scale-105'
-                }`}
-              >
-                <span className="flex items-center gap-3">
-                  <Play
-                    size={24}
-                    className={isSpinning ? 'animate-pulse' : ''}
-                  />
-                  {isSpinning ? 'SPINNING…' : 'SPIN'}
-                </span>
-              </button>
-
-              {selectedGame && !isSpinning && (
-                <button
-                  onClick={() => {
-                    resetWheel();
-                    spinWheel();
-                  }}
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/50 hover:text-white hover:border-emerald-400/40 text-sm font-bold transition-all"
-                >
-                  <RotateCcw size={15} /> Spin Again
-                </button>
-              )}
-            </div>
-
-            {/* Result card */}
-            {selectedGame && !isSpinning && (
-              <div className="result-appear p-6 rounded-2xl bg-gradient-to-r from-emerald-500/20 to-purple-500/20 border-2 border-emerald-500/50">
-                <p className="text-emerald-400 text-xs font-bold uppercase tracking-widest mb-3">
-                  🎰 Selected Slot
-                </p>
-                <div className="flex gap-5 items-start">
-                  <SlotImage
-                    src={selectedGame.thumbnail}
-                    alt={selectedGame.name}
-                    className="w-24 h-24 rounded-xl flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-3xl font-black text-white leading-tight">
-                      {selectedGame.name}
-                    </h3>
-                    <p className="text-white/60 font-bold mt-1">
-                      {selectedGame.providerName}
-                    </p>
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {selectedGame.rtp != null && (
-                        <div className="px-3 py-1.5 bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-center">
-                          <p className="text-xs text-white/50">RTP</p>
-                          <p className="font-bold text-emerald-300">
-                            {selectedGame.rtp}%
-                          </p>
-                        </div>
-                      )}
-                      {selectedGame.volatility && (
-                        <div className="px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-center">
-                          <p className="text-xs text-white/50">Volatility</p>
-                          <p className="font-bold text-white capitalize">
-                            {selectedGame.volatility}
-                          </p>
-                        </div>
-                      )}
-                      {selectedGame.bonusBuy && (
-                        <div className="px-3 py-1.5 bg-purple-500/20 border border-purple-500/30 rounded-lg text-center">
-                          <Zap size={14} className="text-purple-300 mx-auto" />
-                          <p className="text-xs text-purple-300 font-bold">
-                            Bonus Buy
-                          </p>
-                        </div>
-                      )}
-                      {selectedGame.megaways && (
-                        <div className="px-3 py-1.5 bg-blue-500/20 border border-blue-500/30 rounded-lg text-center">
-                          <Layers size={14} className="text-blue-300 mx-auto" />
-                          <p className="text-xs text-blue-300 font-bold">
-                            Megaways
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
+        )}
+      </div>
 
-          {/* Right: Provider exclusion list */}
-          <div className="space-y-3">
-            <div>
-              <p className="text-sm font-bold text-white/60 mb-1">
-                Exclude Providers
-              </p>
-              <p className="text-xs text-white/30">
-                Unchecked providers are excluded from the spin.
-              </p>
-            </div>
-
-            {excludedProviders.size > 0 && (
-              <button
-                onClick={() => setExcludedProviders(new Set())}
-                className="text-xs text-emerald-400 hover:text-emerald-300 transition-colors"
-              >
-                Re-include all
-              </button>
-            )}
-
-            <div className="space-y-1 max-h-[500px] overflow-y-auto pr-1">
-              {ALL_PROVIDERS.map((p) => (
-                <label
-                  key={p.slug}
-                  className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-white/5 cursor-pointer transition-all"
-                >
-                  <input
-                    type="checkbox"
-                    checked={!excludedProviders.has(p.slug)}
-                    onChange={() => toggleProvider(p.slug)}
-                    className="accent-emerald-400"
-                  />
-                  <span
-                    className={`text-sm flex-1 ${excludedProviders.has(p.slug) ? 'text-white/25 line-through' : 'text-white/80'}`}
-                  >
-                    {p.name}
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
+      {/* Right — provider exclusion */}
+      <div className="border border-white/8 bg-zinc-card/30 h-fit">
+        <div
+          className="flex items-center justify-between px-3 py-2.5 border-b border-white/8 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+          <span className="text-white/55">Provider filter</span>
+          {excludedProviders.size > 0 && (
+            <button
+              type="button"
+              onClick={() => setExcludedProviders(new Set())}
+              className="text-emerald-signal/80 hover:text-emerald-signal transition-colors"
+            >
+              Reset
+            </button>
+          )}
         </div>
-      }
 
-      {/* Confetti */}
+        <p
+          className="px-3 py-2.5 text-[10px] tracking-eyebrow uppercase text-white/35 border-b border-white/8 font-mono"
+      >
+          Unchecked providers are excluded.
+        </p>
+
+        <div className="max-h-[500px] overflow-y-auto">
+          {ALL_PROVIDERS.map((p) => {
+            const excluded = excludedProviders.has(p.slug);
+            return (
+              <label
+                key={p.slug}
+                className="flex items-center gap-3 px-3 py-2 border-b border-white/5 hover:bg-zinc-card/60 cursor-pointer transition-colors"
+              >
+                <input
+                  type="checkbox"
+                  checked={!excluded}
+                  onChange={() => toggleProvider(p.slug)}
+                  className="accent-emerald-signal"
+                />
+                <span
+                  className={`text-sm flex-1 ${
+                    excluded ? 'text-white/25 line-through' : 'text-white/80'
+                  }`}
+                >
+                  {p.name}
+                </span>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Confetti — brand palette only */}
       {showConfetti && (
-        <div className="fixed inset-0 pointer-events-none z-50">
+        <div className="fixed inset-0 pointer-events-none z-50 motion-reduce:hidden">
           {Array.from({ length: 60 }).map((_, i) => (
             <div
               key={i}
@@ -797,13 +995,11 @@ function SlotRandomizer() {
                 animationDelay: `${Math.random() * 0.6}s`,
                 borderRadius: Math.random() > 0.5 ? '50%' : '0',
                 backgroundColor: [
-                  '#10b981',
-                  '#a855f7',
-                  '#eab308',
-                  '#f97316',
-                  '#ec4899',
-                  '#3b82f6',
-                ][Math.floor(Math.random() * 6)],
+                  '#10b981', // emerald-signal
+                  '#34d399', // emerald-bright
+                  '#fafafa', // white-body
+                  '#f97316', // orange-admin
+                ][Math.floor(Math.random() * 4)],
               }}
             />
           ))}

@@ -1,47 +1,71 @@
 import React from 'react';
-import { Film } from 'lucide-react';
+import { PlayCircle, Film } from 'lucide-react';
 
-export default function VodCard({ vod, delay }) {
+export default function VodCard({ vod, index = 0 }) {
+  const tapeNumber = String(index + 1).padStart(3, '0');
+  const typeLabel = vod.type === 'clip' ? 'CLIP' : 'VOD';
+
   return (
     <a
       href={vod.url}
       target="_blank"
       rel="noopener noreferrer"
-      className="group cursor-pointer block"
-      style={{ animation: `slideUp 0.6s ease-out ${delay}ms backwards` }}
+      className="group block focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-signal"
     >
-      <div className="relative aspect-video bg-gradient-to-br from-emerald-900/50 to-purple-900/50 rounded-lg overflow-hidden border border-emerald-500/20 hover:border-emerald-500/40 transition-all duration-300 mb-3">
-        {vod.thumbnail && (
+      <div className="relative aspect-video bg-zinc-card border border-white/5 overflow-hidden rounded-md transition-colors duration-200 group-hover:border-emerald-signal/40">
+        {vod.thumbnail ? (
           <img
             src={vod.thumbnail}
-            alt={vod.title}
+            alt=""
             className="absolute inset-0 w-full h-full object-cover"
           />
+        ) : (
+          <div className="absolute inset-0 bg-zinc-elevated flex items-center justify-center">
+            <Film size={32} className="text-white/20" aria-hidden="true" />
+          </div>
         )}
-        <div className="absolute inset-0 bg-black/40 group-hover:bg-black/20 transition-all duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-broadcast/85 via-zinc-broadcast/10 to-transparent" />
 
-        <div className="absolute inset-0 flex items-center justify-center">
-          <Film
-            size={56}
-            className="text-white/80 group-hover:text-emerald-400 group-hover:scale-110 transition-all duration-300"
-          />
+        <div
+          className="absolute top-2 left-2 flex items-center gap-1.5 font-mono"
+      >
+          <span className="px-1.5 py-0.5 bg-zinc-broadcast/80 text-emerald-bright text-[10px] font-bold tracking-eyebrow-sm">
+            #{tapeNumber}
+          </span>
+          <span
+            className={`px-1.5 py-0.5 text-[10px] font-bold tracking-eyebrow ${
+              vod.type === 'clip'
+                ? 'bg-zinc-broadcast/80 text-purple-bright border border-purple-gamba/50'
+                : 'bg-zinc-broadcast/80 text-white-body border border-white/30'
+            }`}
+          >
+            {typeLabel}
+          </span>
         </div>
 
-        <div className="absolute top-3 right-3 px-2 py-1 bg-black/80 backdrop-blur-sm rounded text-xs font-bold">
+        <div
+          className="absolute top-2 right-2 px-2 py-0.5 border border-white/30 text-white/80 text-[10px] font-bold tracking-eyebrow-xs bg-zinc-broadcast/60 font-mono"
+      >
           {vod.duration}
         </div>
 
-        <div className="absolute top-3 left-3 px-2 py-1 bg-emerald-500/80 backdrop-blur-sm rounded text-xs font-bold uppercase">
-          {vod.type}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <PlayCircle size={48} className="text-emerald-bright" strokeWidth={1.25} />
         </div>
       </div>
 
-      <h3 className="font-bold mb-2 group-hover:text-emerald-400 transition-colors line-clamp-2">
-        {vod.title}
-      </h3>
-      <div className="flex items-center justify-between text-sm text-white/60">
-        <span className="truncate">{vod.game}</span>
-        <span>{vod.views} views</span>
+      <div className="mt-2 bg-zinc-card border border-white/5 border-t-0 px-3 py-2.5 transition-colors duration-200 group-hover:bg-zinc-elevated rounded-b-md">
+        <h3 className="text-sm font-bold text-white-body line-clamp-2 leading-snug mb-1.5">
+          {vod.title}
+        </h3>
+        <div className="flex items-center justify-between gap-3 text-[10px] font-bold tracking-eyebrow-xs uppercase">
+          <span className="truncate text-white/55">{vod.game}</span>
+          <span
+            className="shrink-0 text-emerald-bright tabular-nums font-mono"
+      >
+            {vod.views}
+          </span>
+        </div>
       </div>
     </a>
   );

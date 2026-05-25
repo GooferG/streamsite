@@ -75,7 +75,7 @@ export default function SlotMachineWheel({ games }) {
         <div className="absolute top-0 left-0 right-0 h-20 bg-gradient-to-b from-zinc-950 to-transparent z-10 pointer-events-none" />
 
         {/* Selection Window */}
-        <div className="absolute top-1/2 left-0 right-0 transform -translate-y-1/2 h-20 border-y-4 border-emerald-500 bg-emerald-500/10 z-10 pointer-events-none">
+        <div className="absolute top-1/2 left-0 right-0 transform -translate-y-1/2 h-20 border-y-4 border-emerald-signal bg-emerald-signal/10 z-10 pointer-events-none">
           <div className="absolute left-0 top-1/2 transform -translate-y-1/2">
             <div className="w-0 h-0 border-t-8 border-t-transparent border-r-12 border-r-emerald-500 border-b-8 border-b-transparent ml-2" />
           </div>
@@ -97,7 +97,7 @@ export default function SlotMachineWheel({ games }) {
                 className="h-20 flex items-center justify-center px-6 border-b border-white/5"
               >
                 <div className="text-center">
-                  <p className="text-xl font-black text-white">{game.name}</p>
+                  <p className="text-xl font-black text-white-body">{game.name}</p>
                   <p className="text-sm text-white/60">{game.provider}</p>
                 </div>
               </div>
@@ -117,7 +117,7 @@ export default function SlotMachineWheel({ games }) {
           className={`group relative px-12 py-6 rounded-2xl font-black text-2xl tracking-wider transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
             isSpinning
               ? 'bg-gradient-to-r from-gray-500 to-gray-600'
-              : 'bg-gradient-to-r from-emerald-500 to-purple-500 hover:from-emerald-600 hover:to-purple-600 shadow-lg hover:shadow-2xl hover:scale-105'
+              : 'bg-gradient-to-r from-emerald-signal to-purple-gamba hover:from-emerald-600 hover:to-purple-600 shadow-lg hover:shadow-2xl hover:scale-105'
           }`}
         >
           <span className="flex items-center gap-3">
@@ -132,7 +132,7 @@ export default function SlotMachineWheel({ games }) {
         {selectedGame && (
           <button
             onClick={resetWheel}
-            className="flex items-center gap-2 px-6 py-3 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60 transition-all"
+            className="flex items-center gap-2 px-6 py-3 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white-body hover:border-emerald-bright/60 transition-all"
           >
             <RotateCcw size={18} />
             Reset Wheel
@@ -142,12 +142,12 @@ export default function SlotMachineWheel({ games }) {
 
       {/* Selected Game Display */}
       {selectedGame && !isSpinning && (
-        <div className="mt-8 p-8 rounded-2xl bg-gradient-to-r from-emerald-500/20 to-purple-500/20 border-4 border-emerald-500/50 backdrop-blur-sm animate-pulse-slow">
+        <div className="mt-8 p-8 rounded-2xl bg-gradient-to-r from-emerald-signal/20 to-purple-gamba/20 border-4 border-emerald-signal/50 backdrop-blur-sm animate-pulse-slow">
           <div className="text-center space-y-4">
-            <p className="text-emerald-400 font-bold text-sm uppercase tracking-widest">
+            <p className="text-emerald-bright font-bold text-sm uppercase tracking-widest">
               🎰 Selected Game
             </p>
-            <h3 className="text-5xl font-black text-white">
+            <h3 className="text-5xl font-black text-white-body">
               {selectedGame.name}
             </h3>
             <p className="text-2xl text-white/70 font-bold">
@@ -155,11 +155,11 @@ export default function SlotMachineWheel({ games }) {
             </p>
 
             <div className="flex justify-center gap-4 pt-4">
-              <div className="px-4 py-2 bg-emerald-500/20 border border-emerald-500/30 rounded-lg">
+              <div className="px-4 py-2 bg-emerald-signal/20 border border-emerald-signal/30 rounded-lg">
                 <p className="text-xs text-white/60">RTP</p>
                 <p className="text-lg font-bold text-emerald-300">{selectedGame.rtp}%</p>
               </div>
-              <div className="px-4 py-2 bg-purple-500/20 border border-purple-500/30 rounded-lg">
+              <div className="px-4 py-2 bg-purple-gamba/20 border border-purple-gamba/30 rounded-lg">
                 <p className="text-xs text-white/60">Volatility</p>
                 <p className="text-lg font-bold text-purple-300 capitalize">{selectedGame.volatility}</p>
               </div>

@@ -79,7 +79,7 @@ export default function GearInteractive() {
         {/* Header */}
         <header className="text-center space-y-4">
           <h1 className="text-6xl md:text-7xl font-black tracking-tighter">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-purple-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-bright to-purple-bright">
               INTERACTIVE SETUP
             </span>
           </h1>
@@ -92,16 +92,16 @@ export default function GearInteractive() {
         <div className="relative max-w-5xl mx-auto">
           {/* Info Card - Appears on hover */}
           {hoveredItem && (
-            <div className="absolute top-4 right-4 z-20 w-80 p-6 bg-gradient-to-br from-zinc-900/95 to-emerald-950/95 border-2 border-emerald-500/50 rounded-xl backdrop-blur-xl shadow-2xl animate-fade-in">
+            <div className="absolute top-4 right-4 z-20 w-80 p-6 bg-gradient-to-br from-zinc-900/95 to-emerald-950/95 border-2 border-emerald-signal/50 rounded-xl backdrop-blur-xl shadow-2xl animate-fade-in">
               <div className="flex items-start gap-4 mb-4">
-                <div className="p-3 bg-emerald-500/20 border border-emerald-500/30 rounded-lg text-emerald-400">
+                <div className="p-3 bg-emerald-signal/20 border border-emerald-signal/30 rounded-lg text-emerald-bright">
                   {gearData[hoveredItem].icon}
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs text-emerald-400 font-bold uppercase tracking-wider mb-1">
+                  <p className="text-xs text-emerald-bright font-bold uppercase tracking-wider mb-1">
                     {gearData[hoveredItem].name}
                   </p>
-                  <h3 className="text-xl font-black text-white">
+                  <h3 className="text-xl font-black text-white-body">
                     {gearData[hoveredItem].brand}
                   </h3>
                   <p className="text-sm text-white/60">
@@ -113,14 +113,14 @@ export default function GearInteractive() {
               <div className="space-y-2 mb-4">
                 {gearData[hoveredItem].specs.map((spec, idx) => (
                   <div key={idx} className="flex items-center gap-2">
-                    <Zap size={12} className="text-purple-400" />
+                    <Zap size={12} className="text-purple-bright" />
                     <span className="text-sm text-white/80">{spec}</span>
                   </div>
                 ))}
               </div>
 
               <div className="pt-4 border-t border-white/10">
-                <p className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-purple-400">
+                <p className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-bright to-purple-bright">
                   {gearData[hoveredItem].price}
                 </p>
               </div>
@@ -153,8 +153,8 @@ export default function GearInteractive() {
                 strokeWidth="4"
                 className={`pointer-events-auto cursor-pointer transition-all duration-300 ${
                   hoveredItem === 'monitor'
-                    ? 'opacity-100 text-emerald-400 drop-shadow-[0_0_20px_rgba(16,185,129,0.8)]'
-                    : 'opacity-0 hover:opacity-60 text-emerald-400/50'
+                    ? 'opacity-100 text-emerald-bright drop-shadow-[0_0_20px_rgba(16,185,129,0.8)]'
+                    : 'opacity-0 hover:opacity-60 text-emerald-bright/50'
                 }`}
                 rx="12"
                 onMouseEnter={() => setHoveredItem('monitor')}
@@ -172,8 +172,8 @@ export default function GearInteractive() {
                 strokeWidth="4"
                 className={`pointer-events-auto cursor-pointer transition-all duration-300 ${
                   hoveredItem === 'keyboard'
-                    ? 'opacity-100 text-purple-400 drop-shadow-[0_0_20px_rgba(168,85,247,0.8)]'
-                    : 'opacity-0 hover:opacity-60 text-purple-400/50'
+                    ? 'opacity-100 text-purple-bright drop-shadow-[0_0_20px_rgba(168,85,247,0.8)]'
+                    : 'opacity-0 hover:opacity-60 text-purple-bright/50'
                 }`}
                 rx="12"
                 onMouseEnter={() => setHoveredItem('keyboard')}
@@ -190,8 +190,8 @@ export default function GearInteractive() {
                 strokeWidth="4"
                 className={`pointer-events-auto cursor-pointer transition-all duration-300 ${
                   hoveredItem === 'mouse'
-                    ? 'opacity-100 text-emerald-400 drop-shadow-[0_0_20px_rgba(16,185,129,0.8)]'
-                    : 'opacity-0 hover:opacity-60 text-emerald-400/50'
+                    ? 'opacity-100 text-emerald-bright drop-shadow-[0_0_20px_rgba(16,185,129,0.8)]'
+                    : 'opacity-0 hover:opacity-60 text-emerald-bright/50'
                 }`}
                 onMouseEnter={() => setHoveredItem('mouse')}
                 onMouseLeave={() => setHoveredItem(null)}
@@ -208,8 +208,8 @@ export default function GearInteractive() {
                 strokeWidth="4"
                 className={`pointer-events-auto cursor-pointer transition-all duration-300 ${
                   hoveredItem === 'headphones'
-                    ? 'opacity-100 text-purple-400 drop-shadow-[0_0_20px_rgba(168,85,247,0.8)]'
-                    : 'opacity-0 hover:opacity-60 text-purple-400/50'
+                    ? 'opacity-100 text-purple-bright drop-shadow-[0_0_20px_rgba(168,85,247,0.8)]'
+                    : 'opacity-0 hover:opacity-60 text-purple-bright/50'
                 }`}
                 rx="12"
                 onMouseEnter={() => setHoveredItem('headphones')}
@@ -227,8 +227,8 @@ export default function GearInteractive() {
                 strokeWidth="4"
                 className={`pointer-events-auto cursor-pointer transition-all duration-300 ${
                   hoveredItem === 'microphone'
-                    ? 'opacity-100 text-emerald-400 drop-shadow-[0_0_20px_rgba(16,185,129,0.8)]'
-                    : 'opacity-0 hover:opacity-60 text-emerald-400/50'
+                    ? 'opacity-100 text-emerald-bright drop-shadow-[0_0_20px_rgba(16,185,129,0.8)]'
+                    : 'opacity-0 hover:opacity-60 text-emerald-bright/50'
                 }`}
                 rx="12"
                 onMouseEnter={() => setHoveredItem('microphone')}
@@ -246,8 +246,8 @@ export default function GearInteractive() {
                 strokeWidth="4"
                 className={`pointer-events-auto cursor-pointer transition-all duration-300 ${
                   hoveredItem === 'camera'
-                    ? 'opacity-100 text-purple-400 drop-shadow-[0_0_20px_rgba(168,85,247,0.8)]'
-                    : 'opacity-0 hover:opacity-60 text-purple-400/50'
+                    ? 'opacity-100 text-purple-bright drop-shadow-[0_0_20px_rgba(168,85,247,0.8)]'
+                    : 'opacity-0 hover:opacity-60 text-purple-bright/50'
                 }`}
                 rx="12"
                 onMouseEnter={() => setHoveredItem('camera')}
@@ -265,8 +265,8 @@ export default function GearInteractive() {
                 strokeWidth="4"
                 className={`pointer-events-auto cursor-pointer transition-all duration-300 ${
                   hoveredItem === 'pc'
-                    ? 'opacity-100 text-emerald-400 drop-shadow-[0_0_20px_rgba(16,185,129,0.8)]'
-                    : 'opacity-0 hover:opacity-60 text-emerald-400/50'
+                    ? 'opacity-100 text-emerald-bright drop-shadow-[0_0_20px_rgba(16,185,129,0.8)]'
+                    : 'opacity-0 hover:opacity-60 text-emerald-bright/50'
                 }`}
                 rx="12"
                 onMouseEnter={() => setHoveredItem('pc')}
@@ -279,7 +279,7 @@ export default function GearInteractive() {
           <div className="mt-6 text-center">
             <p className="text-white/40 text-sm">
               {hoveredItem ? (
-                <span className="text-emerald-400 font-bold">
+                <span className="text-emerald-bright font-bold">
                   Viewing: {gearData[hoveredItem].name}
                 </span>
               ) : (
@@ -298,13 +298,13 @@ export default function GearInteractive() {
               onMouseLeave={() => setHoveredItem(null)}
               className={`p-4 rounded-xl transition-all duration-300 ${
                 hoveredItem === key
-                  ? 'bg-gradient-to-r from-emerald-500/20 to-purple-500/20 border-2 border-emerald-500/50 scale-105'
+                  ? 'bg-gradient-to-r from-emerald-signal/20 to-purple-gamba/20 border-2 border-emerald-signal/50 scale-105'
                   : 'bg-white/5 border border-white/10 hover:border-white/20'
               }`}
             >
               <div className="flex flex-col items-center gap-2">
                 <div
-                  className={`text-white/60 ${hoveredItem === key ? 'text-emerald-400' : ''}`}
+                  className={`text-white/60 ${hoveredItem === key ? 'text-emerald-bright' : ''}`}
                 >
                   {item.icon}
                 </div>
@@ -318,32 +318,32 @@ export default function GearInteractive() {
 
         {/* Instructions Card */}
         <div className="max-w-3xl mx-auto p-6 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm">
-          <h3 className="text-xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-purple-400">
+          <h3 className="text-xl font-black mb-4 text-transparent bg-clip-text bg-gradient-to-r from-emerald-bright to-purple-bright">
             How to Update with Your Setup
           </h3>
           <ol className="space-y-3 text-white/70">
             <li className="flex gap-3">
-              <span className="text-emerald-400 font-bold">1.</span>
+              <span className="text-emerald-bright font-bold">1.</span>
               <span>
                 Take a high-quality photo of your desk setup (16:9 ratio
                 recommended)
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="text-emerald-400 font-bold">2.</span>
+              <span className="text-emerald-bright font-bold">2.</span>
               <span>
                 Replace the placeholder image in the code with your photo
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="text-emerald-400 font-bold">3.</span>
+              <span className="text-emerald-bright font-bold">3.</span>
               <span>
                 Adjust the SVG hotspot coordinates (x, y, width, height) to
                 match your gear positions
               </span>
             </li>
             <li className="flex gap-3">
-              <span className="text-emerald-400 font-bold">4.</span>
+              <span className="text-emerald-bright font-bold">4.</span>
               <span>
                 Update the gearData object with your actual gear specs and
                 prices

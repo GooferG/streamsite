@@ -116,8 +116,15 @@ function StreamingSiteContent() {
     return () => clearTimeout(timer);
   }, []);
 
+  useEffect(() => {
+    const productPrefixes = ['/gamba', '/admin', '/twitch-callback', '/suggest-overlay'];
+    const isProduct = productPrefixes.some((p) => location.pathname.startsWith(p));
+    document.body.classList.toggle('brand-route', !isProduct);
+    return () => document.body.classList.remove('brand-route');
+  }, [location.pathname]);
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-zinc-950 via-emerald-950 to-purple-950 text-white">
+    <div className="min-h-screen bg-zinc-broadcast text-white-body">
       {showTVIntro && <TVStaticIntro />}
 
       <GrainOverlay />
@@ -181,74 +188,6 @@ function StreamingSiteContent() {
         </Routes>
       </main>
 
-      <style jsx>{`
-        @keyframes grain {
-          0%,
-          100% {
-            transform: translate(0, 0);
-          }
-          10% {
-            transform: translate(-5%, -10%);
-          }
-          20% {
-            transform: translate(-15%, 5%);
-          }
-          30% {
-            transform: translate(7%, -25%);
-          }
-          40% {
-            transform: translate(-5%, 25%);
-          }
-          50% {
-            transform: translate(-15%, 10%);
-          }
-          60% {
-            transform: translate(15%, 0%);
-          }
-          70% {
-            transform: translate(0%, 15%);
-          }
-          80% {
-            transform: translate(3%, 35%);
-          }
-          90% {
-            transform: translate(-10%, 10%);
-          }
-        }
-
-        @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0px);
-          }
-          50% {
-            transform: translateY(-20px);
-          }
-        }
-
-        @keyframes glow {
-          0%,
-          100% {
-            opacity: 0.5;
-            filter: blur(20px);
-          }
-          50% {
-            opacity: 0.8;
-            filter: blur(30px);
-          }
-        }
-
-        @keyframes slideUp {
-          from {
-            transform: translateY(30px);
-            opacity: 0;
-          }
-          to {
-            transform: translateY(0);
-            opacity: 1;
-          }
-        }
-      `}</style>
     </div>
   );
 }

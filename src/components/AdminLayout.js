@@ -1,13 +1,20 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Calendar, MessageSquarePlus, ChevronLeft, ChevronRight, LogOut } from 'lucide-react';
+import {
+  LayoutDashboard,
+  Calendar,
+  MessageSquarePlus,
+  ChevronLeft,
+  ChevronRight,
+  LogOut,
+} from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AdminLoginPage from '../pages/AdminLoginPage';
 
 const NAV_ITEMS = [
-  { to: '/admin', label: 'Admin Hub', icon: LayoutDashboard, end: true },
-  { to: '/admin/schedule', label: 'Schedule', icon: Calendar },
-  { to: '/admin/suggestions', label: 'Suggestions', icon: MessageSquarePlus },
+  { to: '/admin', label: 'Admin Hub', code: 'HUB', icon: LayoutDashboard, end: true },
+  { to: '/admin/schedule', label: 'Schedule', code: 'SCH', icon: Calendar },
+  { to: '/admin/suggestions', label: 'Suggestions', code: 'SUG', icon: MessageSquarePlus },
 ];
 
 export default function AdminLayout() {
@@ -26,57 +33,135 @@ export default function AdminLayout() {
 
   return (
     <div className="min-h-screen flex pt-16">
-      {/* Sidebar */}
+      {/* Sidebar — control panel register */}
       <aside
-        className={`flex flex-col bg-zinc-950/80 border-r border-white/10 backdrop-blur-sm transition-all duration-200 flex-shrink-0 ${
+        className={`relative overflow-hidden flex flex-col bg-zinc-card/30 border-r border-white/8 transition-all duration-200 flex-shrink-0 ${
           collapsed ? 'w-16' : 'w-56'
         }`}
       >
-        {/* Logo area */}
-        <div className={`flex items-center gap-3 px-4 py-5 border-b border-white/10 ${collapsed ? 'justify-center' : ''}`}>
+        {/* Atmospheric backing — scoped to sidebar */}
+        <div
+          className="pointer-events-none absolute -top-24 -left-24 w-64 h-64 rounded-full bg-orange-admin/10 blur-3xl motion-reduce:hidden"
+          aria-hidden="true"
+        />
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.04] mix-blend-screen motion-reduce:hidden"
+          aria-hidden="true"
+          style={{
+            backgroundImage:
+              'repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(255,255,255,0.6) 2px, rgba(255,255,255,0.6) 3px)',
+          }}
+        />
+
+        {/* Channel ID header */}
+        <div
+          className={`relative flex items-center gap-2 px-4 py-4 border-b border-white/8 ${
+            collapsed ? 'justify-center px-2' : ''
+          }`}
+        >
+          <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" aria-hidden="true" />
           {!collapsed && (
-            <span className="text-sm font-black tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-purple-400 uppercase">
-              Admin
-            </span>
+            <div className="flex flex-col leading-none gap-1">
+              <span
+                className="text-[9px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
+      >
+                Channel
+              </span>
+              <span
+                className="text-[11px] font-bold tracking-eyebrow-lg uppercase text-orange-admin font-mono"
+      >
+                GG-ADMIN
+              </span>
+            </div>
           )}
         </div>
 
-        {/* Nav links */}
-        <nav className="flex-1 py-4 space-y-1 px-2">
-          {NAV_ITEMS.map(({ to, label, icon: Icon, end }) => (
+        {/* Nav — tabs, not chips */}
+        <nav className="relative flex-1 py-3">
+          {NAV_ITEMS.map(({ to, label, code, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
               end={end}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg font-bold text-sm transition-all ${
+                `group flex items-center gap-3 px-4 py-3 border-l-2 transition-colors duration-150 ${
                   isActive
-                    ? 'bg-gradient-to-r from-emerald-500/20 to-purple-500/20 border border-emerald-500/30 text-white'
-                    : 'text-white/50 hover:text-white hover:bg-white/5'
-                } ${collapsed ? 'justify-center' : ''}`
+                    ? 'bg-zinc-card border-orange-admin text-white-body'
+                    : 'border-transparent text-white/55 hover:text-white-body hover:bg-zinc-card/40'
+                } ${collapsed ? 'justify-center px-0' : ''}`
               }
             >
-              <Icon size={18} className="flex-shrink-0" />
-              {!collapsed && <span>{label}</span>}
+              {({ isActive }) => (
+                <>
+                  {!collapsed && (
+                    <span
+                      className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums ${
+                        isActive ? 'text-orange-admin' : 'text-white/30'
+                      }`}
+                      
+                    >
+                      {code}
+                    </span>
+                  )}
+                  <Icon size={16} className="flex-shrink-0 opacity-80" aria-hidden="true" />
+                  {!collapsed && (
+                    <span className="text-sm font-bold tracking-tight whitespace-nowrap">
+                      {label}
+                    </span>
+                  )}
+                  {!collapsed && isActive && (
+                    <span
+                      className="ml-auto text-[9px] font-bold tracking-eyebrow-lg text-orange-admin font-mono"
+      >
+                      ON
+                    </span>
+                  )}
+                </>
+              )}
             </NavLink>
           ))}
         </nav>
 
-        {/* Bottom: logout + collapse toggle */}
-        <div className="pb-4 px-2 space-y-1 border-t border-white/10 pt-4">
+        {/* Bottom — logout + collapse */}
+        <div className="relative border-t border-white/8">
           <button
             onClick={handleLogout}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-400/70 hover:text-red-300 hover:bg-red-500/10 font-bold text-sm transition-all ${collapsed ? 'justify-center' : ''}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 text-red-destructive/75 hover:text-red-destructive hover:bg-red-destructive/5 transition-colors duration-150 ${
+              collapsed ? 'justify-center px-0' : ''
+            }`}
           >
-            <LogOut size={18} className="flex-shrink-0" />
-            {!collapsed && <span>Logout</span>}
+            {!collapsed && (
+              <span
+                className="text-[10px] font-bold tracking-eyebrow-md text-red-destructive/60 font-mono"
+      >
+                OUT
+              </span>
+            )}
+            <LogOut size={16} className="flex-shrink-0" aria-hidden="true" />
+            {!collapsed && (
+              <span className="text-sm font-bold tracking-tight">Logout</span>
+            )}
           </button>
           <button
             onClick={() => setCollapsed((c) => !c)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-white/30 hover:text-white hover:bg-white/5 font-bold text-sm transition-all ${collapsed ? 'justify-center' : ''}`}
+            className={`w-full flex items-center gap-3 px-4 py-3 text-white/35 hover:text-white-body hover:bg-zinc-card/40 transition-colors duration-150 ${
+              collapsed ? 'justify-center px-0' : ''
+            }`}
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           >
-            {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
-            {!collapsed && <span>Collapse</span>}
+            {collapsed ? (
+              <ChevronRight size={16} aria-hidden="true" />
+            ) : (
+              <>
+                <span
+                  className="text-[10px] font-bold tracking-eyebrow-md text-white/30 font-mono"
+      >
+                  HIDE
+                </span>
+                <ChevronLeft size={16} aria-hidden="true" />
+                <span className="text-sm font-bold tracking-tight">Collapse</span>
+              </>
+            )}
           </button>
         </div>
       </aside>

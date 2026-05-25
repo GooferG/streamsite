@@ -30,12 +30,12 @@ export default function TwitchCallbackPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-white">
+      <div className="min-h-screen flex items-center justify-center text-white-body">
         <div className="text-center space-y-4">
-          <p className="text-red-400 font-bold">{error}</p>
+          <p className="text-red-destructive font-bold">{error}</p>
           <button
             onClick={() => navigate('/suggest')}
-            className="px-6 py-3 rounded-lg bg-white/10 border border-white/20 hover:border-purple-400/60 transition-all"
+            className="px-6 py-3 rounded-lg bg-white/10 border border-white/20 hover:border-purple-bright/60 transition-all"
           >
             Back to Suggest
           </button>
@@ -45,9 +45,9 @@ export default function TwitchCallbackPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center text-white">
+    <div className="min-h-screen flex items-center justify-center text-white-body">
       <div className="text-center space-y-4">
-        <div className="w-8 h-8 border-2 border-purple-400 border-t-transparent rounded-full animate-spin mx-auto" />
+        <div className="w-8 h-8 border-2 border-purple-bright border-t-transparent rounded-full animate-spin mx-auto" />
         <p className="text-white/60">Logging you in with Twitch...</p>
       </div>
     </div>

@@ -1,14 +1,27 @@
 import { PlayCircle } from 'lucide-react';
 
-export default function ClipCard({ clip, index = 0 }) {
+export default function ClipCard({ clip, index = 0, onPlay }) {
   const tapeNumber = String(index + 1).padStart(3, '0');
 
+  const handlePlay = () => {
+    if (!onPlay) return;
+    onPlay({
+      id: clip.id,
+      type: 'clip',
+      title: clip.title,
+      game: clip.game,
+      views: clip.views,
+      duration: clip.duration,
+      twitchUrl: clip.url,
+      tape: tapeNumber,
+    });
+  };
+
   return (
-    <a
-      href={clip.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group block focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-signal"
+    <button
+      type="button"
+      onClick={handlePlay}
+      className="group block text-left w-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-signal"
     >
       <div className="relative aspect-video bg-zinc-card border border-white/5 overflow-hidden rounded-md transition-colors duration-200 group-hover:border-emerald-signal/40">
         {clip.thumbnail ? (
@@ -46,6 +59,6 @@ export default function ClipCard({ clip, index = 0 }) {
           </span>
         </div>
       </div>
-    </a>
+    </button>
   );
 }

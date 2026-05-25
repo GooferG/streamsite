@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Film } from 'lucide-react';
 import VodCard from '../components/VodCard';
+import VideoModal from '../components/VideoModal';
+import { useVideoModal } from '../hooks/useVideoModal';
 
 function useNowTimestamp() {
   const [now, setNow] = useState(() => new Date());
@@ -75,6 +77,7 @@ function formatDuration(duration) {
 export default function VodsPage({ videos, clips, loading }) {
   const [contentType, setContentType] = useState('all');
   const now = useNowTimestamp();
+  const { current, open, close } = useVideoModal();
 
   const allContent = [
     ...videos.map((video) => ({
@@ -211,7 +214,7 @@ export default function VodsPage({ videos, clips, loading }) {
         ) : filteredContent.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredContent.map((item, index) => (
-              <VodCard key={item.id} vod={item} index={index} />
+              <VodCard key={item.id} vod={item} index={index} onPlay={open} />
             ))}
           </div>
         ) : (
@@ -247,6 +250,8 @@ export default function VodsPage({ videos, clips, loading }) {
           <span className="text-emerald-signal/70 tabular-nums">{formatTimecode(now)}</span>
         </footer>
       </div>
+
+      <VideoModal video={current} onClose={close} />
     </div>
   );
 }

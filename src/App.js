@@ -49,7 +49,10 @@ function StreamingSiteContent() {
   const [clips, setClips] = useState([]);
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showTVIntro, setShowTVIntro] = useState(true);
+  const [showTVIntro, setShowTVIntro] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return !window.sessionStorage.getItem('tvIntroPlayed');
+  });
 
   // Derive current page id from URL for nav highlighting
   const currentPage = location.pathname.split('/').filter(Boolean)[0] || 'home';
@@ -108,13 +111,20 @@ function StreamingSiteContent() {
   }, []);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowTVIntro(false);
+    if (!showTVIntro) {
       setIsVisible(true);
-    }, 2000);
+    }
+  }, [showTVIntro]);
 
-    return () => clearTimeout(timer);
-  }, []);
+  const handleIntroComplete = () => {
+    setShowTVIntro(false);
+    setIsVisible(true);
+    try {
+      window.sessionStorage.setItem('tvIntroPlayed', '1');
+    } catch {
+      // sessionStorage may be unavailable (private mode, etc.)
+    }
+  };
 
   useEffect(() => {
     const productPrefixes = ['/gamba', '/admin', '/twitch-callback', '/suggest-overlay'];
@@ -125,7 +135,7 @@ function StreamingSiteContent() {
 
   return (
     <div className="min-h-screen bg-zinc-broadcast text-white-body">
-      {showTVIntro && <TVStaticIntro />}
+      {showTVIntro && <TVStaticIntro onComplete={handleIntroComplete} />}
 
       <GrainOverlay />
 

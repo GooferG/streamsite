@@ -9,7 +9,8 @@ const NAV_ITEMS = [
   { id: 'gamba', label: 'Gamba', code: '04' },
   { id: 'gaming', label: 'Gaming', code: '05' },
   { id: 'store', label: 'Store', code: '06' },
-  { id: 'about', label: 'About', code: '07' },
+  { id: 'giveaway', label: 'Giveaway', code: '07' },
+  { id: 'about', label: 'About', code: '08' },
 ];
 
 const ADMIN_ITEM = { id: 'admin', label: 'Admin', code: 'AD' };

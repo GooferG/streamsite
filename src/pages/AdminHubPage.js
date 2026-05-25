@@ -5,6 +5,7 @@ import {
   Store,
   Inbox,
   Ticket,
+  Gift,
   ChevronRight,
 } from 'lucide-react';
 
@@ -48,6 +49,14 @@ const HUB_CARDS = [
     title: 'Tickets',
     description:
       'Search viewers by Twitch login. Grant or deduct tickets manually and audit the ledger.',
+  },
+  {
+    to: '/admin/giveaways',
+    icon: Gift,
+    code: 'GVW',
+    title: 'Giveaways',
+    description:
+      'Run keyword-based giveaways. Pick weighted winners on stream with a live-chat modal.',
   },
 ];
 

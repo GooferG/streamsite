@@ -25,9 +25,12 @@ import AdminSuggestionsPage from './pages/AdminSuggestionsPage';
 import AdminStorePage from './pages/AdminStorePage';
 import AdminRedemptionsPage from './pages/AdminRedemptionsPage';
 import AdminTicketsPage from './pages/AdminTicketsPage';
+import AdminGiveawaysPage from './pages/AdminGiveawaysPage';
 import StorePage from './pages/StorePage';
+import GiveawayPage from './pages/GiveawayPage';
 import MyAccountPage from './pages/MyAccountPage';
 import TwitchCallbackPage from './pages/TwitchCallbackPage';
+import DiscordCallbackPage from './pages/DiscordCallbackPage';
 import SuggestPage from './pages/SuggestPage';
 import SuggestOverlay from './pages/SuggestOverlay';
 import { AuthProvider } from './contexts/AuthContext';
@@ -132,7 +135,7 @@ function StreamingSiteContent() {
   };
 
   useEffect(() => {
-    const productPrefixes = ['/gamba', '/admin', '/twitch-callback', '/suggest-overlay'];
+    const productPrefixes = ['/gamba', '/admin', '/twitch-callback', '/discord-callback', '/suggest-overlay'];
     const isProduct = productPrefixes.some((p) => location.pathname.startsWith(p));
     document.body.classList.toggle('brand-route', !isProduct);
     return () => document.body.classList.remove('brand-route');
@@ -199,11 +202,14 @@ function StreamingSiteContent() {
             <Route path="store" element={<AdminStorePage />} />
             <Route path="redemptions" element={<AdminRedemptionsPage />} />
             <Route path="tickets" element={<AdminTicketsPage />} />
+            <Route path="giveaways" element={<AdminGiveawaysPage />} />
           </Route>
           <Route path="/store" element={<StorePage />} />
+          <Route path="/giveaway" element={<GiveawayPage />} />
           <Route path="/me" element={<MyAccountPage />} />
           <Route path="/suggest" element={<SuggestPage />} />
           <Route path="/twitch-callback" element={<TwitchCallbackPage />} />
+          <Route path="/discord-callback" element={<DiscordCallbackPage />} />
           <Route path="/suggest-overlay" element={<SuggestOverlay />} />
         </Routes>
       </main>

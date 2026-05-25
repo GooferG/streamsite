@@ -15,11 +15,76 @@ import {
   ArrowUpRight,
   Sparkles,
   AlertCircle,
+  Link2,
+  CheckCircle2,
 } from 'lucide-react';
 import { db } from '../config/firebase';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 import { useUserDoc } from '../hooks/useUserDoc';
 import { authedFetch } from '../utils/authedFetch';
+
+const DISCORD_CLIENT_ID = process.env.REACT_APP_DISCORD_CLIENT_ID;
+const DISCORD_REDIRECT_URI =
+  process.env.REACT_APP_DISCORD_REDIRECT_URI ||
+  (typeof window !== 'undefined' ? `${window.location.origin}/discord-callback` : '');
+
+function discordAuthUrl() {
+  if (!DISCORD_CLIENT_ID) return null;
+  const params = new URLSearchParams({
+    client_id: DISCORD_CLIENT_ID,
+    redirect_uri: DISCORD_REDIRECT_URI,
+    response_type: 'code',
+    scope: 'identify guilds',
+    prompt: 'consent',
+  });
+  return `https://discord.com/oauth2/authorize?${params.toString()}`;
+}
+
+function DiscordLinkPanel({ discordId, discordUsername }) {
+  const url = discordAuthUrl();
+  const linked = !!discordId;
+
+  if (linked) {
+    return (
+      <div className="px-5 py-4 border-t border-white/8 flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <CheckCircle2 size={14} className="text-emerald-signal" aria-hidden="true" />
+          <span className="text-sm font-bold text-white-body">
+            Discord linked
+            {discordUsername ? (
+              <span className="text-white/45 font-normal"> · @{discordUsername}</span>
+            ) : null}
+          </span>
+        </div>
+        <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal/70 font-mono">
+          Bonus claimed
+        </span>
+      </div>
+    );
+  }
+
+  if (!url) {
+    return (
+      <div className="px-5 py-4 border-t border-white/8 text-[11px] tracking-eyebrow uppercase text-white/40 font-mono">
+        Discord linking not configured.
+      </div>
+    );
+  }
+
+  return (
+    <div className="px-5 py-4 border-t border-white/8">
+      <a
+        href={url}
+        className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#5865F2] hover:bg-[#4752C4] text-white-body transition-colors duration-150"
+      >
+        <Link2 size={13} aria-hidden="true" />
+        <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+          Link Discord
+        </span>
+      </a>
+    </div>
+  );
+}
 
 const REASON_LABELS = {
   watchtime: 'Watch time',
@@ -260,12 +325,16 @@ export default function MyAccountPage() {
               <span>Claim once every 22 hours from this page.</span>
             </li>
             <li className="flex items-baseline gap-2">
-              <span className="text-white/40 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono w-24 flex-shrink-0">
+              <span className="text-emerald-signal text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono w-24 flex-shrink-0">
                 Discord
               </span>
-              <span className="text-white/40">Linking Discord — coming soon.</span>
+              <span>One-time bonus for linking your Discord (must be in the server).</span>
             </li>
           </ul>
+          <DiscordLinkPanel
+            discordId={user?.discordId}
+            discordUsername={user?.discordUsername}
+          />
         </div>
 
         {/* Ledger */}

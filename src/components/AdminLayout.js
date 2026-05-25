@@ -4,6 +4,9 @@ import {
   LayoutDashboard,
   Calendar,
   MessageSquarePlus,
+  Store,
+  Inbox,
+  Ticket,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -15,6 +18,9 @@ const NAV_ITEMS = [
   { to: '/admin', label: 'Admin Hub', code: 'HUB', icon: LayoutDashboard, end: true },
   { to: '/admin/schedule', label: 'Schedule', code: 'SCH', icon: Calendar },
   { to: '/admin/suggestions', label: 'Suggestions', code: 'SUG', icon: MessageSquarePlus },
+  { to: '/admin/store', label: 'Store', code: 'STR', icon: Store },
+  { to: '/admin/redemptions', label: 'Redemptions', code: 'RED', icon: Inbox },
+  { to: '/admin/tickets', label: 'Tickets', code: 'TKT', icon: Ticket },
 ];
 
 export default function AdminLayout() {

@@ -1,5 +1,12 @@
 import { useNavigate } from 'react-router-dom';
-import { Calendar, MessageSquarePlus, ChevronRight } from 'lucide-react';
+import {
+  Calendar,
+  MessageSquarePlus,
+  Store,
+  Inbox,
+  Ticket,
+  ChevronRight,
+} from 'lucide-react';
 
 const HUB_CARDS = [
   {
@@ -17,6 +24,30 @@ const HUB_CARDS = [
     title: 'Suggestions',
     description:
       'Manage viewer game suggestions. Highlight picks, edit entries, or clear the list.',
+  },
+  {
+    to: '/admin/store',
+    icon: Store,
+    code: 'STR',
+    title: 'Store catalog',
+    description:
+      'Create and edit ticket-store items. Virtual items auto-grant; stream items go to the redemption queue.',
+  },
+  {
+    to: '/admin/redemptions',
+    icon: Inbox,
+    code: 'RED',
+    title: 'Redemption queue',
+    description:
+      'Fulfill pending stream-affecting redemptions, or cancel and refund tickets back to viewers.',
+  },
+  {
+    to: '/admin/tickets',
+    icon: Ticket,
+    code: 'TKT',
+    title: 'Tickets',
+    description:
+      'Search viewers by Twitch login. Grant or deduct tickets manually and audit the ledger.',
   },
 ];
 

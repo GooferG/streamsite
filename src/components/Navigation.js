@@ -34,7 +34,6 @@ function Wordmark({ onClick }) {
 
 function NavLink({ item, active, accent = 'emerald', onClick }) {
   const accentDot = accent === 'orange' ? 'bg-orange-admin' : 'bg-emerald-signal';
-  const accentText = accent === 'orange' ? 'text-orange-admin' : 'text-emerald-signal';
 
   return (
     <button
@@ -42,13 +41,6 @@ function NavLink({ item, active, accent = 'emerald', onClick }) {
       onClick={onClick}
       className="group relative inline-flex items-center gap-2 py-1.5"
     >
-      <span
-        className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums transition-colors duration-200 ${
-          active ? accentText : 'text-white/25 group-hover:text-white/45'
-        } font-mono`}
-      >
-        {item.code}
-      </span>
       <span
         className={`text-[13px] font-bold tracking-tight transition-colors duration-200 whitespace-nowrap ${
           active ? 'text-white-body' : 'text-white/60 group-hover:text-white-body'
@@ -152,13 +144,6 @@ export default function Navigation({ currentPage, setPage }) {
                 }`}
               >
                 <span
-                  className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums ${
-                    isActive ? 'text-emerald-signal' : 'text-white/30'
-                  } font-mono`}
-      >
-                  {item.code}
-                </span>
-                <span
                   className={`text-sm font-bold tracking-tight ${
                     isActive ? 'text-white-body' : 'text-white/70'
                   }`}
@@ -192,13 +177,6 @@ export default function Navigation({ currentPage, setPage }) {
                 : 'border-transparent hover:bg-zinc-card/50'
             }`}
           >
-            <span
-              className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums ${
-                currentPage === ADMIN_ITEM.id ? 'text-orange-admin' : 'text-white/30'
-              } font-mono`}
-      >
-              {ADMIN_ITEM.code}
-            </span>
             <span
               className={`text-sm font-bold tracking-tight ${
                 currentPage === ADMIN_ITEM.id ? 'text-white-body' : 'text-white/70'

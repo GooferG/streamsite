@@ -68,12 +68,12 @@ export default function GameAutocomplete({ value, onChange, placeholder, classNa
         className={className}
       />
       {open && (
-        <ul className="absolute z-50 left-0 right-0 mt-1 bg-zinc-900 border border-emerald-500/30 rounded-lg overflow-hidden shadow-xl max-h-64 overflow-y-auto">
+        <ul className="absolute z-50 left-0 right-0 mt-1 bg-zinc-900 border border-emerald-signal/30 rounded-lg overflow-hidden shadow-xl max-h-64 overflow-y-auto">
           {suggestions.map(g => (
             <li
               key={g.appid}
               onMouseDown={() => select(g.name)}
-              className="flex items-center gap-3 px-3 py-2 hover:bg-emerald-500/10 cursor-pointer transition-colors"
+              className="flex items-center gap-3 px-3 py-2 hover:bg-emerald-signal/10 cursor-pointer transition-colors"
             >
               {g.img_logo_url && (
                 <img
@@ -83,8 +83,8 @@ export default function GameAutocomplete({ value, onChange, placeholder, classNa
                   onError={e => { e.target.style.display = 'none'; }}
                 />
               )}
-              <span className="text-sm text-white truncate">{g.name}</span>
-              <Gamepad2 size={12} className="text-emerald-400/50 flex-shrink-0 ml-auto" />
+              <span className="text-sm text-white-body truncate">{g.name}</span>
+              <Gamepad2 size={12} className="text-emerald-bright/50 flex-shrink-0 ml-auto" />
             </li>
           ))}
         </ul>

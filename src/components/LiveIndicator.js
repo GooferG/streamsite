@@ -13,10 +13,10 @@ export default function LiveIndicator({ isLive, streamData }) {
     >
       <div className="relative">
         {/* Pulsing glow effect */}
-        <div className="absolute inset-0 bg-emerald-500 rounded-full blur-xl opacity-50 animate-pulse" />
+        <div className="absolute inset-0 bg-emerald-signal rounded-full blur-xl opacity-50 animate-pulse" />
 
         {/* Main button */}
-        <div className="relative flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full shadow-2xl transform transition-all duration-300 group-hover:scale-105 group-hover:from-emerald-400 group-hover:to-emerald-500">
+        <div className="relative flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-emerald-signal to-emerald-600 rounded-full shadow-2xl transform transition-all duration-300 group-hover:scale-105 group-hover:from-emerald-bright group-hover:to-emerald-signal">
           {/* Animated live dot */}
           <div className="relative">
             <div className="w-3 h-3 bg-white rounded-full animate-pulse" />
@@ -25,7 +25,7 @@ export default function LiveIndicator({ isLive, streamData }) {
 
           {/* Text */}
           <div className="flex flex-col">
-            <span className="text-white font-black text-sm tracking-wider uppercase">
+            <span className="text-white-body font-black text-sm tracking-wider uppercase">
               Goofer LIVE Now
             </span>
             {streamData?.viewers && (
@@ -37,7 +37,7 @@ export default function LiveIndicator({ isLive, streamData }) {
           </div>
 
           {/* Twitch icon */}
-          <Twitch size={24} className="text-white" />
+          <Twitch size={24} className="text-white-body" />
         </div>
       </div>
     </a>

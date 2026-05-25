@@ -1,16 +1,50 @@
 import { useNavigate, useLocation } from 'react-router-dom';
+import { Target, Gamepad2, MessageSquarePlus, Layers } from 'lucide-react';
 import BonusHuntsPage from './BonusHunts';
 import HuntTracker from '../components/HuntTracker';
-import {
-  Target,
-  Flame,
-  ShieldCheck,
-  ExternalLink,
-  Gamepad2,
-  MessageSquarePlus,
-} from 'lucide-react';
 import SlotPicker from '../components/SlotPicker';
 import SuggestAdminTab from '../components/SuggestAdminTab';
+
+const TOOLS = [
+  { id: 'hunt-tracker', label: 'Hunt Tracker', code: 'HT', icon: Target },
+  { id: 'bonus-hunts', label: 'Bonus Hunts', code: 'BH', icon: Layers },
+  { id: 'wheel', label: 'Slot Picker', code: 'SP', icon: Gamepad2 },
+  { id: 'suggest', label: 'Suggestions', code: 'SG', icon: MessageSquarePlus },
+];
+
+function ToolTab({ tool, active, onClick }) {
+  const Icon = tool.icon;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`group flex items-center gap-2.5 px-3 sm:px-4 py-3 transition-colors duration-150 ${
+        active
+          ? 'bg-zinc-card text-white-body'
+          : 'text-white/55 hover:text-white-body hover:bg-zinc-card/40'
+      }`}
+    >
+      <span
+        className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums ${
+          active ? 'text-emerald-signal' : 'text-white/30'
+        } font-mono`}
+      >
+        {tool.code}
+      </span>
+      <Icon size={14} aria-hidden="true" className="opacity-80 flex-shrink-0" />
+      <span className="text-sm font-bold tracking-tight truncate">
+        {tool.label}
+      </span>
+      {active && (
+        <span
+          className="ml-auto text-[10px] font-bold tracking-eyebrow-lg text-emerald-signal font-mono"
+      >
+          ON
+        </span>
+      )}
+    </button>
+  );
+}
 
 export default function GambaPage() {
   const navigate = useNavigate();
@@ -18,183 +52,92 @@ export default function GambaPage() {
   const activeTool = location.pathname.split('/')[2] || 'wheel';
   const setActiveTool = (tool) => navigate(`/gamba/${tool}`);
 
+  const activeMeta = TOOLS.find((t) => t.id === activeTool) || TOOLS[2];
+
   return (
-    <div className="pt-32 pb-24 px-6">
-      <div className="max-w-7xl mx-auto space-y-10">
-        <header className="text-center space-y-4">
-          <h1 className="text-6xl md:text-7xl font-black tracking-tighter">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-purple-400">
-              GAMBA CONTROL ROOM
+    <div className="pt-24 pb-16 px-4 sm:px-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Toolbar header — control panel register, not slate */}
+        <div className="relative overflow-hidden border border-white/8 bg-zinc-card/30">
+          {/* Atmospheric backing — scoped to shell only */}
+          <div
+            className="pointer-events-none absolute -top-24 -right-24 w-72 h-72 rounded-full bg-emerald-signal/10 blur-3xl motion-reduce:hidden"
+            aria-hidden="true"
+          />
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.04] mix-blend-screen motion-reduce:hidden"
+            aria-hidden="true"
+            style={{
+              backgroundImage:
+                'repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(255,255,255,0.6) 2px, rgba(255,255,255,0.6) 3px)',
+            }}
+          />
+
+          {/* Status bar */}
+          <div
+            className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
+      >
+            <span className="inline-flex items-center gap-2 text-emerald-signal">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
+              <span>CONTROL ROOM</span>
             </span>
-          </h1>
-          <p className="text-lg text-white/60 max-w-2xl mx-auto">
-            On-stream gamba tools to keep the vibes high and the bankroll
-            honest. Plan bets, track the session, and keep safety front and
-            center.
-          </p>
-
-          {/* Tool Selection Buttons */}
-          <div className="flex justify-center gap-4 pt-4 flex-wrap">
-            <button
-              onClick={() => setActiveTool('hunt-tracker')}
-              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
-                activeTool === 'hunt-tracker'
-                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
-                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
-              }`}
-            >
-              <Target size={18} />
-              Hunt Tracker
-            </button>
-            <button
-              onClick={() => setActiveTool('bonus-hunts')}
-              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
-                activeTool === 'bonus-hunts'
-                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
-                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
-              }`}
-            >
-              <Target size={18} />
-              Bonus Hunts
-            </button>
-            <button
-              onClick={() => setActiveTool('wheel')}
-              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
-                activeTool === 'wheel'
-                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
-                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
-              }`}
-            >
-              <Gamepad2 size={18} />
-              Slot Picker
-            </button>
-            <button
-              onClick={() => setActiveTool('suggest')}
-              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
-                activeTool === 'suggest'
-                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
-                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
-              }`}
-            >
-              <MessageSquarePlus size={18} />
-              Suggestions
-            </button>
-          </div>
-        </header>
-
-        <div className="space-y-6">
-          <div className="space-y-6">
-            {/* Suggestions Admin Tab — admin only */}
-            {activeTool === 'suggest' && <SuggestAdminTab />}
-
-            {/* Bonus Hunts */}
-            {activeTool === 'bonus-hunts' && <BonusHuntsPage />}
-
-            {/* Hunt Tracker */}
-            {activeTool === 'hunt-tracker' && <HuntTracker />}
-
-            {/* Slot Picker Tool */}
-            {activeTool === 'wheel' && (
-              <div className="space-y-6">
-                <div className="p-8 bg-gradient-to-br from-orange-900/20 to-pink-900/20 border border-orange-500/20 rounded-xl backdrop-blur-sm">
-                  <div className="mb-6">
-                    <div className="flex items-center gap-2 text-orange-300 font-bold mb-2">
-                      <Gamepad2 size={18} />
-                      Advanced Slot Picker
-                    </div>
-                    <h2 className="text-3xl font-black tracking-tighter">
-                      Find Your Next Slot
-                    </h2>
-                    <p className="text-white/60">
-                      Browse 30+ slots with advanced filters. Search by
-                      provider, volatility, RTP, and more.
-                    </p>
-                  </div>
-
-                  <SlotPicker />
-                </div>
-              </div>
-            )}
+            <span className="text-white/15">·</span>
+            <span className="text-white/45">CHANNEL</span>
+            <span className="text-white/70 tracking-eyebrow-lg">GG-02</span>
+            <span className="text-white/15">·</span>
+            <span className="text-white/45">MODULE</span>
+            <span className="text-white/70 tracking-eyebrow-lg">
+              {activeMeta.code}
+            </span>
+            <span className="text-white/15 hidden sm:inline">·</span>
+            <span className="hidden sm:inline text-white/30">
+              On-stream gamba tools. Entertainment only.
+            </span>
           </div>
 
-          {/* Bottom info strip */}
-          <div className="grid md:grid-cols-3 gap-6 pt-4 border-t border-white/10">
-            <div className="p-6 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm space-y-4">
-              <div className="flex items-center gap-2 text-emerald-300 font-bold">
-                <ShieldCheck size={16} />
-                Responsible Play
-              </div>
-              <p className="text-white/70 text-sm">
-                Gamba is entertainment and entertainment ONLY. Set limits, take breaks, and mute if you feel tilted. Chat should hear your plan before each session.
-              </p>
-              <ul className="space-y-2 text-sm text-white/60">
-                <li>ƒ?› Cash-out when goal is hit twice in a row.</li>
-                <li>ƒ?› If down your stop-loss, call it.</li>
-                <li>ƒ?› Hydrate + 5 minute walk every 40 minutes.</li>
-                <li>ƒ?› No late-night redeposits.</li>
-              </ul>
-            </div>
-
-            <div className="p-6 bg-gradient-to-br from-emerald-900/30 to-purple-900/30 border border-emerald-500/20 rounded-xl backdrop-blur-sm">
-              <div className="flex items-center gap-2 text-purple-200 font-bold mb-3">
-                <Flame size={16} />
-                Stream Segment Prompts
-              </div>
-              <div className="space-y-2 text-sm text-white/70">
-                <PromptItem title="Warmup" detail="Low-volatility slots, show bet sizing overlay." />
-                <PromptItem title="Heat Check" detail="1-2 higher stakes buys, stop if net goes red twice." />
-                <PromptItem title="Cooldown" detail="Switch to high RTP game / react content for 15m." />
-                <PromptItem title="Viewer Picks" detail="Run a poll with 3 games you pre-approved." />
-              </div>
-            </div>
-
-            <div className="p-6 bg-white/5 border border-white/10 rounded-xl backdrop-blur-sm space-y-4">
-              <div className="flex items-center gap-2 text-purple-200 font-bold">
-                <ExternalLink size={16} />
-                Resources & Links
-              </div>
-              <ResourceLink
-                title="Broadcast-friendly RTP checker"
-                description="Verify picks before stream so chat knows the plan."
-                href="https://www.askgamblers.com/online-casinos/slots-rtp"
+          {/* Tool tabs — 2x2 on mobile, single row on sm+ */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 border-b border-white/8 divide-x divide-y sm:divide-y-0 divide-white/8">
+            {TOOLS.map((tool) => (
+              <ToolTab
+                key={tool.id}
+                tool={tool}
+                active={activeTool === tool.id}
+                onClick={() => setActiveTool(tool.id)}
               />
-              <ResourceLink
-                title="Responsible gambling (GamCare)"
-                description="Helpline + tips for staying within limits."
-                href="https://www.gamcare.org.uk/"
-              />
-              <ResourceLink
-                title="Stream checklist template"
-                description="Pre/post stream gamba checklist to print or pin."
-                href="https://docs.google.com/document/u/0/"
-              />
-            </div>
+            ))}
           </div>
+
+          {/* Active module slate */}
+          <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 px-4 py-4">
+            <div className="flex items-baseline gap-4">
+              <span
+                className="text-[10px] font-bold tracking-eyebrow-lg text-white/40 tabular-nums font-mono"
+      >
+                MODULE {activeMeta.code}
+              </span>
+              <h1
+                className="text-xl sm:text-2xl font-bold tracking-tight text-white-body"
+                style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}
+              >
+                {activeMeta.label}
+              </h1>
+            </div>
+            <span
+              className="text-[10px] font-bold tracking-eyebrow-md text-white/35 font-mono"
+      >
+              READY
+            </span>
+          </div>
+        </div>
+
+        {/* Tool surface — untouched, hosted in a plain container */}
+        <div className="mt-6">
+          {activeTool === 'suggest' && <SuggestAdminTab />}
+          {activeTool === 'bonus-hunts' && <BonusHuntsPage />}
+          {activeTool === 'hunt-tracker' && <HuntTracker />}
+          {activeTool === 'wheel' && <SlotPicker />}
         </div>
       </div>
     </div>
-  );
-}
-
-function PromptItem({ title, detail }) {
-  return (
-    <div className="p-3 rounded-lg bg-black/30 border border-white/5">
-      <p className="font-bold text-white">{title}</p>
-      <p className="text-white/60 text-sm">{detail}</p>
-    </div>
-  );
-}
-
-function ResourceLink({ title, description, href }) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="block p-3 rounded-lg bg-black/30 border border-white/5 hover:border-emerald-400/60 transition-all"
-    >
-      <p className="font-bold text-white">{title}</p>
-      <p className="text-white/60 text-sm">{description}</p>
-    </a>
   );
 }

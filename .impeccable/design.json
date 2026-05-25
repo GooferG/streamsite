@@ -1,0 +1,344 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-25T00:00:00Z",
+  "title": "Design System: GooferG Live",
+  "extensions": {
+    "colorMeta": {
+      "emerald-signal": {
+        "role": "primary",
+        "displayName": "Emerald Signal",
+        "canonical": "oklch(70% 0.17 158)",
+        "tonalRamp": [
+          "oklch(20% 0.05 158)",
+          "oklch(30% 0.09 158)",
+          "oklch(40% 0.13 158)",
+          "oklch(50% 0.16 158)",
+          "oklch(60% 0.17 158)",
+          "oklch(70% 0.17 158)",
+          "oklch(80% 0.13 158)",
+          "oklch(92% 0.08 158)"
+        ]
+      },
+      "emerald-bright": {
+        "role": "primary",
+        "displayName": "Emerald Bright",
+        "canonical": "oklch(78% 0.17 158)",
+        "tonalRamp": [
+          "oklch(25% 0.06 158)",
+          "oklch(35% 0.10 158)",
+          "oklch(45% 0.14 158)",
+          "oklch(55% 0.17 158)",
+          "oklch(65% 0.18 158)",
+          "oklch(78% 0.17 158)",
+          "oklch(86% 0.12 158)",
+          "oklch(94% 0.07 158)"
+        ]
+      },
+      "purple-gamba": {
+        "role": "secondary",
+        "displayName": "Gamba Purple",
+        "canonical": "oklch(64% 0.23 305)",
+        "tonalRamp": [
+          "oklch(18% 0.08 305)",
+          "oklch(28% 0.12 305)",
+          "oklch(38% 0.17 305)",
+          "oklch(48% 0.22 305)",
+          "oklch(56% 0.24 305)",
+          "oklch(64% 0.23 305)",
+          "oklch(76% 0.18 305)",
+          "oklch(90% 0.10 305)"
+        ]
+      },
+      "orange-admin": {
+        "role": "tertiary",
+        "displayName": "Admin Orange",
+        "canonical": "oklch(70% 0.19 50)",
+        "tonalRamp": [
+          "oklch(22% 0.06 50)",
+          "oklch(32% 0.10 50)",
+          "oklch(42% 0.14 50)",
+          "oklch(52% 0.18 50)",
+          "oklch(62% 0.20 50)",
+          "oklch(70% 0.19 50)",
+          "oklch(82% 0.13 50)",
+          "oklch(93% 0.07 50)"
+        ]
+      },
+      "red-destructive": {
+        "role": "tertiary",
+        "displayName": "Destructive Red",
+        "canonical": "oklch(64% 0.23 28)",
+        "tonalRamp": [
+          "oklch(20% 0.07 28)",
+          "oklch(30% 0.11 28)",
+          "oklch(40% 0.16 28)",
+          "oklch(50% 0.20 28)",
+          "oklch(58% 0.23 28)",
+          "oklch(64% 0.23 28)",
+          "oklch(78% 0.16 28)",
+          "oklch(92% 0.08 28)"
+        ]
+      },
+      "zinc-broadcast": {
+        "role": "neutral",
+        "displayName": "Zinc Broadcast",
+        "canonical": "oklch(14% 0.01 280)",
+        "tonalRamp": [
+          "oklch(14% 0.01 280)",
+          "oklch(20% 0.01 280)",
+          "oklch(28% 0.01 280)",
+          "oklch(36% 0.01 280)",
+          "oklch(48% 0.01 280)",
+          "oklch(64% 0.01 280)",
+          "oklch(80% 0.01 280)",
+          "oklch(96% 0.005 280)"
+        ]
+      },
+      "zinc-card": {
+        "role": "neutral",
+        "displayName": "Zinc Card",
+        "canonical": "oklch(20% 0.01 280)",
+        "tonalRamp": [
+          "oklch(14% 0.01 280)",
+          "oklch(20% 0.01 280)",
+          "oklch(28% 0.01 280)",
+          "oklch(36% 0.01 280)",
+          "oklch(48% 0.01 280)",
+          "oklch(64% 0.01 280)",
+          "oklch(80% 0.01 280)",
+          "oklch(96% 0.005 280)"
+        ]
+      },
+      "white-body": {
+        "role": "neutral",
+        "displayName": "White Body",
+        "canonical": "oklch(98% 0.002 280)",
+        "tonalRamp": [
+          "oklch(20% 0.005 280)",
+          "oklch(40% 0.005 280)",
+          "oklch(60% 0.005 280)",
+          "oklch(72% 0.004 280)",
+          "oklch(82% 0.003 280)",
+          "oklch(90% 0.002 280)",
+          "oklch(94% 0.002 280)",
+          "oklch(98% 0.002 280)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "fontFamily": "ui-sans-serif, system-ui, sans-serif", "weight": 900, "tracking": "-0.04em", "purpose": "Hero wordmarks only. System stack is the chosen typography for this brand. Never a webfont." },
+      "headline": { "displayName": "Headline", "fontFamily": "ui-sans-serif, system-ui, sans-serif", "weight": 700, "tracking": "-0.02em", "purpose": "Page titles on /about, /schedule, /vods." },
+      "title": { "displayName": "Title", "fontFamily": "ui-sans-serif, system-ui, sans-serif", "weight": 700, "purpose": "Card titles, schedule day labels, modal headers." },
+      "body": { "displayName": "Body", "fontFamily": "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif", "weight": 400, "purpose": "Default running text. Cap line length at 65–75ch on marketing." },
+      "body-large": { "displayName": "Body Large", "fontFamily": "-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif", "weight": 300, "purpose": "Hero supporting copy. Always a lighter weight than body. The contrast is the point." },
+      "label": { "displayName": "Label (Chyron)", "fontFamily": "ui-sans-serif, system-ui, sans-serif", "weight": 700, "tracking": "0.08em", "transform": "uppercase", "purpose": "Nav, buttons, pills, eyebrows. UPPERCASE, tracking-wider. The cable-broadcast tell." },
+      "mono": { "displayName": "Mono", "fontFamily": "source-code-pro, Menlo, Monaco, Consolas, monospace", "weight": 400, "purpose": "Stat counters, timestamps, code-like values. Sparing." }
+    },
+    "shadows": [],
+    "motion": [
+      { "name": "ease-channel", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Default ease-out-quart for hover and state transitions. No bounce." },
+      { "name": "glow-loop", "value": "8s ease-in-out infinite", "purpose": "Slow opacity+blur pulse on hero accent halos. 0.5→0.8 opacity, 20px→30px blur." },
+      { "name": "underline-grow", "value": "300ms cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "Nav underline scales from w-0 to w-full on hover/active." },
+      { "name": "pulse-live", "value": "2s ease-in-out infinite", "purpose": "Pulsing dot on the LIVE pill." }
+    ],
+    "breakpoints": [
+      { "name": "md", "value": "768px" },
+      { "name": "lg", "value": "1024px" }
+    ],
+    "surfaces": [
+      { "name": "body-gradient", "value": "linear-gradient(to bottom right, #09090b, #022c22, #2e1065)", "purpose": "Site-wide body background. Tinted-dark signature; never replace with flat black." }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Emerald Signal action button. Used for primary CTAs on marketing and tool surfaces.",
+      "html": "<button class=\"ds-btn-primary\">FOLLOW ON TWITCH</button>",
+      "css": ".ds-btn-primary { background: #10b981; color: #09090b; font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 0.875rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 12px 24px; border: none; border-radius: 8px; cursor: pointer; transition: background 300ms cubic-bezier(0.22, 1, 0.36, 1), color 300ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-btn-primary:hover { background: #34d399; } .ds-btn-primary:focus-visible { outline: 2px solid #34d399; outline-offset: 2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Transparent secondary action. Used for nav-like buttons and tertiary CTAs.",
+      "html": "<button class=\"ds-btn-ghost\">VODS &amp; CLIPS</button>",
+      "css": ".ds-btn-ghost { background: transparent; color: rgba(250, 250, 250, 0.6); font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 0.875rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 12px 16px; border: none; border-radius: 8px; cursor: pointer; transition: color 300ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-btn-ghost:hover { color: #34d399; } .ds-btn-ghost:focus-visible { outline: 2px solid #34d399; outline-offset: 2px; }"
+    },
+    {
+      "name": "Live Pill",
+      "kind": "chip",
+      "refersTo": "pill-live",
+      "description": "The signature status indicator. Pulsing emerald dot + LIVE NOW chyron label on a tinted glass surface.",
+      "html": "<div class=\"ds-pill-live\"><span class=\"ds-pill-live__dot\"></span><span class=\"ds-pill-live__label\">LIVE NOW</span></div>",
+      "css": ".ds-pill-live { display: inline-flex; align-items: center; gap: 12px; padding: 8px 20px; background: rgba(16, 185, 129, 0.10); border: 1px solid rgba(16, 185, 129, 0.30); border-radius: 9999px; backdrop-filter: blur(4px); } .ds-pill-live__dot { width: 8px; height: 8px; background: #34d399; border-radius: 50%; animation: ds-pulse-live 2s ease-in-out infinite; } .ds-pill-live__label { color: #34d399; font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 0.875rem; letter-spacing: 0.08em; text-transform: uppercase; } @keyframes ds-pulse-live { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }"
+    },
+    {
+      "name": "Offline Pill",
+      "kind": "chip",
+      "refersTo": "pill-offline",
+      "description": "Quiet counterpart to the Live Pill. No animation, muted whites.",
+      "html": "<div class=\"ds-pill-offline\"><span class=\"ds-pill-offline__dot\"></span><span class=\"ds-pill-offline__label\">OFFLINE</span></div>",
+      "css": ".ds-pill-offline { display: inline-flex; align-items: center; gap: 12px; padding: 8px 20px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.10); border-radius: 9999px; backdrop-filter: blur(4px); } .ds-pill-offline__dot { width: 8px; height: 8px; background: rgba(255, 255, 255, 0.40); border-radius: 50%; } .ds-pill-offline__label { color: rgba(255, 255, 255, 0.60); font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 0.875rem; letter-spacing: 0.08em; text-transform: uppercase; }"
+    },
+    {
+      "name": "Marketing Card",
+      "kind": "card",
+      "refersTo": "card-marketing",
+      "description": "Larger radius (16px), 24px padding. Default on /, /about, /schedule, /vods.",
+      "html": "<div class=\"ds-card-marketing\"><h3 class=\"ds-card-marketing__title\">Schedule</h3><p class=\"ds-card-marketing__body\">Late nights, variety gaming, irregular Sundays.</p></div>",
+      "css": ".ds-card-marketing { background: #18181b; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 16px; padding: 24px; color: #fafafa; } .ds-card-marketing__title { margin: 0 0 8px; font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 1.5rem; line-height: 1.2; } .ds-card-marketing__body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif; font-weight: 400; font-size: 1rem; line-height: 1.6; color: rgba(250, 250, 250, 0.7); }"
+    },
+    {
+      "name": "Tool Card",
+      "kind": "card",
+      "refersTo": "card-tool",
+      "description": "Tighter radius (12px), 16px padding. Default on /gamba/*, /admin/*. The register shift is visible.",
+      "html": "<div class=\"ds-card-tool\"><div class=\"ds-card-tool__label\">HUNT</div><div class=\"ds-card-tool__value\">$2,418</div></div>",
+      "css": ".ds-card-tool { background: #18181b; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 16px; color: #fafafa; } .ds-card-tool__label { font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 0.875rem; letter-spacing: 0.08em; text-transform: uppercase; color: rgba(250, 250, 250, 0.6); margin-bottom: 4px; } .ds-card-tool__value { font-family: source-code-pro, Menlo, Monaco, Consolas, monospace; font-size: 1.5rem; font-weight: 400; color: #34d399; }"
+    },
+    {
+      "name": "Default Input",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Zinc fill, 12px radius, emerald focus border. No box-shadow rings.",
+      "html": "<input class=\"ds-input\" type=\"text\" placeholder=\"Suggest a game...\" />",
+      "css": ".ds-input { display: block; width: 100%; background: #18181b; color: #fafafa; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif; font-size: 1rem; line-height: 1.6; padding: 12px 16px; border: 1px solid rgba(255, 255, 255, 0.10); border-radius: 12px; transition: border-color 300ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-input::placeholder { color: rgba(250, 250, 250, 0.4); } .ds-input:focus { outline: none; border-color: rgba(16, 185, 129, 0.5); } .ds-input:focus-visible { outline: 2px solid rgba(16, 185, 129, 0.5); outline-offset: 2px; }"
+    },
+    {
+      "name": "Top Navigation Item",
+      "kind": "nav",
+      "refersTo": "button-ghost",
+      "description": "Label typography with the underline-grow hover. Active state lifts text to emerald and locks the underline at full width.",
+      "html": "<nav class=\"ds-nav\"><button class=\"ds-nav__item ds-nav__item--active\">HOME<span class=\"ds-nav__underline\"></span></button><button class=\"ds-nav__item\">SCHEDULE<span class=\"ds-nav__underline\"></span></button><button class=\"ds-nav__item\">VODS &amp; CLIPS<span class=\"ds-nav__underline\"></span></button></nav>",
+      "css": ".ds-nav { display: flex; gap: 32px; padding: 16px 24px; background: rgba(0, 0, 0, 0.20); backdrop-filter: blur(24px); border-bottom: 1px solid rgba(16, 185, 129, 0.10); } .ds-nav__item { position: relative; background: transparent; border: none; cursor: pointer; color: rgba(250, 250, 250, 0.6); font-family: ui-sans-serif, system-ui, sans-serif; font-weight: 700; font-size: 0.875rem; letter-spacing: 0.08em; text-transform: uppercase; padding: 4px 0; transition: color 300ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-nav__item:hover { color: #34d399; } .ds-nav__item--active { color: #34d399; } .ds-nav__underline { position: absolute; left: 0; bottom: -4px; height: 2px; width: 0; background: linear-gradient(to right, #34d399, #c084fc); transition: width 300ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-nav__item:hover .ds-nav__underline, .ds-nav__item--active .ds-nav__underline { width: 100%; }"
+    },
+    {
+      "name": "Hero",
+      "kind": "section",
+      "refersTo": "hero",
+      "description": "Above-the-fold marketing block. Display wordmark, Body Large supporting copy, Live Pill anchored to the player region, paired glow halos (emerald and purple) animated with glow-loop. Inherits the body gradient. No solid background panel.",
+      "slots": ["wordmark", "supportingCopy", "livePill", "primaryCta", "glowHaloEmerald", "glowHaloPurple"]
+    },
+    {
+      "name": "Player Frame",
+      "kind": "media",
+      "refersTo": "player-frame",
+      "description": "16:9 container wrapping the Twitch iframe embed. Live state shows the embed with the Live Pill (inline variant) anchored top-left over the media. Offline state shows a poster image with Body Large copy and a Primary Button CTA. 1px emerald-tinted border. No box-shadow.",
+      "states": ["live", "offline"],
+      "slots": ["embed", "offlinePoster", "offlineCopy", "offlineCta", "livePillInline"]
+    },
+    {
+      "name": "Schedule Grid",
+      "kind": "layout",
+      "refersTo": "schedule-grid",
+      "description": "EPG-style container that holds Schedule Rows. Day-column headers run Title typography. Horizontal layout on lg, stacks on md.",
+      "slots": ["dayHeaders", "rows"]
+    },
+    {
+      "name": "Schedule Row",
+      "kind": "list-item",
+      "refersTo": "schedule-row",
+      "description": "Single day in the schedule. Day label (Title), time block (Mono), category (Label), optional Schedule Status Pill. Reads as a TV listing.",
+      "slots": ["dayLabel", "timeBlock", "category", "statusPill"]
+    },
+    {
+      "name": "Schedule Status Pill",
+      "kind": "chip",
+      "refersTo": "pill-status",
+      "description": "Chyron-style status indicator on schedule entries. Non-interactive. Three variants: REGULAR (emerald), SPECIAL (purple), OFF (neutral muted).",
+      "variants": ["regular", "special", "off"],
+      "slots": ["label"]
+    },
+    {
+      "name": "VOD Card",
+      "kind": "card",
+      "refersTo": "vod-card",
+      "description": "Marketing Card variant. 16:9 thumbnail with a Mono duration chyron anchored bottom-right of the thumbnail. Title below. Date and game in Label typography, muted. Hover lifts thumbnail brightness only. No transform, no shadow.",
+      "slots": ["thumbnail", "durationChyron", "title", "metaRow"]
+    },
+    {
+      "name": "Grain Overlay",
+      "kind": "decoration",
+      "refersTo": "grain-overlay",
+      "description": "Site-wide noise texture. position: fixed, full viewport, pointer-events: none. Opacity between 0.04 and 0.06, mix-blend-mode: overlay. Disabled under prefers-reduced-motion. The texture that never fully settles.",
+      "slots": []
+    },
+    {
+      "name": "Snow Effect",
+      "kind": "decoration",
+      "refersTo": "snow-effect",
+      "description": "Decorative falling-snow particle layer, scoped per-page (typically hero or schedule). Cheap CSS or SVG, never canvas. Density tuned so the layer reads as ambience. Disabled under prefers-reduced-motion.",
+      "slots": []
+    },
+    {
+      "name": "TV Static Cold Open",
+      "kind": "decoration",
+      "refersTo": "tv-static-cold-open",
+      "description": "First-load intro overlay. SVG or CSS noise pattern at full opacity for about 600ms, then fades out as the page resolves. Plays once per session (sessionStorage flag). Disabled under prefers-reduced-motion, replaced with an instant fade-in.",
+      "slots": []
+    },
+    {
+      "name": "Glow Halo",
+      "kind": "decoration",
+      "refersTo": "glow-halo",
+      "description": "Absolute-positioned blurred disc behind marketing surfaces. blur-3xl, bg-{accent}-500/20, animated by glow-loop motion token. Used in pairs (emerald and purple) for hero depth. Never on /admin or /gamba tool surfaces.",
+      "variants": ["emerald", "purple"],
+      "slots": []
+    },
+    {
+      "name": "Live Pill Inline",
+      "kind": "chip",
+      "refersTo": "pill-live-inline",
+      "description": "Variant of Live Pill anchored inside Player Frame top-left when state is live. backdrop-blur-sm is justified here (over media). Identical typography to base Live Pill.",
+      "slots": ["dot", "label"]
+    }
+  ],
+  "narrative": {
+    "northStar": "The Late-Night Channel",
+    "overview": "The site reads like a cable channel you flip to after midnight: a TV-static cold open, a grain overlay that never fully settles, schedule pages that act like an EPG, and gamba tools that feel like the slot wall behind the bar. Marketing surfaces carry the on-air vibe. Utility surfaces are the back-of-house, denser and calmer and less decorated, still visibly part of the same broadcast. The palette commits to two roles: emerald is the signal color (live, action, positive, active); purple is the gamba color (special status, decorative glow, gamba-section weight). Red is destructive only. Orange is admin-scope only. The dark gradient (from-zinc-950 via-emerald-950 to-purple-950) is the surface the whole site sits on. Never replace it with flat black. The tinted depth is the channel's signature.",
+    "keyCharacteristics": [
+      "Always-on dark surface with tinted depth, never #000.",
+      "Emerald and purple two-role accent system. Red and orange are reserved.",
+      "Glow-and-glass depth instead of shadows. Backdrop-blur is purposeful, never default.",
+      "Tracking-wider uppercase labels and 900-weight display headers. Long-form copy stays warm and lowercase.",
+      "Marketing and tools sit on the same brand. The register shift between them is visible but never absolute."
+    ],
+    "rules": [
+      { "name": "The Two-Role Rule", "body": "Emerald means signal (live, action, positive, active). Purple means gamba (special, decorative weight). Red is destructive only. Orange is admin-scope only. Never use red for emphasis, never use purple for the live state, never use emerald for /admin.", "section": "colors" },
+      { "name": "The Tinted-Dark Rule", "body": "The body gradient is part of the brand. Pages render onto from-zinc-950 via-emerald-950 to-purple-950. Don't replace it with flat bg-black. Don't add a second full-surface gradient on top of it.", "section": "colors" },
+      { "name": "The Two-Weight Rule", "body": "Body copy is either 300 (large, atmospheric) or 400 (default). Headlines are either 700 (page titles) or 900 (hero wordmarks). Weights 500 and 600 do not appear in this system.", "section": "typography" },
+      { "name": "The Chyron Rule", "body": "Anything tagged as a label (button, nav item, pill, eyebrow) gets tracking-wider (≈0.08em) and UPPERCASE. This is the cable-broadcast tell. Don't break it for softer mixed-case nav.", "section": "typography" },
+      { "name": "The No-Shadow Rule", "body": "box-shadow does not appear on cards, buttons, or surfaces. If something needs to feel lifted, use a glow halo behind it or a tonal step up. Drop shadows read SaaS; this site reads cable.", "section": "elevation" },
+      { "name": "The Purposeful Glass Rule", "body": "backdrop-blur is for surfaces the gradient must show through: top nav, mobile menu drawer, the LIVE pill over the hero video region. It is not the default for cards, modals, or list items.", "section": "elevation" },
+      { "name": "The Tools Look Like Tools Rule", "body": "Cards in /gamba/* and /admin/* use rounded-lg (12px) and smaller padding (16px). Marketing pages use rounded-xl (16px) and 24px padding. The radius drop is the register shift. Don't unify them.", "section": "components" }
+    ],
+    "dos": [
+      "Do use Emerald Signal (#10b981) for every live / active / primary / positive signal. One color, one job.",
+      "Do use Gamba Purple (#a855f7) for /gamba accents, schedule special status, and decorative glow halos. Nothing else.",
+      "Do layer surfaces tonally on the from-zinc-950 via-emerald-950 to-purple-950 body gradient. The tint is part of the brand.",
+      "Do use tracking-wider UPPERCASE label typography for nav, buttons, pills, and eyebrows.",
+      "Do reach for glow halos (blur-3xl discs of bg-{accent}-500/20 with the glow keyframe) when a marketing surface needs depth.",
+      "Do drop the radius from rounded-xl to rounded-lg and tighten padding when designing /gamba and /admin surfaces.",
+      "Do keep decorative motion (grain, snow, TV static) cheap enough that prefers-reduced-motion can disable it without breaking layout."
+    ],
+    "donts": [
+      "Don't use gradient text (bg-clip-text + bg-gradient-to-*). Known violations: hero wordmark on HomePage.js:198,202; nav logo on Navigation.js:32.",
+      "Don't ship a SaaS landing template. No hero stat plus 3-card grid plus gradient text plus trusted-by row.",
+      "Don't drift toward Twitch-corporate purple. The gradient must stay tinted. Avoid using purple-500 as a flat fill across whole surfaces.",
+      "Don't add casino chrome to /gamba. No gold-on-black, no slot-machine bevels, no glossy JACKPOT treatments.",
+      "Don't add cyberpunk drift: neon green on flat #000, glitch text, Blade Runner palettes.",
+      "Don't use box-shadow on cards, buttons, or surfaces. Depth comes from tonal layering and glow halos.",
+      "Don't use glassmorphism as a default. It belongs on three surfaces: top nav, mobile drawer, the LIVE pill over media.",
+      "Don't use border-left or border-right greater than 1px as a colored side-stripe accent.",
+      "Don't introduce middle font weights (500, 600). The system is 300 / 400 / 700 / 900 with intentional gaps.",
+      "Don't import a webfont. No Google Fonts, no @font-face, no next/font. The system stack is the chosen typography for this brand.",
+      "Don't soften the Chyron Rule for readability or modernity. Tracking-wider uppercase labels are the cable-broadcast tell.",
+      "Don't use em dashes in copy. Commas, colons, semicolons, periods, or parentheses instead.",
+      "Don't use X, not Y parallelism in copy. State what something is on its own terms.",
+      "Don't use AI-tell vocabulary: leverage, harness, utilize, seamless, robust, cutting-edge, unlock, delve, elevate, empower, foster, streamline, holistic, synergy, ecosystem.",
+      "Don't nest cards. Step the background tonally for sub-sections."
+    ]
+  }
+}

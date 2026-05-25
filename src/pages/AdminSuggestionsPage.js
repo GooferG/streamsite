@@ -1,26 +1,53 @@
 import { useEffect, useState } from 'react';
 import {
-  collection, onSnapshot, orderBy, query,
-  updateDoc, deleteDoc, doc, writeBatch
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+  updateDoc,
+  deleteDoc,
+  doc,
+  writeBatch,
 } from 'firebase/firestore';
 import {
-  DndContext, closestCenter, KeyboardSensor, PointerSensor,
-  useSensor, useSensors
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
 } from '@dnd-kit/core';
 import {
-  SortableContext, sortableKeyboardCoordinates,
-  useSortable, verticalListSortingStrategy, arrayMove
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import {
-  Star, X, RefreshCcw, MessageSquarePlus, GripVertical, Pencil, ExternalLink
+  Star,
+  X,
+  RefreshCcw,
+  GripVertical,
+  Pencil,
+  ExternalLink,
+  Check,
 } from 'lucide-react';
 import { db } from '../config/firebase';
 
-function SortableRow({ suggestion, onHighlight, onEdit, onDelete }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
-    id: suggestion.id,
-  });
+const inputCls =
+  'w-full bg-zinc-broadcast/60 border border-white/10 px-3 py-2.5 text-sm text-white-body placeholder:text-white/25 focus:border-orange-admin/70 focus:outline-none transition-colors duration-150';
+
+function SortableRow({ suggestion, onHighlight, onEdit, onDelete, index }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: suggestion.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -28,74 +55,103 @@ function SortableRow({ suggestion, onHighlight, onEdit, onDelete }) {
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const highlighted = suggestion.status === 'highlighted';
+  const tape = String(index + 1).padStart(3, '0');
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`p-4 rounded-lg border flex items-center gap-3 transition-all ${
-        suggestion.status === 'highlighted'
-          ? 'bg-emerald-500/10 border-emerald-500/30'
-          : 'bg-white/5 border-white/10'
+      className={`grid grid-cols-[auto_auto_1fr_auto] gap-3 items-center px-3 py-2.5 border-t transition-colors duration-150 ${
+        highlighted
+          ? 'border-emerald-signal/30 bg-emerald-signal/5'
+          : 'border-white/8 hover:bg-zinc-card/40'
       }`}
     >
       <button
+        type="button"
         {...attributes}
         {...listeners}
-        className="p-1 text-white/20 hover:text-white/60 cursor-grab active:cursor-grabbing flex-shrink-0"
+        className="p-1 text-white/25 hover:text-white/65 cursor-grab active:cursor-grabbing flex-shrink-0"
+        aria-label="Drag to reorder"
       >
-        <GripVertical size={18} />
+        <GripVertical size={16} aria-hidden="true" />
       </button>
 
-      {suggestion.profileImageUrl && (
-        <img
-          src={suggestion.profileImageUrl}
-          alt=""
-          className="w-9 h-9 rounded-full border border-white/20 flex-shrink-0"
-        />
-      )}
+      <div className="flex items-center gap-2.5">
+        <span
+          className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums ${
+            highlighted ? 'text-emerald-signal' : 'text-white/30'
+          } font-mono`}
+      >
+          #{tape}
+        </span>
+        {suggestion.profileImageUrl && (
+          <img
+            src={suggestion.profileImageUrl}
+            alt=""
+            className="w-8 h-8 rounded-full border border-white/15 flex-shrink-0"
+          />
+        )}
+      </div>
 
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="font-black text-white">{suggestion.gameName}</p>
-          {suggestion.status === 'highlighted' && (
-            <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded px-2 py-0.5">
+          <p className="font-bold text-white-body text-sm leading-tight">
+            {suggestion.gameName}
+          </p>
+          {highlighted && (
+            <span
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-bold tracking-eyebrow-md text-emerald-signal border border-emerald-signal/40 font-mono"
+      >
+              <Check size={9} aria-hidden="true" />
               PICKED
             </span>
           )}
         </div>
-        <p className="text-sm text-white/50">
+        <p
+          className="mt-0.5 text-[10px] tracking-eyebrow-sm uppercase text-white/40 truncate font-mono"
+      >
           {suggestion.twitchName}
-          {suggestion.rainbetName
-            ? <span className="text-emerald-400/70"> · {suggestion.rainbetName}</span>
-            : null}
+          {suggestion.rainbetName ? (
+            <span className="text-emerald-signal/60">
+              {' '}· {suggestion.rainbetName}
+            </span>
+          ) : null}
         </p>
       </div>
 
-      <div className="flex gap-2 flex-shrink-0">
+      <div className="flex gap-1.5 flex-shrink-0">
         <button
+          type="button"
           onClick={() => onHighlight(suggestion)}
-          className={`p-2 rounded-lg border transition-all ${
-            suggestion.status === 'highlighted'
-              ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-300'
-              : 'bg-white/5 border-white/10 text-white/50 hover:text-emerald-300 hover:border-emerald-400/60'
+          className={`p-2 border transition-colors duration-150 ${
+            highlighted
+              ? 'bg-emerald-signal/15 border-emerald-signal/40 text-emerald-signal'
+              : 'border-white/10 text-white/50 hover:text-emerald-signal hover:border-emerald-signal/40'
           }`}
+          aria-label={highlighted ? 'Unpick' : 'Pick'}
           title="Toggle highlight"
         >
-          <Star size={16} />
+          <Star size={13} aria-hidden="true" />
         </button>
         <button
+          type="button"
           onClick={() => onEdit(suggestion)}
-          className="p-2 rounded-lg bg-white/5 border border-white/10 text-white/50 hover:text-white hover:border-purple-400/60 transition-all"
-          title="Edit suggestion"
+          className="p-2 border border-white/10 text-white/50 hover:text-orange-admin hover:border-orange-admin/40 transition-colors duration-150"
+          aria-label="Edit"
+          title="Edit"
         >
-          <Pencil size={16} />
+          <Pencil size={13} aria-hidden="true" />
         </button>
         <button
+          type="button"
           onClick={() => onDelete(suggestion.id)}
-          className="p-2 rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all"
-          title="Delete suggestion"
+          className="p-2 border border-red-destructive/30 text-red-destructive/80 hover:bg-red-destructive/10 hover:border-red-destructive/60 transition-colors duration-150"
+          aria-label="Delete"
+          title="Delete"
         >
-          <X size={16} />
+          <X size={13} aria-hidden="true" />
         </button>
       </div>
     </div>
@@ -123,70 +179,115 @@ function EditModal({ suggestion, onClose, onSave }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-      <div className="w-full max-w-md bg-zinc-900 border border-white/10 rounded-2xl p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-black text-white">Edit Suggestion</h2>
-          <button onClick={onClose} className="p-2 rounded-lg bg-white/5 border border-white/10 text-white/50 hover:text-white transition-all">
-            <X size={16} />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-broadcast/70 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md border border-white/10 bg-zinc-card"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Status bar */}
+        <div
+          className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
+      >
+          <span className="inline-flex items-center gap-2 text-orange-admin">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
+            <span>Edit entry</span>
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 border border-white/10 text-white/55 hover:text-white-body hover:border-white/25 transition-colors duration-150"
+            aria-label="Close"
+          >
+            <X size={12} aria-hidden="true" />
           </button>
         </div>
 
-        <div className="space-y-3">
-          <div>
-            <label className="block text-sm text-white/60 mb-1">Game / Slot Name <span className="text-red-400">*</span></label>
+        <div className="px-5 py-5 space-y-4">
+          <label className="block">
+            <span
+              className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono"
+      >
+              <span className="text-orange-admin tabular-nums">01</span>{' '}
+              Game / slot name <span className="text-emerald-signal">*</span>
+            </span>
             <input
               type="text"
               value={gameName}
               onChange={(e) => setGameName(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
+              className={inputCls}
             />
-          </div>
-          <div>
-            <label className="block text-sm text-white/60 mb-1">Twitch Name</label>
+          </label>
+          <label className="block">
+            <span
+              className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono"
+      >
+              <span className="text-orange-admin tabular-nums">02</span> Twitch name
+            </span>
             <input
               type="text"
               value={twitchName}
               onChange={(e) => setTwitchName(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
+              className={inputCls}
             />
-          </div>
-          <div>
-            <label className="block text-sm text-white/60 mb-1">Rainbet Username</label>
+          </label>
+          <label className="block">
+            <span
+              className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono"
+      >
+              <span className="text-orange-admin tabular-nums">03</span> Rainbet
+              username <span className="text-white/30">· optional</span>
+            </span>
             <input
               type="text"
               value={rainbetName}
               onChange={(e) => setRainbetName(e.target.value)}
-              placeholder="optional"
-              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
+              placeholder="—"
+              className={inputCls}
             />
-          </div>
-          <div>
-            <label className="block text-sm text-white/60 mb-1">Status</label>
+          </label>
+          <label className="block">
+            <span
+              className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono"
+      >
+              <span className="text-orange-admin tabular-nums">04</span> Status
+            </span>
             <select
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full bg-zinc-800 border border-white/10 rounded-lg px-4 py-3 focus:border-emerald-400 focus:outline-none"
+              className={inputCls}
             >
               <option value="pending">Pending</option>
-              <option value="highlighted">Highlighted (Picked)</option>
+              <option value="highlighted">Highlighted (picked)</option>
             </select>
-          </div>
+          </label>
         </div>
 
-        <div className="flex gap-3 pt-2">
+        <div className="flex gap-2 px-5 pb-5">
           <button
+            type="button"
             onClick={onClose}
-            className="flex-1 px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white font-bold transition-all"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
           >
-            Cancel
+            <span
+              className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+              Cancel
+            </span>
           </button>
           <button
+            type="button"
             onClick={handleSave}
             disabled={saving || !gameName.trim()}
-            className="flex-1 px-4 py-3 rounded-lg bg-gradient-to-r from-emerald-500 to-purple-500 text-white font-bold hover:from-emerald-600 hover:to-purple-600 transition-all disabled:opacity-50"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50"
           >
-            {saving ? 'Saving...' : 'Save'}
+            <span
+              className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+              {saving ? 'Saving…' : 'Save'}
+            </span>
           </button>
         </div>
       </div>
@@ -243,86 +344,157 @@ export default function AdminSuggestionsPage() {
     await updateDoc(doc(db, 'suggestions', id), fields);
   };
 
-  return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <div className="mb-8">
-        <div className="flex items-center gap-2 text-purple-400 font-bold text-sm mb-2">
-          <MessageSquarePlus size={16} />
-          SUGGESTIONS
-        </div>
-        <h1 className="text-4xl font-black tracking-tighter">
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-emerald-400">
-            Viewer Suggestions
-          </span>
-        </h1>
-        <p className="text-white/50 mt-1">
-          {suggestions.length} suggestion{suggestions.length !== 1 ? 's' : ''} — drag to reorder, star to highlight as picked.
-        </p>
-      </div>
+  const pickedCount = suggestions.filter(
+    (s) => s.status === 'highlighted'
+  ).length;
 
-      {/* Header actions */}
-      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+  return (
+    <div className="p-6 sm:p-8 max-w-4xl mx-auto">
+      {/* Slate header */}
+      <header className="mb-8">
+        <div
+          className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono"
+      >
+          <span className="inline-flex items-center gap-2 text-orange-admin">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
+            <span>VIEWER QUEUE</span>
+          </span>
+          <span className="text-white/20">·</span>
+          <span>MODULE</span>
+          <span className="text-white/70 tracking-eyebrow-lg">SUG</span>
+          <span className="text-white/20">·</span>
+          <span className="text-white/45">TOTAL</span>
+          <span className="text-white/70 tabular-nums tracking-eyebrow-lg">
+            {String(suggestions.length).padStart(3, '0')}
+          </span>
+          <span className="text-white/15">·</span>
+          <span className="text-white/45">PICKED</span>
+          <span className="text-emerald-signal tabular-nums tracking-eyebrow-lg">
+            {String(pickedCount).padStart(3, '0')}
+          </span>
+        </div>
+
+        <h1
+          className="font-black leading-[0.85] tracking-[-0.035em] text-white-body"
+          style={{
+            fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+            fontSize: 'clamp(2.25rem, 6vw, 3.25rem)',
+          }}
+        >
+          <span className="block">Viewer</span>
+          <span className="block text-orange-admin">suggestions.</span>
+        </h1>
+
+        <p className="mt-4 text-sm text-white/55 max-w-md leading-relaxed">
+          Drag to reorder. Star to mark as picked on the overlay.
+        </p>
+      </header>
+
+      {/* Action strip */}
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-6">
         <a
           href="/suggest"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-purple-400/60 text-sm font-bold transition-all"
+          className="inline-flex items-center gap-2 px-3.5 py-2 border border-white/10 text-white/65 hover:text-white-body hover:border-orange-admin/40 transition-colors duration-150"
         >
-          <ExternalLink size={14} />
-          goofer.tv/suggest
+          <ExternalLink size={12} aria-hidden="true" />
+          <span
+            className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+            goofer.tv/suggest
+          </span>
         </a>
 
         {!clearConfirm ? (
           <button
+            type="button"
             onClick={() => setClearConfirm(true)}
             disabled={suggestions.length === 0}
-            className="flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg border border-white/10 text-white/60 hover:text-white hover:border-red-400/60 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+            className="inline-flex items-center gap-2 px-3 py-2 border border-white/10 text-white/55 hover:text-white-body hover:border-red-destructive/50 transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed"
           >
-            <RefreshCcw size={14} />
-            CLEAR ALL
+            <RefreshCcw size={12} aria-hidden="true" />
+            <span
+              className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+              Clear all
+            </span>
           </button>
         ) : (
           <div className="flex gap-2">
             <button
+              type="button"
               onClick={clearAll}
-              className="px-3 py-2 text-xs font-bold rounded-lg bg-red-500/20 border border-red-500/40 text-red-300 hover:bg-red-500/30 transition-all"
+              className="px-3 py-2 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 transition-colors duration-150"
             >
-              Confirm Clear
+              <span
+                className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+                Confirm clear
+              </span>
             </button>
             <button
+              type="button"
               onClick={() => setClearConfirm(false)}
-              className="px-3 py-2 text-xs font-bold rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white transition-all"
+              className="px-3 py-2 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
             >
-              Cancel
+              <span
+                className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+                Cancel
+              </span>
             </button>
           </div>
         )}
       </div>
 
+      {/* List */}
       {suggestions.length === 0 ? (
-        <div className="text-center py-16 text-white/40">
-          No suggestions yet. Share <strong className="text-white/60">goofer.tv/suggest</strong> with chat!
+        <div className="border border-white/8 bg-zinc-card/30 py-16 text-center">
+          <p
+            className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono"
+      >
+            Empty queue
+          </p>
+          <p className="text-sm text-white/55">
+            Share{' '}
+            <span className="text-white-body">goofer.tv/suggest</span> with chat.
+          </p>
         </div>
       ) : (
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
-          <SortableContext items={suggestions.map((s) => s.id)} strategy={verticalListSortingStrategy}>
-            <div className="space-y-3">
-              {suggestions.map((s) => (
-                <SortableRow
-                  key={s.id}
-                  suggestion={s}
-                  onHighlight={toggleHighlight}
-                  onEdit={setEditTarget}
-                  onDelete={removeSuggestion}
-                />
-              ))}
-            </div>
-          </SortableContext>
-        </DndContext>
+        <div className="border border-white/8 bg-zinc-card/30">
+          <div
+            className="flex items-center gap-3 px-4 py-2 border-b border-white/8 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
+      >
+            <span>Order</span>
+            <span className="text-white/15">·</span>
+            <span>Drag handle to rearrange</span>
+          </div>
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={suggestions.map((s) => s.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              <div>
+                {suggestions.map((s, i) => (
+                  <SortableRow
+                    key={s.id}
+                    suggestion={s}
+                    index={i}
+                    onHighlight={toggleHighlight}
+                    onEdit={setEditTarget}
+                    onDelete={removeSuggestion}
+                  />
+                ))}
+                <div className="border-t border-white/8" />
+              </div>
+            </SortableContext>
+          </DndContext>
+        </div>
       )}
 
       {editTarget && (

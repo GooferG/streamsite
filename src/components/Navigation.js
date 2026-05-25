@@ -1,20 +1,73 @@
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 
+const NAV_ITEMS = [
+  { id: 'home', label: 'Home', code: '01' },
+  { id: 'schedule', label: 'Schedule', code: '02' },
+  { id: 'vods', label: 'Vods', code: '03' },
+  { id: 'gamba', label: 'Gamba', code: '04' },
+  { id: 'gaming', label: 'Gaming', code: '05' },
+  { id: 'about', label: 'About', code: '06' },
+];
+
+const ADMIN_ITEM = { id: 'admin', label: 'Admin', code: 'AD' };
+
+function Wordmark({ onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group flex items-baseline gap-2 cursor-pointer flex-shrink-0"
+      aria-label="GooferG home"
+    >
+      <span
+        className="text-xs font-bold tracking-eyebrow-lg uppercase text-white/40 group-hover:text-emerald-signal transition-colors duration-200 font-mono"
+      >
+        GG
+      </span>
+      <span className="text-lg font-black tracking-tight text-white-body group-hover:text-emerald-signal transition-colors duration-200">
+        Goofer<span className="text-emerald-signal">G</span>
+      </span>
+    </button>
+  );
+}
+
+function NavLink({ item, active, accent = 'emerald', onClick }) {
+  const accentDot = accent === 'orange' ? 'bg-orange-admin' : 'bg-emerald-signal';
+  const accentText = accent === 'orange' ? 'text-orange-admin' : 'text-emerald-signal';
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="group relative inline-flex items-center gap-2 py-1.5"
+    >
+      <span
+        className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums transition-colors duration-200 ${
+          active ? accentText : 'text-white/25 group-hover:text-white/45'
+        } font-mono`}
+      >
+        {item.code}
+      </span>
+      <span
+        className={`text-[13px] font-bold tracking-tight transition-colors duration-200 whitespace-nowrap ${
+          active ? 'text-white-body' : 'text-white/60 group-hover:text-white-body'
+        }`}
+      >
+        {item.label}
+      </span>
+      {active && (
+        <span
+          className={`inline-block w-1.5 h-1.5 rounded-full ${accentDot}`}
+          aria-hidden="true"
+        />
+      )}
+    </button>
+  );
+}
+
 export default function Navigation({ currentPage, setPage }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const navItems = [
-    { id: 'home', label: 'HOME' },
-    { id: 'schedule', label: 'SCHEDULE' },
-    { id: 'vods', label: 'VODS & CLIPS' },
-    // { id: 'gear', label: 'GEAR' },
-    // { id: 'gear-interactive', label: 'GEAR (NEW)' },
-    { id: 'gamba', label: 'GAMBA' },
-    { id: 'gaming', label: 'GAMING' },
-    { id: 'about', label: 'ABOUT ME' },
-    { id: 'admin', label: 'ADMIN' },
-  ];
 
   const handleNavClick = (pageId) => {
     setPage(pageId);
@@ -23,104 +76,145 @@ export default function Navigation({ currentPage, setPage }) {
 
   return (
     <>
-      <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-black/20 border-b border-emerald-500/10">
-        <div className="w-full px-6 py-4 flex items-center">
-          <div
-            onClick={() => setPage('home')}
-            className="text-2xl font-bold tracking-tighter cursor-pointer hover:opacity-80 transition-opacity flex-shrink-0"
-          >
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-purple-400">
-              GooferG
-            </span>
-          </div>
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-zinc-broadcast/85 backdrop-blur-md border-b border-white/8">
+        <div className="w-full px-5 sm:px-8 py-3 flex items-center gap-6">
+          <Wordmark onClick={() => setPage('home')} />
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex gap-8 flex-1 justify-center">
-            {navItems.filter(item => item.id !== 'admin').map((item) => (
-              <button
+          {/* Desktop nav */}
+          <div className="hidden md:flex items-center gap-7 flex-1 justify-center">
+            {NAV_ITEMS.map((item) => (
+              <NavLink
                 key={item.id}
+                item={item}
+                active={currentPage === item.id}
                 onClick={() => setPage(item.id)}
-                className={`text-sm font-bold tracking-wider transition-all duration-300 hover:text-emerald-400 relative group whitespace-nowrap ${
-                  currentPage === item.id ? 'text-emerald-400' : 'text-white/60'
-                }`}
-              >
-                {item.label}
-                <span
-                  className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-emerald-400 to-purple-400 transition-all duration-300 ${
-                    currentPage === item.id ? 'w-full' : 'w-0 group-hover:w-full'
-                  }`}
-                />
-              </button>
+              />
             ))}
           </div>
 
-          {/* Admin Button (desktop) */}
-          <div className="hidden md:flex flex-shrink-0">
-            <button
-              onClick={() => setPage('admin')}
-              className={`text-sm font-bold tracking-wider transition-all duration-300 hover:text-orange-400 relative group whitespace-nowrap ${
-                currentPage === 'admin' ? 'text-orange-400' : 'text-white/60'
-              }`}
-            >
-              ADMIN
-              <span
-                className={`absolute -bottom-1 left-0 h-0.5 bg-gradient-to-r from-orange-400 to-red-400 transition-all duration-300 ${
-                  currentPage === 'admin' ? 'w-full' : 'w-0 group-hover:w-full'
-                }`}
-              />
-            </button>
+          {/* Admin — visually separated */}
+          <div className="hidden md:flex items-center flex-shrink-0 pl-6 border-l border-white/10">
+            <NavLink
+              item={ADMIN_ITEM}
+              active={currentPage === ADMIN_ITEM.id}
+              accent="orange"
+              onClick={() => setPage(ADMIN_ITEM.id)}
+            />
           </div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile menu trigger */}
           <button
+            type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 text-white/80 hover:text-emerald-400 transition-colors ml-auto"
-            aria-label="Toggle menu"
+            className="md:hidden p-2 text-white/70 hover:text-white-body transition-colors ml-auto"
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
           >
-            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
           </button>
         </div>
       </nav>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile overlay */}
       {mobileMenuOpen && (
         <div
-          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden"
+          className="fixed inset-0 bg-zinc-broadcast/70 backdrop-blur-sm z-40 md:hidden"
           onClick={() => setMobileMenuOpen(false)}
+          aria-hidden="true"
         />
       )}
 
-      {/* Mobile Menu Drawer */}
+      {/* Mobile drawer */}
       <div
-        className={`fixed top-[73px] right-0 bottom-0 w-64 bg-gradient-to-b from-zinc-950 to-emerald-950/50 backdrop-blur-xl border-l border-emerald-500/20 z-40 transform transition-transform duration-300 ease-in-out md:hidden ${
+        className={`fixed top-[57px] right-0 bottom-0 w-72 bg-zinc-broadcast border-l border-white/10 z-40 transform transition-transform duration-200 ease-out md:hidden ${
           mobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
+        aria-hidden={!mobileMenuOpen}
       >
-        <div className="flex flex-col p-6 gap-1">
-          {navItems.map((item) => {
-            const isAdmin = item.id === 'admin';
-            const activeColor = isAdmin
-              ? 'bg-orange-500/10 border-orange-500/30 text-orange-400'
-              : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400';
-            const hoverColor = isAdmin
-              ? 'hover:bg-orange-500/5 hover:border-orange-500/20'
-              : 'hover:bg-emerald-500/5 hover:border-emerald-500/20';
+        {/* Drawer header */}
+        <div
+          className="px-5 py-4 border-b border-white/10 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
+      >
+          Channel Index
+        </div>
 
+        <nav className="flex flex-col">
+          {NAV_ITEMS.map((item) => {
+            const isActive = currentPage === item.id;
             return (
               <button
                 key={item.id}
+                type="button"
                 onClick={() => handleNavClick(item.id)}
-                className={`w-full text-left px-4 py-3 rounded-lg font-bold tracking-wider transition-all duration-300 border ${
-                  currentPage === item.id
-                    ? activeColor
-                    : `text-white/60 border-transparent ${hoverColor}`
+                className={`group flex items-center gap-3 px-5 py-3.5 border-l-2 transition-colors duration-150 ${
+                  isActive
+                    ? 'bg-zinc-card border-emerald-signal'
+                    : 'border-transparent hover:bg-zinc-card/50'
                 }`}
               >
-                {item.label}
+                <span
+                  className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums ${
+                    isActive ? 'text-emerald-signal' : 'text-white/30'
+                  } font-mono`}
+      >
+                  {item.code}
+                </span>
+                <span
+                  className={`text-sm font-bold tracking-tight ${
+                    isActive ? 'text-white-body' : 'text-white/70'
+                  }`}
+                >
+                  {item.label}
+                </span>
+                {isActive && (
+                  <span
+                    className="ml-auto text-[9px] font-bold tracking-eyebrow-lg text-emerald-signal font-mono"
+      >
+                    ON
+                  </span>
+                )}
               </button>
             );
           })}
-        </div>
+
+          {/* Admin separator */}
+          <div
+            className="mt-2 px-5 pt-4 pb-2 border-t border-white/10 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
+      >
+            Operator
+          </div>
+
+          <button
+            type="button"
+            onClick={() => handleNavClick(ADMIN_ITEM.id)}
+            className={`group flex items-center gap-3 px-5 py-3.5 border-l-2 transition-colors duration-150 ${
+              currentPage === ADMIN_ITEM.id
+                ? 'bg-zinc-card border-orange-admin'
+                : 'border-transparent hover:bg-zinc-card/50'
+            }`}
+          >
+            <span
+              className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums ${
+                currentPage === ADMIN_ITEM.id ? 'text-orange-admin' : 'text-white/30'
+              } font-mono`}
+      >
+              {ADMIN_ITEM.code}
+            </span>
+            <span
+              className={`text-sm font-bold tracking-tight ${
+                currentPage === ADMIN_ITEM.id ? 'text-white-body' : 'text-white/70'
+              }`}
+            >
+              {ADMIN_ITEM.label}
+            </span>
+            {currentPage === ADMIN_ITEM.id && (
+              <span
+                className="ml-auto text-[9px] font-bold tracking-eyebrow-lg text-orange-admin font-mono"
+      >
+                ON
+              </span>
+            )}
+          </button>
+        </nav>
       </div>
     </>
   );

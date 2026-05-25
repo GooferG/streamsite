@@ -1,12 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Target, TrendingUp, TrendingDown, Minus, ChevronDown, ChevronUp, RefreshCcw } from 'lucide-react';
+import {
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  ChevronDown,
+  ChevronUp,
+  RefreshCcw,
+} from 'lucide-react';
 
 async function fetchHunts() {
   const res = await fetch('/api/bonus-hunts?path=hunts');
   if (!res.ok) throw new Error(`Failed to fetch hunts: ${res.status}`);
   return res.json();
 }
-
 
 function formatCurrency(val) {
   if (val == null) return '—';
@@ -16,46 +22,60 @@ function formatCurrency(val) {
 function formatDate(dateStr) {
   if (!dateStr) return '—';
   return new Date(dateStr).toLocaleDateString('en-US', {
-    year: 'numeric', month: 'short', day: 'numeric',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
   });
 }
 
 function ProfitBadge({ profit }) {
   if (profit == null) return null;
-  if (profit > 0) return (
-    <span className="flex items-center gap-1 text-emerald-400 font-bold text-sm">
-      <TrendingUp size={14} /> +{formatCurrency(profit)}
-    </span>
-  );
-  if (profit < 0) return (
-    <span className="flex items-center gap-1 text-red-400 font-bold text-sm">
-      <TrendingDown size={14} /> {formatCurrency(profit)}
-    </span>
-  );
+  if (profit > 0)
+    return (
+      <span className="inline-flex items-center gap-1 text-emerald-signal font-bold text-sm tabular-nums">
+        <TrendingUp size={13} aria-hidden="true" /> +{formatCurrency(profit)}
+      </span>
+    );
+  if (profit < 0)
+    return (
+      <span className="inline-flex items-center gap-1 text-red-destructive font-bold text-sm tabular-nums">
+        <TrendingDown size={13} aria-hidden="true" /> {formatCurrency(profit)}
+      </span>
+    );
   return (
-    <span className="flex items-center gap-1 text-white/50 font-bold text-sm">
-      <Minus size={14} /> {formatCurrency(profit)}
+    <span className="inline-flex items-center gap-1 text-white/50 font-bold text-sm tabular-nums">
+      <Minus size={13} aria-hidden="true" /> {formatCurrency(profit)}
     </span>
   );
 }
 
 function MultiplierBar({ value, max }) {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
-  const color = value >= 100 ? 'from-emerald-500 to-emerald-400' : value >= 50 ? 'from-yellow-500 to-yellow-400' : 'from-red-500 to-red-400';
+  // Semantic data viz — keeps gradient fills for magnitude (intentional)
+  const color =
+    value >= 100
+      ? 'from-emerald-signal to-emerald-bright'
+      : value >= 50
+        ? 'from-yellow-500 to-yellow-400'
+        : 'from-red-destructive to-red-destructive/70';
   return (
     <div className="flex items-center gap-2 w-full">
-      <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+      <div className="flex-1 h-1 bg-white/10 overflow-hidden">
         <div
           className={`h-full bg-gradient-to-r ${color} transition-all duration-500`}
           style={{ width: `${pct}%` }}
         />
       </div>
-      <span className="text-xs text-white/60 w-12 text-right">{value?.toFixed(0)}x</span>
+      <span
+        className="text-[10px] text-white/55 w-10 text-right tabular-nums tracking-eyebrow-sm font-mono"
+      >
+        {value?.toFixed(0)}x
+      </span>
     </div>
   );
 }
 
-function HuntCard({ hunt }) {
+function HuntCard({ hunt, index }) {
   const [expanded, setExpanded] = useState(false);
 
   const totalCost = hunt.startCost ?? null;
@@ -63,97 +83,188 @@ function HuntCard({ hunt }) {
   const profit = hunt.stats?.profitLoss ?? null;
   const bonusCount = hunt.stats?.bonusCount ?? hunt.bonuses?.length ?? '—';
   const isOpening = hunt.isOpening ?? false;
+  const tape = String(index + 1).padStart(3, '0');
 
   const bonuses = hunt.bonuses ?? [];
-  const maxMultiplier = bonuses.length > 0 ? Math.max(...bonuses.map((b) => b.multiplier ?? 0)) : 1;
+  const maxMultiplier =
+    bonuses.length > 0 ? Math.max(...bonuses.map((b) => b.multiplier ?? 0)) : 1;
 
   return (
-    <div className="bg-white/5 border border-white/10 rounded-xl overflow-hidden hover:border-emerald-500/30 transition-all duration-200">
-      {/* Card Header */}
-      <div className="p-5 cursor-pointer select-none" onClick={() => setExpanded((prev) => !prev)}>
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 mb-1">
-              <Target size={15} className="text-emerald-400 flex-shrink-0" />
-              <h3 className="font-black text-white text-lg leading-tight truncate">
-                {hunt.title ?? `Hunt #${hunt.id}`}
-              </h3>
-              {isOpening && (
-                <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex-shrink-0">
-                  LIVE
-                </span>
-              )}
+    <div
+      className={`border bg-zinc-card/40 transition-colors duration-200 ${
+        expanded
+          ? 'border-emerald-signal/30'
+          : 'border-white/8 hover:border-emerald-signal/25'
+      }`}
+    >
+      {/* Card header — clickable */}
+      <button
+        type="button"
+        onClick={() => setExpanded((prev) => !prev)}
+        className="w-full text-left px-4 sm:px-5 py-4"
+      >
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="flex items-start gap-3 min-w-0 flex-1">
+            <span
+              className="mt-1 text-[10px] font-bold tracking-eyebrow-md tabular-nums text-emerald-signal/80 font-mono"
+      >
+              #{tape}
+            </span>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="font-bold text-white-body text-base sm:text-lg leading-tight tracking-tight truncate">
+                  {hunt.title ?? `Hunt #${hunt.id}`}
+                </h3>
+                {isOpening && (
+                  <span
+                    className="inline-flex items-center gap-1.5 px-1.5 py-0.5 text-[9px] font-bold tracking-eyebrow-md text-emerald-signal border border-emerald-signal/40 font-mono"
+      >
+                    <span className="relative flex w-1.5 h-1.5">
+                      <span className="absolute inset-0 rounded-full bg-emerald-signal motion-safe:animate-ping opacity-50" />
+                      <span className="relative w-1.5 h-1.5 rounded-full bg-emerald-signal" />
+                    </span>
+                    LIVE
+                  </span>
+                )}
+              </div>
+              <p
+                className="mt-1 text-[11px] tracking-eyebrow-sm uppercase text-white/40 truncate font-mono"
+      >
+                {hunt.casino} · {formatDate(hunt.createdAt)}
+              </p>
             </div>
-            <p className="text-sm text-white/40">{hunt.casino} · {formatDate(hunt.createdAt)}</p>
           </div>
 
           <div className="flex items-center gap-6 flex-shrink-0">
             <div className="text-right hidden sm:block">
-              <p className="text-xs text-white/40 mb-0.5">Cost</p>
-              <p className="font-bold text-white text-sm">{formatCurrency(totalCost)}</p>
+              <p
+                className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 mb-0.5 font-mono"
+      >
+                Cost
+              </p>
+              <p className="font-bold text-white-body text-sm tabular-nums">
+                {formatCurrency(totalCost)}
+              </p>
             </div>
             <div className="text-right hidden sm:block">
-              <p className="text-xs text-white/40 mb-0.5">Payout</p>
-              <p className="font-bold text-white text-sm">{formatCurrency(totalPayout)}</p>
+              <p
+                className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 mb-0.5 font-mono"
+      >
+                Payout
+              </p>
+              <p className="font-bold text-white-body text-sm tabular-nums">
+                {formatCurrency(totalPayout)}
+              </p>
             </div>
             <div className="text-right">
-              <p className="text-xs text-white/40 mb-0.5">Result</p>
+              <p
+                className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 mb-0.5 font-mono"
+      >
+                Result
+              </p>
               <ProfitBadge profit={profit} />
             </div>
             <div className="text-right hidden md:block">
-              <p className="text-xs text-white/40 mb-0.5">Bonuses</p>
-              <p className="font-bold text-white/70 text-sm">{bonusCount}</p>
+              <p
+                className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 mb-0.5 font-mono"
+      >
+                Bonuses
+              </p>
+              <p className="font-bold text-white/70 text-sm tabular-nums">
+                {bonusCount}
+              </p>
             </div>
-            <div className="text-white/30 flex-shrink-0">
-              {expanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            <div className="text-white/35 flex-shrink-0">
+              {expanded ? (
+                <ChevronUp size={16} aria-hidden="true" />
+              ) : (
+                <ChevronDown size={16} aria-hidden="true" />
+              )}
             </div>
           </div>
         </div>
 
         {/* Mobile cost/payout row */}
-        <div className="sm:hidden flex gap-4 mt-3 pt-3 border-t border-white/5">
+        <div className="sm:hidden grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-white/8">
           <div>
-            <p className="text-xs text-white/40">Cost</p>
-            <p className="font-bold text-white text-sm">{formatCurrency(totalCost)}</p>
+            <p
+              className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono"
+      >
+              Cost
+            </p>
+            <p className="font-bold text-white-body text-sm tabular-nums">
+              {formatCurrency(totalCost)}
+            </p>
           </div>
           <div>
-            <p className="text-xs text-white/40">Payout</p>
-            <p className="font-bold text-white text-sm">{formatCurrency(totalPayout)}</p>
+            <p
+              className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono"
+      >
+              Payout
+            </p>
+            <p className="font-bold text-white-body text-sm tabular-nums">
+              {formatCurrency(totalPayout)}
+            </p>
           </div>
           <div>
-            <p className="text-xs text-white/40">Bonuses</p>
-            <p className="font-bold text-white/70 text-sm">{bonusCount}</p>
+            <p
+              className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono"
+      >
+              Bonuses
+            </p>
+            <p className="font-bold text-white/70 text-sm tabular-nums">
+              {bonusCount}
+            </p>
           </div>
         </div>
-      </div>
+      </button>
 
-      {/* Expanded Detail */}
+      {/* Expanded — bonus detail */}
       {expanded && bonuses.length > 0 && (
-        <div className="border-t border-white/10 px-5 pb-5">
-          <div className="mt-4 space-y-2">
-            <p className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3">
-              Bonus Results ({bonuses.length})
-            </p>
+        <div className="border-t border-white/8 px-4 sm:px-5 pb-5 pt-4">
+          <p
+            className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-3 font-mono"
+      >
+            Bonus reel · {bonuses.length}
+          </p>
+          <div className="space-y-1.5">
             {bonuses.map((bonus, i) => (
-              <div key={bonus.id ?? i} className="flex items-center gap-3 p-3 rounded-lg bg-white/5">
+              <div
+                key={bonus.id ?? i}
+                className="flex items-center gap-3 px-3 py-2.5 bg-zinc-broadcast/40 border border-white/5"
+              >
                 {bonus.slotImage && (
                   <img
                     src={bonus.slotImage}
-                    alt={bonus.slotName}
-                    className="w-10 h-10 rounded object-cover flex-shrink-0 bg-white/10"
-                    onError={(e) => { e.target.style.display = 'none'; }}
+                    alt=""
+                    className="w-9 h-9 object-cover flex-shrink-0 bg-white/5 border border-white/10"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
                   />
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="font-bold text-white text-sm truncate">{bonus.slotName ?? `Bonus ${i + 1}`}</p>
-                  <p className="text-xs text-white/40">{bonus.provider} · Bet: {formatCurrency(bonus.betSize)}</p>
+                  <p className="font-bold text-white-body text-sm truncate leading-tight">
+                    {bonus.slotName ?? `Bonus ${i + 1}`}
+                  </p>
+                  <p
+                    className="text-[10px] tracking-eyebrow-sm uppercase text-white/40 truncate mt-0.5 font-mono"
+      >
+                    {bonus.provider} · Bet {formatCurrency(bonus.betSize)}
+                  </p>
                 </div>
-                <div className="w-36 hidden sm:block">
+                <div className="w-32 hidden sm:block">
                   <MultiplierBar value={bonus.multiplier ?? 0} max={maxMultiplier} />
                 </div>
                 <div className="text-right flex-shrink-0">
-                  <p className="font-bold text-sm text-white">{formatCurrency(bonus.payout)}</p>
-                  <p className="text-xs text-white/40">{(bonus.multiplier ?? 0).toFixed(1)}x</p>
+                  <p className="font-bold text-sm text-white-body tabular-nums">
+                    {formatCurrency(bonus.payout)}
+                  </p>
+                  <p
+                    className="text-[10px] tracking-eyebrow-sm text-white/40 tabular-nums font-mono"
+      >
+                    {(bonus.multiplier ?? 0).toFixed(1)}x
+                  </p>
                 </div>
               </div>
             ))}
@@ -174,10 +285,12 @@ export default function BonusHuntsPage() {
     setError(null);
     try {
       const data = await fetchHunts();
-      // Handle both array response and { hunts: [...] } envelope
-      const list = Array.isArray(data) ? data : (data.hunts ?? data.data ?? []);
-      // Sort newest first
-      list.sort((a, b) => new Date(b.created_at ?? b.date ?? 0) - new Date(a.created_at ?? a.date ?? 0));
+      const list = Array.isArray(data) ? data : data.hunts ?? data.data ?? [];
+      list.sort(
+        (a, b) =>
+          new Date(b.created_at ?? b.date ?? 0) -
+          new Date(a.created_at ?? a.date ?? 0)
+      );
       setHunts(list);
     } catch (e) {
       setError(e.message);
@@ -186,66 +299,121 @@ export default function BonusHuntsPage() {
     }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+  }, []);
 
   return (
-    <div className="pt-32 pb-24 px-6">
-      <div className="max-w-4xl mx-auto space-y-10">
-        {/* Header */}
-        <header className="text-center space-y-4">
-          <h1 className="text-6xl md:text-7xl font-black tracking-tighter">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-purple-400">
-              BONUS HUNTS
-            </span>
-          </h1>
-          <p className="text-lg text-white/60 max-w-xl mx-auto">
-            All past bonus hunts — click any hunt to see the full breakdown.
-          </p>
-        </header>
+    <div className="space-y-6">
+      {/* Active hunt iframe — kept as-is */}
+      <div className="border border-white/8 overflow-hidden">
+        <div
+          className="flex items-center gap-3 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md bg-zinc-broadcast/40 font-mono"
+      >
+          <span className="inline-flex items-center gap-2 text-emerald-signal">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
+            <span>LIVE WIDGET</span>
+          </span>
+          <span className="text-white/15">·</span>
+          <span className="text-white/45">Bonushunt.gg</span>
+        </div>
+        <iframe
+          src="https://bonushunt.gg/widget/1?userId=cmjxkol6401c3jcm59l6fssds"
+          title="Active Bonus Hunt"
+          className="w-full bg-zinc-broadcast"
+          style={{ height: '500px', border: 'none' }}
+          loading="lazy"
+        />
+      </div>
 
-        {/* Active Hunt Widget */}
-        <div className="rounded-xl overflow-hidden border border-white/10">
-          <iframe
-            src="https://bonushunt.gg/widget/1?userId=cmjxkol6401c3jcm59l6fssds"
-            title="Active Bonus Hunt"
-            className="w-full"
-            style={{ height: '500px', border: 'none' }}
-            loading="lazy"
-          />
+      {/* Archive */}
+      <div className="border border-white/8 bg-zinc-card/30">
+        <div
+          className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
+      >
+          <span className="inline-flex items-center gap-2 text-emerald-signal">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
+            <span>HUNT ARCHIVE</span>
+          </span>
+          <span className="text-white/15">·</span>
+          <span className="text-white/45">REELS</span>
+          <span className="text-white/70 tabular-nums tracking-eyebrow-lg">
+            {String(hunts.length).padStart(3, '0')}
+          </span>
+          <button
+            type="button"
+            onClick={load}
+            className="ml-auto inline-flex items-center gap-2 px-3 py-1.5 border border-white/10 text-white/55 hover:text-white-body hover:border-white/30 transition-colors duration-150"
+          >
+            <RefreshCcw
+              size={11}
+              aria-hidden="true"
+              className={loading ? 'animate-spin' : ''}
+            />
+            <span className="text-[10px] font-bold tracking-eyebrow-lg">
+              Refresh
+            </span>
+          </button>
         </div>
 
-        {/* Hunt List */}
+        {/* List */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-3 text-white/40">
-            <RefreshCcw size={28} className="animate-spin" />
-            <p className="text-sm">Loading hunts…</p>
+          <div className="py-16 flex flex-col items-center gap-3 text-white/40">
+            <RefreshCcw size={20} className="animate-spin" aria-hidden="true" />
+            <p
+              className="text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+              Loading reels…
+            </p>
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-4">
-            <p className="text-red-400 font-bold">Failed to load hunts</p>
-            <p className="text-white/40 text-sm">{error}</p>
+          <div className="py-16 px-4 flex flex-col items-center gap-3 text-center">
+            <p
+              className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-red-destructive/80 font-mono"
+      >
+              Signal lost
+            </p>
+            <p className="text-sm text-white/55">{error}</p>
             <button
+              type="button"
               onClick={load}
-              className="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 font-bold text-sm hover:bg-emerald-500/30 transition-all"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
             >
-              <RefreshCcw size={14} />
-              Retry
+              <RefreshCcw size={12} aria-hidden="true" />
+              <span
+                className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+                Retry
+              </span>
             </button>
           </div>
         ) : hunts.length === 0 ? (
-          <p className="text-center text-white/40 py-24">No hunts found.</p>
+          <p
+            className="text-center text-[11px] font-bold tracking-eyebrow-lg uppercase text-white/40 py-16 font-mono"
+      >
+            No hunts on file.
+          </p>
         ) : (
-          <div className="space-y-3">
-            {hunts.map((hunt) => (
-              <HuntCard key={hunt.id} hunt={hunt} />
+          <div className="p-3 space-y-2">
+            {hunts.map((hunt, i) => (
+              <HuntCard key={hunt.id} hunt={hunt} index={i} />
             ))}
           </div>
         )}
-      </div>
 
-      {/* Footer */}
-      <div className="text-center mt-16 text-white/30 text-sm">
-        Want to use this same bonus tracker? <a href="https://bonushunt.gg" target="_blank" rel="noopener noreferrer" className="hover:text-white/60 transition-colors underline underline-offset-2">bonushunt.gg</a>
+        <div
+          className="px-4 py-3 border-t border-white/8 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/30 text-center font-mono"
+      >
+          Tracker by{' '}
+          <a
+            href="https://bonushunt.gg"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-white/55 hover:text-emerald-signal transition-colors"
+          >
+            bonushunt.gg
+          </a>
+        </div>
       </div>
     </div>
   );

@@ -1,14 +1,130 @@
 import { useState, useEffect, useMemo } from 'react';
-import { Gamepad2, List, Shuffle, Search, Clock, ArrowUpDown } from 'lucide-react';
+import {
+  List,
+  Shuffle,
+  Search,
+  Clock,
+  ArrowUpDown,
+  RefreshCcw,
+} from 'lucide-react';
 import GameWheel from '../components/GameWheel';
+
+const inputCls =
+  'w-full bg-zinc-broadcast/60 border border-white/10 pl-10 pr-4 py-2.5 text-sm text-white-body placeholder:text-white/25 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';
+
+const TOOLS = [
+  { id: 'browse', label: 'Browse', code: 'LIB', icon: List },
+  { id: 'wheel', label: 'Wheel', code: 'WHL', icon: Shuffle },
+];
+
+function useNowTimestamp() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return now;
+}
+
+function formatTimecode(d) {
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
+}
+
+function ScanlineOverlay() {
+  return (
+    <div
+      className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-screen motion-reduce:hidden"
+      aria-hidden="true"
+      style={{
+        backgroundImage:
+          'repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(255,255,255,0.6) 2px, rgba(255,255,255,0.6) 3px)',
+      }}
+    />
+  );
+}
+
+function ToolTab({ tool, active, onClick }) {
+  const Icon = tool.icon;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex items-center gap-2.5 px-4 py-2.5 transition-colors duration-150 ${
+        active
+          ? 'bg-zinc-card text-white-body'
+          : 'text-white/55 hover:text-white-body hover:bg-zinc-card/50'
+      }`}
+    >
+      <span
+        className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums ${
+          active ? 'text-emerald-signal' : 'text-white/30'
+        } font-mono`}
+      >
+        {tool.code}
+      </span>
+      <Icon size={14} aria-hidden="true" className="opacity-80" />
+      <span className="text-sm font-bold tracking-tight">{tool.label}</span>
+    </button>
+  );
+}
+
+function GameCard({ game, index }) {
+  const tape = String(index + 1).padStart(3, '0');
+  return (
+    <div className="group border border-white/8 bg-zinc-card/40 hover:border-emerald-signal/40 transition-colors duration-200 overflow-hidden">
+      <div className="relative aspect-[460/215] overflow-hidden bg-zinc-broadcast">
+        {game.img_logo_url ? (
+          <img
+            src={game.img_logo_url}
+            alt=""
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.target.style.display = 'none';
+            }}
+          />
+        ) : (
+          <div className="absolute inset-0 bg-zinc-elevated" />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-broadcast/85 via-zinc-broadcast/10 to-transparent" />
+        <div
+          className="absolute top-2 left-2 px-1.5 py-0.5 bg-zinc-broadcast/80 text-emerald-signal text-[10px] font-bold tracking-eyebrow font-mono"
+      >
+          #{tape}
+        </div>
+      </div>
+      <div className="px-3 py-2.5">
+        <p className="text-xs font-bold text-white-body line-clamp-2 leading-snug">
+          {game.name}
+        </p>
+        {game.playtime_forever > 0 && (
+          <div
+            className="mt-1.5 flex items-center justify-between gap-2 text-[10px] font-bold tracking-eyebrow uppercase font-mono"
+      >
+            <span className="text-white/45 inline-flex items-center gap-1">
+              <Clock size={10} aria-hidden="true" />
+              Played
+            </span>
+            <span className="text-emerald-signal tabular-nums">
+              {game.playtime_forever}h
+            </span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function GamingPage() {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTool, setActiveTool] = useState('browse');
-  const [query, setQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState('playtime');
+  const now = useNowTimestamp();
 
   useEffect(() => {
     const fetchLibrary = async () => {
@@ -27,152 +143,242 @@ export default function GamingPage() {
   }, []);
 
   const visibleGames = useMemo(() => {
-    let filtered = query.trim()
-      ? games.filter(g => g.name.toLowerCase().includes(query.toLowerCase()))
+    let filtered = searchQuery.trim()
+      ? games.filter((g) =>
+          g.name.toLowerCase().includes(searchQuery.toLowerCase())
+        )
       : games;
 
     if (sortBy === 'alpha') {
       filtered = [...filtered].sort((a, b) => a.name.localeCompare(b.name));
     }
-
     return filtered;
-  }, [games, query, sortBy]);
+  }, [games, searchQuery, sortBy]);
 
   return (
-    <div className="pt-32 pb-24 px-6">
-      <div className="max-w-7xl mx-auto space-y-10">
-        <header className="text-center space-y-4">
-          <h1 className="text-6xl md:text-7xl font-black tracking-tighter">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-purple-400">
-              GAME PICKER
-            </span>
-          </h1>
-          <p className="text-lg text-white/60 max-w-2xl mx-auto">
-            Can't decide what to play? Browse your Steam library or let the wheel decide.
-          </p>
+    <div className="relative pt-32 pb-24 px-6 sm:px-10">
+      <ScanlineOverlay />
 
-          <div className="flex justify-center gap-4 pt-4 flex-wrap">
-            <button
-              onClick={() => setActiveTool('browse')}
-              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
-                activeTool === 'browse'
-                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
-                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
-              }`}
-            >
-              <List size={18} />
-              Browse
-            </button>
-            <button
-              onClick={() => setActiveTool('wheel')}
-              className={`px-6 py-3 rounded-lg font-bold tracking-wide transition-all duration-200 flex items-center gap-2 ${
-                activeTool === 'wheel'
-                  ? 'bg-gradient-to-r from-emerald-500 to-purple-500 text-white shadow-lg'
-                  : 'bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60'
-              }`}
-            >
-              <Shuffle size={18} />
-              Wheel
-            </button>
+      <div className="relative max-w-7xl mx-auto">
+        {/* Slate header */}
+        <header className="mb-10 sm:mb-12">
+          <div
+            className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-6 font-mono"
+      >
+            <span className="inline-flex items-center gap-2 text-emerald-signal">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
+              <span>STEAM LIBRARY</span>
+            </span>
+            <span className="text-white/20">·</span>
+            <span>GAME PICKER</span>
+            <span className="text-white/20">·</span>
+            <span className="text-white/30 tabular-nums">
+              {String(games.length).padStart(3, '0')} TITLES
+            </span>
+          </div>
+
+          <h1
+            className="font-black leading-[0.82] tracking-[-0.035em] text-white-body select-none"
+            style={{
+              fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+              fontSize: 'clamp(3rem, 10vw, 6.5rem)',
+            }}
+          >
+            <span className="block">Can't decide?</span>
+            <span className="block text-emerald-signal">Spin the wheel.</span>
+          </h1>
+
+          <div
+            className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] uppercase tracking-eyebrow text-white/45 font-mono"
+      >
+            <span>
+              Source · <span className="text-white/70">Steam</span>
+            </span>
+            <span className="text-white/15">·</span>
+            <span>
+              Sort ·{' '}
+              <span className="text-white/70">
+                {sortBy === 'playtime' ? 'Most played' : 'A–Z'}
+              </span>
+            </span>
+            <span className="text-white/15">·</span>
+            <span>
+              Now ·{' '}
+              <span className="text-emerald-signal tabular-nums">
+                {formatTimecode(now)}
+              </span>
+            </span>
           </div>
         </header>
 
+        {/* Loading */}
         {loading && (
-          <div className="text-center py-20">
-            <div className="inline-block w-12 h-12 border-4 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin" />
-            <p className="text-white/60 mt-4">Loading Steam library...</p>
+          <div className="border border-white/8 bg-zinc-card/30 py-16 flex flex-col items-center gap-3">
+            <RefreshCcw
+              size={20}
+              className="text-white/40 animate-spin"
+              aria-hidden="true"
+            />
+            <p
+              className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
+      >
+              Loading library…
+            </p>
           </div>
         )}
 
+        {/* Error */}
         {error && !loading && (
-          <div className="text-center py-20 space-y-4">
-            <p className="text-red-400 font-bold">Failed to load library</p>
-            <p className="text-white/50 text-sm">{error}</p>
+          <div className="border border-white/8 bg-zinc-card/30 py-16 px-6 flex flex-col items-center gap-3 text-center">
+            <p
+              className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-red-destructive/80 font-mono"
+      >
+              Signal lost
+            </p>
+            <p className="text-sm text-white/55">{error}</p>
             <button
+              type="button"
               onClick={() => window.location.reload()}
-              className="px-6 py-3 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60 transition-all font-bold"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
             >
-              Retry
+              <RefreshCcw size={12} aria-hidden="true" />
+              <span
+                className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+                Retry
+              </span>
             </button>
           </div>
         )}
 
         {!loading && !error && (
           <div className="space-y-6">
-            {/* Shared search + sort bar */}
-            <div className="flex gap-3 flex-wrap">
-              <div className="relative flex-1 min-w-48">
-                <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-white/40" />
+            {/* Mode toggle */}
+            <div className="inline-flex border border-white/8 bg-zinc-card/30">
+              {TOOLS.map((tool, i) => (
+                <div
+                  key={tool.id}
+                  className={i > 0 ? 'border-l border-white/8' : ''}
+                >
+                  <ToolTab
+                    tool={tool}
+                    active={activeTool === tool.id}
+                    onClick={() => setActiveTool(tool.id)}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {/* Search + sort */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search
+                  size={14}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35"
+                  aria-hidden="true"
+                />
                 <input
                   type="text"
-                  placeholder="Search games..."
-                  value={query}
-                  onChange={e => setQuery(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg pl-9 pr-4 py-3 focus:border-emerald-400 focus:outline-none text-sm"
+                  placeholder="Search library…"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className={inputCls}
                 />
               </div>
               <button
-                onClick={() => setSortBy(s => s === 'playtime' ? 'alpha' : 'playtime')}
-                className="flex items-center gap-2 px-4 py-3 rounded-lg bg-white/5 border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60 transition-all text-sm font-bold"
+                type="button"
+                onClick={() =>
+                  setSortBy((s) => (s === 'playtime' ? 'alpha' : 'playtime'))
+                }
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 border border-white/10 text-white/65 hover:text-white-body hover:border-emerald-signal/40 transition-colors duration-150"
               >
-                <ArrowUpDown size={14} />
-                {sortBy === 'playtime' ? 'Most Played' : 'A–Z'}
+                <ArrowUpDown size={13} aria-hidden="true" />
+                <span
+                  className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+                  {sortBy === 'playtime' ? 'Most played' : 'A–Z'}
+                </span>
               </button>
+            </div>
+
+            {/* Result strip */}
+            <div
+              className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
+      >
+              <span>
+                Showing{' '}
+                <span className="text-white/70 tabular-nums">
+                  {String(visibleGames.length).padStart(3, '0')}
+                </span>
+                {' / '}
+                <span className="text-white/70 tabular-nums">
+                  {String(games.length).padStart(3, '0')}
+                </span>
+              </span>
+              {searchQuery && (
+                <>
+                  <span className="text-white/15">·</span>
+                  <span>
+                    Filter ·{' '}
+                    <span className="text-emerald-signal normal-case tracking-normal">
+                      "{searchQuery}"
+                    </span>
+                  </span>
+                </>
+              )}
             </div>
 
             {/* Browse view */}
             {activeTool === 'browse' && (
-              <div>
-                <p className="text-white/40 text-sm mb-4">
-                  {visibleGames.length} game{visibleGames.length !== 1 ? 's' : ''}
-                  {query ? ` matching "${query}"` : ' in library'}
-                </p>
+              <>
                 {visibleGames.length === 0 ? (
-                  <div className="text-center py-16 text-white/40">No games match your search.</div>
+                  <div className="border border-white/8 bg-zinc-card/30 py-16 text-center">
+                    <p
+                      className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono"
+      >
+                      No matches
+                    </p>
+                    <p className="text-sm text-white/55">
+                      No games match the current search.
+                    </p>
+                  </div>
                 ) : (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-                    {visibleGames.map(game => (
-                      <div
-                        key={game.appid}
-                        className="group rounded-xl overflow-hidden border border-white/10 bg-white/5 hover:border-emerald-500/40 hover:scale-105 transition-all duration-200"
-                      >
-                        <div className="aspect-[460/215] relative overflow-hidden bg-black/40">
-                          <img
-                            src={game.img_logo_url}
-                            alt={game.name}
-                            className="w-full h-full object-cover"
-                            onError={e => { e.target.style.display = 'none'; }}
-                          />
-                        </div>
-                        <div className="p-3">
-                          <p className="font-bold text-white text-xs line-clamp-2 group-hover:text-emerald-400 transition-colors">
-                            {game.name}
-                          </p>
-                          {game.playtime_forever > 0 && (
-                            <p className="flex items-center gap-1 text-white/40 text-xs mt-1">
-                              <Clock size={10} />
-                              {game.playtime_forever}h
-                            </p>
-                          )}
-                        </div>
-                      </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                    {visibleGames.map((game, i) => (
+                      <GameCard key={game.appid} game={game} index={i} />
                     ))}
                   </div>
                 )}
-              </div>
+              </>
             )}
 
             {/* Wheel view */}
             {activeTool === 'wheel' && (
-              <div className="max-w-lg mx-auto p-8 bg-gradient-to-br from-emerald-900/20 to-purple-900/20 border border-emerald-500/20 rounded-xl backdrop-blur-sm">
-                <div className="flex items-center gap-2 text-emerald-400 font-bold mb-2">
-                  <Gamepad2 size={18} />
-                  Game Wheel
+              <div className="max-w-lg mx-auto border border-white/8 bg-zinc-card/30">
+                <div
+                  className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
+      >
+                  <span className="inline-flex items-center gap-2 text-emerald-signal">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
+                    <span>WHEEL READY</span>
+                  </span>
+                  <span className="text-white/15">·</span>
+                  <span className="text-white/45">POOL</span>
+                  <span className="text-white/70 tabular-nums tracking-eyebrow-lg">
+                    {String(visibleGames.length).padStart(3, '0')}
+                  </span>
                 </div>
-                <h2 className="text-3xl font-black tracking-tighter mb-6">
-                  Let fate decide.
-                </h2>
-                <GameWheel games={visibleGames} />
+                <div className="px-5 py-6">
+                  <p
+                    className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono"
+      >
+                    Game wheel
+                  </p>
+                  <h2 className="text-2xl font-bold tracking-tight text-white-body mb-5">
+                    Let fate decide.
+                  </h2>
+                  <GameWheel games={visibleGames} />
+                </div>
               </div>
             )}
           </div>

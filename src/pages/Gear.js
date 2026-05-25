@@ -6,15 +6,15 @@ export default function GearPage() {
       <div className="max-w-4xl mx-auto">
         <div className="text-center mb-16">
           <h1 className="text-6xl md:text-7xl font-black tracking-tighter mb-6">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-purple-400">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-bright to-purple-bright">
               GEAR USED ON STREAM
             </span>
           </h1>
         </div>
 
         <div className="space-y-8">
-          <div className="p-8 bg-gradient-to-br from-emerald-900/20 to-purple-900/20 border border-emerald-500/20 rounded-xl backdrop-blur-sm">
-            <h2 className="text-3xl font-black tracking-tighter mb-4 text-emerald-400">
+          <div className="p-8 bg-gradient-to-br from-emerald-900/20 to-purple-900/20 border border-emerald-signal/20 rounded-xl backdrop-blur-sm">
+            <h2 className="text-3xl font-black tracking-tighter mb-4 text-emerald-bright">
               COMPUTERS
             </h2>
             <p className="text-lg text-white/80 leading-relaxed mb-4">
@@ -37,8 +37,8 @@ export default function GearPage() {
             </p>
           </div>
 
-          <div className="p-8 bg-gradient-to-br from-purple-900/20 to-emerald-900/20 border border-purple-500/20 rounded-xl backdrop-blur-sm">
-            <h2 className="text-3xl font-black tracking-tighter mb-4 text-purple-400">
+          <div className="p-8 bg-gradient-to-br from-purple-900/20 to-emerald-900/20 border border-purple-gamba/20 rounded-xl backdrop-blur-sm">
+            <h2 className="text-3xl font-black tracking-tighter mb-4 text-purple-bright">
               RACING RIG
             </h2>
             <div className="space-y-4">
@@ -54,8 +54,8 @@ export default function GearPage() {
             </div>
           </div>
 
-          <div className="p-8 bg-gradient-to-br from-emerald-900/20 to-purple-900/20 border border-emerald-500/20 rounded-xl backdrop-blur-sm">
-            <h2 className="text-3xl font-black tracking-tighter mb-4 text-emerald-400">
+          <div className="p-8 bg-gradient-to-br from-emerald-900/20 to-purple-900/20 border border-emerald-signal/20 rounded-xl backdrop-blur-sm">
+            <h2 className="text-3xl font-black tracking-tighter mb-4 text-emerald-bright">
               AUX ITEMS
             </h2>
             <div>
@@ -74,7 +74,7 @@ export default function GearPage() {
 
 function ContentItem({ title, description }) {
   return (
-    <div className="border-l-4 border-emerald-500/50 pl-4">
+    <div className="border-l-4 border-emerald-signal/50 pl-4">
       <h3 className="text-xl font-bold mb-2">{title}</h3>
       <p className="text-white/70">{description}</p>
     </div>

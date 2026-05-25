@@ -49,12 +49,12 @@ export default function GameWheel({ games }) {
       {/* Pool info */}
       <div className="flex items-center justify-between">
         <p className="text-white/50 text-sm">
-          Spinning from <span className="text-emerald-400 font-bold">{games.length}</span> game{games.length !== 1 ? 's' : ''}
+          Spinning from <span className="text-emerald-bright font-bold">{games.length}</span> game{games.length !== 1 ? 's' : ''}
         </p>
         {result && (
           <button
             onClick={reset}
-            className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg border border-white/10 text-white/60 hover:text-white hover:border-emerald-400/60 transition-all"
+            className="flex items-center gap-2 px-3 py-1.5 text-xs font-bold rounded-lg border border-white/10 text-white/60 hover:text-white-body hover:border-emerald-bright/60 transition-all"
           >
             <RotateCcw size={12} />
             RESET
@@ -74,18 +74,18 @@ export default function GameWheel({ games }) {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
             <div className="absolute bottom-0 left-0 right-0 p-4">
-              <p className={`font-black text-xl tracking-tight text-white ${spinning ? 'blur-[1px]' : ''}`}>
+              <p className={`font-black text-xl tracking-tight text-white-body ${spinning ? 'blur-[1px]' : ''}`}>
                 {displayGame.name}
               </p>
               {!spinning && displayGame.playtime_forever > 0 && (
-                <p className="text-emerald-400 text-sm font-bold mt-1">
+                <p className="text-emerald-bright text-sm font-bold mt-1">
                   {displayGame.playtime_forever}h played
                 </p>
               )}
             </div>
             {spinning && (
               <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                <div className="w-10 h-10 border-4 border-emerald-400/30 border-t-emerald-400 rounded-full animate-spin" />
+                <div className="w-10 h-10 border-4 border-emerald-bright/30 border-t-emerald-400 rounded-full animate-spin" />
               </div>
             )}
           </>
@@ -98,9 +98,9 @@ export default function GameWheel({ games }) {
 
       {/* Result banner */}
       {result && !spinning && (
-        <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-900/40 to-purple-900/40 border border-emerald-500/30 text-center">
+        <div className="p-4 rounded-xl bg-gradient-to-r from-emerald-900/40 to-purple-900/40 border border-emerald-signal/30 text-center">
           <p className="text-white/60 text-sm mb-1">Tonight you're playing</p>
-          <p className="text-2xl font-black text-white tracking-tight">{result.name}</p>
+          <p className="text-2xl font-black text-white-body tracking-tight">{result.name}</p>
         </div>
       )}
 
@@ -108,7 +108,7 @@ export default function GameWheel({ games }) {
       <button
         onClick={result ? reset : spin}
         disabled={spinning || games.length === 0}
-        className="w-full py-4 rounded-xl font-black text-lg tracking-wide transition-all duration-200 flex items-center justify-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-emerald-500 to-purple-500 hover:from-emerald-600 hover:to-purple-600 text-white shadow-lg"
+        className="w-full py-4 rounded-xl font-black text-lg tracking-wide transition-all duration-200 flex items-center justify-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed bg-gradient-to-r from-emerald-signal to-purple-gamba hover:from-emerald-600 hover:to-purple-600 text-white-body shadow-lg"
       >
         <Shuffle size={22} />
         {spinning ? 'SPINNING...' : result ? 'SPIN AGAIN' : 'SPIN'}

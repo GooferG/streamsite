@@ -58,12 +58,12 @@ export default function SlotAutocomplete({ value, onChange, onSelect, placeholde
         className={className}
       />
       {open && (
-        <ul className="absolute z-50 left-0 right-0 mt-1 bg-zinc-900 border border-emerald-500/30 rounded-lg overflow-hidden shadow-xl max-h-64 overflow-y-auto">
+        <ul className="absolute z-50 left-0 right-0 mt-1 bg-zinc-900 border border-emerald-signal/30 rounded-lg overflow-hidden shadow-xl max-h-64 overflow-y-auto">
           {suggestions.map((s) => (
             <li
               key={s.id}
               onMouseDown={() => select(s)}
-              className="flex items-center gap-3 px-3 py-2 hover:bg-emerald-500/10 cursor-pointer transition-colors"
+              className="flex items-center gap-3 px-3 py-2 hover:bg-emerald-signal/10 cursor-pointer transition-colors"
             >
               {s.thumbnail && (
                 <img
@@ -74,10 +74,10 @@ export default function SlotAutocomplete({ value, onChange, onSelect, placeholde
                 />
               )}
               <div className="min-w-0 flex-1">
-                <p className="text-sm text-white truncate">{s.name}</p>
+                <p className="text-sm text-white-body truncate">{s.name}</p>
                 <p className="text-xs text-white/40 truncate">{s.provider}</p>
               </div>
-              <Dice6 size={12} className="text-emerald-400/50 flex-shrink-0" />
+              <Dice6 size={12} className="text-emerald-bright/50 flex-shrink-0" />
             </li>
           ))}
         </ul>

@@ -1,6 +1,49 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lock, Mail, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+
+function useNowTimestamp() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(t);
+  }, []);
+  return now;
+}
+
+function formatTimecode(d) {
+  const hh = String(d.getHours()).padStart(2, '0');
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const ss = String(d.getSeconds()).padStart(2, '0');
+  return `${hh}:${mm}:${ss}`;
+}
+
+function Field({ label, code, icon: Icon, type, value, onChange, placeholder, autoComplete }) {
+  return (
+    <label className="block">
+      <div
+        className="flex items-baseline gap-3 mb-2 text-[10px] font-bold uppercase tracking-eyebrow-lg font-mono"
+      >
+        <span className="text-orange-admin tabular-nums">{code}</span>
+        <span className="text-white/55">{label}</span>
+      </div>
+      <div className="relative">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35 pointer-events-none">
+          <Icon size={16} aria-hidden="true" />
+        </span>
+        <input
+          type={type}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          required
+          autoComplete={autoComplete}
+          placeholder={placeholder}
+          className="w-full bg-zinc-broadcast/60 border border-white/10 pl-10 pr-4 py-3 text-sm text-white-body placeholder:text-white/25 focus:border-orange-admin/70 focus:outline-none focus:bg-zinc-broadcast/80 transition-colors duration-150"
+        />
+      </div>
+    </label>
+  );
+}
 
 export default function AdminLoginPage({ onLoginSuccess }) {
   const [email, setEmail] = useState('');
@@ -8,104 +51,154 @@ export default function AdminLoginPage({ onLoginSuccess }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const now = useNowTimestamp();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
     try {
       await login(email, password);
       onLoginSuccess();
     } catch (err) {
       console.error('Login error:', err);
-      setError('Failed to login. Please check your credentials.');
+      setError('Authentication failed. Verify credentials and retry.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen pt-20 pb-24 px-6 flex items-center justify-center">
-      <div
-        className="absolute top-1/4 left-1/4 w-96 h-96 bg-emerald-500/20 rounded-full blur-3xl animate-pulse"
-        style={{ animation: 'glow 8s ease-in-out infinite' }}
-      />
-      <div
-        className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse"
-        style={{ animation: 'glow 10s ease-in-out infinite 2s' }}
-      />
+    <div className="min-h-screen pt-24 pb-16 px-6 flex items-center justify-center">
+      <div className="relative w-full max-w-md">
+        {/* Terminal shell */}
+        <div className="relative overflow-hidden border border-white/8 bg-zinc-card/30">
+          {/* Atmospheric backing — orange admin accent */}
+          <div
+            className="pointer-events-none absolute -top-24 -left-24 w-64 h-64 rounded-full bg-orange-admin/10 blur-3xl motion-reduce:hidden"
+            aria-hidden="true"
+          />
+          <div
+            className="pointer-events-none absolute inset-0 opacity-[0.04] mix-blend-screen motion-reduce:hidden"
+            aria-hidden="true"
+            style={{
+              backgroundImage:
+                'repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(255,255,255,0.6) 2px, rgba(255,255,255,0.6) 3px)',
+            }}
+          />
 
-      <div className="relative z-10 w-full max-w-md">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-r from-emerald-500 to-purple-500 mb-4">
-            <Lock size={32} className="text-white" />
-          </div>
-          <h1 className="text-4xl font-black tracking-tighter mb-2">
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-purple-400">
-              ADMIN LOGIN
+          {/* Status bar */}
+          <div
+            className="relative flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
+      >
+            <span className="inline-flex items-center gap-2 text-orange-admin">
+              <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
+              <span>ACCESS REQUIRED</span>
             </span>
-          </h1>
-          <p className="text-white/60">
-            Manage your stream schedule and settings
-          </p>
-        </div>
+            <span className="text-white/15">·</span>
+            <span className="text-white/45">CHANNEL</span>
+            <span className="text-white/70 tracking-eyebrow-lg">GG-ADMIN</span>
+          </div>
 
-        <div className="p-8 bg-gradient-to-br from-emerald-900/20 to-purple-900/20 border border-emerald-500/20 rounded-xl backdrop-blur-sm">
-          {error && (
-            <div className="mb-6 p-4 bg-red-500/10 border border-red-500/30 rounded-lg flex items-center gap-3">
-              <AlertCircle size={20} className="text-red-400 flex-shrink-0" />
-              <p className="text-sm text-red-200">{error}</p>
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-bold text-white/80 mb-2">
-                Email
-              </label>
-              <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                  <Mail size={18} className="text-white/40" />
-                </div>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                  className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-3 focus:border-emerald-400 focus:outline-none"
-                  placeholder="admin@example.com"
-                />
+          {/* Body */}
+          <div className="relative px-6 sm:px-8 py-8">
+            {/* Slate */}
+            <div className="mb-7">
+              <div
+                className="flex items-baseline gap-3 mb-3 text-[10px] font-bold uppercase tracking-eyebrow-lg font-mono"
+      >
+                <span className="text-white/30">TERMINAL</span>
+                <span className="text-orange-admin tabular-nums">T-01</span>
               </div>
+              <h1
+                className="font-black leading-none tracking-tight text-white-body"
+                style={{
+                  fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+                  fontSize: 'clamp(2rem, 6vw, 2.75rem)',
+                }}
+              >
+                Operator sign-in.
+              </h1>
+              <p
+                className="mt-3 text-[11px] tracking-eyebrow uppercase text-white/40 font-mono"
+      >
+                Authorized personnel only.
+              </p>
             </div>
 
-            <div>
-              <label className="block text-sm font-bold text-white/80 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute left-3 top-1/2 -translate-y-1/2">
-                  <Lock size={18} className="text-white/40" />
-                </div>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                  className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-3 focus:border-emerald-400 focus:outline-none"
-                  placeholder="••••••••"
+            {/* Error */}
+            {error && (
+              <div
+                className="mb-6 px-4 py-3 border border-red-destructive/40 bg-red-destructive/5 flex items-start gap-3"
+                role="alert"
+              >
+                <AlertCircle
+                  size={16}
+                  className="text-red-destructive flex-shrink-0 mt-0.5"
+                  aria-hidden="true"
                 />
+                <div className="min-w-0">
+                  <div
+                    className="text-[10px] font-bold tracking-eyebrow-md uppercase text-red-destructive/80 mb-0.5 font-mono"
+      >
+                    Signal rejected
+                  </div>
+                  <p className="text-sm text-white/80">{error}</p>
+                </div>
               </div>
-            </div>
+            )}
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full px-6 py-4 rounded-lg bg-gradient-to-r from-emerald-500 to-purple-500 text-white font-bold hover:from-emerald-600 hover:to-purple-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? 'Logging in...' : 'Login'}
-            </button>
-          </form>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <Field
+                label="Email"
+                code="01"
+                icon={Mail}
+                type="email"
+                value={email}
+                onChange={setEmail}
+                placeholder="operator@channel"
+                autoComplete="email"
+              />
+              <Field
+                label="Password"
+                code="02"
+                icon={Lock}
+                type="password"
+                value={password}
+                onChange={setPassword}
+                placeholder="••••••••"
+                autoComplete="current-password"
+              />
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full inline-flex items-center justify-center gap-3 px-6 py-3 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span
+                  className="text-[10px] font-bold tracking-eyebrow-lg font-mono"
+      >
+                  {loading ? 'AUTH...' : 'AUTHENTICATE'}
+                </span>
+                {!loading && (
+                  <span
+                    className="text-[10px] font-bold tracking-eyebrow-lg opacity-70 font-mono"
+      >
+                    →
+                  </span>
+                )}
+              </button>
+            </form>
+          </div>
+
+          {/* Footer */}
+          <div
+            className="relative flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 border-t border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md text-white/30 font-mono"
+      >
+            <span>SECURE TERMINAL</span>
+            <span className="text-white/15">·</span>
+            <span className="text-orange-admin/70 tabular-nums">{formatTimecode(now)}</span>
+          </div>
         </div>
       </div>
     </div>

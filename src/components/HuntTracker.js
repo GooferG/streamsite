@@ -3,7 +3,6 @@ import {
   Plus,
   X,
   RefreshCcw,
-  Target,
   Users,
   DollarSign,
   TrendingDown,
@@ -39,6 +38,42 @@ function fmt(val) {
 function fmtX(val) {
   if (val == null || !isFinite(val)) return '—';
   return `${val.toFixed(2)}x`;
+}
+
+const inputCls =
+  'bg-zinc-broadcast/60 border border-white/10 px-3 py-2 text-sm text-white-body placeholder:text-white/25 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';
+
+function PanelLabel({ code, icon: Icon, label, accent = 'emerald' }) {
+  const color =
+    accent === 'orange'
+      ? 'text-orange-admin'
+      : accent === 'purple'
+        ? 'text-purple-bright'
+        : 'text-emerald-signal';
+  return (
+    <div
+      className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 font-mono"
+      >
+      <span className={`${color} tabular-nums`}>{code}</span>
+      <span className="inline-flex items-center gap-1.5">
+        {Icon && <Icon size={12} aria-hidden="true" className={color} />}
+        <span>{label}</span>
+      </span>
+    </div>
+  );
+}
+
+function StatCell({ label, value }) {
+  return (
+    <div className="px-3 py-2.5 bg-zinc-broadcast/50 border border-white/8">
+      <p
+        className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/40 mb-1 font-mono"
+      >
+        {label}
+      </p>
+      <p className="font-bold text-white-body text-base tabular-nums">{value}</p>
+    </div>
+  );
 }
 
 export default function HuntTracker() {
@@ -381,55 +416,60 @@ export default function HuntTracker() {
     [gamblers, totalBuyIns, finishBalance]
   );
 
-  const inputCls =
-    'bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:border-emerald-400 focus:outline-none placeholder-white/20';
-
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="p-8 bg-gradient-to-br from-emerald-900/20 to-purple-900/20 border border-emerald-500/20 rounded-xl backdrop-blur-sm">
-        <div className="flex items-start justify-between gap-4 mb-6">
-          <div>
-            <div className="flex items-center gap-2 text-emerald-400 font-bold mb-2">
-              <Target size={18} />
-              Hunt Tracker
-            </div>
-            <h2 className="text-3xl font-black tracking-tighter">
-              Bonus Hunt Tracker
-            </h2>
-            <p className="text-white/60">
-              Log bonuses, track stats, split payouts among the squad.
-            </p>
-          </div>
-          <div className="flex items-center gap-2" data-html2canvas-ignore="true">
-            <button
-              onClick={downloadImage}
-              disabled={downloading}
-              className="flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg border border-emerald-500/30 text-emerald-300 hover:text-white hover:border-emerald-400 hover:bg-emerald-500/10 transition-all disabled:opacity-50"
-            >
-              <Download size={14} />
-              {downloading ? 'SAVING…' : 'DOWNLOAD'}
-            </button>
-            <button
-              onClick={resetAll}
-              className="flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-lg border border-white/10 text-white/60 hover:text-white hover:border-red-400/60 transition-all"
-            >
-              <RefreshCcw size={14} />
+    <div className="border border-white/8 bg-zinc-card/30">
+      {/* Status bar */}
+      <div
+        className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
+      >
+        <span className="inline-flex items-center gap-2 text-emerald-signal">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
+          <span>HUNT TRACKER</span>
+        </span>
+        <span className="text-white/15">·</span>
+        <span className="text-white/45">BONUSES</span>
+        <span className="text-white/70 tabular-nums tracking-eyebrow-lg">
+          {String(bonuses.length).padStart(3, '0')}
+        </span>
+        <span className="text-white/15">·</span>
+        <span className="text-white/45">SQUAD</span>
+        <span className="text-white/70 tabular-nums tracking-eyebrow-lg">
+          {String(gamblers.length).padStart(2, '0')}
+        </span>
+        <div className="ml-auto flex gap-2" data-html2canvas-ignore="true">
+          <button
+            type="button"
+            onClick={downloadImage}
+            disabled={downloading}
+            className="inline-flex items-center gap-2 px-3 py-1.5 border border-emerald-signal/40 text-emerald-signal hover:bg-emerald-signal/10 transition-colors duration-150 disabled:opacity-50"
+          >
+            <Download size={12} aria-hidden="true" />
+            <span className="text-[10px] font-bold tracking-eyebrow-lg">
+              {downloading ? 'SAVING…' : 'EXPORT'}
+            </span>
+          </button>
+          <button
+            type="button"
+            onClick={resetAll}
+            className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/10 text-white/55 hover:text-red-destructive hover:border-red-destructive/50 transition-colors duration-150"
+          >
+            <RefreshCcw size={12} aria-hidden="true" />
+            <span className="text-[10px] font-bold tracking-eyebrow-lg">
               RESET
-            </button>
-          </div>
+            </span>
+          </button>
         </div>
+      </div>
 
-        {/* Two-column layout */}
+      {/* Body */}
+      <div className="px-4 py-5">
         <div className="grid lg:grid-cols-2 gap-6">
-          {/* LEFT — Bonus List */}
+          {/* LEFT — Bonus list */}
           <div className="space-y-4">
-            <h3 className="text-sm font-bold text-white/70 uppercase tracking-widest">
-              Bonus List
-            </h3>
+            <PanelLabel code="01" label="Bonus list" />
 
-            {/* Add bonus row */}
-            <div className="p-4 bg-white/5 border border-white/10 rounded-lg space-y-3">
+            {/* Add bonus */}
+            <div className="border border-white/8 bg-zinc-broadcast/40 p-3 space-y-2">
               <SlotAutocomplete
                 value={slotInput}
                 onChange={setSlotInput}
@@ -446,28 +486,37 @@ export default function HuntTracker() {
                 className={`w-full ${inputCls}`}
               />
               <button
+                type="button"
                 onClick={addBonus}
-                className="w-full px-4 py-2.5 rounded-lg bg-gradient-to-r from-emerald-500 to-purple-500 text-white font-bold text-sm hover:from-emerald-600 hover:to-purple-600 transition-all flex items-center justify-center gap-2"
+                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
               >
-                <Plus size={16} />
-                Add Bonus
+                <Plus size={14} aria-hidden="true" />
+                <span
+                  className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+                  Log bonus
+                </span>
               </button>
             </div>
 
             {/* Bonus table */}
             {bonuses.length === 0 ? (
-              <p className="text-center text-white/30 py-8 text-sm">
-                No bonuses yet.
+              <p
+                className="text-center text-white/30 py-6 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+                No bonuses logged.
               </p>
             ) : (
-              <div className="rounded-lg border border-white/10 overflow-hidden">
+              <div className="border border-white/8 overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
-                    <tr className="border-b border-white/10 text-white/40 text-xs uppercase tracking-wider">
-                      <th className="text-left px-3 py-2">Slot</th>
-                      <th className="text-right px-3 py-2">Stake</th>
-                      <th className="text-right px-3 py-2">Win</th>
-                      <th className="text-right px-3 py-2">X</th>
+                    <tr
+                      className="border-b border-white/10 text-white/40 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono"
+      >
+                      <th className="text-left px-3 py-2 font-bold">Slot</th>
+                      <th className="text-right px-3 py-2 font-bold">Stake</th>
+                      <th className="text-right px-3 py-2 font-bold">Win</th>
+                      <th className="text-right px-3 py-2 font-bold">X</th>
                       <th className="px-2 py-2" />
                     </tr>
                   </thead>
@@ -477,12 +526,12 @@ export default function HuntTracker() {
                       return (
                         <tr
                           key={b.id}
-                          className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                          className="border-b border-white/5 hover:bg-zinc-broadcast/40 transition-colors"
                         >
-                          <td className="px-3 py-2.5 font-medium text-white truncate max-w-[120px]">
+                          <td className="px-3 py-2.5 font-bold text-white-body truncate max-w-[140px]">
                             {b.slot}
                           </td>
-                          <td className="px-3 py-2.5 text-right text-white/70">
+                          <td className="px-3 py-2.5 text-right text-white/70 tabular-nums">
                             {fmt(b.stake)}
                           </td>
                           <td className="px-2 py-1.5 text-right">
@@ -491,20 +540,26 @@ export default function HuntTracker() {
                               value={b.win || ''}
                               onChange={(e) => updateBonusWin(b.id, e.target.value)}
                               placeholder="—"
-                              className="w-24 bg-white/5 border border-white/10 rounded px-2 py-1 text-sm text-right focus:border-emerald-400 focus:outline-none placeholder-white/20"
+                              className="w-24 bg-zinc-broadcast/60 border border-white/10 px-2 py-1 text-sm text-right focus:border-emerald-signal/70 focus:outline-none placeholder:text-white/20 tabular-nums"
                             />
                           </td>
                           <td
-                            className={`px-3 py-2.5 text-right font-bold ${x != null && x >= (reqX ?? 0) ? 'text-emerald-400' : 'text-white/50'}`}
+                            className={`px-3 py-2.5 text-right font-bold tabular-nums ${
+                              x != null && x >= (reqX ?? 0)
+                                ? 'text-emerald-signal'
+                                : 'text-white/50'
+                            }`}
                           >
                             {x != null ? fmtX(x) : '—'}
                           </td>
                           <td className="px-2 py-2.5">
                             <button
+                              type="button"
                               onClick={() => removeBonus(b.id)}
-                              className="p-1 rounded bg-red-500/20 border border-red-500/30 text-red-300 hover:bg-red-500/30 transition-all"
+                              className="p-1 border border-red-destructive/30 text-red-destructive/80 hover:bg-red-destructive/15 transition-colors"
+                              aria-label="Remove bonus"
                             >
-                              <X size={12} />
+                              <X size={11} aria-hidden="true" />
                             </button>
                           </td>
                         </tr>
@@ -512,14 +567,16 @@ export default function HuntTracker() {
                     })}
                   </tbody>
                   <tfoot>
-                    <tr className="border-t border-white/10 text-white/50 text-xs">
-                      <td className="px-3 py-2 font-bold text-white/40">
-                        TOTALS
+                    <tr
+                      className="border-t border-white/10 bg-zinc-broadcast/50 text-[10px] uppercase tracking-eyebrow-md font-mono"
+      >
+                      <td className="px-3 py-2 font-bold text-white/45">
+                        Totals
                       </td>
-                      <td className="px-3 py-2 text-right font-bold text-white/60">
+                      <td className="px-3 py-2 text-right font-bold text-white/70 tabular-nums">
                         {fmt(totalStakes)}
                       </td>
-                      <td className="px-3 py-2 text-right font-bold text-white/60">
+                      <td className="px-3 py-2 text-right font-bold text-white/70 tabular-nums">
                         {fmt(totalWins)}
                       </td>
                       <td colSpan={2} />
@@ -530,43 +587,44 @@ export default function HuntTracker() {
             )}
           </div>
 
-          {/* RIGHT — Stats & Split */}
-          <div className="space-y-4">
+          {/* RIGHT — Stats / Split / Banned */}
+          <div className="space-y-5">
             {/* Hunt Financials */}
-            <div className="p-4 bg-white/5 border border-white/10 rounded-lg space-y-3">
-              <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm mb-1">
-                <DollarSign size={15} />
-                Hunt Financials
-              </div>
+            <div className="space-y-3">
+              <PanelLabel code="02" icon={DollarSign} label="Financials" />
 
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs text-white/50 mb-1">
-                    Start Balance
-                  </label>
+                <label className="block">
+                  <span
+                    className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/45 mb-1.5 font-mono"
+      >
+                    Start balance
+                  </span>
                   <input
                     type="number"
                     placeholder="0.00"
                     value={startBalance}
                     onChange={(e) => updateStart(e.target.value)}
-                    className={`w-full ${inputCls}`}
+                    className={`w-full ${inputCls} tabular-nums`}
                   />
-                </div>
-                <div>
-                  <label className="block text-xs text-white/50 mb-1">
-                    Finish Balance
-                  </label>
+                </label>
+                <label className="block">
+                  <span
+                    className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/45 mb-1.5 font-mono"
+      >
+                    Finish balance
+                  </span>
                   <input
                     type="number"
                     placeholder="0.00"
                     value={finishBalance}
                     onChange={(e) => updateFinish(e.target.value)}
-                    className={`w-full ${inputCls}`}
+                    className={`w-full ${inputCls} tabular-nums`}
                   />
-                </div>
+                </label>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/10">
+              <div className="grid grid-cols-2 gap-2 pt-1">
                 <StatCell
                   label="Profit"
                   value={
@@ -575,7 +633,7 @@ export default function HuntTracker() {
                     ) : (
                       <span
                         className={
-                          profit >= 0 ? 'text-emerald-400' : 'text-red-400'
+                          profit >= 0 ? 'text-emerald-signal' : 'text-red-destructive'
                         }
                       >
                         {profit >= 0 ? '+' : ''}
@@ -596,16 +654,13 @@ export default function HuntTracker() {
                       : '—'
                   }
                 />
-                <StatCell label="Total Wins" value={fmt(totalWins)} />
+                <StatCell label="Total wins" value={fmt(totalWins)} />
               </div>
             </div>
 
             {/* Gambler Split */}
-            <div className="p-4 bg-white/5 border border-white/10 rounded-lg space-y-3">
-              <div className="flex items-center gap-2 text-purple-400 font-bold text-sm mb-1">
-                <Users size={15} />
-                Gambler Split
-              </div>
+            <div className="space-y-3">
+              <PanelLabel code="03" icon={Users} label="Squad split" accent="purple" />
 
               {/* Add gambler */}
               <div className="flex gap-2">
@@ -623,30 +678,36 @@ export default function HuntTracker() {
                   value={gamblerInInput}
                   onChange={(e) => setGamblerInInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addGambler()}
-                  className={`w-28 ${inputCls}`}
+                  className={`w-28 ${inputCls} tabular-nums`}
                 />
                 <button
+                  type="button"
                   onClick={addGambler}
                   disabled={gamblers.length >= 10}
-                  className="px-3 py-2 rounded-lg bg-purple-500/20 border border-purple-500/30 text-purple-300 hover:bg-purple-500/30 transition-all disabled:opacity-40"
+                  className="px-3 py-2 border border-purple-gamba/40 text-purple-bright hover:bg-purple-gamba/15 transition-colors duration-150 disabled:opacity-40"
+                  aria-label="Add gambler"
                 >
-                  <Plus size={16} />
+                  <Plus size={14} aria-hidden="true" />
                 </button>
               </div>
 
               {gamblers.length === 0 ? (
-                <p className="text-center text-white/30 py-4 text-sm">
-                  No gamblers added.
+                <p
+                  className="text-center text-white/30 py-4 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono"
+      >
+                  No squad added.
                 </p>
               ) : (
-                <div className="rounded-lg border border-white/10 overflow-hidden">
+                <div className="border border-white/8 overflow-hidden">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-white/10 text-white/40 text-xs uppercase tracking-wider">
-                        <th className="text-left px-3 py-2">Name</th>
-                        <th className="text-right px-3 py-2">In For</th>
-                        <th className="text-right px-3 py-2">%</th>
-                        <th className="text-right px-3 py-2">Payout</th>
+                      <tr
+                        className="border-b border-white/10 text-white/40 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono"
+      >
+                        <th className="text-left px-3 py-2 font-bold">Name</th>
+                        <th className="text-right px-3 py-2 font-bold">In for</th>
+                        <th className="text-right px-3 py-2 font-bold">%</th>
+                        <th className="text-right px-3 py-2 font-bold">Payout</th>
                         <th className="px-2 py-2" />
                       </tr>
                     </thead>
@@ -654,12 +715,12 @@ export default function HuntTracker() {
                       {gamblerRows.map((g) => (
                         <tr
                           key={g.id}
-                          className="border-b border-white/5 hover:bg-white/5 transition-colors"
+                          className="border-b border-white/5 hover:bg-zinc-broadcast/40 transition-colors"
                         >
-                          <td className="px-3 py-2.5 font-medium text-white">
+                          <td className="px-3 py-2.5 font-bold text-white-body">
                             {g.name}
                           </td>
-                          <td className="px-3 py-2.5 text-right text-white/70">
+                          <td className="px-3 py-2.5 text-right text-white/70 tabular-nums">
                             {editingGamblerId === g.id ? (
                               <input
                                 type="number"
@@ -675,50 +736,60 @@ export default function HuntTracker() {
                                   if (e.key === 'Enter' || e.key === 'Escape')
                                     setEditingGamblerId(null);
                                 }}
-                                className="w-24 bg-black/30 border border-purple-400/50 rounded px-2 py-1 text-right text-white/80 focus:outline-none focus:bg-black/40"
+                                className="w-24 bg-zinc-broadcast/80 border border-purple-gamba/50 px-2 py-1 text-right text-white-body focus:outline-none tabular-nums"
                               />
                             ) : (
                               <button
                                 type="button"
                                 onClick={() => setEditingGamblerId(g.id)}
                                 title="Click to edit"
-                                className="px-2 py-1 rounded text-right text-white/70 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+                                className="px-2 py-1 text-right text-white/70 hover:bg-zinc-broadcast/60 hover:text-white-body transition-colors cursor-pointer tabular-nums"
                               >
                                 {fmt(g.inFor)}
                               </button>
                             )}
                           </td>
-                          <td className="px-3 py-2.5 text-right text-purple-300 font-bold">
+                          <td className="px-3 py-2.5 text-right text-purple-bright font-bold tabular-nums">
                             {g.pct.toFixed(2)}%
                           </td>
                           <td
-                            className={`px-3 py-2.5 text-right font-bold ${g.payout != null ? (g.payout >= g.inFor ? 'text-emerald-400' : 'text-red-400') : 'text-white/30'}`}
+                            className={`px-3 py-2.5 text-right font-bold tabular-nums ${
+                              g.payout != null
+                                ? g.payout >= g.inFor
+                                  ? 'text-emerald-signal'
+                                  : 'text-red-destructive'
+                                : 'text-white/30'
+                            }`}
                           >
                             {g.payout != null ? fmt(g.payout) : '—'}
                           </td>
                           <td className="px-2 py-2.5">
                             <button
+                              type="button"
                               onClick={() => removeGambler(g.id)}
-                              className="p-1 rounded bg-red-500/20 border border-red-500/30 text-red-300 hover:bg-red-500/30 transition-all"
+                              className="p-1 border border-red-destructive/30 text-red-destructive/80 hover:bg-red-destructive/15 transition-colors"
+                              aria-label="Remove gambler"
                             >
-                              <X size={12} />
+                              <X size={11} aria-hidden="true" />
                             </button>
                           </td>
                         </tr>
                       ))}
                     </tbody>
                     <tfoot>
-                      <tr className="border-t border-white/10 text-xs">
-                        <td className="px-3 py-2 font-bold text-white/40">
-                          TOTAL
+                      <tr
+                        className="border-t border-white/10 bg-zinc-broadcast/50 text-[10px] uppercase tracking-eyebrow-md font-mono"
+      >
+                        <td className="px-3 py-2 font-bold text-white/45">
+                          Total
                         </td>
-                        <td className="px-3 py-2 text-right font-bold text-white/60">
+                        <td className="px-3 py-2 text-right font-bold text-white/70 tabular-nums">
                           {fmt(totalBuyIns)}
                         </td>
-                        <td className="px-3 py-2 text-right font-bold text-white/60">
+                        <td className="px-3 py-2 text-right font-bold text-white/70 tabular-nums">
                           100.00%
                         </td>
-                        <td className="px-3 py-2 text-right font-bold text-white/60">
+                        <td className="px-3 py-2 text-right font-bold text-white/70 tabular-nums">
                           {finishBalance !== ''
                             ? fmt(Number(finishBalance))
                             : '—'}
@@ -731,14 +802,11 @@ export default function HuntTracker() {
               )}
             </div>
 
-            {/* Soft Banned Slots */}
-            <div className="p-4 bg-white/5 border border-white/10 rounded-lg space-y-2">
-              <div className="flex items-center gap-2 text-orange-400 font-bold text-sm">
-                <TrendingDown size={15} />
-                Soft Banned Slots
-              </div>
+            {/* Banned slots */}
+            <div className="space-y-2">
+              <PanelLabel code="04" icon={TrendingDown} label="Soft banned" accent="orange" />
               <textarea
-                placeholder="List slots to avoid (e.g. Gates of Olympus, Sweet Bonanza...)"
+                placeholder="Slots to avoid this hunt — comma or newline separated."
                 value={bannedSlots}
                 onChange={(e) => updateBanned(e.target.value)}
                 rows={3}
@@ -748,15 +816,6 @@ export default function HuntTracker() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-function StatCell({ label, value }) {
-  return (
-    <div className="p-3 bg-black/20 rounded-lg">
-      <p className="text-xs text-white/40 mb-1">{label}</p>
-      <p className="font-black text-white text-lg">{value}</p>
     </div>
   );
 }

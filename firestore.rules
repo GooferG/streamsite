@@ -1,0 +1,81 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn()
+        && request.auth.token.email == 'luimeneghim@gmail.com';
+    }
+
+    function isSelf(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // --- existing collections ---
+
+    // Schedule doc — public read, admin write.
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Game suggestions — public read, viewer can write only their own doc
+    // (doc id == their twitchId == Firebase auth uid).
+    match /suggestions/{uid} {
+      allow read: if true;
+      allow create, update: if isSelf(uid) || isAdmin();
+      allow delete: if isSelf(uid) || isAdmin();
+    }
+
+    // --- store / tickets / giveaways (Phase 1+) ---
+
+    // Users — owner can read their own doc, admin can read all.
+    // All writes are server-only via firebase-admin (which bypasses rules).
+    match /users/{uid} {
+      allow read: if isSelf(uid) || isAdmin();
+      allow write: if false;
+    }
+
+    // Store catalog — public read, admin write through server endpoint only.
+    // The Edit/Delete on /admin/store-items uses firebase-admin so we can also
+    // deny direct client writes here.
+    match /store_items/{itemId} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    // Redemptions — owner + admin read; writes server-only.
+    match /redemptions/{id} {
+      allow read: if isSignedIn()
+        && (isAdmin() || resource.data.userId == request.auth.uid);
+      allow write: if false;
+    }
+
+    // Ticket ledger — owner + admin read; writes server-only.
+    match /ticket_ledger/{id} {
+      allow read: if isSignedIn()
+        && (isAdmin() || resource.data.userId == request.auth.uid);
+      allow write: if false;
+    }
+
+    // Secrets (broadcaster refresh token, etc.) — never client-accessible.
+    match /secrets/{id} {
+      allow read, write: if false;
+    }
+
+    // Future: giveaways, entries — public read; server-only writes.
+    match /giveaways/{id} {
+      allow read: if true;
+      allow write: if false;
+      match /entries/{entryId} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+  }
+}

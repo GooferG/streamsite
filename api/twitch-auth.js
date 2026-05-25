@@ -1,14 +1,4 @@
-import admin from 'firebase-admin';
-
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-  });
-}
+import { adminAuth, adminDb, FieldValue } from './_lib/firebaseAdmin.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -51,14 +41,43 @@ export default async function handler(req, res) {
 
   const twitchUser = userData.data[0];
 
-  const firebaseToken = await admin.auth().createCustomToken(twitchUser.id, {
+  // Upsert users/{twitchId} — initialize ticket fields only on first login.
+  const userRef = adminDb.collection('users').doc(twitchUser.id);
+  const existing = await userRef.get();
+  if (!existing.exists) {
+    await userRef.set({
+      twitchId: twitchUser.id,
+      twitchName: twitchUser.login,
+      displayName: twitchUser.display_name,
+      profileImageUrl: twitchUser.profile_image_url || null,
+      tickets: 0,
+      totalEarned: 0,
+      totalSpent: 0,
+      lastDailyClaimAt: null,
+      lastWatchTimeAwardAt: null,
+      createdAt: FieldValue.serverTimestamp(),
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  } else {
+    // Refresh profile fields (display name / avatar) on every login.
+    await userRef.update({
+      twitchName: twitchUser.login,
+      displayName: twitchUser.display_name,
+      profileImageUrl: twitchUser.profile_image_url || null,
+      updatedAt: FieldValue.serverTimestamp(),
+    });
+  }
+
+  const firebaseToken = await adminAuth.createCustomToken(twitchUser.id, {
     twitchName: twitchUser.display_name,
+    twitchLogin: twitchUser.login,
     profileImageUrl: twitchUser.profile_image_url,
   });
 
   return res.status(200).json({
     firebaseToken,
     twitchId: twitchUser.id,
+    twitchLogin: twitchUser.login,
     displayName: twitchUser.display_name,
     profileImageUrl: twitchUser.profile_image_url,
   });

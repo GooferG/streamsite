@@ -22,6 +22,11 @@ import AdminLayout from './components/AdminLayout';
 import AdminHubPage from './pages/AdminHubPage';
 import AdminSchedulePage from './pages/AdminSchedulePage';
 import AdminSuggestionsPage from './pages/AdminSuggestionsPage';
+import AdminStorePage from './pages/AdminStorePage';
+import AdminRedemptionsPage from './pages/AdminRedemptionsPage';
+import AdminTicketsPage from './pages/AdminTicketsPage';
+import StorePage from './pages/StorePage';
+import MyAccountPage from './pages/MyAccountPage';
 import TwitchCallbackPage from './pages/TwitchCallbackPage';
 import SuggestPage from './pages/SuggestPage';
 import SuggestOverlay from './pages/SuggestOverlay';
@@ -191,7 +196,12 @@ function StreamingSiteContent() {
             <Route index element={<AdminHubPage />} />
             <Route path="schedule" element={<AdminSchedulePage />} />
             <Route path="suggestions" element={<AdminSuggestionsPage />} />
+            <Route path="store" element={<AdminStorePage />} />
+            <Route path="redemptions" element={<AdminRedemptionsPage />} />
+            <Route path="tickets" element={<AdminTicketsPage />} />
           </Route>
+          <Route path="/store" element={<StorePage />} />
+          <Route path="/me" element={<MyAccountPage />} />
           <Route path="/suggest" element={<SuggestPage />} />
           <Route path="/twitch-callback" element={<TwitchCallbackPage />} />
           <Route path="/suggest-overlay" element={<SuggestOverlay />} />

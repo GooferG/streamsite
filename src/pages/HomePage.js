@@ -6,6 +6,8 @@ import SteamGames from '../components/SteamGames';
 import HomeHero from '../components/HomeHero';
 import StatsTicker from '../components/StatsTicker';
 import SectionHeader from '../components/SectionHeader';
+import VideoModal from '../components/VideoModal';
+import { useVideoModal } from '../hooks/useVideoModal';
 
 function ViewAllLink({ onClick, label, accent = 'emerald' }) {
   const color =
@@ -38,6 +40,8 @@ export default function HomePage({
   clips,
   videos,
 }) {
+  const { current, open, close } = useVideoModal();
+
   const featuredClips = clips.slice(0, 4).map((clip) => ({
     id: clip.id,
     title: clip.title,
@@ -148,11 +152,24 @@ export default function HomePage({
               }
             />
 
-            <a
-              href={latestVod.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group block focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-signal"
+            <button
+              type="button"
+              onClick={() =>
+                open({
+                  id: latestVod.id,
+                  type: 'vod',
+                  title: latestVod.title,
+                  game: latestVod.game_name || 'Various',
+                  views:
+                    latestVod.view_count >= 1000
+                      ? `${(latestVod.view_count / 1000).toFixed(1)}K`
+                      : String(latestVod.view_count),
+                  duration: formatDuration(latestVod.duration),
+                  twitchUrl: latestVod.url,
+                  tape: '001',
+                })
+              }
+              className="group block text-left w-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-signal"
             >
               <div className="grid lg:grid-cols-[1.6fr_1fr] gap-0 bg-zinc-card border border-white/5 rounded-md overflow-hidden transition-colors duration-200 group-hover:border-emerald-signal/30">
                 <div className="relative aspect-video lg:aspect-auto bg-zinc-broadcast border-b lg:border-b-0 lg:border-r border-white/5">
@@ -211,7 +228,7 @@ export default function HomePage({
                   </div>
                 </div>
               </div>
-            </a>
+            </button>
           </div>
         </section>
       )}
@@ -247,7 +264,7 @@ export default function HomePage({
           ) : hasClips ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {featuredClips.map((clip, index) => (
-                <ClipCard key={clip.id} clip={clip} index={index} />
+                <ClipCard key={clip.id} clip={clip} index={index} onPlay={open} />
               ))}
             </div>
           ) : (
@@ -274,6 +291,8 @@ export default function HomePage({
         videos={videos}
         loading={loading}
       />
+
+      <VideoModal video={current} onClose={close} />
     </div>
   );
 }

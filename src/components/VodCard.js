@@ -1,16 +1,29 @@
 import React from 'react';
 import { PlayCircle, Film } from 'lucide-react';
 
-export default function VodCard({ vod, index = 0 }) {
+export default function VodCard({ vod, index = 0, onPlay }) {
   const tapeNumber = String(index + 1).padStart(3, '0');
   const typeLabel = vod.type === 'clip' ? 'CLIP' : 'VOD';
 
+  const handlePlay = () => {
+    if (!onPlay) return;
+    onPlay({
+      id: vod.id,
+      type: vod.type === 'clip' ? 'clip' : 'vod',
+      title: vod.title,
+      game: vod.game,
+      views: vod.views,
+      duration: vod.duration,
+      twitchUrl: vod.url,
+      tape: tapeNumber,
+    });
+  };
+
   return (
-    <a
-      href={vod.url}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group block focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-signal"
+    <button
+      type="button"
+      onClick={handlePlay}
+      className="group block text-left w-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-signal"
     >
       <div className="relative aspect-video bg-zinc-card border border-white/5 overflow-hidden rounded-md transition-colors duration-200 group-hover:border-emerald-signal/40">
         {vod.thumbnail ? (
@@ -26,9 +39,7 @@ export default function VodCard({ vod, index = 0 }) {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-broadcast/85 via-zinc-broadcast/10 to-transparent" />
 
-        <div
-          className="absolute top-2 left-2 flex items-center gap-1.5 font-mono"
-      >
+        <div className="absolute top-2 left-2 flex items-center gap-1.5 font-mono">
           <span className="px-1.5 py-0.5 bg-zinc-broadcast/80 text-emerald-bright text-[10px] font-bold tracking-eyebrow-sm">
             #{tapeNumber}
           </span>
@@ -43,9 +54,7 @@ export default function VodCard({ vod, index = 0 }) {
           </span>
         </div>
 
-        <div
-          className="absolute top-2 right-2 px-2 py-0.5 border border-white/30 text-white/80 text-[10px] font-bold tracking-eyebrow-xs bg-zinc-broadcast/60 font-mono"
-      >
+        <div className="absolute top-2 right-2 px-2 py-0.5 border border-white/30 text-white/80 text-[10px] font-bold tracking-eyebrow-xs bg-zinc-broadcast/60 font-mono">
           {vod.duration}
         </div>
 
@@ -60,13 +69,11 @@ export default function VodCard({ vod, index = 0 }) {
         </h3>
         <div className="flex items-center justify-between gap-3 text-[10px] font-bold tracking-eyebrow-xs uppercase">
           <span className="truncate text-white/55">{vod.game}</span>
-          <span
-            className="shrink-0 text-emerald-bright tabular-nums font-mono"
-      >
+          <span className="shrink-0 text-emerald-bright tabular-nums font-mono">
             {vod.views}
           </span>
         </div>
       </div>
-    </a>
+    </button>
   );
 }

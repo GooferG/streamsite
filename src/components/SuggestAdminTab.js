@@ -16,7 +16,7 @@ import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 function SectionLabel({ code, label }) {
   return (
     <div
-      className="flex items-baseline gap-3 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 font-mono"
+      className="flex items-baseline gap-3 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/65 font-mono"
       >
       <span className="text-emerald-signal tabular-nums">{code}</span>
       <span>{label}</span>
@@ -39,7 +39,7 @@ function SuggestionRow({ suggestion, onToggle, onRemove, index }) {
       <div className="flex items-center gap-3">
         <span
           className={`font-mono text-[10px] font-bold tracking-eyebrow-md tabular-nums ${
-            highlighted ? 'text-emerald-signal' : 'text-white/30'
+            highlighted ? 'text-emerald-signal' : 'text-white/60'
           }`}
         >
           #{tape}
@@ -67,7 +67,7 @@ function SuggestionRow({ suggestion, onToggle, onRemove, index }) {
           )}
         </div>
         <p
-          className="mt-0.5 text-[11px] tracking-eyebrow-sm uppercase text-white/40 truncate font-mono"
+          className="mt-0.5 text-[11px] tracking-eyebrow-sm uppercase text-white/65 truncate font-mono"
       >
           {suggestion.twitchName}
           {suggestion.rainbetName ? (
@@ -82,7 +82,7 @@ function SuggestionRow({ suggestion, onToggle, onRemove, index }) {
           className={`p-2 border transition-colors duration-150 ${
             highlighted
               ? 'bg-emerald-signal/15 border-emerald-signal/40 text-emerald-signal'
-              : 'border-white/10 text-white/50 hover:text-emerald-signal hover:border-emerald-signal/40'
+              : 'border-white/10 text-white/70 hover:text-emerald-signal hover:border-emerald-signal/40'
           }`}
           aria-label={highlighted ? 'Unpick suggestion' : 'Pick suggestion'}
           type="button"
@@ -147,12 +147,12 @@ export default function SuggestAdminTab() {
           <span>VIEWER FEED</span>
         </span>
         <span className="text-white/15">·</span>
-        <span className="text-white/45">QUEUE</span>
+        <span className="text-white/65">QUEUE</span>
         <span className="text-white/70 tabular-nums tracking-eyebrow-lg">
           {String(count).padStart(3, '0')}
         </span>
         <span className="text-white/15">·</span>
-        <span className="text-white/45">PICKED</span>
+        <span className="text-white/65">PICKED</span>
         <span className="text-emerald-signal tabular-nums tracking-eyebrow-lg">
           {String(pickedCount).padStart(3, '0')}
         </span>
@@ -168,7 +168,7 @@ export default function SuggestAdminTab() {
           >
             Viewer suggestions
           </h2>
-          <p className="mt-1 text-sm text-white/55">
+          <p className="mt-1 text-sm text-white/75">
             Star a game to mark it as picked on the overlay.
           </p>
         </div>
@@ -255,7 +255,7 @@ export default function SuggestAdminTab() {
               <button
                 type="button"
                 onClick={logout}
-                className="px-3 py-2 border border-white/10 text-white/55 hover:text-white-body transition-colors duration-150"
+                className="px-3 py-2 border border-white/10 text-white/75 hover:text-white-body transition-colors duration-150"
               >
                 <span
                   className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
@@ -313,10 +313,10 @@ export default function SuggestAdminTab() {
         <div
           className="px-4 py-10 text-center font-mono"
       >
-          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/35 mb-2">
+          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/60 mb-2">
             Empty queue
           </p>
-          <p className="text-sm text-white/55">
+          <p className="text-sm text-white/75">
             Share{' '}
             <span className="text-white-body">goofer.tv/suggest</span>{' '}
             with chat.

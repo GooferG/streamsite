@@ -21,12 +21,12 @@ function ToolTab({ tool, active, onClick }) {
       className={`group flex items-center gap-2.5 px-3 sm:px-4 py-3 transition-colors duration-150 ${
         active
           ? 'bg-zinc-card text-white-body'
-          : 'text-white/55 hover:text-white-body hover:bg-zinc-card/40'
+          : 'text-white/75 hover:text-white-body hover:bg-zinc-card/40'
       }`}
     >
       <span
         className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums ${
-          active ? 'text-emerald-signal' : 'text-white/30'
+          active ? 'text-emerald-signal' : 'text-white/60'
         } font-mono`}
       >
         {tool.code}
@@ -81,16 +81,16 @@ export default function GambaPage() {
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
               <span>CONTROL ROOM</span>
             </span>
-            <span className="text-white/15">·</span>
-            <span className="text-white/45">CHANNEL</span>
-            <span className="text-white/70 tracking-eyebrow-lg">GG-02</span>
-            <span className="text-white/15">·</span>
-            <span className="text-white/45">MODULE</span>
-            <span className="text-white/70 tracking-eyebrow-lg">
+            <span className="text-white/20">·</span>
+            <span className="text-white/65">CHANNEL</span>
+            <span className="text-white/85 tracking-eyebrow-lg">GG-02</span>
+            <span className="text-white/20">·</span>
+            <span className="text-white/65">MODULE</span>
+            <span className="text-white/85 tracking-eyebrow-lg">
               {activeMeta.code}
             </span>
-            <span className="text-white/15 hidden sm:inline">·</span>
-            <span className="hidden sm:inline text-white/30">
+            <span className="text-white/20 hidden sm:inline">·</span>
+            <span className="hidden sm:inline text-white/60">
               On-stream gamba tools. Entertainment only.
             </span>
           </div>
@@ -111,7 +111,7 @@ export default function GambaPage() {
           <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 px-4 py-4">
             <div className="flex items-baseline gap-4">
               <span
-                className="text-[10px] font-bold tracking-eyebrow-lg text-white/40 tabular-nums font-mono"
+                className="text-[10px] font-bold tracking-eyebrow-lg text-white/65 tabular-nums font-mono"
       >
                 MODULE {activeMeta.code}
               </span>
@@ -123,7 +123,7 @@ export default function GambaPage() {
               </h1>
             </div>
             <span
-              className="text-[10px] font-bold tracking-eyebrow-md text-white/35 font-mono"
+              className="text-[10px] font-bold tracking-eyebrow-md text-white/60 font-mono"
       >
               READY
             </span>

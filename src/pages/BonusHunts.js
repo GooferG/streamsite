@@ -43,7 +43,7 @@ function ProfitBadge({ profit }) {
       </span>
     );
   return (
-    <span className="inline-flex items-center gap-1 text-white/50 font-bold text-sm tabular-nums">
+    <span className="inline-flex items-center gap-1 text-white/70 font-bold text-sm tabular-nums">
       <Minus size={13} aria-hidden="true" /> {formatCurrency(profit)}
     </span>
   );
@@ -67,7 +67,7 @@ function MultiplierBar({ value, max }) {
         />
       </div>
       <span
-        className="text-[10px] text-white/55 w-10 text-right tabular-nums tracking-eyebrow-sm font-mono"
+        className="text-[10px] text-white/75 w-10 text-right tabular-nums tracking-eyebrow-sm font-mono"
       >
         {value?.toFixed(0)}x
       </span>
@@ -128,7 +128,7 @@ function HuntCard({ hunt, index }) {
                 )}
               </div>
               <p
-                className="mt-1 text-[11px] tracking-eyebrow-sm uppercase text-white/40 truncate font-mono"
+                className="mt-1 text-[11px] tracking-eyebrow-sm uppercase text-white/65 truncate font-mono"
       >
                 {hunt.casino} · {formatDate(hunt.createdAt)}
               </p>
@@ -138,7 +138,7 @@ function HuntCard({ hunt, index }) {
           <div className="flex items-center gap-6 flex-shrink-0">
             <div className="text-right hidden sm:block">
               <p
-                className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 mb-0.5 font-mono"
+                className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/65 mb-0.5 font-mono"
       >
                 Cost
               </p>
@@ -148,7 +148,7 @@ function HuntCard({ hunt, index }) {
             </div>
             <div className="text-right hidden sm:block">
               <p
-                className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 mb-0.5 font-mono"
+                className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/65 mb-0.5 font-mono"
       >
                 Payout
               </p>
@@ -158,7 +158,7 @@ function HuntCard({ hunt, index }) {
             </div>
             <div className="text-right">
               <p
-                className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 mb-0.5 font-mono"
+                className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/65 mb-0.5 font-mono"
       >
                 Result
               </p>
@@ -166,7 +166,7 @@ function HuntCard({ hunt, index }) {
             </div>
             <div className="text-right hidden md:block">
               <p
-                className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 mb-0.5 font-mono"
+                className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/65 mb-0.5 font-mono"
       >
                 Bonuses
               </p>
@@ -174,7 +174,7 @@ function HuntCard({ hunt, index }) {
                 {bonusCount}
               </p>
             </div>
-            <div className="text-white/35 flex-shrink-0">
+            <div className="text-white/60 flex-shrink-0">
               {expanded ? (
                 <ChevronUp size={16} aria-hidden="true" />
               ) : (
@@ -188,7 +188,7 @@ function HuntCard({ hunt, index }) {
         <div className="sm:hidden grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-white/8">
           <div>
             <p
-              className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono"
+              className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/65 font-mono"
       >
               Cost
             </p>
@@ -198,7 +198,7 @@ function HuntCard({ hunt, index }) {
           </div>
           <div>
             <p
-              className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono"
+              className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/65 font-mono"
       >
               Payout
             </p>
@@ -208,7 +208,7 @@ function HuntCard({ hunt, index }) {
           </div>
           <div>
             <p
-              className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono"
+              className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/65 font-mono"
       >
               Bonuses
             </p>
@@ -223,7 +223,7 @@ function HuntCard({ hunt, index }) {
       {expanded && bonuses.length > 0 && (
         <div className="border-t border-white/8 px-4 sm:px-5 pb-5 pt-4">
           <p
-            className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-3 font-mono"
+            className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/65 mb-3 font-mono"
       >
             Bonus reel · {bonuses.length}
           </p>
@@ -248,7 +248,7 @@ function HuntCard({ hunt, index }) {
                     {bonus.slotName ?? `Bonus ${i + 1}`}
                   </p>
                   <p
-                    className="text-[10px] tracking-eyebrow-sm uppercase text-white/40 truncate mt-0.5 font-mono"
+                    className="text-[10px] tracking-eyebrow-sm uppercase text-white/65 truncate mt-0.5 font-mono"
       >
                     {bonus.provider} · Bet {formatCurrency(bonus.betSize)}
                   </p>
@@ -261,7 +261,7 @@ function HuntCard({ hunt, index }) {
                     {formatCurrency(bonus.payout)}
                   </p>
                   <p
-                    className="text-[10px] tracking-eyebrow-sm text-white/40 tabular-nums font-mono"
+                    className="text-[10px] tracking-eyebrow-sm text-white/65 tabular-nums font-mono"
       >
                     {(bonus.multiplier ?? 0).toFixed(1)}x
                   </p>
@@ -315,7 +315,7 @@ export default function BonusHuntsPage() {
             <span>LIVE WIDGET</span>
           </span>
           <span className="text-white/15">·</span>
-          <span className="text-white/45">Bonushunt.gg</span>
+          <span className="text-white/65">Bonushunt.gg</span>
         </div>
         <iframe
           src="https://bonushunt.gg/widget/1?userId=cmjxkol6401c3jcm59l6fssds"
@@ -336,14 +336,14 @@ export default function BonusHuntsPage() {
             <span>HUNT ARCHIVE</span>
           </span>
           <span className="text-white/15">·</span>
-          <span className="text-white/45">REELS</span>
+          <span className="text-white/65">REELS</span>
           <span className="text-white/70 tabular-nums tracking-eyebrow-lg">
             {String(hunts.length).padStart(3, '0')}
           </span>
           <button
             type="button"
             onClick={load}
-            className="ml-auto inline-flex items-center gap-2 px-3 py-1.5 border border-white/10 text-white/55 hover:text-white-body hover:border-white/30 transition-colors duration-150"
+            className="ml-auto inline-flex items-center gap-2 px-3 py-1.5 border border-white/10 text-white/75 hover:text-white-body hover:border-white/30 transition-colors duration-150"
           >
             <RefreshCcw
               size={11}
@@ -358,7 +358,7 @@ export default function BonusHuntsPage() {
 
         {/* List */}
         {loading ? (
-          <div className="py-16 flex flex-col items-center gap-3 text-white/40">
+          <div className="py-16 flex flex-col items-center gap-3 text-white/65">
             <RefreshCcw size={20} className="animate-spin" aria-hidden="true" />
             <p
               className="text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono"
@@ -373,7 +373,7 @@ export default function BonusHuntsPage() {
       >
               Signal lost
             </p>
-            <p className="text-sm text-white/55">{error}</p>
+            <p className="text-sm text-white/75">{error}</p>
             <button
               type="button"
               onClick={load}
@@ -389,7 +389,7 @@ export default function BonusHuntsPage() {
           </div>
         ) : hunts.length === 0 ? (
           <p
-            className="text-center text-[11px] font-bold tracking-eyebrow-lg uppercase text-white/40 py-16 font-mono"
+            className="text-center text-[11px] font-bold tracking-eyebrow-lg uppercase text-white/65 py-16 font-mono"
       >
             No hunts on file.
           </p>
@@ -402,14 +402,14 @@ export default function BonusHuntsPage() {
         )}
 
         <div
-          className="px-4 py-3 border-t border-white/8 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/30 text-center font-mono"
+          className="px-4 py-3 border-t border-white/8 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/60 text-center font-mono"
       >
           Tracker by{' '}
           <a
             href="https://bonushunt.gg"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-white/55 hover:text-emerald-signal transition-colors"
+            className="text-white/75 hover:text-emerald-signal transition-colors"
           >
             bonushunt.gg
           </a>

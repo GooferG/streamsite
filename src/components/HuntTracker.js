@@ -41,7 +41,7 @@ function fmtX(val) {
 }
 
 const inputCls =
-  'bg-zinc-broadcast/60 border border-white/10 px-3 py-2 text-sm text-white-body placeholder:text-white/25 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';
+  'bg-zinc-broadcast/60 border border-white/10 px-3 py-2 text-sm text-white-body placeholder:text-white/50 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';
 
 function PanelLabel({ code, icon: Icon, label, accent = 'emerald' }) {
   const color =
@@ -52,7 +52,7 @@ function PanelLabel({ code, icon: Icon, label, accent = 'emerald' }) {
         : 'text-emerald-signal';
   return (
     <div
-      className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 font-mono"
+      className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/65 font-mono"
       >
       <span className={`${color} tabular-nums`}>{code}</span>
       <span className="inline-flex items-center gap-1.5">
@@ -67,7 +67,7 @@ function StatCell({ label, value }) {
   return (
     <div className="px-3 py-2.5 bg-zinc-broadcast/50 border border-white/8">
       <p
-        className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/40 mb-1 font-mono"
+        className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/65 mb-1 font-mono"
       >
         {label}
       </p>
@@ -427,12 +427,12 @@ export default function HuntTracker() {
           <span>HUNT TRACKER</span>
         </span>
         <span className="text-white/15">·</span>
-        <span className="text-white/45">BONUSES</span>
+        <span className="text-white/65">BONUSES</span>
         <span className="text-white/70 tabular-nums tracking-eyebrow-lg">
           {String(bonuses.length).padStart(3, '0')}
         </span>
         <span className="text-white/15">·</span>
-        <span className="text-white/45">SQUAD</span>
+        <span className="text-white/65">SQUAD</span>
         <span className="text-white/70 tabular-nums tracking-eyebrow-lg">
           {String(gamblers.length).padStart(2, '0')}
         </span>
@@ -451,7 +451,7 @@ export default function HuntTracker() {
           <button
             type="button"
             onClick={resetAll}
-            className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/10 text-white/55 hover:text-red-destructive hover:border-red-destructive/50 transition-colors duration-150"
+            className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/10 text-white/75 hover:text-red-destructive hover:border-red-destructive/50 transition-colors duration-150"
           >
             <RefreshCcw size={12} aria-hidden="true" />
             <span className="text-[10px] font-bold tracking-eyebrow-lg">
@@ -502,7 +502,7 @@ export default function HuntTracker() {
             {/* Bonus table */}
             {bonuses.length === 0 ? (
               <p
-                className="text-center text-white/30 py-6 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                className="text-center text-white/60 py-6 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
                 No bonuses logged.
               </p>
@@ -511,7 +511,7 @@ export default function HuntTracker() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr
-                      className="border-b border-white/10 text-white/40 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono"
+                      className="border-b border-white/10 text-white/65 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono"
       >
                       <th className="text-left px-3 py-2 font-bold">Slot</th>
                       <th className="text-right px-3 py-2 font-bold">Stake</th>
@@ -547,7 +547,7 @@ export default function HuntTracker() {
                             className={`px-3 py-2.5 text-right font-bold tabular-nums ${
                               x != null && x >= (reqX ?? 0)
                                 ? 'text-emerald-signal'
-                                : 'text-white/50'
+                                : 'text-white/70'
                             }`}
                           >
                             {x != null ? fmtX(x) : '—'}
@@ -570,7 +570,7 @@ export default function HuntTracker() {
                     <tr
                       className="border-t border-white/10 bg-zinc-broadcast/50 text-[10px] uppercase tracking-eyebrow-md font-mono"
       >
-                      <td className="px-3 py-2 font-bold text-white/45">
+                      <td className="px-3 py-2 font-bold text-white/65">
                         Totals
                       </td>
                       <td className="px-3 py-2 text-right font-bold text-white/70 tabular-nums">
@@ -596,7 +596,7 @@ export default function HuntTracker() {
               <div className="grid grid-cols-2 gap-3">
                 <label className="block">
                   <span
-                    className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/45 mb-1.5 font-mono"
+                    className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono"
       >
                     Start balance
                   </span>
@@ -610,7 +610,7 @@ export default function HuntTracker() {
                 </label>
                 <label className="block">
                   <span
-                    className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/45 mb-1.5 font-mono"
+                    className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono"
       >
                     Finish balance
                   </span>
@@ -693,7 +693,7 @@ export default function HuntTracker() {
 
               {gamblers.length === 0 ? (
                 <p
-                  className="text-center text-white/30 py-4 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                  className="text-center text-white/60 py-4 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
                   No squad added.
                 </p>
@@ -702,7 +702,7 @@ export default function HuntTracker() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr
-                        className="border-b border-white/10 text-white/40 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono"
+                        className="border-b border-white/10 text-white/65 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono"
       >
                         <th className="text-left px-3 py-2 font-bold">Name</th>
                         <th className="text-right px-3 py-2 font-bold">In for</th>
@@ -758,7 +758,7 @@ export default function HuntTracker() {
                                 ? g.payout >= g.inFor
                                   ? 'text-emerald-signal'
                                   : 'text-red-destructive'
-                                : 'text-white/30'
+                                : 'text-white/60'
                             }`}
                           >
                             {g.payout != null ? fmt(g.payout) : '—'}
@@ -780,7 +780,7 @@ export default function HuntTracker() {
                       <tr
                         className="border-t border-white/10 bg-zinc-broadcast/50 text-[10px] uppercase tracking-eyebrow-md font-mono"
       >
-                        <td className="px-3 py-2 font-bold text-white/45">
+                        <td className="px-3 py-2 font-bold text-white/65">
                           Total
                         </td>
                         <td className="px-3 py-2 text-right font-bold text-white/70 tabular-nums">

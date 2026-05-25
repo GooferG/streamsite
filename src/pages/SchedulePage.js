@@ -97,7 +97,7 @@ function ScheduleRow({ item, coverUrl, isToday, isOff, isSpecial }) {
           className={`text-[10px] font-bold tracking-eyebrow-lg ${
             isToday ? 'text-emerald-signal' : 'text-white/35'
           } font-mono`}
-      >
+        >
           {dayAbbrev(item.day)}
         </span>
         <span
@@ -106,7 +106,10 @@ function ScheduleRow({ item, coverUrl, isToday, isOff, isSpecial }) {
           }`}
           style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}
         >
-          {item.day === 'FRY-DAY' ? 'FRY' : dayAbbrev(item.day).charAt(0) + dayAbbrev(item.day).slice(1).toLowerCase()}
+          {item.day === 'FRY-DAY'
+            ? 'FRY'
+            : dayAbbrev(item.day).charAt(0) +
+              dayAbbrev(item.day).slice(1).toLowerCase()}
         </span>
       </div>
 
@@ -121,9 +124,7 @@ function ScheduleRow({ item, coverUrl, isToday, isOff, isSpecial }) {
             className={`w-full h-full object-cover ${isOff ? 'grayscale opacity-40' : ''}`}
           />
         ) : (
-          <div
-            className="w-full h-full flex items-center justify-center text-[9px] font-bold tracking-eyebrow-md text-white/30 font-mono"
-      >
+          <div className="w-full h-full flex items-center justify-center text-[9px] font-bold tracking-eyebrow-md text-white/30 font-mono">
             NO ART
           </div>
         )}
@@ -131,16 +132,16 @@ function ScheduleRow({ item, coverUrl, isToday, isOff, isSpecial }) {
 
       {/* Programming info */}
       <div className="min-w-0">
-        <div
-          className="flex items-center gap-2 text-[10px] font-bold tracking-eyebrow-md mb-1.5 font-mono"
-      >
+        <div className="flex items-center gap-2 text-[10px] font-bold tracking-eyebrow-md mb-1.5 font-mono">
           <span className={isOff ? 'text-white/30' : 'text-white/45'}>
             {isOff ? 'DARK' : item.time}
           </span>
           {startHour != null && !isOff && (
             <>
               <span className="text-white/15">·</span>
-              <span className="text-white/35 tabular-nums">{String(startHour).padStart(2, '0')}:00</span>
+              <span className="text-white/35 tabular-nums">
+                {String(startHour).padStart(2, '0')}:00
+              </span>
             </>
           )}
           {isToday && (
@@ -164,9 +165,7 @@ function ScheduleRow({ item, coverUrl, isToday, isOff, isSpecial }) {
           {item.content}
         </p>
         {item.gameName && !isOff && item.gameName !== item.content && (
-          <p
-            className="mt-1 text-[11px] tracking-eyebrow-sm uppercase text-white/40 truncate font-mono"
-      >
+          <p className="mt-1 text-[11px] tracking-eyebrow-sm uppercase text-white/40 truncate font-mono">
             {item.gameName}
           </p>
         )}
@@ -175,9 +174,7 @@ function ScheduleRow({ item, coverUrl, isToday, isOff, isSpecial }) {
       {/* Special tag */}
       {isSpecial && (
         <div className="hidden sm:block">
-          <span
-            className="inline-block px-2.5 py-1 border border-purple-gamba/50 text-[10px] font-bold tracking-eyebrow-md text-purple-bright font-mono"
-      >
+          <span className="inline-block px-2.5 py-1 border border-purple-gamba/50 text-[10px] font-bold tracking-eyebrow-md text-purple-bright font-mono">
             SPECIAL
           </span>
         </div>
@@ -206,10 +203,13 @@ function DarkWeekNotice() {
             fontSize: 'clamp(1.75rem, 5vw, 2.75rem)',
           }}
         >
-          No streams scheduled<br />this week.
+          No streams scheduled
+          <br />
+          this week.
         </h2>
         <p className="max-w-md text-sm sm:text-base text-white/50 leading-relaxed">
-          The tower is quiet. Check back soon — or follow on Twitch for live alerts when the signal returns.
+          The tower is quiet. Check back soon — or follow on Twitch for live
+          alerts when the signal returns.
         </p>
       </div>
     </div>
@@ -264,7 +264,7 @@ export default function SchedulePage() {
   const orderedSchedule = useMemo(() => {
     if (!schedule || schedule.length === 0) return [];
     return [...schedule].sort(
-      (a, b) => (WEEK_ORDER.indexOf(a.day) - WEEK_ORDER.indexOf(b.day))
+      (a, b) => WEEK_ORDER.indexOf(a.day) - WEEK_ORDER.indexOf(b.day)
     );
   }, [schedule]);
 
@@ -282,9 +282,7 @@ export default function SchedulePage() {
       <div className="relative max-w-5xl mx-auto">
         {/* Slate header — programming guide */}
         <header className="mb-16 sm:mb-20">
-          <div
-            className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-6 font-mono"
-      >
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-6 font-mono">
             <span className="inline-flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
               <span className="text-emerald-signal">ON AIR</span>
@@ -292,7 +290,9 @@ export default function SchedulePage() {
             <span className="text-white/20">·</span>
             <span>PROGRAMMING GUIDE</span>
             <span className="text-white/20">·</span>
-            <span className="text-white/30 tabular-nums">WK {Math.ceil(now.getDate() / 7)}</span>
+            <span className="text-white/30 tabular-nums">
+              WK {Math.ceil(now.getDate() / 7)}
+            </span>
           </div>
 
           <h1
@@ -306,14 +306,22 @@ export default function SchedulePage() {
             <span className="block text-emerald-signal">on the air.</span>
           </h1>
 
-          <div
-            className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] uppercase tracking-eyebrow text-white/45 font-mono"
-      >
-            <span>Zone · <span className="text-white/70">EST</span></span>
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] uppercase tracking-eyebrow text-white/45 font-mono">
+            <span>
+              Zone · <span className="text-white/70">AZ / MST</span>
+            </span>
             <span className="text-white/15">·</span>
-            <span>Schedule · <span className="text-white/70">Subject to change</span></span>
+            <span>
+              Schedule ·{' '}
+              <span className="text-white/70">Subject to change</span>
+            </span>
             <span className="text-white/15">·</span>
-            <span>Today · <span className="text-emerald-signal tabular-nums">{formatTimecode(now)}</span></span>
+            <span>
+              Today ·{' '}
+              <span className="text-emerald-signal tabular-nums">
+                {formatTimecode(now)}
+              </span>
+            </span>
           </div>
         </header>
 
@@ -344,9 +352,7 @@ export default function SchedulePage() {
         </section>
 
         {/* Footer note — minimal, no card */}
-        <footer
-          className="mt-16 flex flex-wrap items-baseline gap-x-3 gap-y-2 text-[10px] uppercase tracking-eyebrow-lg text-white/30 font-mono"
-      >
+        <footer className="mt-16 flex flex-wrap items-baseline gap-x-3 gap-y-2 text-[10px] uppercase tracking-eyebrow-lg text-white/30 font-mono">
           <span>END OF GUIDE</span>
           <span className="text-white/15">·</span>
           <span className="text-white/50">
@@ -358,11 +364,13 @@ export default function SchedulePage() {
               className="text-white-body hover:text-emerald-signal transition-colors"
             >
               TWITCH
-            </a>
-            {' '}for live alerts
+            </a>{' '}
+            for live alerts
           </span>
           <span className="text-white/15">·</span>
-          <span className="text-emerald-signal/70 tabular-nums">{formatTimecode(now)}</span>
+          <span className="text-emerald-signal/70 tabular-nums">
+            {formatTimecode(now)}
+          </span>
         </footer>
       </div>
     </div>

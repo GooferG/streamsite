@@ -164,12 +164,12 @@ export default function SlotPicker() {
               } ${
                 isActive
                   ? 'bg-zinc-card text-white-body'
-                  : 'text-white/55 hover:text-white-body hover:bg-zinc-card/50'
+                  : 'text-white/75 hover:text-white-body hover:bg-zinc-card/50'
               }`}
             >
               <span
                 className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums ${
-                  isActive ? 'text-emerald-signal' : 'text-white/30'
+                  isActive ? 'text-emerald-signal' : 'text-white/60'
                 } font-mono`}
               >
                 {t.code}
@@ -265,7 +265,7 @@ function SlotSearch() {
   ].filter(Boolean).length;
 
   const inputCls =
-    'bg-zinc-broadcast/60 border border-white/10 px-3 py-2.5 text-sm text-white-body placeholder:text-white/25 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';
+    'bg-zinc-broadcast/60 border border-white/10 px-3 py-2.5 text-sm text-white-body placeholder:text-white/50 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';
 
   return (
     <div className="space-y-5">
@@ -273,7 +273,7 @@ function SlotSearch() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 text-white/35"
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-white/60"
             size={16}
             aria-hidden="true"
           />
@@ -315,7 +315,7 @@ function SlotSearch() {
                 <button
                   type="button"
                   onClick={() => setSelectedProviders([])}
-                  className="w-full text-left px-3 py-2 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 hover:text-emerald-signal transition-colors mb-1 border-b border-white/5 font-mono"
+                  className="w-full text-left px-3 py-2 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/65 hover:text-emerald-signal transition-colors mb-1 border-b border-white/5 font-mono"
                 >
                   Clear selection
                 </button>
@@ -373,7 +373,7 @@ function SlotSearch() {
               className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 border text-[10px] font-bold tracking-eyebrow-md uppercase transition-colors duration-150 ${
                 f.active
                   ? 'border-purple-gamba/50 text-purple-bright bg-purple-gamba/10'
-                  : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
+                  : 'border-white/10 text-white/75 hover:text-white-body hover:border-white/25'
               } font-mono`}
             >
               <Icon size={11} aria-hidden="true" />
@@ -391,7 +391,7 @@ function SlotSearch() {
               className={`px-2.5 py-1.5 border text-[10px] font-bold tracking-eyebrow-md uppercase transition-colors duration-150 ${
                 volatility === v
                   ? 'border-emerald-signal/50 text-emerald-signal bg-emerald-signal/10'
-                  : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
+                  : 'border-white/10 text-white/75 hover:text-white-body hover:border-white/25'
               } font-mono`}
             >
               {v === 'all' ? 'All vol.' : v}
@@ -401,7 +401,7 @@ function SlotSearch() {
       </div>
 
       {/* Filter / result strip */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/65 font-mono">
         <span>
           Showing{' '}
           <span className="text-white/70 tabular-nums">
@@ -431,7 +431,7 @@ function SlotSearch() {
                 setSelectedProviders([]);
                 setSearchTerm('');
               }}
-              className="inline-flex items-center gap-1.5 text-white/40 hover:text-emerald-signal transition-colors"
+              className="inline-flex items-center gap-1.5 text-white/65 hover:text-emerald-signal transition-colors"
             >
               <X size={11} aria-hidden="true" /> Clear all
             </button>
@@ -464,7 +464,7 @@ function SlotSearch() {
                     <p className="font-bold text-white-body text-sm leading-tight line-clamp-1">
                       {game.name}
                     </p>
-                    <p className="text-[10px] tracking-eyebrow-sm uppercase text-white/40 truncate mt-0.5 font-mono">
+                    <p className="text-[10px] tracking-eyebrow-sm uppercase text-white/65 truncate mt-0.5 font-mono">
                       {game.providerName}
                     </p>
                   </div>
@@ -499,10 +499,10 @@ function SlotSearch() {
       {/* Empty state */}
       {filteredGames.length === 0 && (
         <div className="text-center py-16 border border-white/8 bg-zinc-card/30 font-mono">
-          <p className="text-[11px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2">
+          <p className="text-[11px] font-bold tracking-eyebrow-lg uppercase text-white/65 mb-2">
             No signal
           </p>
-          <p className="text-sm text-white/55">
+          <p className="text-sm text-white/75">
             No slots match the current filters.
           </p>
         </div>
@@ -612,7 +612,7 @@ function SlotRandomizer() {
             <span>SCANNER READY</span>
           </span>
           <span className="text-white/15">·</span>
-          <span className="text-white/45">CANDIDATES</span>
+          <span className="text-white/65">CANDIDATES</span>
           <span className="text-white/75 tabular-nums">
             {String(candidates.length).padStart(3, '0')}
           </span>
@@ -623,7 +623,7 @@ function SlotRandomizer() {
               className={`inline-flex items-center gap-1.5 px-2 py-1 border transition-colors duration-150 ${
                 filterBonusBuyOnly
                   ? 'border-purple-gamba/50 text-purple-bright bg-purple-gamba/10'
-                  : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
+                  : 'border-white/10 text-white/75 hover:text-white-body hover:border-white/25'
               }`}
             >
               <Zap size={10} aria-hidden="true" />
@@ -635,7 +635,7 @@ function SlotRandomizer() {
               className={`inline-flex items-center gap-1.5 px-2 py-1 border transition-colors duration-150 ${
                 filterMegawaysOnly
                   ? 'border-purple-gamba/50 text-purple-bright bg-purple-gamba/10'
-                  : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
+                  : 'border-white/10 text-white/75 hover:text-white-body hover:border-white/25'
               }`}
             >
               <Layers size={10} aria-hidden="true" />
@@ -682,7 +682,7 @@ function SlotRandomizer() {
               />
               <span>{isSpinning ? 'Tuning…' : 'Signal lock'}</span>
             </span>
-            <span className="text-white/30">REEL · GG-04</span>
+            <span className="text-white/65">REEL · GG-04</span>
           </div>
 
           <div className="relative" style={{ height: '360px' }}>
@@ -723,11 +723,11 @@ function SlotRandomizer() {
                 }}
               >
                 {candidates.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-[360px] text-white/30 gap-2 font-mono">
-                    <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40">
+                  <div className="flex flex-col items-center justify-center h-[360px] text-white/60 gap-2 font-mono">
+                    <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/65">
                       No signal
                     </span>
-                    <span className="text-sm text-white/55">
+                    <span className="text-sm text-white/75">
                       Adjust filters to acquire candidates.
                     </span>
                   </div>
@@ -747,7 +747,7 @@ function SlotRandomizer() {
                         <p className="font-bold text-white-body text-base leading-tight truncate">
                           {game.name}
                         </p>
-                        <p className="text-[10px] tracking-eyebrow-sm uppercase text-white/45 truncate mt-0.5 font-mono">
+                        <p className="text-[10px] tracking-eyebrow-sm uppercase text-white/65 truncate mt-0.5 font-mono">
                           {game.providerName}
                         </p>
                         <div className="flex gap-2 mt-1 flex-wrap text-[10px] font-bold tracking-eyebrow-sm uppercase font-mono">
@@ -853,7 +853,7 @@ function SlotRandomizer() {
                 className="w-24 h-24 flex-shrink-0 border border-white/10"
               />
               <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
+                <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/65 mb-1 font-mono">
                   Now tuned to
                 </p>
                 <h3
@@ -862,14 +862,14 @@ function SlotRandomizer() {
                 >
                   {selectedGame.name}
                 </h3>
-                <p className="text-[10px] tracking-eyebrow uppercase text-white/50 mt-1.5 font-mono">
+                <p className="text-[10px] tracking-eyebrow uppercase text-white/70 mt-1.5 font-mono">
                   {selectedGame.providerName}
                 </p>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
                   {selectedGame.rtp != null && (
                     <div className="px-2.5 py-1.5 border border-emerald-signal/40 bg-emerald-signal/5">
-                      <p className="text-[9px] font-bold tracking-eyebrow-md uppercase text-white/45 font-mono">
+                      <p className="text-[9px] font-bold tracking-eyebrow-md uppercase text-white/65 font-mono">
                         RTP
                       </p>
                       <p className="font-bold text-emerald-signal tabular-nums mt-0.5">
@@ -879,7 +879,7 @@ function SlotRandomizer() {
                   )}
                   {selectedGame.volatility && (
                     <div className="px-2.5 py-1.5 border border-white/10 bg-zinc-broadcast/40">
-                      <p className="text-[9px] font-bold tracking-eyebrow-md uppercase text-white/45 font-mono">
+                      <p className="text-[9px] font-bold tracking-eyebrow-md uppercase text-white/65 font-mono">
                         Volatility
                       </p>
                       <p className="font-bold text-white-body capitalize mt-0.5">
@@ -889,7 +889,7 @@ function SlotRandomizer() {
                   )}
                   {selectedGame.bonusBuy && (
                     <div className="px-2.5 py-1.5 border border-purple-gamba/40 bg-purple-gamba/5">
-                      <p className="text-[9px] font-bold tracking-eyebrow-md uppercase text-white/45 font-mono">
+                      <p className="text-[9px] font-bold tracking-eyebrow-md uppercase text-white/65 font-mono">
                         Bonus buy
                       </p>
                       <p className="font-bold text-purple-bright mt-0.5 font-mono">
@@ -899,7 +899,7 @@ function SlotRandomizer() {
                   )}
                   {selectedGame.megaways && (
                     <div className="px-2.5 py-1.5 border border-purple-gamba/40 bg-purple-gamba/5">
-                      <p className="text-[9px] font-bold tracking-eyebrow-md uppercase text-white/45 font-mono">
+                      <p className="text-[9px] font-bold tracking-eyebrow-md uppercase text-white/65 font-mono">
                         Megaways
                       </p>
                       <p className="font-bold text-purple-bright mt-0.5 font-mono">
@@ -917,7 +917,7 @@ function SlotRandomizer() {
       {/* Right — provider exclusion */}
       <div className="border border-white/8 bg-zinc-card/30 h-fit">
         <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/8 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-          <span className="text-white/55">Provider filter</span>
+          <span className="text-white/75">Provider filter</span>
           {excludedProviders.size > 0 && (
             <button
               type="button"
@@ -929,7 +929,7 @@ function SlotRandomizer() {
           )}
         </div>
 
-        <p className="px-3 py-2.5 text-[10px] tracking-eyebrow uppercase text-white/35 border-b border-white/8 font-mono">
+        <p className="px-3 py-2.5 text-[10px] tracking-eyebrow uppercase text-white/60 border-b border-white/8 font-mono">
           Unchecked providers are excluded.
         </p>
 

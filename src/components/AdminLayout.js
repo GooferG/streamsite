@@ -23,12 +23,18 @@ const NAV_ITEMS = [
   { to: '/admin/tickets', label: 'Tickets', code: 'TKT', icon: Ticket },
 ];
 
+const ADMIN_EMAIL = 'luimeneghim@gmail.com';
+
 export default function AdminLayout() {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
 
-  if (!currentUser) {
+  // Gate: must be the admin email account.
+  // A Twitch viewer (custom token, no email claim) shares the same Firebase
+  // auth instance — so currentUser is truthy for them too. The email check
+  // is what actually distinguishes admin from viewer.
+  if (!currentUser || currentUser.email !== ADMIN_EMAIL) {
     return <AdminLoginPage onLoginSuccess={() => navigate('/admin')} />;
   }
 

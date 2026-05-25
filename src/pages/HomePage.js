@@ -84,6 +84,7 @@ export default function HomePage({
         loading={loading}
         hasError={false}
         onNavigate={setPage}
+        clips={clips}
       />
 
       {/* Live Stream Embed - Only shown when live */}

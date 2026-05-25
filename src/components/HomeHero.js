@@ -243,12 +243,70 @@ function NextCenter({ nextStream, gameCover, onBrowseVods }) {
   );
 }
 
-function OffAirCenter({ onBrowseVods }) {
+const SLIDE_DURATION_MS = 6000;
+
+function ClipBackdrop({ clips }) {
+  const items = useMemo(() => {
+    const valid = (clips || []).filter((c) => c.thumbnail_url || c.mp4_url);
+    const sorted = [...valid].sort((a, b) => {
+      const aTime = a.created_at ? Date.parse(a.created_at) : 0;
+      const bTime = b.created_at ? Date.parse(b.created_at) : 0;
+      return bTime - aTime;
+    });
+    return sorted.slice(0, 8);
+  }, [clips]);
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (items.length <= 1) return undefined;
+    const hasVideo = items[index]?.mp4_url;
+    if (hasVideo) return undefined;
+    const t = setTimeout(
+      () => setIndex((i) => (i + 1) % items.length),
+      SLIDE_DURATION_MS
+    );
+    return () => clearTimeout(t);
+  }, [index, items]);
+
+  if (items.length === 0) return null;
+
+  const current = items[index];
+  const handleEnded = () => setIndex((i) => (i + 1) % items.length);
+
+  if (current.mp4_url) {
+    return (
+      <video
+        key={current.id || current.mp4_url}
+        src={current.mp4_url}
+        autoPlay
+        muted
+        playsInline
+        onEnded={handleEnded}
+        onError={handleEnded}
+        aria-hidden="true"
+        className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-screen pointer-events-none motion-reduce:hidden animate-slow-zoom"
+      />
+    );
+  }
+
+  return (
+    <img
+      key={current.id || current.thumbnail_url}
+      src={current.thumbnail_url}
+      alt=""
+      aria-hidden="true"
+      className="absolute inset-0 w-full h-full object-cover opacity-30 mix-blend-screen pointer-events-none motion-reduce:hidden animate-slow-zoom"
+    />
+  );
+}
+
+function OffAirCenter({ onBrowseVods, clips }) {
   return (
     <div className="w-full max-w-3xl">
       <div className="relative overflow-hidden rounded-xl border border-white/5">
-        <div className="aspect-[16/9] bg-zinc-broadcast">
+        <div className="relative aspect-[16/9] bg-zinc-broadcast">
           <TestPattern />
+          <ClipBackdrop clips={clips} />
         </div>
         <div className="px-5 sm:px-7 py-4 bg-zinc-card border-t border-white/5 flex items-center justify-between gap-4">
           <div>
@@ -312,6 +370,7 @@ export default function HomeHero({
   loading,
   hasError,
   onNavigate,
+  clips,
 }) {
   const { schedule } = useSchedule();
   const [gameCover, setGameCover] = useState(null);
@@ -371,7 +430,7 @@ export default function HomeHero({
       />
     );
   } else {
-    center = <OffAirCenter onBrowseVods={handleBrowseVods} />;
+    center = <OffAirCenter onBrowseVods={handleBrowseVods} clips={clips} />;
   }
 
   const viewers = isLive ? streamData?.viewer_count ?? streamData?.viewers : null;

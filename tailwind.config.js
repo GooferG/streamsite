@@ -49,6 +49,14 @@ module.exports = {
           '0%, 100%': { opacity: '0.5', filter: 'blur(20px)' },
           '50%': { opacity: '0.8', filter: 'blur(30px)' },
         },
+        'slow-zoom': {
+          '0%': { transform: 'scale(1) translate(0, 0)' },
+          '50%': { transform: 'scale(1.08) translate(-1%, -1%)' },
+          '100%': { transform: 'scale(1) translate(0, 0)' },
+        },
+      },
+      animation: {
+        'slow-zoom': 'slow-zoom 18s ease-in-out infinite',
       },
     },
   },

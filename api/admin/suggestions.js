@@ -43,6 +43,7 @@ export default async function handler(req, res) {
 
   try {
     await adminDb.runTransaction(async (tx) => {
+      // ALL reads must happen before any writes in a Firestore transaction.
       const snap = await tx.get(suggRef);
       if (!snap.exists) throw new Error('NOT_FOUND');
       const sug = snap.data();
@@ -52,10 +53,12 @@ export default async function handler(req, res) {
         return;
       }
 
-      const ts = FieldValue.serverTimestamp();
       const userRef = adminDb.collection('users').doc(sug.twitchId);
+      const userSnap = await tx.get(userRef);
 
-      // Update the suggestion doc.
+      // Now writes.
+      const ts = FieldValue.serverTimestamp();
+
       const update = {
         status,
         updatedAt: ts,
@@ -67,8 +70,6 @@ export default async function handler(req, res) {
       }
       tx.update(suggRef, update);
 
-      // Rebalance the suggester's stat counters.
-      const userSnap = await tx.get(userRef);
       if (userSnap.exists) {
         const updates = { 'stats.suggestions.lastUpdated': ts };
         const prevCounter = STATUS_COUNTER[prevStatus];

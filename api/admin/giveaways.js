@@ -18,21 +18,12 @@ function sanitizeWeights(w = {}) {
   };
   return {
     base: num(w.base, 1),
+    registered: num(w.registered, 0),
     discord: num(w.discord, 0),
     sub: num(w.sub, 0),
     vip: num(w.vip, 0),
     mod: num(w.mod, 0),
   };
-}
-
-function computeWeight(user, giveaway) {
-  const w = giveaway.weights || {};
-  let total = Number.isFinite(Number(w.base)) ? Number(w.base) : 1;
-  if (w.discord && user.discordVerifiedAt) total += Number(w.discord) || 0;
-  if (w.sub && user.isTwitchSub) total += Number(w.sub) || 0;
-  if (w.vip && user.isVip) total += Number(w.vip) || 0;
-  if (w.mod && user.isMod) total += Number(w.mod) || 0;
-  return Math.max(1, Math.floor(total));
 }
 
 async function pickWeightedWinner(giveawayRef, excludeIds = []) {
@@ -69,6 +60,7 @@ function trimEntry(entry) {
     profileImageUrl: entry.profileImageUrl || null,
     weight: entry.weight,
     source: entry.source,
+    registered: entry.registered === true,
   };
 }
 

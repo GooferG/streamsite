@@ -61,12 +61,18 @@ async function alreadyProcessed(messageId) {
 }
 
 function computeWeight(user, giveaway) {
+  // `user` may be null when the chatter has never signed in on the site.
+  // In that case all the user-dependent bonuses are skipped; the chatter
+  // gets only the base weight.
   const w = giveaway.weights || {};
   let total = Number.isFinite(Number(w.base)) ? Number(w.base) : 1;
-  if (w.discord && user.discordVerifiedAt) total += Number(w.discord) || 0;
-  if (w.sub && user.isTwitchSub) total += Number(w.sub) || 0;
-  if (w.vip && user.isVip) total += Number(w.vip) || 0;
-  if (w.mod && user.isMod) total += Number(w.mod) || 0;
+  if (user) {
+    if (w.registered) total += Number(w.registered) || 0;
+    if (w.discord && user.discordVerifiedAt) total += Number(w.discord) || 0;
+    if (w.sub && user.isTwitchSub) total += Number(w.sub) || 0;
+    if (w.vip && user.isVip) total += Number(w.vip) || 0;
+    if (w.mod && user.isMod) total += Number(w.mod) || 0;
+  }
   return Math.max(1, Math.floor(total));
 }
 
@@ -113,16 +119,17 @@ async function handleChatMessage(event) {
     }
 
     // 2. If open and keyword present, write an entry.
+    // Anyone in chat can enter — registered viewers may receive weight bonuses
+    // depending on the giveaway's toggles. Unregistered chatters get base weight.
     if (g.status === 'open' && g.keyword) {
       const kw = String(g.keyword).toLowerCase();
       if (!lowerText.includes(kw)) continue;
 
-      // Lazy-load the user doc (only if any keyword matches).
+      // Lazy-load the user doc; user may be missing (chatter never logged in).
       if (userSnap === null) {
         userSnap = await userRef.get();
         userData = userSnap.exists ? userSnap.data() : null;
       }
-      if (!userData) continue; // viewer not site-registered, ignore entry
 
       const entryRef = gdoc.ref.collection('entries').doc(chatterId);
       const existing = await entryRef.get();
@@ -131,9 +138,10 @@ async function handleChatMessage(event) {
       const weight = computeWeight(userData, g);
       await entryRef.set({
         twitchId: chatterId,
-        twitchName: userData.twitchName || chatterLogin,
-        displayName: userData.displayName || chatterName,
-        profileImageUrl: userData.profileImageUrl || null,
+        twitchName: userData?.twitchName || chatterLogin,
+        displayName: userData?.displayName || chatterName,
+        profileImageUrl: userData?.profileImageUrl || null,
+        registered: !!userData,
         weight,
         source: 'chat',
         enteredAt: FieldValue.serverTimestamp(),

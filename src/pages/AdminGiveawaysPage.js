@@ -32,7 +32,7 @@ const DEFAULT_FORM = {
   title: '',
   prize: '',
   keyword: '',
-  weights: { base: 1, discord: 1, sub: 1, vip: 1, mod: 1 },
+  weights: { base: 1, registered: 1, discord: 1, sub: 1, vip: 1, mod: 1 },
 };
 
 function formatTs(ts) {
@@ -167,6 +167,12 @@ function NewGiveawayForm({ onClose, onCreated }) {
               <span className="text-orange-admin tabular-nums">04</span> Weight rules
             </p>
             <div className="space-y-1.5">
+              <ToggleRow
+                label="Registered on site"
+                value={form.weights.registered}
+                onChange={(v) => setW('registered', v)}
+                hint="(+1 for viewers who signed in here)"
+              />
               <ToggleRow
                 label="Discord linked"
                 value={form.weights.discord}
@@ -394,12 +400,27 @@ function WinnerModal({ giveaway, onClose }) {
                 className="w-16 h-16 rounded-full border border-orange-admin/40 flex-shrink-0"
               />
             ) : (
-              <div className="w-16 h-16 border border-white/15" />
+              <div
+                className="w-16 h-16 rounded-full border-2 border-orange-admin/40 bg-zinc-broadcast/50 flex items-center justify-center text-2xl font-black text-white/55 font-mono flex-shrink-0"
+                aria-hidden="true"
+              >
+                {(w.displayName || w.twitchName || '?').charAt(0).toUpperCase()}
+              </div>
             )}
             <div className="min-w-0 flex-1">
-              <p className="text-3xl sm:text-4xl font-black text-white-body tracking-tight leading-none">
-                {w.displayName || w.twitchName}
-              </p>
+              <div className="flex items-center gap-2 flex-wrap">
+                <p className="text-3xl sm:text-4xl font-black text-white-body tracking-tight leading-none">
+                  {w.displayName || w.twitchName}
+                </p>
+                {!w.registered && (
+                  <span
+                    className="inline-flex items-center gap-1 px-2 py-1 border border-orange-admin/50 bg-orange-admin/5 text-orange-admin text-[9px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                    title="Winner has not signed in on goofer.tv — prize redemption won't show on /me. DM them on Twitch to deliver."
+                  >
+                    Not on site · DM to deliver
+                  </span>
+                )}
+              </div>
               <p className="mt-2 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
                 {w.twitchName} · weight {w.weight} · via {w.source}
               </p>

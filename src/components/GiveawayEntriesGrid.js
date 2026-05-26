@@ -23,6 +23,34 @@ function DiscordBadge() {
   );
 }
 
+function avatarColorFromName(name) {
+  // Deterministic muted accent color from name hash. Keeps the palette
+  // intentionally dim so avatars don't compete with the registered viewers.
+  const palette = [
+    'bg-zinc-card text-white/55 border-white/15',
+    'bg-zinc-broadcast text-white/60 border-white/20',
+    'bg-purple-gamba/30 text-purple-bright/80 border-purple-bright/30',
+    'bg-emerald-signal/15 text-emerald-signal/70 border-emerald-signal/25',
+    'bg-orange-admin/15 text-orange-admin/70 border-orange-admin/25',
+  ];
+  if (!name) return palette[0];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  return palette[hash % palette.length];
+}
+
+function FallbackAvatar({ name, className = '' }) {
+  const initial = (name || '?').trim().charAt(0).toUpperCase() || '?';
+  return (
+    <div
+      className={`flex items-center justify-center font-mono font-bold border-2 ${avatarColorFromName(name)} ${className}`}
+      aria-hidden="true"
+    >
+      {initial}
+    </div>
+  );
+}
+
 function EntryTile({ entry, state }) {
   // state: 'normal' | 'winner' | 'dimmed' | 'skipped'
   const ring =
@@ -52,7 +80,10 @@ function EntryTile({ entry, state }) {
             loading="lazy"
           />
         ) : (
-          <div className={`w-14 h-14 rounded-full border-2 ${ring} bg-zinc-card/60`} />
+          <FallbackAvatar
+            name={entry.displayName || entry.twitchName}
+            className={`w-14 h-14 rounded-full text-base transition-all duration-300 ${ring}`}
+          />
         )}
         {discord && <DiscordBadge />}
         {state === 'skipped' && (

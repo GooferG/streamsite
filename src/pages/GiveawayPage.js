@@ -83,7 +83,8 @@ export default function GiveawayPage() {
           </h1>
           <p className="mt-4 text-sm text-white/60 leading-relaxed">
             Enter by typing the keyword in Twitch chat while live. One entry per
-            account. Linking Discord increases your odds.
+            account. Sign in here for an extra entry weight, link Discord for
+            another.
           </p>
         </header>
 
@@ -147,11 +148,11 @@ export default function GiveawayPage() {
                         className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-gamba hover:bg-purple-bright text-white-body transition-colors duration-150"
                       >
                         <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                          Sign in to enter
+                          Sign in for bonus weight
                         </span>
                       </button>
                       <p className="mt-2 text-[10px] tracking-eyebrow uppercase text-white/40 font-mono">
-                        Your Twitch account must be linked so we can match your chat message.
+                        Anyone in chat can enter — signing in here adds +1 entry weight.
                       </p>
                     </div>
                   ) : (

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   getBaselinePlayers,
   applyDeltas,
@@ -61,6 +61,9 @@ export function useLeaderboardData(options = {}) {
     return {
       players: attachPositions(initial),
       lastUpdatedAt: Date.now(),
+      endsAt: thirtyDaysFromMonthStart(),
+      periodLabel: currentPeriodLabel(),
+      weekLabel: currentWeekLabel(),
     };
   });
 
@@ -84,6 +87,9 @@ export function useLeaderboardData(options = {}) {
         return {
           players: attachPositions(next, previousIds, deltas),
           lastUpdatedAt: Date.now(),
+          endsAt: thirtyDaysFromMonthStart(),
+          periodLabel: currentPeriodLabel(),
+          weekLabel: currentWeekLabel(),
         };
       });
     };
@@ -92,16 +98,12 @@ export function useLeaderboardData(options = {}) {
     return () => clearInterval(id);
   }, [mock, pollMs]);
 
-  const endsAt = useMemo(() => thirtyDaysFromMonthStart(), []);
-  const periodLabel = useMemo(() => currentPeriodLabel(), []);
-  const weekLabel = useMemo(() => currentWeekLabel(), []);
-
   return {
     players: state.players,
     prizePool,
-    periodLabel,
-    weekLabel,
-    endsAt,
+    periodLabel: state.periodLabel,
+    weekLabel: state.weekLabel,
+    endsAt: state.endsAt,
     lastUpdatedAt: state.lastUpdatedAt,
     isLoading: false,
     error: null,

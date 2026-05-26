@@ -17,6 +17,7 @@ import {
   AlertCircle,
   Link2,
   CheckCircle2,
+  ListChecks,
 } from 'lucide-react';
 import { db } from '../config/firebase';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
@@ -82,6 +83,56 @@ function DiscordLinkPanel({ discordId, discordUsername }) {
           Link Discord
         </span>
       </a>
+    </div>
+  );
+}
+
+function SuggestionRecord({ user }) {
+  const s = user?.stats?.suggestions || {};
+  const submitted = Number(s.submittedCount) || 0;
+  const added = Number(s.addedCount) || 0;
+  const hit = Number(s.bonusHitCount) || 0;
+  const miss = Number(s.bonusMissCount) || 0;
+  const played = hit + miss;
+  const hitRate = played > 0 ? Math.round((hit / played) * 100) : null;
+
+  // Hide entirely if the user has never participated.
+  if (submitted === 0 && added === 0 && hit === 0 && miss === 0) return null;
+
+  const cells = [
+    { label: 'Submitted', value: submitted, tone: 'text-white-body' },
+    { label: 'Added', value: added, tone: 'text-emerald-signal' },
+    { label: 'Bonus hit', value: hit, tone: 'text-orange-admin' },
+    {
+      label: 'Hit rate',
+      value: hitRate == null ? '—' : `${hitRate}%`,
+      tone: hitRate == null ? 'text-white/45' : 'text-emerald-signal',
+    },
+  ];
+
+  return (
+    <div className="border border-white/8 bg-zinc-card/30">
+      <div className="px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+        <span className="inline-flex items-center gap-2 text-emerald-signal">
+          <ListChecks size={11} aria-hidden="true" />
+          <span>Suggestion record</span>
+        </span>
+      </div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 px-3 py-4 gap-0">
+        {cells.map((c, i) => (
+          <div
+            key={c.label}
+            className={`px-3 py-1 ${i > 0 ? 'border-l border-white/8' : ''}`}
+          >
+            <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono mb-1">
+              {c.label}
+            </p>
+            <p className={`text-2xl font-black tabular-nums leading-none ${c.tone}`}>
+              {c.value}
+            </p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -302,6 +353,8 @@ export default function MyAccountPage() {
             </div>
           )}
         </div>
+
+        <SuggestionRecord user={user} />
 
         {/* Earn methods info */}
         <div className="border border-white/8 bg-zinc-card/30">

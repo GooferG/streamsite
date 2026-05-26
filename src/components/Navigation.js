@@ -1,6 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Menu, X, LogOut, User as UserIcon, Store as StoreIcon } from 'lucide-react';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
+import { useAuth } from '../contexts/AuthContext';
+
+const ADMIN_EMAIL = 'luimeneghim@gmail.com';
 
 const NAV_ITEMS = [
   { id: 'home', label: 'Home', code: '01' },
@@ -15,11 +18,26 @@ const NAV_ITEMS = [
 
 const ADMIN_ITEM = { id: 'admin', label: 'Admin', code: 'AD' };
 
-function Wordmark({ onClick }) {
+function Wordmark({ onClick, onSecretActivate }) {
+  const clicksRef = useRef([]);
+
+  const handleClick = () => {
+    if (onSecretActivate) {
+      const now = Date.now();
+      clicksRef.current = [...clicksRef.current, now].filter((t) => now - t <= 2000);
+      if (clicksRef.current.length >= 5) {
+        clicksRef.current = [];
+        onSecretActivate();
+        return;
+      }
+    }
+    if (onClick) onClick();
+  };
+
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={handleClick}
       className="group flex items-baseline gap-2 cursor-pointer flex-shrink-0"
       aria-label="GooferG home"
     >
@@ -169,6 +187,8 @@ function ViewerAuthControl({ onNavigate }) {
 export default function Navigation({ currentPage, setPage }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { twitchUser, loginWithTwitch, logout } = useTwitchAuth();
+  const { currentUser } = useAuth();
+  const isAdmin = currentUser?.email === ADMIN_EMAIL;
 
   const handleNavClick = (pageId) => {
     setPage(pageId);
@@ -179,7 +199,10 @@ export default function Navigation({ currentPage, setPage }) {
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 bg-zinc-broadcast/85 backdrop-blur-md border-b border-white/8">
         <div className="w-full px-5 sm:px-8 py-3 flex items-center gap-6">
-          <Wordmark onClick={() => setPage('home')} />
+          <Wordmark
+            onClick={() => setPage('home')}
+            onSecretActivate={() => setPage('admin')}
+          />
 
           {/* Desktop nav */}
           <div className="hidden md:flex items-center gap-7 flex-1 justify-center">
@@ -196,14 +219,16 @@ export default function Navigation({ currentPage, setPage }) {
           {/* Right cluster: viewer auth + admin */}
           <div className="hidden md:flex items-center gap-3 flex-shrink-0">
             <ViewerAuthControl onNavigate={(id) => setPage(id)} />
-            <div className="pl-3 border-l border-white/10">
-              <NavLink
-                item={ADMIN_ITEM}
-                active={currentPage === ADMIN_ITEM.id}
-                accent="orange"
-                onClick={() => setPage(ADMIN_ITEM.id)}
-              />
-            </div>
+            {isAdmin && (
+              <div className="pl-3 border-l border-white/10">
+                <NavLink
+                  item={ADMIN_ITEM}
+                  active={currentPage === ADMIN_ITEM.id}
+                  accent="orange"
+                  onClick={() => setPage(ADMIN_ITEM.id)}
+                />
+              </div>
+            )}
           </div>
 
           {/* Mobile menu trigger */}
@@ -330,37 +355,41 @@ export default function Navigation({ currentPage, setPage }) {
             );
           })}
 
-          {/* Admin separator */}
-          <div
-            className="mt-2 px-5 pt-4 pb-2 border-t border-white/10 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
-      >
-            Operator
-          </div>
+          {isAdmin && (
+            <>
+              {/* Admin separator */}
+              <div
+                className="mt-2 px-5 pt-4 pb-2 border-t border-white/10 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
+              >
+                Operator
+              </div>
 
-          <button
-            type="button"
-            onClick={() => handleNavClick(ADMIN_ITEM.id)}
-            className={`group flex items-center gap-3 px-5 py-3.5 border-l-2 transition-colors duration-150 ${
-              currentPage === ADMIN_ITEM.id
-                ? 'bg-zinc-card border-orange-admin'
-                : 'border-transparent hover:bg-zinc-card/50'
-            }`}
-          >
-            <span
-              className={`text-sm font-bold tracking-tight ${
-                currentPage === ADMIN_ITEM.id ? 'text-white-body' : 'text-white/70'
-              }`}
-            >
-              {ADMIN_ITEM.label}
-            </span>
-            {currentPage === ADMIN_ITEM.id && (
-              <span
-                className="ml-auto text-[9px] font-bold tracking-eyebrow-lg text-orange-admin font-mono"
-      >
-                ON
-              </span>
-            )}
-          </button>
+              <button
+                type="button"
+                onClick={() => handleNavClick(ADMIN_ITEM.id)}
+                className={`group flex items-center gap-3 px-5 py-3.5 border-l-2 transition-colors duration-150 ${
+                  currentPage === ADMIN_ITEM.id
+                    ? 'bg-zinc-card border-orange-admin'
+                    : 'border-transparent hover:bg-zinc-card/50'
+                }`}
+              >
+                <span
+                  className={`text-sm font-bold tracking-tight ${
+                    currentPage === ADMIN_ITEM.id ? 'text-white-body' : 'text-white/70'
+                  }`}
+                >
+                  {ADMIN_ITEM.label}
+                </span>
+                {currentPage === ADMIN_ITEM.id && (
+                  <span
+                    className="ml-auto text-[9px] font-bold tracking-eyebrow-lg text-orange-admin font-mono"
+                  >
+                    ON
+                  </span>
+                )}
+              </button>
+            </>
+          )}
         </nav>
       </div>
     </>

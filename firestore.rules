@@ -94,13 +94,20 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Prediction rounds — public read of round + entries so the wall and
-    // number line can subscribe. All writes server-only (admin endpoints
-    // for lifecycle; submit endpoint for viewer entries).
-    match /prediction_rounds/{id} {
+    // Hunts — unified collection for community hunts. A hunt has feature
+    // flags (acceptPredictions, acceptSuggestions). Predictions live under
+    // /entries; community-suggestion slots under /suggestions. Both
+    // subcollections are public read for live wall + number line + list
+    // subscriptions. All writes server-only via the admin endpoints and
+    // the viewer submit/delete endpoints.
+    match /hunts/{id} {
       allow read: if true;
       allow write: if false;
       match /entries/{entryId} {
+        allow read: if true;
+        allow write: if false;
+      }
+      match /suggestions/{sid} {
         allow read: if true;
         allow write: if false;
       }

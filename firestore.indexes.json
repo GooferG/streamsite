@@ -49,7 +49,7 @@
       ]
     },
     {
-      "collectionGroup": "prediction_rounds",
+      "collectionGroup": "hunts",
       "queryScope": "COLLECTION",
       "fields": [
         { "fieldPath": "status", "order": "ASCENDING" },

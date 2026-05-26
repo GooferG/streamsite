@@ -8,6 +8,7 @@ import {
   Inbox,
   Ticket,
   Gift,
+  TrendingUp,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
   { to: '/admin/redemptions', label: 'Redemptions', code: 'RED', icon: Inbox },
   { to: '/admin/tickets', label: 'Tickets', code: 'TKT', icon: Ticket },
   { to: '/admin/giveaways', label: 'Giveaways', code: 'GVW', icon: Gift },
+  { to: '/admin/predictions', label: 'Predictions', code: 'PRD', icon: TrendingUp },
 ];
 
 const ADMIN_EMAIL = 'luimeneghim@gmail.com';

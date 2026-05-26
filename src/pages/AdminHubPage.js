@@ -6,6 +6,7 @@ import {
   Inbox,
   Ticket,
   Gift,
+  TrendingUp,
   ChevronRight,
 } from 'lucide-react';
 
@@ -57,6 +58,14 @@ const HUB_CARDS = [
     title: 'Giveaways',
     description:
       'Run keyword-based giveaways. Pick weighted winners on stream with a live-chat modal.',
+  },
+  {
+    to: '/admin/predictions',
+    icon: TrendingUp,
+    code: 'PRD',
+    title: 'Predictions',
+    description:
+      'Run bonus hunt prediction rounds. Snapshot the slot list from bonushunt.gg, settle winners, distribute tickets or cash.',
   },
 ];
 

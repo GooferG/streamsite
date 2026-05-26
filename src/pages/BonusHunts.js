@@ -1,5 +1,12 @@
 import { useState, useEffect } from 'react';
 import {
+  collection,
+  onSnapshot,
+  orderBy,
+  query,
+  limit as fLimit,
+} from 'firebase/firestore';
+import {
   TrendingUp,
   TrendingDown,
   Minus,
@@ -7,6 +14,11 @@ import {
   ChevronUp,
   RefreshCcw,
 } from 'lucide-react';
+import { db } from '../config/firebase';
+import PredictionSlip from '../components/PredictionSlip';
+import PredictionWall from '../components/PredictionWall';
+import PredictionNumberLine from '../components/PredictionNumberLine';
+import PredictionWinnersReveal from '../components/PredictionWinnersReveal';
 
 async function fetchHunts() {
   const res = await fetch('/api/bonus-hunts?path=hunts');
@@ -275,10 +287,73 @@ function HuntCard({ hunt, index }) {
   );
 }
 
+function PredictionModeBanner({ round }) {
+  if (!round) return null;
+  const tone =
+    round.status === 'open'
+      ? 'text-emerald-signal border-emerald-signal/40'
+      : round.status === 'locked'
+        ? 'text-orange-admin border-orange-admin/50'
+        : 'text-white-body border-white/30';
+  const label =
+    round.status === 'open' ? 'PREDICTION · OPEN'
+      : round.status === 'locked' ? 'PREDICTION · LOCKED'
+      : 'PREDICTION · SETTLED';
+  return (
+    <div className={`flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border ${tone} bg-zinc-card/30 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono`}>
+      <span className="inline-flex items-center gap-2">
+        <span className="relative flex w-1.5 h-1.5">
+          {round.status === 'open' && (
+            <span className="absolute inset-0 rounded-full bg-emerald-signal motion-safe:animate-ping opacity-50" />
+          )}
+          <span
+            className={`relative w-1.5 h-1.5 rounded-full ${
+              round.status === 'open'
+                ? 'bg-emerald-signal'
+                : round.status === 'locked'
+                  ? 'bg-orange-admin'
+                  : 'bg-white-body'
+            }`}
+          />
+        </span>
+        <span>{label}</span>
+      </span>
+      <span className="text-white/15">·</span>
+      <span className="text-white/55 truncate max-w-[40ch]">{round.title}</span>
+      <span className="ml-auto text-white/40 tabular-nums">
+        {String(round.entryCount ?? 0).padStart(4, '0')} ENTRIES
+      </span>
+    </div>
+  );
+}
+
+function usePredictionRound() {
+  const [round, setRound] = useState(null);
+  useEffect(() => {
+    // Most recent non-deleted round. Show settled rounds too (last result lingers).
+    const q = query(
+      collection(db, 'prediction_rounds'),
+      orderBy('createdAt', 'desc'),
+      fLimit(1)
+    );
+    const unsub = onSnapshot(q, (snap) => {
+      if (snap.empty) {
+        setRound(null);
+      } else {
+        const d = snap.docs[0];
+        setRound({ id: d.id, ...d.data() });
+      }
+    });
+    return unsub;
+  }, []);
+  return round;
+}
+
 export default function BonusHuntsPage() {
   const [hunts, setHunts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const round = usePredictionRound();
 
   const load = async () => {
     setLoading(true);
@@ -303,8 +378,49 @@ export default function BonusHuntsPage() {
     load();
   }, []);
 
+  // Determine which mode we're in for prediction layout. The live hunt widget
+  // is shown in all modes, but its prominence shifts based on round status.
+  const mode =
+    !round
+      ? 'no_round'
+      : round.status === 'open'
+        ? 'predicting'
+        : round.status === 'locked'
+          ? 'opening'
+          : 'settled';
+
   return (
     <div className="space-y-6">
+      {round && <PredictionModeBanner round={round} />}
+
+      {/* PREDICTING mode — slip + wall hero, hunt widget compact */}
+      {mode === 'predicting' && (
+        <>
+          <PredictionSlip round={round} />
+          <PredictionNumberLine round={round} />
+          <PredictionWall round={round} />
+        </>
+      )}
+
+      {/* OPENING mode (predictions locked, hunt is being opened) — slip shows
+          locked stamp, hunt widget below is the hero. */}
+      {mode === 'opening' && (
+        <>
+          <PredictionSlip round={round} />
+          <PredictionWall round={round} />
+        </>
+      )}
+
+      {/* SETTLED mode — winners hero */}
+      {mode === 'settled' && (
+        <>
+          <PredictionWinnersReveal round={round} />
+          <PredictionNumberLine round={round} />
+          <PredictionWall round={round} />
+          <PredictionSlip round={round} />
+        </>
+      )}
+
       {/* Active hunt iframe — kept as-is */}
       <div className="border border-white/8 overflow-hidden">
         <div

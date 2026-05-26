@@ -93,5 +93,17 @@ service cloud.firestore {
     match /eventsub_seen/{id} {
       allow read, write: if false;
     }
+
+    // Prediction rounds — public read of round + entries so the wall and
+    // number line can subscribe. All writes server-only (admin endpoints
+    // for lifecycle; submit endpoint for viewer entries).
+    match /prediction_rounds/{id} {
+      allow read: if true;
+      allow write: if false;
+      match /entries/{entryId} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
   }
 }

@@ -158,6 +158,20 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
+    // Helper: fire winner announce in chat for a freshly picked entry.
+    const fireWinnerAnnounce = async (winner) => {
+      if (giveaway.announceWinner === false || !giveaway.winnerMessage) {
+        return { posted: false, reason: 'disabled' };
+      }
+      const text = fillTemplate(giveaway.winnerMessage, {
+        keyword: giveaway.keyword,
+        prize: giveaway.prize,
+        title: giveaway.title,
+        winner: winner.displayName || winner.twitchName,
+      });
+      return tryAnnounce(text);
+    };
+
     if (action === 'roll') {
       if (!['open', 'closed'].includes(giveaway.status)) {
         return res.status(400).json({ error: 'NOT_ROLLABLE' });
@@ -171,7 +185,8 @@ export default async function handler(req, res) {
         winnerTwitchId: winner.id,
         rolledAt: FieldValue.serverTimestamp(),
       });
-      return res.status(200).json({ ok: true, winner: trimEntry(winner) });
+      const announce = await fireWinnerAnnounce(winner);
+      return res.status(200).json({ ok: true, winner: trimEntry(winner), announce });
     }
 
     if (action === 'reroll') {
@@ -187,7 +202,8 @@ export default async function handler(req, res) {
         winnerTwitchId: winner.id,
         rolledAt: FieldValue.serverTimestamp(),
       });
-      return res.status(200).json({ ok: true, winner: trimEntry(winner) });
+      const announce = await fireWinnerAnnounce(winner);
+      return res.status(200).json({ ok: true, winner: trimEntry(winner), announce });
     }
 
     if (action === 'skip') {
@@ -224,7 +240,8 @@ export default async function handler(req, res) {
         winnerTwitchId: winner.id,
         rolledAt: FieldValue.serverTimestamp(),
       });
-      return res.status(200).json({ ok: true, winner: trimEntry(winner) });
+      const announce = await fireWinnerAnnounce(winner);
+      return res.status(200).json({ ok: true, winner: trimEntry(winner), announce });
     }
 
     if (action === 'confirm') {
@@ -259,18 +276,8 @@ export default async function handler(req, res) {
         confirmedBy: admin.email,
         redemptionId: redemptionRef.id,
       });
-
-      let announce = { posted: false, reason: 'disabled' };
-      if (giveaway.announceWinner !== false && giveaway.winnerMessage) {
-        const text = fillTemplate(giveaway.winnerMessage, {
-          keyword: giveaway.keyword,
-          prize: giveaway.prize,
-          title: giveaway.title,
-          winner: winner.displayName || winner.twitchName,
-        });
-        announce = await tryAnnounce(text);
-      }
-      return res.status(200).json({ ok: true, redemptionId: redemptionRef.id, announce });
+      // No chat announce here — winner is already announced at pick time.
+      return res.status(200).json({ ok: true, redemptionId: redemptionRef.id });
     }
 
     if (action === 'delete') {

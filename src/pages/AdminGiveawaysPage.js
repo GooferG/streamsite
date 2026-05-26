@@ -30,7 +30,8 @@ const inputCls =
 
 const DEFAULT_START_MSG =
   '🎁 GIVEAWAY → Type "{keyword}" in chat to enter. Prize: {prize}';
-const DEFAULT_WINNER_MSG = '🎉 Winner: @{winner} won {prize}! GG!';
+const DEFAULT_WINNER_MSG =
+  '🎉 @{winner} has been picked for {prize}! Reply in chat to claim.';
 
 const DEFAULT_FORM = {
   title: '',
@@ -254,7 +255,7 @@ function NewGiveawayForm({ onClose, onCreated }) {
                     onChange={(e) => setForm((f) => ({ ...f, announceWinner: e.target.checked }))}
                   />
                   <span className="text-[11px] font-bold tracking-eyebrow uppercase text-white/70 font-mono">
-                    Announce winner in chat on confirm
+                    Announce winner in chat on pick
                   </span>
                 </label>
                 <textarea
@@ -412,17 +413,21 @@ function WinnerModal({ giveaway, onClose, onAnnounceError }) {
       const data = await res.json();
       if (!res.ok) {
         alert(`Action failed: ${data.error || res.status}`);
-      } else if (action === 'confirm') {
-        if (
-          data.announce &&
-          data.announce.posted === false &&
-          data.announce.reason &&
-          data.announce.reason !== 'disabled' &&
-          data.announce.reason !== 'empty' &&
-          onAnnounceError
-        ) {
-          onAnnounceError(data.announce.reason);
-        }
+        return;
+      }
+      // Announce now fires on roll/reroll/skip (whenever a new winner is picked).
+      if (
+        ['reroll', 'skip'].includes(action) &&
+        data.announce &&
+        data.announce.posted === false &&
+        data.announce.reason &&
+        data.announce.reason !== 'disabled' &&
+        data.announce.reason !== 'empty' &&
+        onAnnounceError
+      ) {
+        onAnnounceError(data.announce.reason);
+      }
+      if (action === 'confirm') {
         onClose();
       }
     } finally {
@@ -756,7 +761,7 @@ function AnimatedCount({ value }) {
   );
 }
 
-function GiveawayDetail({ giveaway, onBack }) {
+function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
   const [busy, setBusy] = useState(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -768,7 +773,21 @@ function GiveawayDetail({ giveaway, onBack }) {
         body: JSON.stringify({ action, id: giveaway.id }),
       });
       const data = await res.json();
-      if (!res.ok) alert(`Action failed: ${data.error || res.status}`);
+      if (!res.ok) {
+        alert(`Action failed: ${data.error || res.status}`);
+        return;
+      }
+      if (
+        action === 'roll' &&
+        data.announce &&
+        data.announce.posted === false &&
+        data.announce.reason &&
+        data.announce.reason !== 'disabled' &&
+        data.announce.reason !== 'empty' &&
+        onAnnounceError
+      ) {
+        onAnnounceError(data.announce.reason);
+      }
     } finally {
       setBusy(null);
     }
@@ -1022,7 +1041,13 @@ export default function AdminGiveawaysPage() {
       </div>
 
       {selected ? (
-        <GiveawayDetail giveaway={selected} onBack={() => setSelectedId(null)} />
+        <GiveawayDetail
+          giveaway={selected}
+          onBack={() => setSelectedId(null)}
+          onAnnounceError={(reason) =>
+            setWarning(`Winner picked, but chat announce failed: ${reason}`)
+          }
+        />
       ) : (
         <div className="space-y-6">
           {grouped.open.length > 0 && (

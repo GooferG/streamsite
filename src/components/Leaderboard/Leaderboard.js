@@ -3,10 +3,13 @@ import { useLeaderboardData } from '../../hooks/useLeaderboardData';
 import BroadcastFrame from './BroadcastFrame';
 import BroadcastHeader from './BroadcastHeader';
 import LeaderTakeover from './LeaderTakeover';
+import PodiumCard from './PodiumCard';
 import RaceBars from './RaceBars';
 import RosterTable from './RosterTable';
 import TickerCrawl from './TickerCrawl';
 import StationID from './StationID';
+
+const TAKEOVER_THRESHOLD = 1.3;
 
 function useNow() {
   const [now, setNow] = useState(() => Date.now());
@@ -20,9 +23,14 @@ function useNow() {
 export default function Leaderboard() {
   const data = useLeaderboardData();
   const now = useNow();
-  const [leader, runnerUp, ...rest] = data.players;
-  const racers = [runnerUp, ...rest.slice(0, 3)].filter(Boolean); // P02..P05
-  const roster = data.players.slice(5); // P06..P20
+  const [leader, runnerUp, third, ...rest] = data.players;
+  const showTakeover =
+    leader && runnerUp && leader.wagered >= runnerUp.wagered * TAKEOVER_THRESHOLD;
+  const racers = showTakeover
+    ? rest.slice(0, 7)
+    : [leader, runnerUp, third, ...rest].filter(Boolean).slice(0, 7);
+  const roster = showTakeover ? data.players.slice(10) : data.players.slice(7);
+  const racerLeader = showTakeover ? racers[0] : leader;
 
   return (
     <BroadcastFrame>
@@ -34,8 +42,23 @@ export default function Leaderboard() {
         lastUpdatedAt={data.lastUpdatedAt}
         now={now}
       />
-      <LeaderTakeover leader={leader} runnerUp={runnerUp} />
-      <RaceBars players={racers} leaderWagered={leader ? leader.wagered : 0} />
+
+      {showTakeover && (
+        <div className="px-4 sm:px-6 py-6 border-b border-white/8">
+          <div className="grid grid-cols-1 lg:grid-cols-[5fr_3fr] gap-4 lg:gap-5">
+            <LeaderTakeover leader={leader} runnerUp={runnerUp} />
+            <div className="grid grid-cols-1 gap-4 lg:gap-5">
+              <PodiumCard player={runnerUp} tier="runnerUp" />
+              <PodiumCard player={third} tier="third" />
+            </div>
+          </div>
+        </div>
+      )}
+
+      <RaceBars
+        players={racers}
+        leaderWagered={racerLeader ? racerLeader.wagered : 0}
+      />
       <RosterTable players={roster} />
       <TickerCrawl />
       <StationID />

@@ -15,6 +15,8 @@ module.exports = {
         'purple-haze': '#581c87',
         'orange-admin': '#f97316',
         'orange-bright': '#fb923c',
+        'amber-rust': '#e0a458',
+        'amber-rust-dim': '#a8763d',
         'red-destructive': '#ef4444',
         'zinc-broadcast': '#09090b',
         'zinc-card': '#18181b',
@@ -24,6 +26,7 @@ module.exports = {
       },
       fontFamily: {
         mono: ['source-code-pro', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
+        display: ['Anton', 'Impact', 'Haettenschweiler', 'sans-serif'],
       },
       letterSpacing: {
         'eyebrow-xs': '0.15em',

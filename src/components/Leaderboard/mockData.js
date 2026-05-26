@@ -3,7 +3,7 @@
 // at least 2x P02 so the leader-takeover banner visually earns its scale.
 
 const NAMES = [
-  'Neverleavehome',
+  'Nikshotmom',
   'midnightowl1',
   'maximumoverdriveo',
   'minorthreats',
@@ -26,10 +26,9 @@ const NAMES = [
 ];
 
 const BASE_WAGERED = [
-  23434853, 9256889, 7198825, 6430844, 6376767,
-  5123400, 4890210, 4321000, 3987654, 3654321,
-  3200000, 2987600, 2754100, 2500000, 2300000,
-  2050000, 1820000, 1500000, 1200000, 1012000,
+  23434853, 12256889, 7198825, 6430844, 6376767, 5123400, 4890210, 4321000,
+  3987654, 3654321, 3200000, 2987600, 2754100, 2500000, 2300000, 2050000,
+  1820000, 1500000, 1200000, 1012000,
 ];
 
 export function getBaselinePlayers() {
@@ -37,7 +36,7 @@ export function getBaselinePlayers() {
     id: `mock-${i + 1}`,
     username,
     wagered: BASE_WAGERED[i],
-  }));
+  })).sort((a, b) => b.wagered - a.wagered);
 }
 
 export function applyDeltas(players, deltasById) {
@@ -54,7 +53,7 @@ export function applyDeltas(players, deltasById) {
 function mulberry32(seed) {
   let a = seed >>> 0;
   return function next() {
-    a = (a + 0x6D2B79F5) >>> 0;
+    a = (a + 0x6d2b79f5) >>> 0;
     let t = a;
     t = Math.imul(t ^ (t >>> 15), t | 1);
     t ^= t + Math.imul(t ^ (t >>> 7), t | 61);

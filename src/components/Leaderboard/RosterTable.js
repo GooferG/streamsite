@@ -2,13 +2,21 @@ import { formatUSD, formatPosition } from './format';
 import TrendArrow from './TrendArrow';
 import WagerDropChip from './WagerDropChip';
 
+function pad2(n) {
+  return String(n).padStart(2, '0');
+}
+
 export default function RosterTable({ players }) {
   if (!players.length) return null;
+  const firstPos = players[0].position;
+  const lastPos = players[players.length - 1].position;
+  const label =
+    firstPos === lastPos ? `ROSTER ${pad2(firstPos)}` : `ROSTER ${pad2(firstPos)}–${pad2(lastPos)}`;
 
   return (
     <div className="border-t border-white/8">
       <div className="px-4 sm:px-6 py-3 text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono">
-        ROSTER 06–20
+        {label}
       </div>
       <div className="divide-y divide-white/6">
         {players.map((p) => (

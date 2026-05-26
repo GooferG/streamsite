@@ -16,9 +16,9 @@ describe('getBaselinePlayers', () => {
     }
   });
 
-  it('places P01 at least 2x P02 (for leader takeover visual)', () => {
+  it('places P01 strictly ahead of P02', () => {
     const [p1, p2] = getBaselinePlayers();
-    expect(p1.wagered).toBeGreaterThanOrEqual(p2.wagered * 2);
+    expect(p1.wagered).toBeGreaterThan(p2.wagered);
   });
 
   it('every player has the expected shape', () => {

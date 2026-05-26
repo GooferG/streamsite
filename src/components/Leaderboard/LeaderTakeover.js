@@ -31,20 +31,20 @@ export default function LeaderTakeover({ leader, runnerUp }) {
           <span>LIVE</span>
         </div>
 
-        <div className="relative p-6 sm:p-8 lg:p-10 flex flex-col gap-6 sm:gap-8 min-h-[28rem] sm:min-h-[32rem]">
+        <div className="relative p-5 sm:p-7 lg:p-8 flex flex-col gap-5 sm:gap-6 min-h-[22rem] sm:min-h-[24rem]">
           <div className="text-[10px] sm:text-[11px] font-bold tracking-eyebrow-lg text-white/55 font-mono">
-            ── TONIGHT&apos;S LEADER ──
+            ── THIS MONTH&apos;S LEADER ──
           </div>
 
           <div className="relative">
             <span
-              className="absolute -top-3 -left-1 text-[6rem] sm:text-[8rem] lg:text-[9rem] font-extrabold tabular-nums font-mono text-emerald-signal/15 leading-none select-none"
+              className="absolute -top-2 -left-1 text-[4.5rem] sm:text-[6rem] lg:text-[6.5rem] font-extrabold tabular-nums font-mono text-emerald-signal/15 leading-none select-none"
               aria-hidden="true"
             >
               {formatPosition(leader.position)}
             </span>
             <span
-              className="relative text-[6rem] sm:text-[8rem] lg:text-[9rem] font-extrabold tabular-nums font-mono text-emerald-signal leading-none"
+              className="relative text-[4.5rem] sm:text-[6rem] lg:text-[6.5rem] font-extrabold tabular-nums font-mono text-emerald-signal leading-none"
               style={{ transform: 'translate(2px, -2px)' }}
             >
               {formatPosition(leader.position)}
@@ -52,7 +52,7 @@ export default function LeaderTakeover({ leader, runnerUp }) {
           </div>
 
           <div className="flex items-baseline gap-3 flex-wrap">
-            <h2 className="font-display text-5xl sm:text-7xl lg:text-8xl tracking-tight text-white-body leading-[0.9] break-all uppercase">
+            <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight text-white-body leading-[0.9] break-all uppercase">
               {leader.maskedUsername}
             </h2>
             <WagerDropChip delta={leader.delta} />
@@ -62,7 +62,7 @@ export default function LeaderTakeover({ leader, runnerUp }) {
             <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono mb-1">
               TOTAL WAGERED
             </div>
-            <div className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tabular-nums font-mono text-emerald-signal leading-none">
+            <div className="text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold tabular-nums font-mono text-emerald-signal leading-none">
               {formatUSD(leader.wagered)}
             </div>
           </div>
@@ -72,7 +72,7 @@ export default function LeaderTakeover({ leader, runnerUp }) {
               <div className="text-[10px] font-bold tracking-eyebrow-lg text-emerald-signal/80 font-mono">
                 PRIZE
               </div>
-              <div className="text-3xl sm:text-4xl font-extrabold tabular-nums font-mono text-emerald-signal leading-none">
+              <div className="text-2xl sm:text-3xl font-extrabold tabular-nums font-mono text-emerald-signal leading-none">
                 {formatUSD(leader.prize)}
               </div>
             </div>
@@ -81,7 +81,7 @@ export default function LeaderTakeover({ leader, runnerUp }) {
                 <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono">
                   LEADING BY
                 </div>
-                <div className="text-xl sm:text-2xl font-bold tabular-nums font-mono text-white-body">
+                <div className="text-lg sm:text-xl font-bold tabular-nums font-mono text-white-body">
                   {formatUSD(lead)}
                 </div>
                 <div className="mt-2 flex items-center gap-2 sm:justify-end text-[11px] font-bold tracking-eyebrow-lg font-mono text-white/65">

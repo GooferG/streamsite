@@ -56,10 +56,11 @@ describe('useLeaderboardData (mock mode)', () => {
 
     expect(result.current.lastUpdatedAt).toBeGreaterThan(initialLastUpdated);
     const totalWagered = result.current.players.reduce((sum, p) => sum + p.wagered, 0);
-    const initialTotal = 23434853 + 9256889 + 7198825 + 6430844 + 6376767
-      + 5123400 + 4890210 + 4321000 + 3987654 + 3654321
-      + 3200000 + 2987600 + 2754100 + 2500000 + 2300000
-      + 2050000 + 1820000 + 1500000 + 1200000 + 1012000;
+    const initialTotal =
+      1464622.96 + 1034104.98 + 790547.86 + 703037.66 + 584398.66
+      + 264991.93 + 243842.27 + 220580.21 + 218940.73 + 199706.01
+      + 194481.82 + 187465.35 + 183261.85 + 149599.53 + 135194.83
+      + 95487.09 + 94087.37 + 82543.59 + 79000.32 + 77163.89;
     expect(totalWagered).toBeGreaterThanOrEqual(initialTotal); // monotonic — deltas only add
     expect(totalWagered).toBeGreaterThan(initialTotal); // and at least one player gained
     // (initialP01Wagered is referenced just to assert types — value may or may not change)

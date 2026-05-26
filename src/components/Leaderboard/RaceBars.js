@@ -22,7 +22,7 @@ export default function RaceBars({ players, leaderWagered }) {
             key={p.id}
             className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 px-4 sm:px-6 py-3"
           >
-            <div className="flex items-center gap-3 w-28">
+            <div className="flex items-center gap-2 w-16 sm:w-20">
               <span className="text-[11px] font-bold tracking-eyebrow-lg text-white/65 tabular-nums font-mono">
                 {formatPosition(p.position)}
               </span>

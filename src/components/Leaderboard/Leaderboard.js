@@ -58,11 +58,21 @@ export default function Leaderboard() {
 
       <SponsorBanner />
 
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 px-4 sm:px-6 py-3 border-b border-white/8 text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono">
+        <span className="w-16 sm:w-20" aria-hidden="true" />
+        <span aria-hidden="true" />
+        <span className="text-right">WAGERED</span>
+        <span className="text-right w-20 sm:w-24">PRIZE</span>
+      </div>
+
       <RaceBars
         players={racers}
         leaderWagered={racerLeader ? racerLeader.wagered : 0}
       />
-      <RosterTable players={roster} />
+      <RosterTable
+        players={roster}
+        leaderWagered={racerLeader ? racerLeader.wagered : 0}
+      />
       <TickerCrawl />
       <StationID />
     </BroadcastFrame>

@@ -19,9 +19,10 @@ export function formatPosition(position) {
   return `P${String(position).padStart(2, '0')}`;
 }
 
-// $50,000 split across top 10. Sums to exactly $50,000.
+// $120,000 split across top 20. Sums to exactly $120,000.
 export const PRIZE_TABLE = [
-  15000, 9000, 6500, 5000, 4000, 3500, 2500, 2000, 1500, 1000,
+  40000, 22000, 15000, 9000, 6000, 5000, 4000, 3000, 2500, 2000,
+  1500, 1500, 1500, 1500, 1500, 800, 800, 800, 800, 800,
 ];
 
 export const PRIZE_POOL_TOTAL = PRIZE_TABLE.reduce((sum, n) => sum + n, 0);

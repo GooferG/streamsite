@@ -9,13 +9,19 @@ import { applyCors, requireAdmin } from '../_lib/verifyAuth.js';
 // Status transitions: pending <-> added <-> played-bonus | played-no-bonus | skipped
 // All transitions are allowed (so admin can undo).
 
-const STATUSES = ['pending', 'added', 'played-bonus', 'played-no-bonus', 'skipped'];
+const STATUSES = [
+  'pending',
+  'added',
+  'played-bonus',
+  'played-no-bonus',
+  'skipped',
+];
 
 // Map status -> the user-stat counter that tracks it. `pending` and `added`
 // are tracked separately; the played/skipped statuses contribute to specific
 // lifetime counters.
 const STATUS_COUNTER = {
-  pending: null,            // pending has no separate counter (it's the default)
+  pending: null, // pending has no separate counter (it's the default)
   added: 'addedCount',
   'played-bonus': 'bonusHitCount',
   'played-no-bonus': 'bonusMissCount',
@@ -25,7 +31,8 @@ const STATUS_COUNTER = {
 export default async function handler(req, res) {
   applyCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== 'POST')
+    return res.status(405).json({ error: 'Method not allowed' });
 
   const admin = await requireAdmin(req, res);
   if (!admin) return;
@@ -75,7 +82,8 @@ export default async function handler(req, res) {
         const prevCounter = STATUS_COUNTER[prevStatus];
         const nextCounter = STATUS_COUNTER[status];
         if (prevCounter) {
-          updates[`stats.suggestions.${prevCounter}`] = FieldValue.increment(-1);
+          updates[`stats.suggestions.${prevCounter}`] =
+            FieldValue.increment(-1);
         }
         if (nextCounter) {
           updates[`stats.suggestions.${nextCounter}`] = FieldValue.increment(1);
@@ -87,7 +95,8 @@ export default async function handler(req, res) {
     return res.status(200).json({ ok: true });
   } catch (err) {
     const code = err.message;
-    if (code === 'NOT_FOUND') return res.status(404).json({ error: 'NOT_FOUND' });
+    if (code === 'NOT_FOUND')
+      return res.status(404).json({ error: 'NOT_FOUND' });
     console.error('admin/suggestions error', err);
     return res.status(500).json({ error: 'INTERNAL', detail: err.message });
   }

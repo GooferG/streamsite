@@ -211,8 +211,9 @@ function StreamingSiteContent() {
           <Route path="/gamba" element={<GambaPage />}>
             <Route
               index
-              element={<Navigate to="/gamba/hunt-tracker" replace />}
+              element={<Navigate to="/gamba/leaderboard" replace />}
             />
+            <Route path="leaderboard" element={null} />
             <Route path="wheel" element={null} />
             <Route path="equity" element={null} />
             <Route path="hunt" element={null} />

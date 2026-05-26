@@ -7,13 +7,12 @@ export default function StationID() {
       <span className="text-white/20">·</span>
       <span>BUILT BY GOOFER</span>
       <span className="text-white/20">·</span>
-      <a
-        href="#"
-        onClick={(e) => e.preventDefault()}
+      <button
+        type="button"
         className="underline decoration-white/25 underline-offset-4 hover:text-white-body hover:decoration-white-body transition-colors motion-reduce:transition-none"
       >
         /tools
-      </a>
+      </button>
     </div>
   );
 }

@@ -1,11 +1,13 @@
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Target, Gamepad2, MessageSquarePlus, Layers } from 'lucide-react';
+import { Target, Gamepad2, MessageSquarePlus, Layers, Radio } from 'lucide-react';
 import BonusHuntsPage from './BonusHunts';
 import HuntTracker from '../components/HuntTracker';
 import SlotPicker from '../components/SlotPicker';
 import SuggestAdminTab from '../components/SuggestAdminTab';
+import Leaderboard from '../components/Leaderboard';
 
 const TOOLS = [
+  { id: 'leaderboard', label: 'Leaderboard', code: 'LB', icon: Radio },
   { id: 'hunt-tracker', label: 'Hunt Tracker', code: 'HT', icon: Target },
   { id: 'bonus-hunts', label: 'Bonus Hunts', code: 'BH', icon: Layers },
   { id: 'wheel', label: 'Slot Picker', code: 'SP', icon: Gamepad2 },
@@ -49,10 +51,10 @@ function ToolTab({ tool, active, onClick }) {
 export default function GambaPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const activeTool = location.pathname.split('/')[2] || 'wheel';
+  const activeTool = location.pathname.split('/')[2] || 'leaderboard';
   const setActiveTool = (tool) => navigate(`/gamba/${tool}`);
 
-  const activeMeta = TOOLS.find((t) => t.id === activeTool) || TOOLS[2];
+  const activeMeta = TOOLS.find((t) => t.id === activeTool) || TOOLS[0];
 
   return (
     <div className="pt-24 pb-16 px-4 sm:px-6">
@@ -132,6 +134,7 @@ export default function GambaPage() {
 
         {/* Tool surface — untouched, hosted in a plain container */}
         <div className="mt-6">
+          {activeTool === 'leaderboard' && <Leaderboard />}
           {activeTool === 'suggest' && <SuggestAdminTab />}
           {activeTool === 'bonus-hunts' && <BonusHuntsPage />}
           {activeTool === 'hunt-tracker' && <HuntTracker />}

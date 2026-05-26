@@ -36,7 +36,7 @@ function ChannelTab({ tool, channelNumber, active, onClick }) {
       role="tab"
       aria-selected={active}
       data-active={active}
-      className={`group relative flex items-center gap-2 px-3 sm:px-4 py-2 transition-colors duration-150 border-r border-white/8 last:border-r-0 flex-shrink-0 snap-start ${
+      className={`group relative flex items-center justify-center gap-2 px-3 lg:px-4 py-2 transition-colors duration-150 border-r border-white/8 last:border-r-0 flex-1 min-w-0 ${
         active
           ? 'bg-zinc-card text-white-body'
           : 'text-white/70 hover:text-white-body hover:bg-zinc-card/40'
@@ -115,7 +115,7 @@ function MobileChannelSheet({ open, activeId, onSelect, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex flex-col justify-end sm:hidden"
+      className="fixed inset-0 z-50 flex flex-col justify-end lg:hidden"
       role="dialog"
       aria-modal="true"
       aria-label="Switch channel"
@@ -271,19 +271,19 @@ export default function GambaPage() {
   return (
     <div className="pt-20 pb-16 px-4 sm:px-6">
       <div className="max-w-7xl mx-auto">
-        {/* Mobile — single tuner button */}
-        <div className="sm:hidden">
+        {/* Mobile/tablet — single tuner button */}
+        <div className="lg:hidden">
           <MobileChannelTrigger
             activeIndex={activeIndex}
             onOpen={() => setSheetOpen(true)}
           />
         </div>
 
-        {/* Tablet/desktop — scroll strip */}
-        <div className="hidden sm:block">
+        {/* Desktop — equal-width strip */}
+        <div className="hidden lg:block">
           <div
             ref={stripRef}
-            className="flex border border-white/8 bg-zinc-card/30 overflow-x-auto snap-x snap-mandatory [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex border border-white/8 bg-zinc-card/30"
             role="tablist"
             aria-label="Gamba tools"
           >

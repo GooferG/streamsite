@@ -59,18 +59,20 @@ function Wordmark({ onClick, onSecretActivate }) {
   );
 }
 
-function NavLink({ item, active, accent = 'emerald', onClick }) {
+function NavLink({ item, active, accent = 'emerald', onClick, size = 'md' }) {
   const accentDot =
     accent === 'orange' ? 'bg-orange-admin' : 'bg-emerald-signal';
+  const sizeCls =
+    size === 'lg' ? 'text-[18px]' : 'text-sm md:text-[15px]';
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className="group relative inline-flex items-center gap-2 py-1.5"
+      className="group relative inline-flex items-center gap-1.5 lg:gap-2 py-1.5"
     >
       <span
-        className={`text-[18px] font-bold tracking-tight transition-colors duration-200 whitespace-nowrap ${
+        className={`${sizeCls} font-bold tracking-tight transition-colors duration-200 whitespace-nowrap ${
           active
             ? 'text-white-body'
             : 'text-white/60 group-hover:text-white-body'
@@ -110,7 +112,7 @@ function ViewerAuthControl({ onNavigate }) {
       <button
         type="button"
         onClick={loginWithTwitch}
-        className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-gamba hover:bg-purple-bright text-white-body transition-colors duration-150"
+        className="inline-flex items-center gap-1.5 lg:gap-2 px-2 lg:px-3 py-1.5 bg-purple-gamba hover:bg-purple-bright text-white-body transition-colors duration-150 flex-shrink-0"
       >
         <svg
           viewBox="0 0 24 24"
@@ -212,14 +214,14 @@ export default function Navigation({ currentPage, setPage }) {
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 bg-zinc-broadcast/85 backdrop-blur-md border-b border-white/8">
-        <div className="w-full px-5 sm:px-8 py-3 flex items-center gap-6">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-3 flex items-center gap-3 md:gap-4 lg:gap-6">
           <Wordmark
             onClick={() => setPage('home')}
             onSecretActivate={() => setPage('admin')}
           />
 
-          {/* Desktop nav */}
-          <div className="hidden md:flex items-center gap-7 flex-1 justify-center">
+          {/* Desktop nav — centered, flexible mid */}
+          <div className="hidden md:flex items-center justify-center md:gap-3 lg:gap-5 flex-1 min-w-0">
             {NAV_ITEMS.map((item) => (
               <NavLink
                 key={item.id}
@@ -230,11 +232,11 @@ export default function Navigation({ currentPage, setPage }) {
             ))}
           </div>
 
-          {/* Right cluster: viewer auth + admin */}
-          <div className="hidden md:flex items-center gap-3 flex-shrink-0">
+          {/* Right cluster: viewer auth + admin — never shrinks */}
+          <div className="hidden md:flex items-center gap-2 lg:gap-3 flex-shrink-0">
             <ViewerAuthControl onNavigate={(id) => setPage(id)} />
             {isAdmin && (
-              <div className="pl-3 border-l border-white/10">
+              <div className="pl-2 lg:pl-3 border-l border-white/10">
                 <NavLink
                   item={ADMIN_ITEM}
                   active={currentPage === ADMIN_ITEM.id}

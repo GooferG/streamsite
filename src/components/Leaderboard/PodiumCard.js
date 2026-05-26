@@ -40,47 +40,47 @@ export default function PodiumCard({ player, tier }) {
           }}
         />
 
-        <div className="relative p-5 sm:p-6 flex flex-col gap-4 min-h-[13.5rem] sm:min-h-[15rem]">
+        <div className="relative p-4 sm:p-6 flex flex-col gap-3 sm:gap-4 sm:min-h-[15rem]">
           <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono">
             {palette.eyebrow}
           </div>
 
-          <div className="flex items-baseline gap-3 flex-wrap">
+          <div className="flex items-baseline gap-2.5 sm:gap-3 flex-wrap">
             <div className="relative">
               <span
-                className={`absolute -top-1 -left-0.5 text-4xl sm:text-5xl font-extrabold tabular-nums font-mono ${palette.positionGlow} leading-none select-none`}
+                className={`absolute -top-1 -left-0.5 text-3xl sm:text-5xl font-extrabold tabular-nums font-mono ${palette.positionGlow} leading-none select-none`}
                 aria-hidden="true"
               >
                 {formatPosition(player.position)}
               </span>
               <span
-                className={`relative text-4xl sm:text-5xl font-extrabold tabular-nums font-mono ${palette.accent} leading-none`}
+                className={`relative text-3xl sm:text-5xl font-extrabold tabular-nums font-mono ${palette.accent} leading-none`}
                 style={{ transform: 'translate(1px, -1px)' }}
               >
                 {formatPosition(player.position)}
               </span>
             </div>
-            <h3 className="font-display text-3xl sm:text-4xl tracking-tight text-white-body leading-[0.95] break-all uppercase">
+            <h3 className="font-display text-2xl sm:text-4xl tracking-tight text-white-body leading-[0.95] break-all uppercase">
               {player.maskedUsername}
             </h3>
             <WagerDropChip delta={player.delta} />
           </div>
 
           <div>
-            <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono mb-1">
+            <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono mb-0.5 sm:mb-1">
               WAGERED
             </div>
-            <div className={`text-2xl sm:text-3xl font-extrabold tabular-nums font-mono ${palette.accent} leading-none`}>
+            <div className={`text-xl sm:text-3xl font-extrabold tabular-nums font-mono ${palette.accent} leading-none`}>
               {formatUSD(player.wagered)}
             </div>
           </div>
 
-          <div className="mt-auto pt-3 border-t border-white/8 flex items-end justify-between gap-4">
+          <div className="mt-auto pt-2.5 sm:pt-3 border-t border-white/8 flex items-end justify-between gap-3 sm:gap-4">
             <div>
               <div className={`text-[10px] font-bold tracking-eyebrow-lg font-mono ${palette.accent}`} style={{ opacity: 0.8 }}>
                 PRIZE
               </div>
-              <div className={`text-xl sm:text-2xl font-extrabold tabular-nums font-mono leading-none ${palette.accent}`}>
+              <div className={`text-lg sm:text-2xl font-extrabold tabular-nums font-mono leading-none ${palette.accent}`}>
                 {formatUSD(player.prize)}
               </div>
             </div>

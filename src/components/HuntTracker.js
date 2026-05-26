@@ -507,8 +507,8 @@ export default function HuntTracker() {
                 No bonuses logged.
               </p>
             ) : (
-              <div className="border border-white/8 overflow-hidden">
-                <table className="w-full text-sm">
+              <div className="border border-white/8 overflow-x-auto [scrollbar-width:thin]">
+                <table className="w-full text-sm min-w-[480px]">
                   <thead>
                     <tr
                       className="border-b border-white/10 text-white/65 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono"
@@ -698,8 +698,8 @@ export default function HuntTracker() {
                   No squad added.
                 </p>
               ) : (
-                <div className="border border-white/8 overflow-hidden">
-                  <table className="w-full text-sm">
+                <div className="border border-white/8 overflow-x-auto [scrollbar-width:thin]">
+                  <table className="w-full text-sm min-w-[480px]">
                     <thead>
                       <tr
                         className="border-b border-white/10 text-white/65 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono"

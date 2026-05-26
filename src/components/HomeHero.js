@@ -98,9 +98,11 @@ function ChannelBug() {
 function StatePill({ isLive, viewers, loading }) {
   if (loading) {
     return (
-      <div className="inline-flex items-center gap-3 px-5 py-2 bg-white/5 border border-white/10 rounded-full backdrop-blur-sm opacity-0">
-        <span className="w-2 h-2 rounded-full bg-transparent" />
-        <span className="text-sm font-bold tracking-wider">TUNING</span>
+      <div className="inline-flex items-center gap-2.5 px-3 py-1.5 bg-white/5 border border-white/10 backdrop-blur-sm opacity-0">
+        <span className="w-1.5 h-1.5 bg-transparent" />
+        <span className="text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono">
+          Tuning
+        </span>
       </div>
     );
   }
@@ -110,36 +112,43 @@ function StatePill({ isLive, viewers, loading }) {
         href={SOCIAL_LINKS.twitch}
         target="_blank"
         rel="noopener noreferrer"
-        className="group inline-flex items-center gap-3 px-5 py-2 bg-emerald-signal/10 border border-emerald-signal/30 rounded-full backdrop-blur-sm hover:bg-emerald-signal/15 transition-colors duration-300"
+        className="group inline-flex items-stretch border border-emerald-signal/40 bg-emerald-signal/8 backdrop-blur-sm hover:bg-emerald-signal/15 transition-colors duration-300"
         aria-label="Open Goofer's live stream on Twitch"
       >
-        <span className="relative flex items-center justify-center w-2 h-2">
-          <span className="absolute inset-0 rounded-full bg-emerald-bright motion-safe:animate-ping opacity-60" />
-          <span className="relative w-2 h-2 rounded-full bg-emerald-bright" />
-        </span>
-        <span className="text-sm font-bold tracking-wider text-emerald-bright">
-          LIVE
+        <span className="flex items-center gap-2 px-3 py-1.5">
+          <span className="relative flex items-center justify-center w-1.5 h-1.5">
+            <span className="absolute inset-0 rounded-full bg-emerald-bright motion-safe:animate-ping opacity-60" />
+            <span className="relative w-1.5 h-1.5 rounded-full bg-emerald-bright" />
+          </span>
+          <span className="text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono text-emerald-bright">
+            On air
+          </span>
         </span>
         {viewers != null && (
-          <>
-            <span className="w-px h-3 bg-emerald-bright/40" />
-            <span className="inline-flex items-center gap-1.5 text-sm font-bold tracking-wider text-emerald-bright tabular-nums">
-              <Eye size={14} aria-hidden="true" />
-              {formatViewerCount(viewers)}
-            </span>
-          </>
+          <span className="flex items-center gap-1.5 px-3 py-1.5 border-l border-emerald-signal/30 text-[11px] font-bold tracking-eyebrow-md tabular-nums font-mono text-emerald-bright">
+            <Eye size={11} aria-hidden="true" />
+            {formatViewerCount(viewers)}
+          </span>
         )}
       </a>
     );
   }
   return (
     <div
-      className="inline-flex items-center gap-3 px-5 py-2 bg-white/5 border border-white/10 rounded-full backdrop-blur-sm"
+      className="inline-flex items-stretch border border-white/12 bg-white/3 backdrop-blur-sm"
       role="status"
     >
-      <span className="w-2 h-2 rounded-full bg-white/40" />
-      <span className="text-sm font-bold tracking-wider text-white/60">
-        OFF AIR
+      <span className="flex items-center gap-2 px-3 py-1.5 border-r border-white/10">
+        <span
+          className="w-1.5 h-1.5 bg-white/35"
+          aria-hidden="true"
+        />
+        <span className="text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono text-white/70">
+          Off air
+        </span>
+      </span>
+      <span className="flex items-center px-3 py-1.5 text-[10px] font-bold tracking-eyebrow-md uppercase font-mono text-white/40">
+        Signal dark
       </span>
     </div>
   );
@@ -462,12 +471,12 @@ export default function HomeHero({
         style={{ animation: 'glow 11s ease-in-out infinite 2s' }}
       />
 
-      <div className="relative z-10 pt-[140px] sm:pt-[160px] px-6 sm:px-10 flex items-center justify-between">
+      <div className="relative z-10 pt-[160px] px-4 sm:px-6 lg:px-8 flex items-center justify-between">
         <ChannelBug />
         <StatePill isLive={isLive} viewers={viewers} loading={loading} />
       </div>
 
-      <div className="relative z-10 flex-1 flex items-center justify-center px-6 sm:px-10 py-12 sm:py-16">
+      <div className="relative z-10 flex-1 flex items-center justify-center px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
         <div
           className={`transition-opacity duration-200 ease-out ${
             centerVisible ? 'opacity-100' : 'opacity-0'

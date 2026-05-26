@@ -1,5 +1,26 @@
 import { adminDb, FieldValue } from '../_lib/firebaseAdmin.js';
 import { applyCors, requireAdmin } from '../_lib/verifyAuth.js';
+import { sendChannelMessage } from '../_lib/twitchChat.js';
+
+// Substitute template tokens in announcement text. Unknown tokens are
+// left intact so the admin sees something is off.
+function fillTemplate(tmpl, vars) {
+  if (!tmpl) return '';
+  return String(tmpl).replace(/\{(\w+)\}/g, (m, k) =>
+    Object.prototype.hasOwnProperty.call(vars, k) ? String(vars[k] ?? '') : m
+  );
+}
+
+async function tryAnnounce(text) {
+  if (!text || !text.trim()) return { posted: false, reason: 'empty' };
+  try {
+    await sendChannelMessage(text);
+    return { posted: true };
+  } catch (err) {
+    console.error('chat announce failed', err);
+    return { posted: false, reason: err.message };
+  }
+}
 
 // Admin giveaway lifecycle endpoint. POST { action, ...payload }.
 //
@@ -83,12 +104,20 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'title, prize, keyword required' });
       }
       const weights = sanitizeWeights(payload.weights);
+      const announceStart = payload.announceStart !== false; // default true
+      const announceWinner = payload.announceWinner !== false; // default true
+      const startMessage = String(payload.startMessage || '').trim();
+      const winnerMessage = String(payload.winnerMessage || '').trim();
       const now = FieldValue.serverTimestamp();
       const ref = await adminDb.collection('giveaways').add({
         title,
         prize,
         keyword,
         weights,
+        announceStart,
+        announceWinner,
+        startMessage: startMessage || null,
+        winnerMessage: winnerMessage || null,
         status: 'open',
         entryCount: 0,
         totalWeight: 0,
@@ -102,7 +131,13 @@ export default async function handler(req, res) {
         createdAt: now,
         createdBy: admin.email,
       });
-      return res.status(200).json({ ok: true, id: ref.id });
+
+      let announce = { posted: false, reason: 'disabled' };
+      if (announceStart && startMessage) {
+        const text = fillTemplate(startMessage, { keyword, prize, title });
+        announce = await tryAnnounce(text);
+      }
+      return res.status(200).json({ ok: true, id: ref.id, announce });
     }
 
     // All other actions need an existing giveaway.
@@ -224,7 +259,18 @@ export default async function handler(req, res) {
         confirmedBy: admin.email,
         redemptionId: redemptionRef.id,
       });
-      return res.status(200).json({ ok: true, redemptionId: redemptionRef.id });
+
+      let announce = { posted: false, reason: 'disabled' };
+      if (giveaway.announceWinner !== false && giveaway.winnerMessage) {
+        const text = fillTemplate(giveaway.winnerMessage, {
+          keyword: giveaway.keyword,
+          prize: giveaway.prize,
+          title: giveaway.title,
+          winner: winner.displayName || winner.twitchName,
+        });
+        announce = await tryAnnounce(text);
+      }
+      return res.status(200).json({ ok: true, redemptionId: redemptionRef.id, announce });
     }
 
     if (action === 'delete') {

@@ -28,11 +28,19 @@ import GiveawayEntriesGrid from '../components/GiveawayEntriesGrid';
 const inputCls =
   'w-full bg-zinc-broadcast/60 border border-white/10 px-3 py-2.5 text-sm text-white-body placeholder:text-white/25 focus:border-orange-admin/70 focus:outline-none transition-colors duration-150';
 
+const DEFAULT_START_MSG =
+  '🎁 GIVEAWAY → Type "{keyword}" in chat to enter. Prize: {prize}';
+const DEFAULT_WINNER_MSG = '🎉 Winner: @{winner} won {prize}! GG!';
+
 const DEFAULT_FORM = {
   title: '',
   prize: '',
   keyword: '',
   weights: { base: 1, registered: 1, discord: 1, sub: 1, vip: 1, mod: 1 },
+  announceStart: true,
+  startMessage: DEFAULT_START_MSG,
+  announceWinner: true,
+  winnerMessage: DEFAULT_WINNER_MSG,
 };
 
 function formatTs(ts) {
@@ -93,7 +101,14 @@ function NewGiveawayForm({ onClose, onCreated }) {
       if (!res.ok) {
         setError(data.error || 'Failed to create.');
       } else {
-        onCreated(data.id);
+        // Bubble a warning if chat announce failed (giveaway still created)
+        if (data.announce && data.announce.posted === false &&
+            data.announce.reason && data.announce.reason !== 'disabled' &&
+            data.announce.reason !== 'empty') {
+          onCreated(data.id, { announceError: data.announce.reason });
+        } else {
+          onCreated(data.id);
+        }
       }
     } catch (err) {
       setError('Network error.');
@@ -201,6 +216,56 @@ function NewGiveawayForm({ onClose, onCreated }) {
             <p className="mt-2 text-[10px] tracking-eyebrow uppercase text-white/35 font-mono">
               Base entry weight is always 1. Toggles add +1 each.
             </p>
+          </div>
+
+          {/* Chat announcements */}
+          <div>
+            <p className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-2 font-mono">
+              <span className="text-orange-admin tabular-nums">05</span> Chat announcements
+              <span className="text-white/30 normal-case font-normal"> · vars: {'{keyword} {prize} {title} {winner}'}</span>
+            </p>
+            <div className="space-y-3">
+              {/* Start */}
+              <div className="border border-white/10 bg-zinc-broadcast/40 p-3 space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.announceStart}
+                    onChange={(e) => setForm((f) => ({ ...f, announceStart: e.target.checked }))}
+                  />
+                  <span className="text-[11px] font-bold tracking-eyebrow uppercase text-white/70 font-mono">
+                    Announce in chat when starting
+                  </span>
+                </label>
+                <textarea
+                  value={form.startMessage}
+                  onChange={(e) => setForm((f) => ({ ...f, startMessage: e.target.value }))}
+                  rows={2}
+                  disabled={!form.announceStart}
+                  className={`${inputCls} ${!form.announceStart ? 'opacity-40' : ''}`}
+                />
+              </div>
+              {/* Winner */}
+              <div className="border border-white/10 bg-zinc-broadcast/40 p-3 space-y-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={form.announceWinner}
+                    onChange={(e) => setForm((f) => ({ ...f, announceWinner: e.target.checked }))}
+                  />
+                  <span className="text-[11px] font-bold tracking-eyebrow uppercase text-white/70 font-mono">
+                    Announce winner in chat on confirm
+                  </span>
+                </label>
+                <textarea
+                  value={form.winnerMessage}
+                  onChange={(e) => setForm((f) => ({ ...f, winnerMessage: e.target.value }))}
+                  rows={2}
+                  disabled={!form.announceWinner}
+                  className={`${inputCls} ${!form.announceWinner ? 'opacity-40' : ''}`}
+                />
+              </div>
+            </div>
           </div>
 
           {error && (
@@ -314,7 +379,7 @@ function WinnerTimer({ rolledAt, firstMessageAt }) {
   );
 }
 
-function WinnerModal({ giveaway, onClose }) {
+function WinnerModal({ giveaway, onClose, onAnnounceError }) {
   const [busy, setBusy] = useState(null); // 'reroll' | 'skip' | 'confirm'
   const [messages, setMessages] = useState([]);
   const [prizeNote, setPrizeNote] = useState('');
@@ -348,6 +413,16 @@ function WinnerModal({ giveaway, onClose }) {
       if (!res.ok) {
         alert(`Action failed: ${data.error || res.status}`);
       } else if (action === 'confirm') {
+        if (
+          data.announce &&
+          data.announce.posted === false &&
+          data.announce.reason &&
+          data.announce.reason !== 'disabled' &&
+          data.announce.reason !== 'empty' &&
+          onAnnounceError
+        ) {
+          onAnnounceError(data.announce.reason);
+        }
         onClose();
       }
     } finally {
@@ -872,6 +947,13 @@ export default function AdminGiveawaysPage() {
   const [creating, setCreating] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
   const [activeRollingId, setActiveRollingId] = useState(null);
+  const [warning, setWarning] = useState(null);
+
+  useEffect(() => {
+    if (!warning) return undefined;
+    const t = setTimeout(() => setWarning(null), 8000);
+    return () => clearTimeout(t);
+  }, [warning]);
 
   useEffect(() => {
     const q = query(collection(db, 'giveaways'), orderBy('createdAt', 'desc'), fLimit(50));
@@ -993,13 +1075,40 @@ export default function AdminGiveawaysPage() {
       {creating && (
         <NewGiveawayForm
           onClose={() => setCreating(false)}
-          onCreated={(id) => {
+          onCreated={(id, meta) => {
             setCreating(false);
             setSelectedId(id);
+            if (meta?.announceError) {
+              setWarning(`Giveaway started, but chat announce failed: ${meta.announceError}`);
+            }
           }}
         />
       )}
-      {activeRolling && <WinnerModal giveaway={activeRolling} onClose={() => setActiveRollingId(null)} />}
+      {activeRolling && (
+        <WinnerModal
+          giveaway={activeRolling}
+          onClose={() => setActiveRollingId(null)}
+          onAnnounceError={(reason) =>
+            setWarning(`Winner confirmed, but chat announce failed: ${reason}`)
+          }
+        />
+      )}
+      {warning && (
+        <div className="fixed bottom-6 right-6 z-50 max-w-sm border border-orange-admin/60 bg-zinc-card/95 backdrop-blur px-4 py-3 shadow-lg">
+          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-orange-admin mb-1 font-mono">
+            Warning
+          </p>
+          <p className="text-sm text-white/80">{warning}</p>
+          <button
+            type="button"
+            onClick={() => setWarning(null)}
+            className="absolute top-1 right-2 text-white/40 hover:text-white-body text-xs font-mono"
+            aria-label="Dismiss"
+          >
+            ×
+          </button>
+        </div>
+      )}
     </div>
   );
 }

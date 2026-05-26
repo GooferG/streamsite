@@ -53,11 +53,14 @@ const REDIRECT_URI = 'http://localhost:8765/callback';
 // user:bot                 — required alongside user:read:chat for app-token
 //                            webhook subscriptions on channel.chat.message
 // channel:bot              — broadcaster authorizing app to read chat in their channel
+// user:write:chat          — needed to POST /chat/messages (announce giveaway start
+//                            and winner)
 const SCOPES = [
   'moderator:read:chatters',
   'user:read:chat',
   'user:bot',
   'channel:bot',
+  'user:write:chat',
 ];
 
 if (!CLIENT_ID || !CLIENT_SECRET) {

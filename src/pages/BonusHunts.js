@@ -19,6 +19,8 @@ import PredictionSlip from '../components/PredictionSlip';
 import PredictionWall from '../components/PredictionWall';
 import PredictionNumberLine from '../components/PredictionNumberLine';
 import PredictionWinnersReveal from '../components/PredictionWinnersReveal';
+import SuggestionSubmit from '../components/SuggestionSubmit';
+import SuggestionList from '../components/SuggestionList';
 
 async function fetchHunts() {
   const res = await fetch('/api/bonus-hunts?path=hunts');
@@ -295,10 +297,17 @@ function PredictionModeBanner({ round }) {
       : round.status === 'locked'
         ? 'text-orange-admin border-orange-admin/50'
         : 'text-white-body border-white/30';
-  const label =
-    round.status === 'open' ? 'PREDICTION · OPEN'
-      : round.status === 'locked' ? 'PREDICTION · LOCKED'
-      : 'PREDICTION · SETTLED';
+
+  const features = [
+    round.acceptPredictions && 'PREDICT',
+    round.acceptSuggestions && 'SUGGEST',
+  ].filter(Boolean).join(' + ') || 'HUNT';
+  const statusLabel =
+    round.status === 'open' ? 'OPEN'
+      : round.status === 'locked' ? 'LOCKED'
+      : 'SETTLED';
+  const label = `${features} · ${statusLabel}`;
+
   return (
     <div className={`flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border ${tone} bg-zinc-card/30 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono`}>
       <span className="inline-flex items-center gap-2">
@@ -320,8 +329,13 @@ function PredictionModeBanner({ round }) {
       </span>
       <span className="text-white/15">·</span>
       <span className="text-white/55 truncate max-w-[40ch]">{round.title}</span>
-      <span className="ml-auto text-white/40 tabular-nums">
-        {String(round.entryCount ?? 0).padStart(4, '0')} ENTRIES
+      <span className="ml-auto text-white/40 tabular-nums flex flex-wrap items-center gap-x-3 gap-y-1">
+        {round.acceptPredictions && (
+          <span>{String(round.entryCount ?? 0).padStart(4, '0')} ENTRIES</span>
+        )}
+        {round.acceptSuggestions && (
+          <span>{String(round.suggestionCount ?? 0).padStart(3, '0')} SUGG.</span>
+        )}
       </span>
     </div>
   );
@@ -332,7 +346,7 @@ function usePredictionRound() {
   useEffect(() => {
     // Most recent non-deleted round. Show settled rounds too (last result lingers).
     const q = query(
-      collection(db, 'prediction_rounds'),
+      collection(db, 'hunts'),
       orderBy('createdAt', 'desc'),
       fLimit(1)
     );
@@ -393,8 +407,8 @@ export default function BonusHuntsPage() {
     <div className="space-y-6">
       {round && <PredictionModeBanner round={round} />}
 
-      {/* PREDICTING mode — slip + wall hero, hunt widget compact */}
-      {mode === 'predicting' && (
+      {/* PREDICTING mode — slip + wall hero (only if predictions enabled) */}
+      {mode === 'predicting' && round?.acceptPredictions && (
         <>
           <PredictionSlip round={round} />
           <PredictionNumberLine round={round} />
@@ -402,9 +416,8 @@ export default function BonusHuntsPage() {
         </>
       )}
 
-      {/* OPENING mode (predictions locked, hunt is being opened) — slip shows
-          locked stamp, hunt widget below is the hero. */}
-      {mode === 'opening' && (
+      {/* OPENING mode (predictions locked, hunt is being opened) */}
+      {mode === 'opening' && round?.acceptPredictions && (
         <>
           <PredictionSlip round={round} />
           <PredictionWall round={round} />
@@ -412,12 +425,20 @@ export default function BonusHuntsPage() {
       )}
 
       {/* SETTLED mode — winners hero */}
-      {mode === 'settled' && (
+      {mode === 'settled' && round?.acceptPredictions && (
         <>
           <PredictionWinnersReveal round={round} />
           <PredictionNumberLine round={round} />
           <PredictionWall round={round} />
           <PredictionSlip round={round} />
+        </>
+      )}
+
+      {/* Suggestion sections — render whenever the hunt accepts suggestions */}
+      {round?.acceptSuggestions && (
+        <>
+          <SuggestionSubmit hunt={round} />
+          <SuggestionList huntId={round.id} adminMode={false} />
         </>
       )}
 

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { db } from '../config/firebase';
 import { authedFetch } from '../utils/authedFetch';
+import SuggestionList from '../components/SuggestionList';
 
 const inputCls =
   'w-full bg-zinc-broadcast/60 border border-white/10 px-3 py-2.5 text-sm text-white-body placeholder:text-white/25 focus:border-orange-admin/70 focus:outline-none transition-colors duration-150';
@@ -43,6 +44,9 @@ function formatCurrency(val) {
 const DEFAULT_FORM = () => ({
   title: '',
   contextNote: '',
+  acceptPredictions: true,
+  acceptSuggestions: false,
+  suggestionCap: 3,
   kinds: { payout: true, topSlot: false },
   source: 'bonushunt',
   manualSlots: '',
@@ -81,7 +85,7 @@ function NewRoundModal({ onClose, onCreated }) {
     setPreviewing(true);
     setPreviewError(null);
     try {
-      const res = await authedFetch('/api/admin/predictions', {
+      const res = await authedFetch('/api/admin/hunts', {
         method: 'POST',
         body: JSON.stringify({ action: 'preview_hunt' }),
       });
@@ -108,7 +112,10 @@ function NewRoundModal({ onClose, onCreated }) {
     e.preventDefault();
     setError(null);
     if (!form.title.trim()) return setError('Title required');
-    if (!form.kinds.payout && !form.kinds.topSlot) {
+    if (!form.acceptPredictions && !form.acceptSuggestions) {
+      return setError('Enable predictions or suggestions');
+    }
+    if (form.acceptPredictions && !form.kinds.payout && !form.kinds.topSlot) {
       return setError('At least one prediction kind');
     }
     const rewards = {
@@ -128,17 +135,20 @@ function NewRoundModal({ onClose, onCreated }) {
 
     setSubmitting(true);
     try {
-      const res = await authedFetch('/api/admin/predictions', {
+      const res = await authedFetch('/api/admin/hunts', {
         method: 'POST',
         body: JSON.stringify({
           action: 'create',
           title: form.title,
           contextNote: form.contextNote,
+          acceptPredictions: form.acceptPredictions,
+          acceptSuggestions: form.acceptSuggestions,
+          suggestionCap: form.acceptSuggestions ? form.suggestionCap : 0,
           kinds: form.kinds,
           source: form.source,
           manualSlots: form.source === 'manual' ? form.manualSlots : null,
           manualTotalCost: form.source === 'manual' ? form.manualTotalCost : null,
-          rewards,
+          rewards: form.acceptPredictions ? rewards : { type: 'tickets', tiers: [] },
         }),
       });
       const data = await res.json();
@@ -263,41 +273,102 @@ function NewRoundModal({ onClose, onCreated }) {
             )}
           </div>
 
-          {/* Kinds */}
+          {/* Features */}
           <div>
             <p className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
-              <span className="text-orange-admin tabular-nums">04</span> Prediction kinds
+              <span className="text-orange-admin tabular-nums">04</span> Features
             </p>
-            <div className="flex gap-2 flex-wrap">
+            <div className="space-y-2">
               <button
                 type="button"
-                onClick={() => set('kinds.payout', !form.kinds.payout)}
-                className={`px-3 py-2 border text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors duration-150 ${
-                  form.kinds.payout
-                    ? 'border-emerald-signal/50 bg-emerald-signal/10 text-emerald-signal'
-                    : 'border-white/15 text-white/55 hover:text-white-body'
+                onClick={() => set('acceptPredictions', !form.acceptPredictions)}
+                className={`w-full flex items-center justify-between gap-3 px-3 py-2 border transition-colors duration-150 ${
+                  form.acceptPredictions
+                    ? 'border-emerald-signal/40 bg-emerald-signal/5 text-white-body'
+                    : 'border-white/10 bg-zinc-broadcast/40 text-white/50 hover:text-white-body'
                 }`}
               >
-                Final payout
+                <span className="flex items-center gap-2 text-[11px] font-bold tracking-eyebrow uppercase font-mono">
+                  <span className={`w-1.5 h-1.5 rounded-full ${form.acceptPredictions ? 'bg-emerald-signal' : 'bg-white/25'}`} />
+                  Predictions <span className="text-white/30 normal-case font-normal text-[10px]">viewers guess outcome</span>
+                </span>
+                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  {form.acceptPredictions ? 'ON' : 'OFF'}
+                </span>
               </button>
               <button
                 type="button"
-                onClick={() => set('kinds.topSlot', !form.kinds.topSlot)}
-                className={`px-3 py-2 border text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors duration-150 ${
-                  form.kinds.topSlot
-                    ? 'border-emerald-signal/50 bg-emerald-signal/10 text-emerald-signal'
-                    : 'border-white/15 text-white/55 hover:text-white-body'
+                onClick={() => set('acceptSuggestions', !form.acceptSuggestions)}
+                className={`w-full flex items-center justify-between gap-3 px-3 py-2 border transition-colors duration-150 ${
+                  form.acceptSuggestions
+                    ? 'border-emerald-signal/40 bg-emerald-signal/5 text-white-body'
+                    : 'border-white/10 bg-zinc-broadcast/40 text-white/50 hover:text-white-body'
                 }`}
               >
-                Top slot
+                <span className="flex items-center gap-2 text-[11px] font-bold tracking-eyebrow uppercase font-mono">
+                  <span className={`w-1.5 h-1.5 rounded-full ${form.acceptSuggestions ? 'bg-emerald-signal' : 'bg-white/25'}`} />
+                  Slot suggestions <span className="text-white/30 normal-case font-normal text-[10px]">viewers nominate slots</span>
+                </span>
+                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  {form.acceptSuggestions ? 'ON' : 'OFF'}
+                </span>
               </button>
+              {form.acceptSuggestions && (
+                <label className="block mt-2 pl-3 border-l-2 border-emerald-signal/30">
+                  <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1 font-mono">
+                    Per-viewer cap <span className="text-white/30 normal-case font-normal">· max suggestions each viewer can submit</span>
+                  </span>
+                  <input
+                    type="number"
+                    min="1"
+                    max="20"
+                    value={form.suggestionCap}
+                    onChange={(e) => set('suggestionCap', Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
+                    className={inputCls}
+                  />
+                </label>
+              )}
             </div>
           </div>
 
-          {/* Rewards */}
+          {/* Kinds (only if predictions enabled) */}
+          {form.acceptPredictions && (
+            <div>
+              <p className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+                <span className="text-orange-admin tabular-nums">05</span> Prediction kinds
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => set('kinds.payout', !form.kinds.payout)}
+                  className={`px-3 py-2 border text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors duration-150 ${
+                    form.kinds.payout
+                      ? 'border-emerald-signal/50 bg-emerald-signal/10 text-emerald-signal'
+                      : 'border-white/15 text-white/55 hover:text-white-body'
+                  }`}
+                >
+                  Final payout
+                </button>
+                <button
+                  type="button"
+                  onClick={() => set('kinds.topSlot', !form.kinds.topSlot)}
+                  className={`px-3 py-2 border text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors duration-150 ${
+                    form.kinds.topSlot
+                      ? 'border-emerald-signal/50 bg-emerald-signal/10 text-emerald-signal'
+                      : 'border-white/15 text-white/55 hover:text-white-body'
+                  }`}
+                >
+                  Top slot
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Rewards (only if predictions enabled) */}
+          {form.acceptPredictions && (
           <div>
             <p className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
-              <span className="text-orange-admin tabular-nums">05</span> Rewards
+              <span className="text-orange-admin tabular-nums">06</span> Rewards
             </p>
             <div className="flex gap-2 mb-3">
               {['tickets', 'cash', 'both'].map((t) => (
@@ -384,6 +455,7 @@ function NewRoundModal({ onClose, onCreated }) {
               </div>
             )}
           </div>
+          )}
 
           {error && (
             <p className="text-[11px] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">{error}</p>
@@ -426,7 +498,7 @@ function SettleModal({ round, onClose, onSettled }) {
     }
     setSubmitting(true);
     try {
-      const res = await authedFetch('/api/admin/predictions', {
+      const res = await authedFetch('/api/admin/hunts', {
         method: 'POST',
         body: JSON.stringify({
           action: 'settle',
@@ -510,7 +582,12 @@ function RoundRow({ round, onOpen }) {
       <div className="min-w-0">
         <p className="font-bold text-white-body text-sm truncate">{round.title}</p>
         <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5">
-          {[round.kinds?.payout && 'PAYOUT', round.kinds?.topSlot && 'TOP-SLOT'].filter(Boolean).join(' + ')} · {round.source} · {formatTs(round.createdAt)}
+          {[
+            round.acceptPredictions && (round.kinds?.payout || round.kinds?.topSlot)
+              ? `PREDICT (${[round.kinds?.payout && 'payout', round.kinds?.topSlot && 'top-slot'].filter(Boolean).join('+')})`
+              : null,
+            round.acceptSuggestions && `SUGGEST`,
+          ].filter(Boolean).join(' + ')} · {round.source} · {formatTs(round.createdAt)}
         </p>
       </div>
       <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono tabular-nums">
@@ -529,7 +606,7 @@ function RoundDetail({ round, onBack }) {
   const act = async (action) => {
     setBusy(action);
     try {
-      const res = await authedFetch('/api/admin/predictions', {
+      const res = await authedFetch('/api/admin/hunts', {
         method: 'POST',
         body: JSON.stringify({ action, id: round.id }),
       });
@@ -557,7 +634,7 @@ function RoundDetail({ round, onBack }) {
         <div className="pointer-events-none absolute -top-32 -right-24 w-96 h-96 rounded-full bg-orange-admin/15 blur-3xl motion-reduce:hidden" aria-hidden="true" />
         <div className="relative px-6 sm:px-8 py-7">
           <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-orange-admin mb-2 font-mono">
-            ▸ Prediction round
+            ▸ Community hunt
           </p>
           <p
             className="font-black text-white-body leading-[0.9] tracking-[-0.03em]"
@@ -570,35 +647,55 @@ function RoundDetail({ round, onBack }) {
           </p>
           {round.contextNote && <p className="mt-2 text-sm text-white/55">{round.contextNote}</p>}
           <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] font-bold tracking-eyebrow-md uppercase font-mono">
-            <span className="text-white/55">Kinds <span className="text-emerald-signal">{[round.kinds?.payout && 'payout', round.kinds?.topSlot && 'top-slot'].filter(Boolean).join(' + ')}</span></span>
+            <span className="text-white/55">
+              Features{' '}
+              <span className="text-emerald-signal">
+                {[
+                  round.acceptPredictions && 'predictions',
+                  round.acceptSuggestions && 'suggestions',
+                ].filter(Boolean).join(' + ') || 'none'}
+              </span>
+            </span>
             <span className="text-white/15">·</span>
             <span className="text-white/55">Source <span className="text-white-body">{round.source}</span></span>
-            <span className="text-white/15">·</span>
-            <span className="text-white/55">Entries <span className="text-white-body tabular-nums">{round.entryCount ?? 0}</span></span>
+            {round.acceptPredictions && (
+              <>
+                <span className="text-white/15">·</span>
+                <span className="text-white/55">Entries <span className="text-white-body tabular-nums">{round.entryCount ?? 0}</span></span>
+              </>
+            )}
+            {round.acceptSuggestions && (
+              <>
+                <span className="text-white/15">·</span>
+                <span className="text-white/55">Suggestions <span className="text-white-body tabular-nums">{round.suggestionCount ?? 0}</span></span>
+                <span className="text-white/15">·</span>
+                <span className="text-white/55">Cap <span className="text-white-body tabular-nums">{round.suggestionCap ?? 3}</span></span>
+              </>
+            )}
           </div>
         </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
-        {round.status === 'open' && (
+        {round.acceptPredictions && round.status === 'open' && (
           <button type="button" onClick={() => act('lock')} disabled={!!busy} className="inline-flex items-center gap-2 px-3.5 py-2 border border-white/15 text-white/70 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-50">
             <Lock size={13} aria-hidden="true" />
             <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">{busy === 'lock' ? 'Locking…' : 'Lock entries'}</span>
           </button>
         )}
-        {round.status === 'locked' && (
+        {round.acceptPredictions && round.status === 'locked' && (
           <button type="button" onClick={() => act('reopen')} disabled={!!busy} className="inline-flex items-center gap-2 px-3.5 py-2 border border-white/15 text-white/70 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-50">
             <Unlock size={13} aria-hidden="true" />
             <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">{busy === 'reopen' ? 'Reopening…' : 'Reopen'}</span>
           </button>
         )}
-        {['open', 'locked'].includes(round.status) && (
+        {round.acceptPredictions && ['open', 'locked'].includes(round.status) && (
           <button type="button" onClick={() => setSettling(true)} disabled={!!busy} className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-30">
             <Trophy size={13} aria-hidden="true" />
             <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Settle & reveal</span>
           </button>
         )}
-        {round.status === 'settled' && round.winners?.[0] && (
+        {round.acceptPredictions && round.status === 'settled' && round.winners?.[0] && (
           <div className="inline-flex items-center gap-2 px-3 py-2 border border-emerald-signal/40 bg-emerald-signal/5 text-emerald-signal text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
             <Trophy size={12} aria-hidden="true" />
             1st: {round.winners[0].displayName}
@@ -617,6 +714,10 @@ function RoundDetail({ round, onBack }) {
         )}
       </div>
 
+      {round.acceptSuggestions && (
+        <SuggestionList huntId={round.id} adminMode />
+      )}
+
       {settling && (
         <SettleModal
           round={round}
@@ -628,13 +729,13 @@ function RoundDetail({ round, onBack }) {
   );
 }
 
-export default function AdminPredictionsPage() {
+export default function AdminHuntsPage() {
   const [list, setList] = useState([]);
   const [creating, setCreating] = useState(false);
   const [selectedId, setSelectedId] = useState(null);
 
   useEffect(() => {
-    const q = query(collection(db, 'prediction_rounds'), orderBy('createdAt', 'desc'), fLimit(50));
+    const q = query(collection(db, 'hunts'), orderBy('createdAt', 'desc'), fLimit(50));
     const unsub = onSnapshot(q, (snap) => {
       setList(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
@@ -654,18 +755,18 @@ export default function AdminPredictionsPage() {
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
-            <span>PREDICTIONS</span>
+            <span>HUNTS</span>
           </span>
           <span className="text-white/20">·</span>
           <span>MODULE</span>
-          <span className="text-white/70 tracking-eyebrow-lg">PRD</span>
+          <span className="text-white/70 tracking-eyebrow-lg">HNT</span>
         </div>
         <h1
           className="font-black leading-[0.85] tracking-[-0.035em] text-white-body"
           style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: 'clamp(2.25rem, 6vw, 3.25rem)' }}
         >
-          <span className="block">Bonus hunt</span>
-          <span className="block text-orange-admin">predictions.</span>
+          <span className="block">Community</span>
+          <span className="block text-orange-admin">hunts.</span>
         </h1>
       </header>
 

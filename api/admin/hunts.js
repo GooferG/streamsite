@@ -1,11 +1,11 @@
 import { adminDb, FieldValue } from '../_lib/firebaseAdmin.js';
 import { applyCors, requireAdmin } from '../_lib/verifyAuth.js';
 
-// Admin prediction round lifecycle: create / lock / settle / delete.
-// POST { action, ...payload }
+// Admin hunt lifecycle. A "hunt" can have prediction and/or suggestion
+// features enabled. Predictions follow the same lifecycle as the old
+// prediction_rounds collection (open -> locked -> settled).
 //
-// Reused data:
-//   - bonushunt.gg snapshot (from existing bonus-hunts.gg public API)
+// POST { action, ...payload }
 
 const BONUSHUNT_API = 'https://bonushunt.gg/api/public';
 const BONUSHUNT_KEY = process.env.BONUSHUNT_API_KEY ||
@@ -18,9 +18,6 @@ async function fetchCurrentHunt() {
   if (!r.ok) throw new Error(`BONUSHUNT_${r.status}`);
   const data = await r.json();
   const list = Array.isArray(data) ? data : data.hunts ?? data.data ?? [];
-  // Pick the most recent hunt that's in-progress (not yet fully opened) OR
-  // the most recently created. Real-world: streamer's latest is usually the
-  // one they want.
   list.sort(
     (a, b) =>
       new Date(b.created_at ?? b.createdAt ?? 0) -
@@ -69,8 +66,6 @@ function sanitizeRewards(input) {
   const tiers = Array.isArray(input?.tiers)
     ? input.tiers.map(sanitizeTier).filter(Boolean)
     : [];
-  // Always have at least 1st and 2nd present; default each to zero tickets if
-  // missing so we don't crash on settle. Admin is expected to fill these.
   const places = new Set(tiers.map((t) => t.place));
   if (!places.has(1)) tiers.push({ place: 1, tickets: 0, cashLabel: null });
   if (!places.has(2)) tiers.push({ place: 2, tickets: 0, cashLabel: null });
@@ -79,17 +74,6 @@ function sanitizeRewards(input) {
 }
 
 function pickWinners(entries, round) {
-  // entries: full list of entry docs
-  // round.actual: { payout, topSlotName }
-  // round.kinds: { payout, topSlot }
-  // round.rewards.tiers: list of { place }
-  //
-  // For each kind, rank entries by distance / match. We award places 1..N
-  // based on how many tiers exist. If both kinds are enabled, we score by
-  // a combined rank: rank-sum, lower is better.
-  //
-  // Ties broken by earliest `submittedAt`.
-
   const kinds = round.kinds || {};
   const actual = round.actual || {};
   const tierPlaces = (round.rewards?.tiers || [])
@@ -108,7 +92,6 @@ function pickWinners(entries, round) {
     return { ...e, payoutDiff, topSlotMatch };
   });
 
-  // Sort comparator — earliest submittedAt is the tiebreaker.
   const tieBreak = (a, b) => {
     const aMs = a.submittedAt?.toMillis ? a.submittedAt.toMillis() : 0;
     const bMs = b.submittedAt?.toMillis ? b.submittedAt.toMillis() : 0;
@@ -117,8 +100,6 @@ function pickWinners(entries, round) {
 
   let ranked;
   if (kinds.payout && kinds.topSlot) {
-    // Combined: top-slot matches go first (sorted by payout diff among them,
-    // then non-matches by payout diff). Within ties, earliest wins.
     ranked = [...enriched].sort((a, b) => {
       const matchOrder = (b.topSlotMatch ? 1 : 0) - (a.topSlotMatch ? 1 : 0);
       if (matchOrder !== 0) return matchOrder;
@@ -144,9 +125,6 @@ function pickWinners(entries, round) {
     ranked = [];
   }
 
-  // Take top N where N = tier count, but only viable picks. For payout: every
-  // entry is viable. For topSlot only: only entries that matched. For combined:
-  // we keep order but exclude entries with neither match nor a payout guess.
   const viable = ranked.filter((e) => {
     if (kinds.payout && typeof e.payoutDiff === 'number') return true;
     if (kinds.topSlot && e.topSlotMatch) return true;
@@ -168,7 +146,6 @@ export default async function handler(req, res) {
 
   try {
     if (action === 'preview_hunt') {
-      // Helper for the create modal to show what the snapshot will be.
       const hunt = await fetchCurrentHunt();
       if (!hunt) return res.status(404).json({ error: 'NO_CURRENT_HUNT' });
       return res.status(200).json({ ok: true, snapshot: snapshotHunt(hunt) });
@@ -179,13 +156,28 @@ export default async function handler(req, res) {
       const contextNote = String(payload.contextNote || '').trim() || null;
       if (!title) return res.status(400).json({ error: 'title required' });
 
-      const kinds = {
-        payout: !!payload.kinds?.payout,
-        topSlot: !!payload.kinds?.topSlot,
-      };
-      if (!kinds.payout && !kinds.topSlot) {
+      const acceptPredictions = payload.acceptPredictions !== false;
+      const acceptSuggestions = !!payload.acceptSuggestions;
+      if (!acceptPredictions && !acceptSuggestions) {
+        return res.status(400).json({ error: 'enable predictions or suggestions' });
+      }
+
+      const kinds = acceptPredictions
+        ? {
+            payout: !!payload.kinds?.payout,
+            topSlot: !!payload.kinds?.topSlot,
+          }
+        : { payout: false, topSlot: false };
+      if (acceptPredictions && !kinds.payout && !kinds.topSlot) {
         return res.status(400).json({ error: 'at least one prediction kind required' });
       }
+
+      const suggestionCapRaw = Number(payload.suggestionCap);
+      const suggestionCap = acceptSuggestions
+        ? (Number.isInteger(suggestionCapRaw) && suggestionCapRaw >= 1
+            ? Math.min(20, suggestionCapRaw)
+            : 3)
+        : 0;
 
       const source = payload.source === 'manual' ? 'manual' : 'bonushunt';
       let bonusHuntSnapshot = null;
@@ -214,19 +206,28 @@ export default async function handler(req, res) {
       const rewards = sanitizeRewards(payload.rewards);
       const now = FieldValue.serverTimestamp();
 
-      const ref = await adminDb.collection('prediction_rounds').add({
+      const ref = await adminDb.collection('hunts').add({
         title,
         contextNote,
-        kinds,
+        // Feature flags
+        acceptPredictions,
+        acceptSuggestions,
+        suggestionCap,
+        // Source data
         source,
         bonusHuntSnapshot,
         manualSlots,
         manualTotalCost,
+        // Prediction config
+        kinds,
         rewards,
+        // Prediction lifecycle state
         status: 'open',
         entryCount: 0,
+        suggestionCount: 0,
         actual: null,
         winners: [],
+        // Timestamps
         openedAt: now,
         lockedAt: null,
         settledAt: null,
@@ -236,34 +237,37 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, id: ref.id });
     }
 
-    // All other actions need an existing round.
+    // All other actions need an existing hunt.
     const { id } = payload;
     if (!id) return res.status(400).json({ error: 'Missing id' });
-    const ref = adminDb.collection('prediction_rounds').doc(id);
+    const ref = adminDb.collection('hunts').doc(id);
     const snap = await ref.get();
     if (!snap.exists) return res.status(404).json({ error: 'NOT_FOUND' });
     const round = snap.data();
 
     if (action === 'lock') {
+      if (!round.acceptPredictions) {
+        return res.status(400).json({ error: 'PREDICTIONS_DISABLED' });
+      }
       if (round.status !== 'open') return res.status(400).json({ error: 'NOT_OPEN' });
       await ref.update({ status: 'locked', lockedAt: FieldValue.serverTimestamp() });
       return res.status(200).json({ ok: true });
     }
 
     if (action === 'reopen') {
-      // Edge case: streamer locked too early. Allow re-open while not settled.
       if (round.status !== 'locked') return res.status(400).json({ error: 'NOT_LOCKED' });
       await ref.update({ status: 'open', lockedAt: null });
       return res.status(200).json({ ok: true });
     }
 
     if (action === 'settle') {
+      if (!round.acceptPredictions) {
+        return res.status(400).json({ error: 'PREDICTIONS_DISABLED' });
+      }
       if (!['open', 'locked'].includes(round.status)) {
         return res.status(400).json({ error: 'NOT_SETTLEABLE' });
       }
-      const actualPayout = round.kinds.payout
-        ? Number(payload.actualPayout)
-        : null;
+      const actualPayout = round.kinds.payout ? Number(payload.actualPayout) : null;
       const actualTopSlot = round.kinds.topSlot
         ? String(payload.actualTopSlotName || '').trim() || null
         : null;
@@ -274,7 +278,6 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'actualTopSlotName required' });
       }
 
-      // Load all entries.
       const entriesSnap = await ref.collection('entries').get();
       const entries = entriesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
@@ -284,7 +287,6 @@ export default async function handler(req, res) {
       };
       const placements = pickWinners(entries, updatedRound);
 
-      // Build winners list + distribute rewards.
       const winners = [];
       const now = FieldValue.serverTimestamp();
       const batch = adminDb.batch();
@@ -312,7 +314,6 @@ export default async function handler(req, res) {
           redemptionId: null,
         };
 
-        // Distribute tickets immediately if tier specifies them.
         if (tier?.tickets && tier.tickets > 0) {
           const userRef = adminDb.collection('users').doc(e.twitchId);
           batch.update(userRef, {
@@ -331,7 +332,6 @@ export default async function handler(req, res) {
           });
         }
 
-        // Create cash redemption if tier specifies cash.
         if (tier?.cashLabel) {
           const redemptionRef = adminDb.collection('redemptions').doc();
           batch.set(redemptionRef, {
@@ -346,6 +346,7 @@ export default async function handler(req, res) {
             status: 'pending',
             note: tier.cashLabel,
             predictionRoundId: id,
+            huntId: id,
             createdAt: now,
             fulfilledAt: null,
           });
@@ -367,13 +368,16 @@ export default async function handler(req, res) {
     }
 
     if (action === 'delete') {
-      // Hard delete round + entries subcollection.
-      const subSnap = await ref.collection('entries').get();
-      if (!subSnap.empty) {
-        for (let i = 0; i < subSnap.docs.length; i += 400) {
-          const b = adminDb.batch();
-          subSnap.docs.slice(i, i + 400).forEach((d) => b.delete(d.ref));
-          await b.commit();
+      // Hard delete hunt + entries + suggestions subcollections.
+      const subcols = ['entries', 'suggestions'];
+      for (const sub of subcols) {
+        const subSnap = await ref.collection(sub).get();
+        if (!subSnap.empty) {
+          for (let i = 0; i < subSnap.docs.length; i += 400) {
+            const b = adminDb.batch();
+            subSnap.docs.slice(i, i + 400).forEach((d) => b.delete(d.ref));
+            await b.commit();
+          }
         }
       }
       await ref.delete();
@@ -382,7 +386,7 @@ export default async function handler(req, res) {
 
     return res.status(400).json({ error: 'UNKNOWN_ACTION' });
   } catch (err) {
-    console.error('predictions admin error', err);
+    console.error('hunts admin error', err);
     return res.status(500).json({ error: 'INTERNAL', detail: err.message });
   }
 }

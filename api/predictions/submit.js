@@ -17,7 +17,7 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing roundId' });
   }
 
-  const roundRef = adminDb.collection('prediction_rounds').doc(roundId);
+  const roundRef = adminDb.collection('hunts').doc(roundId);
   const entryRef = roundRef.collection('entries').doc(twitchId);
   const userRef = adminDb.collection('users').doc(twitchId);
 
@@ -30,6 +30,7 @@ export default async function handler(req, res) {
       ]);
       if (!roundSnap.exists) throw new Error('NOT_FOUND');
       const round = roundSnap.data();
+      if (!round.acceptPredictions) throw new Error('PREDICTIONS_DISABLED');
       if (round.status !== 'open') throw new Error('NOT_OPEN');
 
       const { kinds } = round;
@@ -106,6 +107,7 @@ export default async function handler(req, res) {
     const code = err.message;
     if (code === 'NOT_FOUND') return res.status(404).json({ error: 'NOT_FOUND' });
     if (code === 'NOT_OPEN') return res.status(400).json({ error: 'NOT_OPEN' });
+    if (code === 'PREDICTIONS_DISABLED') return res.status(400).json({ error: 'PREDICTIONS_DISABLED' });
     if (code === 'INVALID_PAYOUT') return res.status(400).json({ error: 'INVALID_PAYOUT' });
     if (code === 'INVALID_SLOT') return res.status(400).json({ error: 'INVALID_SLOT' });
     if (code === 'SLOT_NOT_IN_LIST') return res.status(400).json({ error: 'SLOT_NOT_IN_LIST' });

@@ -26,7 +26,7 @@ import AdminStorePage from './pages/AdminStorePage';
 import AdminRedemptionsPage from './pages/AdminRedemptionsPage';
 import AdminTicketsPage from './pages/AdminTicketsPage';
 import AdminGiveawaysPage from './pages/AdminGiveawaysPage';
-import AdminPredictionsPage from './pages/AdminPredictionsPage';
+import AdminHuntsPage from './pages/AdminHuntsPage';
 import StorePage from './pages/StorePage';
 import GiveawayPage from './pages/GiveawayPage';
 import MyAccountPage from './pages/MyAccountPage';
@@ -142,6 +142,31 @@ function StreamingSiteContent() {
     return () => document.body.classList.remove('brand-route');
   }, [location.pathname]);
 
+  useEffect(() => {
+    const KONAMI = [
+      'ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
+      'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight',
+      'KeyB', 'KeyA',
+    ];
+    let buffer = [];
+    const onKey = (e) => {
+      const next = [...buffer, e.code];
+      const expected = KONAMI.slice(0, next.length);
+      const matches = next.every((c, i) => c === expected[i]);
+      if (!matches) {
+        buffer = KONAMI[0] === e.code ? [e.code] : [];
+        return;
+      }
+      buffer = next;
+      if (buffer.length === KONAMI.length) {
+        buffer = [];
+        navigate('/admin');
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [navigate]);
+
   return (
     <div className="min-h-screen bg-zinc-broadcast text-white-body">
       {showTVIntro && <TVStaticIntro onComplete={handleIntroComplete} />}
@@ -204,7 +229,7 @@ function StreamingSiteContent() {
             <Route path="redemptions" element={<AdminRedemptionsPage />} />
             <Route path="tickets" element={<AdminTicketsPage />} />
             <Route path="giveaways" element={<AdminGiveawaysPage />} />
-            <Route path="predictions" element={<AdminPredictionsPage />} />
+            <Route path="hunts" element={<AdminHuntsPage />} />
           </Route>
           <Route path="/store" element={<StorePage />} />
           <Route path="/giveaway" element={<GiveawayPage />} />

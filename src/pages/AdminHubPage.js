@@ -12,8 +12,10 @@ import {
   AlertTriangle,
   X,
   Users,
+  ShieldCheck,
 } from 'lucide-react';
 import { authedFetch } from '../utils/authedFetch';
+import { useAuth } from '../contexts/AuthContext';
 
 const HUB_CARDS = [
   {
@@ -37,6 +39,7 @@ const HUB_CARDS = [
     icon: Store,
     code: 'STR',
     title: 'Store catalog',
+    ownerOnly: true,
     description:
       'Create and edit ticket-store items. Virtual items auto-grant; stream items go to the redemption queue.',
   },
@@ -79,6 +82,15 @@ const HUB_CARDS = [
     title: 'Users',
     description:
       'Dashboard of every signed-in viewer. See tickets, Discord linkage, giveaway entries, hunt predictions, slot suggestions, and recent ledger activity.',
+  },
+  {
+    to: '/admin/moderators',
+    icon: ShieldCheck,
+    code: 'MOD',
+    title: 'Moderators',
+    ownerOnly: true,
+    description:
+      'Add or remove trusted Twitch accounts who can help run giveaways, fulfill redemptions, and manage hunts.',
   },
 ];
 
@@ -313,7 +325,10 @@ function ResetModal({ onClose }) {
 
 export default function AdminHubPage() {
   const navigate = useNavigate();
+  const { isOwner, role } = useAuth();
   const [resetOpen, setResetOpen] = useState(false);
+
+  const visibleCards = HUB_CARDS.filter((c) => !c.ownerOnly || isOwner);
 
   return (
     <div className="p-6 sm:p-8 max-w-4xl mx-auto">
@@ -325,8 +340,10 @@ export default function AdminHubPage() {
             <span>OPERATOR HUB</span>
           </span>
           <span className="text-white/20">·</span>
-          <span>CHANNEL</span>
-          <span className="text-white/70 tracking-eyebrow-lg">GG-ADMIN</span>
+          <span>ROLE</span>
+          <span className="text-white/70 tracking-eyebrow-lg">
+            {role === 'owner' ? 'OWNER' : 'MODERATOR'}
+          </span>
         </div>
 
         <h1
@@ -347,36 +364,38 @@ export default function AdminHubPage() {
 
       {/* Module grid */}
       <div className="grid sm:grid-cols-2 gap-4">
-        {HUB_CARDS.map((card) => (
+        {visibleCards.map((card) => (
           <HubCard key={card.to} {...card} onClick={() => navigate(card.to)} />
         ))}
       </div>
 
-      {/* Danger zone */}
-      <section className="mt-12 border border-red-destructive/30 bg-red-destructive/5">
-        <div className="px-5 py-3 border-b border-red-destructive/20 flex items-center gap-2">
-          <AlertTriangle size={13} className="text-red-destructive" aria-hidden="true" />
-          <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-red-destructive font-mono">
-            Danger zone · database
-          </span>
-        </div>
-        <div className="px-5 py-5 flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
-          <div className="max-w-md">
-            <p className="text-sm text-white-body font-bold">Wipe test data</p>
-            <p className="mt-1 text-sm text-white/55 leading-relaxed">
-              Clear giveaways, redemptions, tickets, hunts, or EventSub cache. User accounts and the store catalog are preserved. Choose scope in the next step.
-            </p>
+      {/* Danger zone — owner only */}
+      {isOwner && (
+        <section className="mt-12 border border-red-destructive/30 bg-red-destructive/5">
+          <div className="px-5 py-3 border-b border-red-destructive/20 flex items-center gap-2">
+            <AlertTriangle size={13} className="text-red-destructive" aria-hidden="true" />
+            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-red-destructive font-mono">
+              Danger zone · database
+            </span>
           </div>
-          <button
-            type="button"
-            onClick={() => setResetOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2.5 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/10 transition-colors duration-150 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
-          >
-            <AlertTriangle size={12} aria-hidden="true" />
-            Open wipe panel
-          </button>
-        </div>
-      </section>
+          <div className="px-5 py-5 flex flex-col sm:flex-row sm:items-center gap-4 sm:justify-between">
+            <div className="max-w-md">
+              <p className="text-sm text-white-body font-bold">Wipe test data</p>
+              <p className="mt-1 text-sm text-white/55 leading-relaxed">
+                Clear giveaways, redemptions, tickets, hunts, or EventSub cache. User accounts and the store catalog are preserved. Choose scope in the next step.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setResetOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2.5 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/10 transition-colors duration-150 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+            >
+              <AlertTriangle size={12} aria-hidden="true" />
+              Open wipe panel
+            </button>
+          </div>
+        </section>
+      )}
 
       {resetOpen && <ResetModal onClose={() => setResetOpen(false)} />}
     </div>

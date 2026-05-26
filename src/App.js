@@ -28,6 +28,7 @@ import AdminTicketsPage from './pages/AdminTicketsPage';
 import AdminGiveawaysPage from './pages/AdminGiveawaysPage';
 import AdminHuntsPage from './pages/AdminHuntsPage';
 import AdminUsersPage from './pages/AdminUsersPage';
+import AdminModeratorsPage from './pages/AdminModeratorsPage';
 import StorePage from './pages/StorePage';
 import GiveawayPage from './pages/GiveawayPage';
 import MyAccountPage from './pages/MyAccountPage';
@@ -237,6 +238,7 @@ function StreamingSiteContent() {
             <Route path="giveaways" element={<AdminGiveawaysPage />} />
             <Route path="hunts" element={<AdminHuntsPage />} />
             <Route path="users" element={<AdminUsersPage />} />
+            <Route path="moderators" element={<AdminModeratorsPage />} />
           </Route>
           <Route path="/store" element={<StorePage />} />
           <Route path="/giveaway" element={<GiveawayPage />} />

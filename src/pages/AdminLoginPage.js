@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, Mail, AlertCircle } from 'lucide-react';
+import { Lock, Mail, AlertCircle, ShieldCheck, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 
 function useNowTimestamp() {
   const [now, setNow] = useState(() => new Date());
@@ -45,12 +46,13 @@ function Field({ label, code, icon: Icon, type, value, onChange, placeholder, au
   );
 }
 
-export default function AdminLoginPage({ onLoginSuccess }) {
+export default function AdminLoginPage({ onLoginSuccess, signedIn = false }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
+  const { loginWithTwitch } = useTwitchAuth();
   const now = useNowTimestamp();
 
   const handleSubmit = async (e) => {
@@ -189,6 +191,50 @@ export default function AdminLoginPage({ onLoginSuccess }) {
                 )}
               </button>
             </form>
+
+            {/* Divider */}
+            <div className="my-6 flex items-center gap-3 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/30 font-mono">
+              <span className="flex-1 h-px bg-white/10" />
+              <span>or moderator</span>
+              <span className="flex-1 h-px bg-white/10" />
+            </div>
+
+            {signedIn ? (
+              <div className="space-y-3">
+                <div className="px-4 py-3 border border-orange-admin/30 bg-orange-admin/5 flex items-start gap-3">
+                  <AlertCircle
+                    size={16}
+                    className="text-orange-admin flex-shrink-0 mt-0.5"
+                    aria-hidden="true"
+                  />
+                  <div className="min-w-0 text-sm text-white/75">
+                    Signed in, but this account isn't on the moderator allowlist. Ask
+                    the channel owner to add you.
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => logout()}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-white/15 text-white/65 hover:text-white-body hover:border-white/30 transition-colors duration-150"
+                >
+                  <LogOut size={13} aria-hidden="true" />
+                  <span className="text-[10px] font-bold tracking-eyebrow-lg font-mono">
+                    Sign out
+                  </span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={loginWithTwitch}
+                className="w-full inline-flex items-center justify-center gap-3 px-6 py-3 border border-purple-bright/50 bg-purple-gamba/20 text-white-body hover:bg-purple-gamba/40 transition-colors duration-150"
+              >
+                <ShieldCheck size={14} className="text-purple-bright" aria-hidden="true" />
+                <span className="text-[10px] font-bold tracking-eyebrow-lg font-mono">
+                  Continue with Twitch
+                </span>
+              </button>
+            )}
           </div>
 
           {/* Footer */}

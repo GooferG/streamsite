@@ -1,5 +1,5 @@
 import { adminDb, FieldValue } from '../_lib/firebaseAdmin.js';
-import { applyCors, requireAdmin } from '../_lib/verifyAuth.js';
+import { applyCors, requireOwner } from '../_lib/verifyAuth.js';
 
 const KINDS = ['virtual', 'stream'];
 
@@ -30,7 +30,7 @@ export default async function handler(req, res) {
   applyCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const admin = await requireAdmin(req, res);
+  const admin = await requireOwner(req, res);
   if (!admin) return;
 
   const col = adminDb.collection('store_items');

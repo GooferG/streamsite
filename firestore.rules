@@ -7,9 +7,27 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isAdmin() {
+    function isOwner() {
       return isSignedIn()
         && request.auth.token.email == 'luimeneghim@gmail.com';
+    }
+
+    // Moderator = signed-in user whose Firebase uid (= Twitch user id for
+    // viewer sign-ins) has an active admin_users/{uid} doc with role==moderator.
+    function isMod() {
+      return isSignedIn()
+        && exists(/databases/$(database)/documents/admin_users/$(request.auth.uid))
+        && get(/databases/$(database)/documents/admin_users/$(request.auth.uid)).data.role == 'moderator'
+        && get(/databases/$(database)/documents/admin_users/$(request.auth.uid)).data.active != false;
+    }
+
+    function isStaff() {
+      return isOwner() || isMod();
+    }
+
+    // Legacy name kept for clarity in older rule lines below.
+    function isAdmin() {
+      return isStaff();
     }
 
     function isSelf(uid) {
@@ -18,48 +36,46 @@ service cloud.firestore {
 
     // --- existing collections ---
 
-    // Schedule doc — public read, admin write.
+    // Schedule doc — public read, staff write.
     match /settings/{docId} {
       allow read: if true;
-      allow write: if isAdmin();
+      allow write: if isStaff();
     }
 
     // Game suggestions — public read, viewer can write only their own doc
     // (doc id == their twitchId == Firebase auth uid).
     match /suggestions/{uid} {
       allow read: if true;
-      allow create, update: if isSelf(uid) || isAdmin();
-      allow delete: if isSelf(uid) || isAdmin();
+      allow create, update: if isSelf(uid) || isStaff();
+      allow delete: if isSelf(uid) || isStaff();
     }
 
     // --- store / tickets / giveaways (Phase 1+) ---
 
-    // Users — owner can read their own doc, admin can read all.
+    // Users — owner can read their own doc, staff can read all.
     // All writes are server-only via firebase-admin (which bypasses rules).
     match /users/{uid} {
-      allow read: if isSelf(uid) || isAdmin();
+      allow read: if isSelf(uid) || isStaff();
       allow write: if false;
     }
 
-    // Store catalog — public read, admin write through server endpoint only.
-    // The Edit/Delete on /admin/store-items uses firebase-admin so we can also
-    // deny direct client writes here.
+    // Store catalog — public read, owner-only write through server endpoint.
     match /store_items/{itemId} {
       allow read: if true;
       allow write: if false;
     }
 
-    // Redemptions — owner + admin read; writes server-only.
+    // Redemptions — owner-of-redemption + staff read; writes server-only.
     match /redemptions/{id} {
       allow read: if isSignedIn()
-        && (isAdmin() || resource.data.userId == request.auth.uid);
+        && (isStaff() || resource.data.userId == request.auth.uid);
       allow write: if false;
     }
 
-    // Ticket ledger — owner + admin read; writes server-only.
+    // Ticket ledger — owner-of-row + staff read; writes server-only.
     match /ticket_ledger/{id} {
       allow read: if isSignedIn()
-        && (isAdmin() || resource.data.userId == request.auth.uid);
+        && (isStaff() || resource.data.userId == request.auth.uid);
       allow write: if false;
     }
 
@@ -68,10 +84,23 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Moderator allowlist — staff can read (so the admin shell can verify
+    // the signed-in user is a mod). All writes server-only via
+    // /api/admin/moderators (owner-gated).
+    match /admin_users/{id} {
+      allow read: if isStaff();
+      allow write: if false;
+    }
+
+    // Audit logs of database wipes — owner-only read; writes server-only.
+    match /reset_log/{id} {
+      allow read: if isOwner();
+      allow write: if false;
+    }
+
     // Giveaways — public read of giveaway, entries, and winner_messages so
     // /giveaway and the admin modal can subscribe via onSnapshot. All writes
-    // server-only (chat entries via EventSub webhook; lifecycle via
-    // /api/admin/giveaways).
+    // server-only.
     match /giveaways/{id} {
       allow read: if true;
       allow write: if false;
@@ -84,7 +113,7 @@ service cloud.firestore {
         allow write: if false;
       }
       match /history/{historyId} {
-        allow read: if isAdmin();
+        allow read: if isStaff();
         allow write: if false;
       }
     }
@@ -94,12 +123,7 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
-    // Hunts — unified collection for community hunts. A hunt has feature
-    // flags (acceptPredictions, acceptSuggestions). Predictions live under
-    // /entries; community-suggestion slots under /suggestions. Both
-    // subcollections are public read for live wall + number line + list
-    // subscriptions. All writes server-only via the admin endpoints and
-    // the viewer submit/delete endpoints.
+    // Hunts — unified collection for community hunts.
     match /hunts/{id} {
       allow read: if true;
       allow write: if false;

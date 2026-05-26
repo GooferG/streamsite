@@ -1,5 +1,5 @@
 import { adminDb, FieldValue } from '../_lib/firebaseAdmin.js';
-import { applyCors, requireAdmin } from '../_lib/verifyAuth.js';
+import { applyCors, requireOwner } from '../_lib/verifyAuth.js';
 
 // Destructive admin endpoint to wipe selected test-data collections.
 // Body: { confirm: "WIPE", scopes: { giveaways, redemptions, tickets, hunts, eventsubCache } }
@@ -79,7 +79,7 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  const admin = await requireAdmin(req, res);
+  const admin = await requireOwner(req, res);
   if (!admin) return;
 
   const { confirm, scopes } = req.body || {};

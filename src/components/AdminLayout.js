@@ -9,6 +9,8 @@ import {
   Ticket,
   Gift,
   TrendingUp,
+  Users,
+  ShieldCheck,
   ChevronLeft,
   ChevronRight,
   LogOut,
@@ -16,31 +18,32 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import AdminLoginPage from '../pages/AdminLoginPage';
 
+// Nav items annotated with `ownerOnly: true` are hidden from moderators.
 const NAV_ITEMS = [
   { to: '/admin', label: 'Admin Hub', code: 'HUB', icon: LayoutDashboard, end: true },
   { to: '/admin/schedule', label: 'Schedule', code: 'SCH', icon: Calendar },
   { to: '/admin/suggestions', label: 'Suggestions', code: 'SUG', icon: MessageSquarePlus },
-  { to: '/admin/store', label: 'Store', code: 'STR', icon: Store },
+  { to: '/admin/store', label: 'Store', code: 'STR', icon: Store, ownerOnly: true },
   { to: '/admin/redemptions', label: 'Redemptions', code: 'RED', icon: Inbox },
   { to: '/admin/tickets', label: 'Tickets', code: 'TKT', icon: Ticket },
   { to: '/admin/giveaways', label: 'Giveaways', code: 'GVW', icon: Gift },
   { to: '/admin/hunts', label: 'Hunts', code: 'HNT', icon: TrendingUp },
+  { to: '/admin/users', label: 'Users', code: 'USR', icon: Users },
+  { to: '/admin/moderators', label: 'Moderators', code: 'MOD', icon: ShieldCheck, ownerOnly: true },
 ];
 
-const ADMIN_EMAIL = 'luimeneghim@gmail.com';
-
 export default function AdminLayout() {
-  const { currentUser, logout } = useAuth();
+  const { currentUser, role, isOwner, isStaff, logout } = useAuth();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
 
-  // Gate: must be the admin email account.
-  // A Twitch viewer (custom token, no email claim) shares the same Firebase
-  // auth instance — so currentUser is truthy for them too. The email check
-  // is what actually distinguishes admin from viewer.
-  if (!currentUser || currentUser.email !== ADMIN_EMAIL) {
-    return <AdminLoginPage onLoginSuccess={() => navigate('/admin')} />;
+  // Gate: must be owner OR moderator. AuthContext resolves role server-side
+  // (owner via email match; moderator via admin_users/{uid} Firestore lookup).
+  if (!currentUser || !isStaff) {
+    return <AdminLoginPage onLoginSuccess={() => navigate('/admin')} signedIn={!!currentUser} />;
   }
+
+  const visibleNav = NAV_ITEMS.filter((item) => !item.ownerOnly || isOwner);
 
   const handleLogout = async () => {
     await logout();
@@ -86,7 +89,7 @@ export default function AdminLayout() {
               <span
                 className="text-[11px] font-bold tracking-eyebrow-lg uppercase text-orange-admin font-mono"
       >
-                GG-ADMIN
+                {role === 'owner' ? 'GG-ADMIN' : 'GG-MOD'}
               </span>
             </div>
           )}
@@ -94,7 +97,7 @@ export default function AdminLayout() {
 
         {/* Nav — tabs, not chips */}
         <nav className="relative flex-1 py-3">
-          {NAV_ITEMS.map(({ to, label, code, icon: Icon, end }) => (
+          {visibleNav.map(({ to, label, code, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}

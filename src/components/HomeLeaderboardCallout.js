@@ -327,7 +327,7 @@ export default function HomeLeaderboardCallout() {
       `}</style>
 
       <div className="max-w-7xl mx-auto">
-        <div className="relative">
+        <div className="relative overflow-hidden">
           {/* Searchlight stage — anchored at the lower outside corners, sweep up & inward */}
           <div
             className="pointer-events-none absolute -inset-x-16 -bottom-12 -top-40 overflow-hidden motion-reduce:opacity-60"

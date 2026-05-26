@@ -20,7 +20,7 @@ export default function RaceBars({ players, leaderWagered }) {
         return (
           <div
             key={p.id}
-            className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 px-4 sm:px-6 py-3"
+            className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 px-4 sm:px-6 py-3"
           >
             <div className="flex items-center gap-3 w-28">
               <span className="text-[11px] font-bold tracking-eyebrow-lg text-white/65 tabular-nums font-mono">
@@ -45,8 +45,17 @@ export default function RaceBars({ players, leaderWagered }) {
               </div>
             </div>
 
-            <div className="text-sm sm:text-base font-bold tabular-nums font-mono text-white-body">
+            <div className="text-sm sm:text-base font-bold tabular-nums font-mono text-white-body text-right">
               {formatUSD(p.wagered)}
+            </div>
+
+            <div className="text-right w-20 sm:w-24">
+              <div className="text-[9px] font-bold tracking-eyebrow-md text-emerald-signal/60 font-mono">
+                PRIZE
+              </div>
+              <div className="text-sm font-bold tabular-nums font-mono text-emerald-signal">
+                {p.prize > 0 ? formatUSD(p.prize) : '—'}
+              </div>
             </div>
           </div>
         );

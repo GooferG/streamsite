@@ -4,7 +4,11 @@ import {
   applyDeltas,
   generatePollDeltas,
 } from '../components/Leaderboard/mockData';
-import { maskUsername } from '../components/Leaderboard/format';
+import {
+  maskUsername,
+  getPrizeForPosition,
+  PRIZE_POOL_TOTAL,
+} from '../components/Leaderboard/format';
 
 function attachPositions(players, previousIds = null, deltasById = {}) {
   const previousIndexById = previousIds
@@ -19,6 +23,7 @@ function attachPositions(players, previousIds = null, deltasById = {}) {
         : i + 1,
     delta: deltasById[p.id] || 0,
     maskedUsername: maskUsername(p.username),
+    prize: getPrizeForPosition(i + 1),
   }));
 }
 
@@ -45,7 +50,7 @@ function currentWeekLabel() {
 const DEFAULT_OPTIONS = {
   mock: true,
   pollMs: 45000,
-  prizePool: 25000,
+  prizePool: PRIZE_POOL_TOTAL,
 };
 
 export function useLeaderboardData(options = {}) {

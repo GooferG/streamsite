@@ -7,7 +7,7 @@ import {
   orderBy,
   limit,
 } from 'firebase/firestore';
-import { Search, Plus, Minus, Ticket, Clock } from 'lucide-react';
+import { Search, Plus, Minus, Ticket, Clock, ArrowLeft } from 'lucide-react';
 import { db } from '../config/firebase';
 import { authedFetch } from '../utils/authedFetch';
 
@@ -276,6 +276,21 @@ export default function AdminTicketsPage() {
       {/* Selected user — grant + ledger */}
       {selected && (
         <div className="space-y-5">
+          <button
+            type="button"
+            onClick={() => {
+              setSelected(null);
+              setFeedback(null);
+              setGrantNote('');
+              loadHolders();
+            }}
+            className="inline-flex items-center gap-2 px-3 py-2 border border-white/10 text-white/60 hover:text-white-body hover:border-white/25 transition-colors duration-150"
+          >
+            <ArrowLeft size={13} aria-hidden="true" />
+            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              Back to list
+            </span>
+          </button>
           <div className="border border-white/8 bg-zinc-card/30">
             <div className="px-4 py-2.5 border-b border-white/8 flex items-center justify-between text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
               <span className="inline-flex items-center gap-2 text-orange-admin">

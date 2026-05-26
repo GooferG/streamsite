@@ -75,9 +75,19 @@ export default function PodiumCard({ player, tier }) {
             </div>
           </div>
 
-          <div className="mt-auto pt-3 border-t border-white/8 flex items-center gap-2 text-[10px] font-bold tracking-eyebrow-lg font-mono text-white/65">
-            <TrendArrow current={player.position} previous={player.previousPosition} />
-            <span aria-hidden="true">POS {formatPosition(player.position)}</span>
+          <div className="mt-auto pt-3 border-t border-white/8 flex items-end justify-between gap-4">
+            <div>
+              <div className={`text-[10px] font-bold tracking-eyebrow-lg font-mono ${palette.accent}`} style={{ opacity: 0.8 }}>
+                PRIZE
+              </div>
+              <div className={`text-xl sm:text-2xl font-extrabold tabular-nums font-mono leading-none ${palette.accent}`}>
+                {formatUSD(player.prize)}
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-[10px] font-bold tracking-eyebrow-lg font-mono text-white/65 pb-0.5">
+              <TrendArrow current={player.position} previous={player.previousPosition} />
+              <span aria-hidden="true">POS {formatPosition(player.position)}</span>
+            </div>
           </div>
         </div>
       </div>

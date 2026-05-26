@@ -67,25 +67,33 @@ export default function LeaderTakeover({ leader, runnerUp }) {
             </div>
           </div>
 
-          {lead > 0 && (
-            <div className="mt-auto pt-4 border-t border-white/8 flex flex-wrap items-baseline gap-x-4 gap-y-2">
-              <div>
+          <div className="mt-auto pt-4 border-t border-white/8 grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
+            <div>
+              <div className="text-[10px] font-bold tracking-eyebrow-lg text-emerald-signal/80 font-mono">
+                PRIZE
+              </div>
+              <div className="text-3xl sm:text-4xl font-extrabold tabular-nums font-mono text-emerald-signal leading-none">
+                {formatUSD(leader.prize)}
+              </div>
+            </div>
+            {lead > 0 && (
+              <div className="sm:text-right">
                 <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono">
                   LEADING BY
                 </div>
                 <div className="text-xl sm:text-2xl font-bold tabular-nums font-mono text-white-body">
                   {formatUSD(lead)}
                 </div>
+                <div className="mt-2 flex items-center gap-2 sm:justify-end text-[11px] font-bold tracking-eyebrow-lg font-mono text-white/65">
+                  <TrendArrow
+                    current={leader.position}
+                    previous={leader.previousPosition}
+                  />
+                  <span aria-hidden="true">POS {formatPosition(leader.position)}</span>
+                </div>
               </div>
-              <div className="ml-auto flex items-center gap-2 text-[11px] font-bold tracking-eyebrow-lg font-mono text-white/65">
-                <TrendArrow
-                  current={leader.position}
-                  previous={leader.previousPosition}
-                />
-                <span aria-hidden="true">POS {formatPosition(leader.position)}</span>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </TiltCard>

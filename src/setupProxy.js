@@ -37,6 +37,26 @@ module.exports = function (app) {
     }
   });
 
+  // Dev handler for /api/btc (mirrors the Vercel function)
+  app.get('/api/btc', async (_req, res) => {
+    try {
+      const upstream = await fetch(
+        'https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd&include_24hr_change=true'
+      );
+      const raw = await upstream.json();
+      if (!upstream.ok || !raw?.bitcoin) {
+        return res.status(502).json({ error: 'Bad upstream response' });
+      }
+      res.status(200).json({
+        usd: raw.bitcoin.usd,
+        change24h: raw.bitcoin.usd_24h_change,
+        fetchedAt: Date.now(),
+      });
+    } catch (e) {
+      res.status(500).json({ error: 'Proxy error' });
+    }
+  });
+
   // Dev handler for /api/slots (mirrors the Vercel function)
   app.get('/api/slots', async (req, res) => {
     const { path, ...rest } = req.query;

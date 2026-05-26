@@ -199,6 +199,7 @@ async function handleChatMessage(event) {
         displayName: userData?.displayName || chatterName,
         profileImageUrl: userData?.profileImageUrl || null,
         registered: !!userData,
+        discordLinked: !!userData?.discordVerifiedAt,
         isTwitchSub: chatRoles.isTwitchSub,
         isVip: chatRoles.isVip,
         isMod: chatRoles.isMod,

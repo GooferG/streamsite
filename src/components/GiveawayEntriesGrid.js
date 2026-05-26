@@ -11,14 +11,26 @@ import { db } from '../config/firebase';
 
 const MAX_VISIBLE = 60;
 
-function DiscordBadge() {
-  // Tiny corner badge for Discord-linked weight bonus.
+function buildWeightTooltip(entry) {
+  const parts = [];
+  if (entry.registered) parts.push('Registered');
+  if (entry.discordLinked) parts.push('Discord');
+  if (entry.isTwitchSub) parts.push('Sub');
+  if (entry.isVip) parts.push('VIP');
+  const bonus = (entry.weight || 1) - 1;
+  if (parts.length === 0) return `Weight ${entry.weight || 1}`;
+  return `+${bonus} tickets · ${parts.join(' + ')}`;
+}
+
+function WeightBadge({ entry }) {
+  const bonus = (entry.weight || 1) - 1;
+  if (bonus <= 0) return null;
   return (
     <span
-      className="absolute -bottom-1 -right-1 inline-flex items-center justify-center w-4 h-4 rounded-full bg-[#5865F2] text-white border border-zinc-broadcast text-[8px] font-bold font-mono"
-      title="Discord linked — extra entry weight"
+      className="absolute -bottom-1 -right-1 inline-flex items-center justify-center min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-emerald-signal text-zinc-broadcast border border-zinc-broadcast text-[9px] font-bold font-mono tabular-nums"
+      title={buildWeightTooltip(entry)}
     >
-      D
+      +{bonus}
     </span>
   );
 }
@@ -64,8 +76,6 @@ function EntryTile({ entry, state }) {
         ? 'opacity-25'
         : 'opacity-100';
   const scale = state === 'winner' ? 'scale-110' : 'scale-100';
-  const discord = (entry.weight || 1) > 1;
-
   return (
     <div
       className={`group flex flex-col items-center gap-1.5 transition-all duration-300 ${opacity} ${scale}`}
@@ -85,7 +95,7 @@ function EntryTile({ entry, state }) {
             className={`w-14 h-14 rounded-full text-base transition-all duration-300 ${ring}`}
           />
         )}
-        {discord && <DiscordBadge />}
+        <WeightBadge entry={entry} />
         {state === 'skipped' && (
           <span
             aria-hidden="true"

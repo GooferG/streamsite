@@ -27,7 +27,7 @@ export default function WagerDropChip({ delta }) {
       aria-hidden="true"
     >
       <span>+</span>
-      <span>{formatUSD(shown).replace('$', '$')}</span>
+      <span>{formatUSD(shown)}</span>
     </span>
   );
 }

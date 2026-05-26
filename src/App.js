@@ -143,6 +143,10 @@ function StreamingSiteContent() {
   }, [location.pathname]);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  useEffect(() => {
     const KONAMI = [
       'ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
       'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight',

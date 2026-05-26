@@ -3,10 +3,6 @@ import { formatUSD, formatPosition } from './format';
 import TrendArrow from './TrendArrow';
 import WagerDropChip from './WagerDropChip';
 
-function pad2(n) {
-  return String(n).padStart(2, '0');
-}
-
 export default function RosterTable({ players, leaderWagered }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {

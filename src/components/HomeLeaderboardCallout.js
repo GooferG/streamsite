@@ -141,9 +141,6 @@ function pad2(n) {
 
 function formatPrizeHeadline(amount) {
   if (!amount && amount !== 0) return '$0';
-  if (amount >= 1000 && amount % 1000 === 0) {
-    return `$${(amount / 1000).toLocaleString('en-US')}K`;
-  }
   return `$${amount.toLocaleString('en-US')}`;
 }
 
@@ -198,11 +195,18 @@ function useCountUp(target, { duration = 1400, runWhen = true } = {}) {
   return value;
 }
 
-function useInView(ref, { rootMargin = '0px 0px -20% 0px' } = {}) {
+function useInView(ref, { rootMargin = '0px', threshold = 0 } = {}) {
   const [inView, setInView] = useState(false);
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === 'undefined') {
+      setInView(true);
+      return;
+    }
+    // If the element is already visible on mount (page loads with callout in view),
+    // fire immediately so the count-up runs without requiring a scroll.
+    const rect = el.getBoundingClientRect();
+    if (rect.top < window.innerHeight && rect.bottom > 0) {
       setInView(true);
       return;
     }
@@ -213,11 +217,11 @@ function useInView(ref, { rootMargin = '0px 0px -20% 0px' } = {}) {
           io.disconnect();
         }
       },
-      { rootMargin, threshold: 0.2 }
+      { rootMargin, threshold }
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [ref, rootMargin]);
+  }, [ref, rootMargin, threshold]);
   return inView;
 }
 
@@ -435,10 +439,20 @@ export default function HomeLeaderboardCallout() {
                 </div>
                 <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-none uppercase">
                   <span
-                    className="text-emerald-signal tabular-nums inline-block"
+                    className="relative inline-block tabular-nums whitespace-nowrap align-baseline"
                     aria-label={formatPrizeHeadline(data.prizePool)}
                   >
-                    {formatPrizeHeadline(animatedPrize)}
+                    {/* Invisible sizer — reserves the final width so the headline
+                        doesn't reflow as the count-up runs. */}
+                    <span aria-hidden="true" className="invisible">
+                      {formatPrizeHeadline(data.prizePool)}
+                    </span>
+                    <span
+                      aria-hidden="true"
+                      className="absolute inset-y-0 right-0 text-emerald-signal"
+                    >
+                      {formatPrizeHeadline(animatedPrize)}
+                    </span>
                   </span>{' '}
                   <span className="text-white-body">MONTHLY LEADERBOARD</span>
                 </h2>

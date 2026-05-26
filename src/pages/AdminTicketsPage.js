@@ -7,7 +7,7 @@ import {
   orderBy,
   limit,
 } from 'firebase/firestore';
-import { Search, Plus, Minus, Ticket, Clock } from 'lucide-react';
+import { Search, Plus, Minus, Ticket, Clock, ArrowLeft } from 'lucide-react';
 import { db } from '../config/firebase';
 import { authedFetch } from '../utils/authedFetch';
 
@@ -41,6 +41,31 @@ export default function AdminTicketsPage() {
   const [grantNote, setGrantNote] = useState('');
   const [granting, setGranting] = useState(false);
   const [feedback, setFeedback] = useState(null);
+  const [holders, setHolders] = useState([]);
+  const [loadingHolders, setLoadingHolders] = useState(true);
+
+  const loadHolders = async () => {
+    setLoadingHolders(true);
+    try {
+      const q = query(
+        collection(db, 'users'),
+        where('tickets', '>', 0),
+        orderBy('tickets', 'desc'),
+        limit(200)
+      );
+      const snap = await getDocs(q);
+      setHolders(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    } catch (err) {
+      console.error('holders load error', err);
+      setHolders([]);
+    } finally {
+      setLoadingHolders(false);
+    }
+  };
+
+  useEffect(() => {
+    loadHolders();
+  }, []);
 
   const runSearch = async (e) => {
     e?.preventDefault();
@@ -123,6 +148,7 @@ export default function AdminTicketsPage() {
           const data2 = refreshed.docs[0].data();
           setSelected({ id: refreshed.docs[0].id, ...data2 });
         }
+        loadHolders();
       }
     } catch (err) {
       setFeedback({ kind: 'error', message: 'Network error.' });
@@ -176,6 +202,44 @@ export default function AdminTicketsPage() {
         </button>
       </form>
 
+      {/* Default: all ticket holders, sorted desc */}
+      {!selected && results.length === 0 && (
+        <div className="border border-white/8 bg-zinc-card/30 mb-6">
+          <div className="px-4 py-2.5 border-b border-white/8 text-[10px] font-bold tracking-eyebrow-md uppercase text-white/55 font-mono">
+            {loadingHolders
+              ? 'Loading…'
+              : `${holders.length} ticket holder${holders.length === 1 ? '' : 's'} · top first`}
+          </div>
+          {!loadingHolders && holders.length === 0 && (
+            <p className="px-5 py-6 text-sm text-white/50">No users have tickets yet.</p>
+          )}
+          {holders.map((u) => (
+            <button
+              key={u.id}
+              type="button"
+              onClick={() => setSelected(u)}
+              className="w-full grid grid-cols-[auto_1fr_auto] gap-3 items-center px-4 py-3 border-t border-white/8 first:border-t-0 hover:bg-zinc-broadcast/40 text-left"
+            >
+              {u.profileImageUrl ? (
+                <img src={u.profileImageUrl} alt="" className="w-9 h-9 rounded-full border border-white/15" />
+              ) : (
+                <div className="w-9 h-9 border border-white/15" />
+              )}
+              <div className="min-w-0">
+                <p className="font-bold text-white-body text-sm">{u.displayName}</p>
+                <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono">
+                  {u.twitchName}
+                </p>
+              </div>
+              <span className="inline-flex items-center gap-1 text-emerald-signal text-sm font-bold tabular-nums">
+                <Ticket size={12} aria-hidden="true" />
+                {u.tickets ?? 0}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Results */}
       {results.length > 0 && !selected && (
         <div className="border border-white/8 bg-zinc-card/30 mb-6">
@@ -212,6 +276,21 @@ export default function AdminTicketsPage() {
       {/* Selected user — grant + ledger */}
       {selected && (
         <div className="space-y-5">
+          <button
+            type="button"
+            onClick={() => {
+              setSelected(null);
+              setFeedback(null);
+              setGrantNote('');
+              loadHolders();
+            }}
+            className="inline-flex items-center gap-2 px-3 py-2 border border-white/10 text-white/60 hover:text-white-body hover:border-white/25 transition-colors duration-150"
+          >
+            <ArrowLeft size={13} aria-hidden="true" />
+            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              Back to list
+            </span>
+          </button>
           <div className="border border-white/8 bg-zinc-card/30">
             <div className="px-4 py-2.5 border-b border-white/8 flex items-center justify-between text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
               <span className="inline-flex items-center gap-2 text-orange-admin">

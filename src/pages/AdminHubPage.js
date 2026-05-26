@@ -47,7 +47,7 @@ const HUB_CARDS = [
     to: '/admin/tickets',
     icon: Ticket,
     code: 'TKT',
-    title: 'Tickets',
+    title: 'Users tickets',
     description:
       'Search viewers by Twitch login. Grant or deduct tickets manually and audit the ledger.',
   },
@@ -63,7 +63,7 @@ const HUB_CARDS = [
     to: '/admin/hunts',
     icon: TrendingUp,
     code: 'HNT',
-    title: 'Community hunts',
+    title: 'Hunts',
     description:
       'Run bonus hunts with viewer predictions and/or slot suggestions. Snapshot from bonushunt.gg, settle winners, manage the suggestion queue.',
   },
@@ -76,9 +76,7 @@ function HubCard({ to, icon: Icon, code, title, description, onClick }) {
       onClick={onClick}
       className="group text-left border border-white/8 bg-zinc-card/30 hover:border-orange-admin/40 hover:bg-zinc-card/50 transition-colors duration-150"
     >
-      <div
-        className="flex items-center justify-between px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-lg font-mono"
-      >
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-lg font-mono">
         <span className="inline-flex items-center gap-2 text-orange-admin">
           <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
           <span>Module</span>
@@ -115,9 +113,7 @@ export default function AdminHubPage() {
     <div className="p-6 sm:p-8 max-w-4xl mx-auto">
       {/* Slate header */}
       <header className="mb-10">
-        <div
-          className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono"
-      >
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
             <span>OPERATOR HUB</span>

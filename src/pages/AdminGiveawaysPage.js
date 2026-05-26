@@ -42,6 +42,7 @@ const DEFAULT_FORM = {
   startMessage: DEFAULT_START_MSG,
   announceWinner: true,
   winnerMessage: DEFAULT_WINNER_MSG,
+  requireFollow: true,
 };
 
 function formatTs(ts) {
@@ -217,6 +218,28 @@ function NewGiveawayForm({ onClose, onCreated }) {
             <p className="mt-2 text-[10px] tracking-eyebrow uppercase text-white/35 font-mono">
               Base entry weight is always 1. Toggles add +1 each.
             </p>
+          </div>
+
+          {/* Eligibility */}
+          <div>
+            <p className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-2 font-mono">
+              <span className="text-orange-admin tabular-nums">04b</span> Eligibility
+            </p>
+            <div className="border border-white/10 bg-zinc-broadcast/40 p-3">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.requireFollow}
+                  onChange={(e) => setForm((f) => ({ ...f, requireFollow: e.target.checked }))}
+                />
+                <span className="text-[11px] font-bold tracking-eyebrow uppercase text-white/70 font-mono">
+                  Require channel follow to enter
+                </span>
+              </label>
+              <p className="mt-1 ml-6 text-[10px] tracking-eyebrow text-white/35 font-mono">
+                Mods and VIPs are exempt. Non-followers' keyword messages are ignored.
+              </p>
+            </div>
           </div>
 
           {/* Chat announcements */}

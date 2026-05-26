@@ -106,6 +106,7 @@ export default async function handler(req, res) {
       const weights = sanitizeWeights(payload.weights);
       const announceStart = payload.announceStart !== false; // default true
       const announceWinner = payload.announceWinner !== false; // default true
+      const requireFollow = payload.requireFollow !== false; // default true
       const startMessage = String(payload.startMessage || '').trim();
       const winnerMessage = String(payload.winnerMessage || '').trim();
       const now = FieldValue.serverTimestamp();
@@ -116,6 +117,7 @@ export default async function handler(req, res) {
         weights,
         announceStart,
         announceWinner,
+        requireFollow,
         startMessage: startMessage || null,
         winnerMessage: winnerMessage || null,
         status: 'open',

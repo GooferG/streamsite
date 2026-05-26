@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { adminDb, FieldValue } from '../_lib/firebaseAdmin.js';
+import { getBroadcasterAccessToken, helix } from '../_lib/twitchBroadcasterToken.js';
 
 // Twitch EventSub webhook receiver.
 //
@@ -76,6 +77,34 @@ function computeWeight(user, giveaway) {
   return Math.max(1, Math.floor(total));
 }
 
+// Check whether a chatter follows the broadcaster. Cached per-invocation to
+// avoid repeated Helix calls when multiple giveaways are open. Returns true
+// if following, false if not, or null when the check could not be performed
+// (missing config / Helix error) so callers can choose how to handle.
+async function isFollower(chatterId, cache) {
+  if (cache.has(chatterId)) return cache.get(chatterId);
+  const broadcasterId = process.env.TWITCH_BROADCASTER_ID;
+  if (!broadcasterId) {
+    cache.set(chatterId, null);
+    return null;
+  }
+  try {
+    const token = await getBroadcasterAccessToken();
+    const r = await helix(
+      'GET',
+      `/channels/followers?broadcaster_id=${broadcasterId}&user_id=${chatterId}`,
+      token
+    );
+    const following = Array.isArray(r?.data) && r.data.length > 0;
+    cache.set(chatterId, following);
+    return following;
+  } catch (err) {
+    console.warn('isFollower check failed', chatterId, err.message);
+    cache.set(chatterId, null);
+    return null;
+  }
+}
+
 function extractMessageText(event) {
   // The chat message event payload nests text on event.message.text;
   // fragments[] may also exist for emote breakdown. We only need the text.
@@ -103,6 +132,10 @@ async function handleChatMessage(event) {
   const userRef = adminDb.collection('users').doc(chatterId);
   let userSnap = null;
   let userData = null;
+
+  // Per-invocation follower cache so we hit Helix at most once per chatter
+  // even if several open giveaways require the check.
+  const followerCache = new Map();
 
   for (const gdoc of activeSnap.docs) {
     const g = gdoc.data();
@@ -134,6 +167,18 @@ async function handleChatMessage(event) {
       const entryRef = gdoc.ref.collection('entries').doc(chatterId);
       const existing = await entryRef.get();
       if (existing.exists) continue; // already entered
+
+      // Follow-gate. Defaults to true so existing giveaways are gated by
+      // default; admin can disable per-giveaway via requireFollow: false.
+      // Mods/VIPs are exempt (they may not follow but are trusted chat roles).
+      const requireFollow = g.requireFollow !== false;
+      const isPrivileged = !!(userData?.isMod || userData?.isVip);
+      if (requireFollow && !isPrivileged) {
+        const following = await isFollower(chatterId, followerCache);
+        // null = check failed; fail-closed (skip entry) to avoid letting
+        // unverified chatters in when the Helix call breaks.
+        if (following !== true) continue;
+      }
 
       const weight = computeWeight(userData, g);
       await entryRef.set({

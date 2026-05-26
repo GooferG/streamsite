@@ -48,7 +48,9 @@ loadEnv();
 const CLIENT_ID = process.env.TWITCH_CLIENT_ID;
 const CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
 const REDIRECT_URI = 'http://localhost:8765/callback';
-// moderator:read:chatters — needed by /api/cron/award-watchtime (Helix Get Chatters)
+// moderator:read:chatters  — needed by /api/cron/award-watchtime (Helix Get Chatters)
+// moderator:read:followers — needed by /api/twitch/eventsub follow-gate
+//                            (Helix Get Channel Followers per chatter)
 // user:read:chat           — needed by EventSub channel.chat.message
 // user:bot                 — required alongside user:read:chat for app-token
 //                            webhook subscriptions on channel.chat.message
@@ -57,6 +59,7 @@ const REDIRECT_URI = 'http://localhost:8765/callback';
 //                            and winner)
 const SCOPES = [
   'moderator:read:chatters',
+  'moderator:read:followers',
   'user:read:chat',
   'user:bot',
   'channel:bot',

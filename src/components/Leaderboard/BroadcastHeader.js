@@ -1,4 +1,3 @@
-import { formatUSD } from './format';
 import { useCountdown } from '../../hooks/useCountdown';
 
 function pad2(n) {
@@ -9,6 +8,14 @@ function formatRelativeAge(ms) {
   if (ms < 60_000) return `${Math.floor(ms / 1000)}s AGO`;
   if (ms < 3_600_000) return `${Math.floor(ms / 60_000)}m AGO`;
   return `${Math.floor(ms / 3_600_000)}h AGO`;
+}
+
+function formatPrizeHeadline(amount) {
+  if (!amount && amount !== 0) return '$0';
+  if (amount >= 1000 && amount % 1000 === 0) {
+    return `$${(amount / 1000).toLocaleString('en-US')}K`;
+  }
+  return `$${amount.toLocaleString('en-US')}`;
 }
 
 export default function BroadcastHeader({
@@ -34,12 +41,13 @@ export default function BroadcastHeader({
       </div>
 
       <div className="text-center">
-        <div className="text-[10px] font-bold tracking-eyebrow-md text-white/50 font-mono">
-          *** {periodLabel} STANDINGS ***
+        <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/50 font-mono">
+          {periodLabel}
         </div>
-        <div className="mt-1 text-[11px] font-bold tracking-eyebrow-md text-white/60 font-mono">
-          PRIZE POOL · {formatUSD(prizePool)}
-        </div>
+        <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-none mt-1 uppercase">
+          <span className="text-emerald-signal">{formatPrizeHeadline(prizePool)}</span>{' '}
+          <span className="text-white-body">MONTHLY LEADERBOARD</span>
+        </h1>
       </div>
 
       <div className="sm:text-right space-y-1">

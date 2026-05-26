@@ -11,9 +11,13 @@ export default function WagerDropChip({ delta }) {
   useEffect(() => {
     if (!delta) return undefined;
     setShown(delta);
-    setVisible(true);
-    const id = setTimeout(() => setVisible(false), 1900);
-    return () => clearTimeout(id);
+    setVisible(false);
+    const raf = requestAnimationFrame(() => setVisible(true));
+    const hide = setTimeout(() => setVisible(false), 1900);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(hide);
+    };
   }, [delta]);
 
   if (!shown) return null;

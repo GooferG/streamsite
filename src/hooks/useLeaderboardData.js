@@ -84,12 +84,17 @@ export function useLeaderboardData(options = {}) {
         seedRef.current += 1;
         const deltas = generatePollDeltas(stripped, { seed });
         const next = applyDeltas(stripped, deltas);
+        const nextEndsAt = thirtyDaysFromMonthStart();
+        const nextPeriodLabel = currentPeriodLabel();
+        const nextWeekLabel = currentWeekLabel();
         return {
           players: attachPositions(next, previousIds, deltas),
           lastUpdatedAt: Date.now(),
-          endsAt: thirtyDaysFromMonthStart(),
-          periodLabel: currentPeriodLabel(),
-          weekLabel: currentWeekLabel(),
+          endsAt: nextEndsAt === prev.endsAt ? prev.endsAt : nextEndsAt,
+          periodLabel:
+            nextPeriodLabel === prev.periodLabel ? prev.periodLabel : nextPeriodLabel,
+          weekLabel:
+            nextWeekLabel === prev.weekLabel ? prev.weekLabel : nextWeekLabel,
         };
       });
     };

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   collection,
   onSnapshot,
@@ -18,9 +18,12 @@ import {
   Webhook,
   Trash2,
   ChevronRight,
+  Users,
+  Timer,
 } from 'lucide-react';
 import { db } from '../config/firebase';
 import { authedFetch } from '../utils/authedFetch';
+import GiveawayEntriesGrid from '../components/GiveawayEntriesGrid';
 
 const inputCls =
   'w-full bg-zinc-broadcast/60 border border-white/10 px-3 py-2.5 text-sm text-white-body placeholder:text-white/25 focus:border-orange-admin/70 focus:outline-none transition-colors duration-150';
@@ -225,6 +228,86 @@ function NewGiveawayForm({ onClose, onCreated }) {
   );
 }
 
+function formatElapsed(seconds) {
+  if (seconds < 0) seconds = 0;
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+}
+
+function WinnerTimer({ rolledAt, firstMessageAt }) {
+  // Count up from rolledAt. Freeze when firstMessageAt is set.
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (firstMessageAt) return undefined; // frozen
+    const t = setInterval(() => setNow(Date.now()), 250);
+    return () => clearInterval(t);
+  }, [firstMessageAt]);
+
+  const startMs = rolledAt?.toMillis ? rolledAt.toMillis() : null;
+  if (!startMs) {
+    return (
+      <div className="flex items-center gap-2 px-3 py-2 border border-white/15 bg-zinc-broadcast/40">
+        <Timer size={13} className="text-white/40" aria-hidden="true" />
+        <span className="text-2xl font-black tabular-nums text-white/40 font-mono leading-none">
+          00:00
+        </span>
+      </div>
+    );
+  }
+
+  const endMs = firstMessageAt?.toMillis ? firstMessageAt.toMillis() : now;
+  const elapsed = Math.max(0, (endMs - startMs) / 1000);
+
+  let tone;
+  if (firstMessageAt) {
+    tone = {
+      border: 'border-emerald-signal/50 bg-emerald-signal/5',
+      text: 'text-emerald-signal',
+      icon: 'text-emerald-signal',
+      label: 'RESPONDED IN',
+    };
+  } else if (elapsed >= 90) {
+    tone = {
+      border: 'border-red-destructive/50 bg-red-destructive/5',
+      text: 'text-red-destructive',
+      icon: 'text-red-destructive',
+      label: 'Waiting',
+    };
+  } else if (elapsed >= 30) {
+    tone = {
+      border: 'border-orange-admin/50 bg-orange-admin/5',
+      text: 'text-orange-admin',
+      icon: 'text-orange-admin',
+      label: 'Waiting',
+    };
+  } else {
+    tone = {
+      border: 'border-white/15 bg-zinc-broadcast/40',
+      text: 'text-white-body',
+      icon: 'text-white/55',
+      label: 'Waiting',
+    };
+  }
+
+  return (
+    <div
+      className={`flex items-center gap-3 px-3 py-2 border transition-colors duration-300 ${tone.border}`}
+    >
+      <Timer size={13} className={tone.icon} aria-hidden="true" />
+      <div className="leading-none">
+        <p className="text-[9px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-0.5 font-mono">
+          {tone.label}
+        </p>
+        <p className={`text-2xl font-black tabular-nums font-mono leading-none ${tone.text}`}>
+          {formatElapsed(elapsed)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function WinnerModal({ giveaway, onClose }) {
   const [busy, setBusy] = useState(null); // 'reroll' | 'skip' | 'confirm'
   const [messages, setMessages] = useState([]);
@@ -242,6 +325,9 @@ function WinnerModal({ giveaway, onClose }) {
     });
     return unsub;
   }, [giveaway?.id]);
+
+  // First message timestamp determines if we freeze the timer.
+  const firstMessageAt = messages.length > 0 ? messages[0].createdAt : null;
 
   const act = async (action) => {
     setBusy(action);
@@ -300,7 +386,7 @@ function WinnerModal({ giveaway, onClose }) {
             <Trophy size={11} className="text-orange-admin" aria-hidden="true" />
             Winner picked
           </p>
-          <div className="flex items-center gap-4 mb-5">
+          <div className="flex items-center gap-4 mb-5 flex-wrap">
             {w.profileImageUrl ? (
               <img
                 src={w.profileImageUrl}
@@ -310,7 +396,7 @@ function WinnerModal({ giveaway, onClose }) {
             ) : (
               <div className="w-16 h-16 border border-white/15" />
             )}
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-3xl sm:text-4xl font-black text-white-body tracking-tight leading-none">
                 {w.displayName || w.twitchName}
               </p>
@@ -318,6 +404,10 @@ function WinnerModal({ giveaway, onClose }) {
                 {w.twitchName} · weight {w.weight} · via {w.source}
               </p>
             </div>
+            <WinnerTimer
+              rolledAt={giveaway.rolledAt}
+              firstMessageAt={firstMessageAt}
+            />
           </div>
 
           {/* Chat stream */}
@@ -537,6 +627,39 @@ function GiveawayRow({ giveaway, onOpen }) {
   );
 }
 
+function AnimatedCount({ value }) {
+  const [display, setDisplay] = useState(value);
+  const prevRef = useRef(value);
+  useEffect(() => {
+    if (value === prevRef.current) return;
+    // Roll up briefly when entries increment
+    const start = prevRef.current;
+    const end = value;
+    if (end <= start) {
+      setDisplay(end);
+      prevRef.current = end;
+      return;
+    }
+    const duration = 300;
+    const startTs = performance.now();
+    let raf;
+    const tick = (now) => {
+      const t = Math.min(1, (now - startTs) / duration);
+      const v = Math.round(start + (end - start) * t);
+      setDisplay(v);
+      if (t < 1) raf = requestAnimationFrame(tick);
+      else prevRef.current = end;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [value]);
+  return (
+    <span className="tabular-nums">
+      {String(display).padStart(4, '0')}
+    </span>
+  );
+}
+
 function GiveawayDetail({ giveaway, onBack }) {
   const [busy, setBusy] = useState(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
@@ -555,124 +678,169 @@ function GiveawayDetail({ giveaway, onBack }) {
     }
   };
 
+  const isLive = giveaway.status === 'open' || giveaway.status === 'rolling';
+
   return (
-    <div className="border border-white/8 bg-zinc-card/30">
-      <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+    <div className="space-y-5">
+      {/* Top utility strip */}
+      <div className="flex items-center justify-between gap-3 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
         <button
           type="button"
           onClick={onBack}
           className="text-white/55 hover:text-white-body tracking-eyebrow-lg"
         >
-          ← Back
+          ← Back to list
         </button>
         <span className="inline-flex items-center gap-2 text-orange-admin">
-          <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${
+              giveaway.status === 'rolling' ? 'bg-orange-admin animate-pulse' : 'bg-orange-admin'
+            }`}
+          />
           Giveaway · {giveaway.status}
         </span>
       </div>
 
-      <div className="px-5 py-5 space-y-4">
-        <div>
-          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono mb-1">
-            Title · prize
-          </p>
-          <p className="text-2xl font-black text-white-body tracking-tight leading-tight">
-            {giveaway.title}
-          </p>
-          <p className="mt-1 text-sm text-emerald-signal/85">{giveaway.prize}</p>
-        </div>
+      {/* Hero card — prize + keyword + count */}
+      <div className="relative overflow-hidden border border-orange-admin/30 bg-zinc-card/40">
+        {/* Atmospheric glow */}
+        <div
+          className="pointer-events-none absolute -top-32 -right-24 w-96 h-96 rounded-full bg-orange-admin/15 blur-3xl motion-reduce:hidden"
+          aria-hidden="true"
+        />
+        <div className="relative px-6 sm:px-8 py-7 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-6 items-end">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-orange-admin mb-2 font-mono">
+              ▸ Prize on the line
+            </p>
+            <p
+              className="font-black text-white-body leading-[0.9] tracking-[-0.03em]"
+              style={{
+                fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+                fontSize: 'clamp(2.25rem, 6vw, 3.5rem)',
+              }}
+            >
+              {giveaway.prize}
+            </p>
+            <p className="mt-2 text-sm text-white/55">{giveaway.title}</p>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
-          <div>
-            <p>Keyword</p>
-            <p className="text-orange-admin">{giveaway.keyword}</p>
+            {/* Keyword pill */}
+            {isLive && (
+              <div className="mt-5 inline-flex items-baseline gap-3 px-4 py-3 border-2 border-emerald-signal/50 bg-emerald-signal/5">
+                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal/80 font-mono">
+                  Type in chat
+                </span>
+                <span
+                  className="text-2xl sm:text-3xl font-black text-emerald-signal tracking-tight tabular-nums font-mono"
+                >
+                  {giveaway.keyword}
+                </span>
+              </div>
+            )}
           </div>
-          <div>
-            <p>Entries</p>
-            <p className="text-white-body tabular-nums">{giveaway.entryCount ?? 0}</p>
-          </div>
-          <div>
-            <p>Total weight</p>
-            <p className="text-white-body tabular-nums">{giveaway.totalWeight ?? 0}</p>
-          </div>
-          <div>
-            <p>Created</p>
-            <p className="text-white-body">{formatTs(giveaway.createdAt)}</p>
+
+          {/* Count */}
+          <div className="text-right">
+            <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
+              Entries
+            </p>
+            <p
+              className="font-black text-orange-admin leading-none tabular-nums font-mono"
+              style={{ fontSize: 'clamp(2.5rem, 7vw, 4rem)' }}
+            >
+              <AnimatedCount value={giveaway.entryCount ?? 0} />
+            </p>
+            <p className="mt-1 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/35 font-mono">
+              total weight {giveaway.totalWeight ?? 0}
+            </p>
           </div>
         </div>
+      </div>
 
-        <div className="flex flex-wrap gap-2 pt-2">
-          {giveaway.status === 'open' && (
-            <>
-              <button
-                type="button"
-                onClick={() => act('close')}
-                disabled={!!busy}
-                className="inline-flex items-center gap-2 px-3.5 py-2 border border-white/15 text-white/70 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-50"
-              >
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                  {busy === 'close' ? 'Closing…' : 'Close entries'}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => act('roll')}
-                disabled={!!busy || (giveaway.entryCount ?? 0) === 0}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-30"
-              >
-                <Gift size={13} aria-hidden="true" />
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                  {busy === 'roll' ? 'Rolling…' : 'Roll winner'}
-                </span>
-              </button>
-            </>
-          )}
-          {giveaway.status === 'closed' && (
+      {/* Operator controls */}
+      <div className="flex flex-wrap items-center gap-2">
+        {giveaway.status === 'open' && (
+          <button
+            type="button"
+            onClick={() => act('close')}
+            disabled={!!busy}
+            className="inline-flex items-center gap-2 px-3.5 py-2 border border-white/15 text-white/70 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-50"
+          >
+            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              {busy === 'close' ? 'Closing…' : 'Close entries'}
+            </span>
+          </button>
+        )}
+        {(giveaway.status === 'open' || giveaway.status === 'closed') && (
+          <button
+            type="button"
+            onClick={() => act('roll')}
+            disabled={!!busy || (giveaway.entryCount ?? 0) === 0}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-30"
+          >
+            <Gift size={13} aria-hidden="true" />
+            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              {busy === 'roll' ? 'Rolling…' : 'Roll winner'}
+            </span>
+          </button>
+        )}
+        {giveaway.status === 'rolled' && giveaway.winner && (
+          <div className="inline-flex items-center gap-2 px-3 py-2 border border-emerald-signal/40 bg-emerald-signal/5 text-emerald-signal text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+            <Trophy size={12} aria-hidden="true" />
+            Winner: {giveaway.winner.displayName}
+          </div>
+        )}
+
+        <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/30 font-mono ml-1">
+          · created {formatTs(giveaway.createdAt)}
+        </span>
+
+        {!confirmingDelete ? (
+          <button
+            type="button"
+            onClick={() => setConfirmingDelete(true)}
+            className="ml-auto inline-flex items-center gap-2 px-3 py-2 border border-red-destructive/30 text-red-destructive/70 hover:bg-red-destructive/10 hover:border-red-destructive/60 transition-colors duration-150"
+          >
+            <Trash2 size={12} aria-hidden="true" />
+            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Delete</span>
+          </button>
+        ) : (
+          <div className="ml-auto flex gap-2">
             <button
               type="button"
-              onClick={() => act('roll')}
-              disabled={!!busy || (giveaway.entryCount ?? 0) === 0}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-30"
+              onClick={() => act('delete').then(onBack)}
+              className="inline-flex items-center gap-2 px-3 py-2 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 transition-colors text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
             >
-              <Gift size={13} aria-hidden="true" />
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                {busy === 'roll' ? 'Rolling…' : 'Roll winner'}
-              </span>
+              Confirm delete
             </button>
-          )}
-          {giveaway.status === 'rolled' && giveaway.winner && (
-            <div className="text-sm text-emerald-signal">
-              Winner: <span className="font-bold">{giveaway.winner.displayName}</span>
-            </div>
-          )}
-          {!confirmingDelete ? (
             <button
               type="button"
-              onClick={() => setConfirmingDelete(true)}
-              className="ml-auto inline-flex items-center gap-2 px-3 py-2 border border-red-destructive/30 text-red-destructive/70 hover:bg-red-destructive/10 hover:border-red-destructive/60 transition-colors duration-150"
+              onClick={() => setConfirmingDelete(false)}
+              className="px-3 py-2 border border-white/10 text-white/60 hover:text-white-body text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
             >
-              <Trash2 size={12} aria-hidden="true" />
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Delete</span>
+              Cancel
             </button>
-          ) : (
-            <div className="ml-auto flex gap-2">
-              <button
-                type="button"
-                onClick={() => act('delete').then(onBack)}
-                className="inline-flex items-center gap-2 px-3 py-2 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 transition-colors text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
-              >
-                Confirm delete
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmingDelete(false)}
-                className="px-3 py-2 border border-white/10 text-white/60 hover:text-white-body text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
-              >
-                Cancel
-              </button>
-            </div>
-          )}
+          </div>
+        )}
+      </div>
+
+      {/* Entries grid */}
+      <div className="border border-white/8 bg-zinc-card/30 p-5 sm:p-6">
+        <div className="flex items-center justify-between mb-5 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+          <span className="inline-flex items-center gap-2 text-white/55">
+            <Users size={11} aria-hidden="true" />
+            Viewers entering
+          </span>
+          <span className="text-white/35 tabular-nums">
+            {giveaway.entryCount ?? 0} total
+          </span>
         </div>
+        <GiveawayEntriesGrid
+          giveawayId={giveaway.id}
+          rolling={giveaway.status === 'rolling'}
+          winnerTwitchId={giveaway.winnerTwitchId || null}
+          skippedIds={giveaway.skippedIds || []}
+        />
       </div>
     </div>
   );

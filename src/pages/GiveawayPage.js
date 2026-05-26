@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { collection, onSnapshot, orderBy, query, where, limit as fLimit } from 'firebase/firestore';
-import { Gift, Trophy, Megaphone } from 'lucide-react';
+import { Gift, Trophy, Megaphone, Users } from 'lucide-react';
 import { db } from '../config/firebase';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 import { useUserDoc } from '../hooks/useUserDoc';
+import GiveawayEntriesGrid from '../components/GiveawayEntriesGrid';
 
 function formatTs(ts) {
   if (!ts) return '—';
@@ -22,7 +23,6 @@ export default function GiveawayPage() {
   const [active, setActive] = useState(null);
   const [past, setPast] = useState([]);
 
-  // Active giveaways (open / rolling)
   useEffect(() => {
     const q = query(
       collection(db, 'giveaways'),
@@ -36,7 +36,6 @@ export default function GiveawayPage() {
     return unsub;
   }, []);
 
-  // Past rolled giveaways
   useEffect(() => {
     const q = query(
       collection(db, 'giveaways'),
@@ -58,7 +57,7 @@ export default function GiveawayPage() {
 
   return (
     <div className="relative min-h-screen pt-20 pb-20 px-4 sm:px-6 bg-zinc-broadcast text-white-body">
-      <div className="relative z-10 max-w-2xl mx-auto space-y-5">
+      <div className="relative z-10 max-w-3xl mx-auto space-y-5">
         {/* Header */}
         <header className="mb-2">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
@@ -90,71 +89,105 @@ export default function GiveawayPage() {
 
         {/* Active card */}
         {active ? (
-          <div className="border border-emerald-signal/40 bg-zinc-card/30">
-            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold tracking-eyebrow-md uppercase font-mono">
-              <Megaphone size={11} className="text-emerald-signal" aria-hidden="true" />
-              <span className="text-emerald-signal">
-                {active.status === 'rolling' ? 'Rolling now' : 'Live giveaway'}
-              </span>
-              <span className="ml-auto text-white/40 tabular-nums">
-                {active.entryCount ?? 0} entries
-              </span>
-            </div>
-            <div className="px-5 py-5 space-y-3">
-              <div>
-                <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono mb-1">
-                  Prize
-                </p>
-                <p className="text-2xl font-black text-white-body tracking-tight leading-tight">
-                  {active.prize}
-                </p>
-                <p className="text-sm text-white/55 mt-1">{active.title}</p>
+          <>
+            <div className="relative overflow-hidden border border-emerald-signal/40 bg-zinc-card/40">
+              <div
+                className="pointer-events-none absolute -top-32 -right-24 w-96 h-96 rounded-full bg-emerald-signal/10 blur-3xl motion-reduce:hidden"
+                aria-hidden="true"
+              />
+              <div className="relative flex items-center gap-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold tracking-eyebrow-md uppercase font-mono">
+                <Megaphone size={11} className="text-emerald-signal" aria-hidden="true" />
+                <span className="text-emerald-signal">
+                  {active.status === 'rolling' ? 'Rolling now' : 'Live giveaway'}
+                </span>
+                <span className="ml-auto text-white/40 tabular-nums">
+                  {String(active.entryCount ?? 0).padStart(4, '0')} entries
+                </span>
               </div>
-              {active.status === 'open' && (
-                <div className="px-4 py-3 bg-zinc-broadcast/40 border border-white/10">
-                  <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 mb-1 font-mono">
-                    Type this in Twitch chat
-                  </p>
-                  <p className="text-xl font-black text-emerald-signal tabular-nums">
-                    {active.keyword}
-                  </p>
-                </div>
-              )}
-              {active.status === 'rolling' && (
-                <p className="text-sm text-orange-admin">
-                  Entries closed — a winner is being picked on stream.
-                </p>
-              )}
 
-              {/* Auth state hint */}
-              {!twitchUser ? (
-                <div className="pt-1">
-                  <button
-                    type="button"
-                    onClick={loginWithTwitch}
-                    className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-gamba hover:bg-purple-bright text-white-body transition-colors duration-150"
-                  >
-                    <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                      Sign in to enter
-                    </span>
-                  </button>
-                  <p className="mt-2 text-[10px] tracking-eyebrow uppercase text-white/40 font-mono">
-                    Your Twitch account must be linked here so we can match your chat message.
+              <div className="relative px-5 sm:px-7 py-6 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-5 items-end">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal/80 mb-2 font-mono">
+                    ▸ Prize
                   </p>
+                  <p
+                    className="font-black text-white-body leading-[0.9] tracking-[-0.03em]"
+                    style={{
+                      fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+                      fontSize: 'clamp(1.75rem, 5vw, 2.75rem)',
+                    }}
+                  >
+                    {active.prize}
+                  </p>
+                  <p className="text-sm text-white/55 mt-1">{active.title}</p>
+
+                  {active.status === 'open' && (
+                    <div className="mt-5 inline-flex items-baseline gap-3 px-4 py-3 border-2 border-emerald-signal/50 bg-emerald-signal/5">
+                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal/80 font-mono">
+                        Type in chat
+                      </span>
+                      <span
+                        className="text-2xl sm:text-3xl font-black text-emerald-signal tracking-tight tabular-nums font-mono"
+                      >
+                        {active.keyword}
+                      </span>
+                    </div>
+                  )}
+                  {active.status === 'rolling' && (
+                    <p className="mt-4 text-sm text-orange-admin">
+                      Entries closed — a winner is being picked on stream.
+                    </p>
+                  )}
+
+                  {!twitchUser ? (
+                    <div className="pt-4">
+                      <button
+                        type="button"
+                        onClick={loginWithTwitch}
+                        className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-gamba hover:bg-purple-bright text-white-body transition-colors duration-150"
+                      >
+                        <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                          Sign in to enter
+                        </span>
+                      </button>
+                      <p className="mt-2 text-[10px] tracking-eyebrow uppercase text-white/40 font-mono">
+                        Your Twitch account must be linked so we can match your chat message.
+                      </p>
+                    </div>
+                  ) : (
+                    <p className="mt-4 text-[11px] tracking-eyebrow uppercase text-white/45 font-mono">
+                      Signed in as <span className="text-emerald-signal/85">{twitchUser.displayName}</span>
+                      {user?.discordVerifiedAt ? <span className="text-white/40"> · Discord linked (extra weight)</span> : null}
+                    </p>
+                  )}
+                  {eligibleNote && (
+                    <p className="mt-2 text-[11px] tracking-eyebrow uppercase text-orange-admin font-mono">
+                      {eligibleNote}
+                    </p>
+                  )}
                 </div>
-              ) : (
-                <p className="text-[11px] tracking-eyebrow uppercase text-white/45 font-mono">
-                  Signed in as <span className="text-emerald-signal/85">{twitchUser.displayName}</span>
-                  {user?.discordVerifiedAt ? <span className="text-white/40"> · Discord linked (extra weight)</span> : null}
-                </p>
-              )}
-              {eligibleNote && (
-                <p className="text-[11px] tracking-eyebrow uppercase text-orange-admin font-mono">
-                  {eligibleNote}
-                </p>
-              )}
+              </div>
             </div>
-          </div>
+
+            {/* Entries grid */}
+            <div className="border border-white/8 bg-zinc-card/30 p-5 sm:p-6">
+              <div className="flex items-center justify-between mb-5 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+                <span className="inline-flex items-center gap-2 text-white/55">
+                  <Users size={11} aria-hidden="true" />
+                  Who&apos;s in
+                </span>
+                <span className="text-white/35 tabular-nums">
+                  {active.entryCount ?? 0} total
+                </span>
+              </div>
+              <GiveawayEntriesGrid
+                giveawayId={active.id}
+                rolling={active.status === 'rolling'}
+                winnerTwitchId={active.winnerTwitchId || null}
+                skippedIds={active.skippedIds || []}
+              />
+            </div>
+          </>
         ) : (
           <div className="border border-white/8 bg-zinc-card/30 py-12 text-center">
             <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono">

@@ -48,7 +48,17 @@ loadEnv();
 const CLIENT_ID = process.env.TWITCH_CLIENT_ID;
 const CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
 const REDIRECT_URI = 'http://localhost:8765/callback';
-const SCOPES = ['moderator:read:chatters'];
+// moderator:read:chatters — needed by /api/cron/award-watchtime (Helix Get Chatters)
+// user:read:chat           — needed by EventSub channel.chat.message
+// user:bot                 — required alongside user:read:chat for app-token
+//                            webhook subscriptions on channel.chat.message
+// channel:bot              — broadcaster authorizing app to read chat in their channel
+const SCOPES = [
+  'moderator:read:chatters',
+  'user:read:chat',
+  'user:bot',
+  'channel:bot',
+];
 
 if (!CLIENT_ID || !CLIENT_SECRET) {
   console.error('Missing TWITCH_CLIENT_ID or TWITCH_CLIENT_SECRET in env / .env.local');

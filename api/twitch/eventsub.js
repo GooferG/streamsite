@@ -61,20 +61,31 @@ async function alreadyProcessed(messageId) {
   return false;
 }
 
-function computeWeight(user, giveaway) {
-  // `user` may be null when the chatter has never signed in on the site.
-  // In that case all the user-dependent bonuses are skipped; the chatter
-  // gets only the base weight.
+function computeWeight(user, chatRoles, giveaway) {
+  // `user` may be null when the chatter has never signed in on the site —
+  // user-doc-dependent bonuses (registered, discord) are skipped in that case.
+  // `chatRoles` comes from the chat message badges and is always available.
   const w = giveaway.weights || {};
   let total = Number.isFinite(Number(w.base)) ? Number(w.base) : 1;
   if (user) {
     if (w.registered) total += Number(w.registered) || 0;
     if (w.discord && user.discordVerifiedAt) total += Number(w.discord) || 0;
-    if (w.sub && user.isTwitchSub) total += Number(w.sub) || 0;
-    if (w.vip && user.isVip) total += Number(w.vip) || 0;
-    if (w.mod && user.isMod) total += Number(w.mod) || 0;
   }
+  if (w.sub && chatRoles.isTwitchSub) total += Number(w.sub) || 0;
+  if (w.vip && chatRoles.isVip) total += Number(w.vip) || 0;
   return Math.max(1, Math.floor(total));
+}
+
+// Derive chat roles from the badges array on a channel.chat.message event.
+// Twitch sends e.g. [{ set_id: 'subscriber', id: '12', info: '14' },
+// { set_id: 'vip', id: '1', info: '' }]. We only care about set_id presence.
+function rolesFromBadges(badges) {
+  const sets = new Set((badges || []).map((b) => b?.set_id).filter(Boolean));
+  return {
+    isTwitchSub: sets.has('subscriber') || sets.has('founder'),
+    isVip: sets.has('vip'),
+    isMod: sets.has('moderator') || sets.has('broadcaster'),
+  };
 }
 
 // Check whether a chatter follows the broadcaster. Cached per-invocation to
@@ -117,6 +128,7 @@ async function handleChatMessage(event) {
   const chatterName = event.chatter_user_name;
   const text = extractMessageText(event);
   if (!chatterId || !text) return { processed: false };
+  const chatRoles = rolesFromBadges(event.badges);
 
   // Pull only what we need. Most messages are not for active giveaways, so
   // bail early if no giveaway is active.
@@ -172,7 +184,7 @@ async function handleChatMessage(event) {
       // default; admin can disable per-giveaway via requireFollow: false.
       // Mods/VIPs are exempt (they may not follow but are trusted chat roles).
       const requireFollow = g.requireFollow !== false;
-      const isPrivileged = !!(userData?.isMod || userData?.isVip);
+      const isPrivileged = chatRoles.isMod || chatRoles.isVip;
       if (requireFollow && !isPrivileged) {
         const following = await isFollower(chatterId, followerCache);
         // null = check failed; fail-closed (skip entry) to avoid letting
@@ -180,13 +192,16 @@ async function handleChatMessage(event) {
         if (following !== true) continue;
       }
 
-      const weight = computeWeight(userData, g);
+      const weight = computeWeight(userData, chatRoles, g);
       await entryRef.set({
         twitchId: chatterId,
         twitchName: userData?.twitchName || chatterLogin,
         displayName: userData?.displayName || chatterName,
         profileImageUrl: userData?.profileImageUrl || null,
         registered: !!userData,
+        isTwitchSub: chatRoles.isTwitchSub,
+        isVip: chatRoles.isVip,
+        isMod: chatRoles.isMod,
         weight,
         source: 'chat',
         enteredAt: FieldValue.serverTimestamp(),

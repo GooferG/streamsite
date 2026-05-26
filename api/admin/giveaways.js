@@ -25,7 +25,7 @@ async function tryAnnounce(text) {
 // Admin giveaway lifecycle endpoint. POST { action, ...payload }.
 //
 // Actions:
-//   create   { title, prize, keyword, weights: { base, discord, sub, vip, mod } }
+//   create   { title, prize, keyword, weights: { base, registered, discord, sub, vip } }
 //   close    { id }                       -> stop accepting entries
 //   roll     { id }                       -> pick weighted winner, status='rolling'
 //   reroll   { id }                       -> pick again silently from remaining
@@ -43,7 +43,6 @@ function sanitizeWeights(w = {}) {
     discord: num(w.discord, 0),
     sub: num(w.sub, 0),
     vip: num(w.vip, 0),
-    mod: num(w.mod, 0),
   };
 }
 

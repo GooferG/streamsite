@@ -37,7 +37,7 @@ const DEFAULT_FORM = {
   title: '',
   prize: '',
   keyword: '',
-  weights: { base: 1, registered: 1, discord: 1, sub: 1, vip: 1, mod: 1 },
+  weights: { base: 1, registered: 1, discord: 1, sub: 1, vip: 1 },
   announceStart: true,
   startMessage: DEFAULT_START_MSG,
   announceWinner: true,
@@ -200,19 +200,13 @@ function NewGiveawayForm({ onClose, onCreated }) {
                 label="Twitch sub"
                 value={form.weights.sub}
                 onChange={(v) => setW('sub', v)}
-                hint="(stub — not yet detected)"
+                hint="(+1 entry weight)"
               />
               <ToggleRow
                 label="Twitch VIP"
                 value={form.weights.vip}
                 onChange={(v) => setW('vip', v)}
-                hint="(stub — not yet detected)"
-              />
-              <ToggleRow
-                label="Twitch mod"
-                value={form.weights.mod}
-                onChange={(v) => setW('mod', v)}
-                hint="(stub — not yet detected)"
+                hint="(+1 entry weight)"
               />
             </div>
             <p className="mt-2 text-[10px] tracking-eyebrow uppercase text-white/35 font-mono">

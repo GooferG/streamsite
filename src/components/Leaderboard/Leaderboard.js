@@ -6,6 +6,7 @@ import LeaderTakeover from './LeaderTakeover';
 import PodiumCard from './PodiumCard';
 import RaceBars from './RaceBars';
 import RosterTable from './RosterTable';
+import SponsorBanner from './SponsorBanner';
 import TickerCrawl from './TickerCrawl';
 import StationID from './StationID';
 
@@ -54,6 +55,8 @@ export default function Leaderboard() {
           </div>
         </div>
       )}
+
+      <SponsorBanner />
 
       <RaceBars
         players={racers}

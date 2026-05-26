@@ -1,5 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { Menu, X, LogOut, User as UserIcon, Store as StoreIcon } from 'lucide-react';
+import {
+  Menu,
+  X,
+  LogOut,
+  User as UserIcon,
+  Store as StoreIcon,
+} from 'lucide-react';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -24,7 +30,9 @@ function Wordmark({ onClick, onSecretActivate }) {
   const handleClick = () => {
     if (onSecretActivate) {
       const now = Date.now();
-      clicksRef.current = [...clicksRef.current, now].filter((t) => now - t <= 2000);
+      clicksRef.current = [...clicksRef.current, now].filter(
+        (t) => now - t <= 2000
+      );
       if (clicksRef.current.length >= 5) {
         clicksRef.current = [];
         onSecretActivate();
@@ -41,9 +49,7 @@ function Wordmark({ onClick, onSecretActivate }) {
       className="group flex items-baseline gap-2 cursor-pointer flex-shrink-0"
       aria-label="GooferG home"
     >
-      <span
-        className="text-xs font-bold tracking-eyebrow-lg uppercase text-white/40 group-hover:text-emerald-signal transition-colors duration-200 font-mono"
-      >
+      <span className="text-xs font-bold tracking-eyebrow-lg uppercase text-white/40 group-hover:text-emerald-signal transition-colors duration-200 font-mono">
         GG
       </span>
       <span className="text-lg font-black tracking-tight text-white-body group-hover:text-emerald-signal transition-colors duration-200">
@@ -54,7 +60,8 @@ function Wordmark({ onClick, onSecretActivate }) {
 }
 
 function NavLink({ item, active, accent = 'emerald', onClick }) {
-  const accentDot = accent === 'orange' ? 'bg-orange-admin' : 'bg-emerald-signal';
+  const accentDot =
+    accent === 'orange' ? 'bg-orange-admin' : 'bg-emerald-signal';
 
   return (
     <button
@@ -63,8 +70,10 @@ function NavLink({ item, active, accent = 'emerald', onClick }) {
       className="group relative inline-flex items-center gap-2 py-1.5"
     >
       <span
-        className={`text-[13px] font-bold tracking-tight transition-colors duration-200 whitespace-nowrap ${
-          active ? 'text-white-body' : 'text-white/60 group-hover:text-white-body'
+        className={`text-[18px] font-bold tracking-tight transition-colors duration-200 whitespace-nowrap ${
+          active
+            ? 'text-white-body'
+            : 'text-white/60 group-hover:text-white-body'
         }`}
       >
         {item.label}
@@ -87,7 +96,8 @@ function ViewerAuthControl({ onNavigate }) {
   useEffect(() => {
     if (!menuOpen) return;
     const onClick = (e) => {
-      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false);
+      if (menuRef.current && !menuRef.current.contains(e.target))
+        setMenuOpen(false);
     };
     document.addEventListener('mousedown', onClick);
     return () => document.removeEventListener('mousedown', onClick);
@@ -102,7 +112,11 @@ function ViewerAuthControl({ onNavigate }) {
         onClick={loginWithTwitch}
         className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-gamba hover:bg-purple-bright text-white-body transition-colors duration-150"
       >
-        <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current" aria-hidden="true">
+        <svg
+          viewBox="0 0 24 24"
+          className="w-3.5 h-3.5 fill-current"
+          aria-hidden="true"
+        >
           <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z" />
         </svg>
         <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
@@ -309,7 +323,11 @@ export default function Navigation({ currentPage, setPage }) {
               }}
               className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-purple-gamba hover:bg-purple-bright text-white-body transition-colors duration-150"
             >
-              <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 fill-current" aria-hidden="true">
+              <svg
+                viewBox="0 0 24 24"
+                className="w-3.5 h-3.5 fill-current"
+                aria-hidden="true"
+              >
                 <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z" />
               </svg>
               <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
@@ -345,9 +363,7 @@ export default function Navigation({ currentPage, setPage }) {
                   {item.label}
                 </span>
                 {isActive && (
-                  <span
-                    className="ml-auto text-[9px] font-bold tracking-eyebrow-lg text-emerald-signal font-mono"
-      >
+                  <span className="ml-auto text-[9px] font-bold tracking-eyebrow-lg text-emerald-signal font-mono">
                     ON
                   </span>
                 )}
@@ -358,9 +374,7 @@ export default function Navigation({ currentPage, setPage }) {
           {isAdmin && (
             <>
               {/* Admin separator */}
-              <div
-                className="mt-2 px-5 pt-4 pb-2 border-t border-white/10 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
-              >
+              <div className="mt-2 px-5 pt-4 pb-2 border-t border-white/10 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
                 Operator
               </div>
 
@@ -375,15 +389,15 @@ export default function Navigation({ currentPage, setPage }) {
               >
                 <span
                   className={`text-sm font-bold tracking-tight ${
-                    currentPage === ADMIN_ITEM.id ? 'text-white-body' : 'text-white/70'
+                    currentPage === ADMIN_ITEM.id
+                      ? 'text-white-body'
+                      : 'text-white/70'
                   }`}
                 >
                   {ADMIN_ITEM.label}
                 </span>
                 {currentPage === ADMIN_ITEM.id && (
-                  <span
-                    className="ml-auto text-[9px] font-bold tracking-eyebrow-lg text-orange-admin font-mono"
-                  >
+                  <span className="ml-auto text-[9px] font-bold tracking-eyebrow-lg text-orange-admin font-mono">
                     ON
                   </span>
                 )}

@@ -53,10 +53,20 @@ service cloud.firestore {
     // --- store / tickets / giveaways (Phase 1+) ---
 
     // Users — owner can read their own doc, staff can read all.
-    // All writes are server-only via firebase-admin (which bypasses rules).
+    // The user doc itself is server-only; viewer-owned hunt subcollections
+    // below are client-writable by the owner (self-gated, like suggestions).
     match /users/{uid} {
       allow read: if isSelf(uid) || isStaff();
       allow write: if false;
+
+      // Bonus tracker — single in-progress hunt.
+      match /active_hunt/{docId} {
+        allow read, write: if isSelf(uid) || isStaff();
+      }
+      // Bonus tracker — completed hunts (track record).
+      match /hunts/{huntId} {
+        allow read, write: if isSelf(uid) || isStaff();
+      }
     }
 
     // Store catalog — public read, owner-only write through server endpoint.

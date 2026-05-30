@@ -15,6 +15,10 @@ import {
   ArrowUp,
   ArrowDown,
   ArrowUpDown,
+  ArrowLeft,
+  Play,
+  SkipForward,
+  Clock,
 } from 'lucide-react';
 import {
   DndContext,
@@ -35,7 +39,7 @@ import { CSS } from '@dnd-kit/utilities';
 import SlotAutocomplete from './SlotAutocomplete';
 import HuntStartScreen from './HuntStartScreen';
 import { useHuntStore } from '../hooks/useHuntStore';
-import { fmt, fmtX, makeId, computeStats, computeCallerStats } from '../utils/huntCalc';
+import { fmt, fmtX, makeId, computeStats, computeCallerStats, openingOrder } from '../utils/huntCalc';
 import { renderSplit, renderRecap } from '../utils/huntExport';
 
 const inputCls =
@@ -73,6 +77,9 @@ function StatCell({ label, value }) {
 function SortableBonusRow({
   bonus,
   reqX,
+  opening = false,
+  isCurrent = false,
+  onJump,
   onWin,
   onStake,
   onRemove,
@@ -82,7 +89,7 @@ function SortableBonusRow({
   setEditingCaller,
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: bonus.id });
+    useSortable({ id: bonus.id, disabled: opening });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -94,8 +101,20 @@ function SortableBonusRow({
     <div
       ref={setNodeRef}
       style={style}
-      className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-1.5 border-b border-white/5 hover:bg-zinc-broadcast/40 transition-colors"
+      className={`grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-1.5 border-b border-white/5 transition-colors ${
+        isCurrent ? 'bg-purple-gamba/15 border-purple-gamba/30' : 'hover:bg-zinc-broadcast/40'
+      }`}
     >
+      {opening ? (
+        <button
+          type="button"
+          onClick={() => onJump && onJump(bonus.id)}
+          title="Jump to this slot"
+          className={`p-1 shrink-0 ${isCurrent ? 'text-purple-bright' : 'text-white/25 hover:text-white/65'}`}
+        >
+          <Play size={13} aria-hidden="true" />
+        </button>
+      ) : (
       <button
         type="button"
         {...attributes}
@@ -105,6 +124,7 @@ function SortableBonusRow({
       >
         <GripVertical size={14} aria-hidden="true" />
       </button>
+      )}
       <div className="min-w-0">
         <span className="flex items-center gap-1.5 min-w-0 font-bold text-white-body">
           {/* Super — common, first: small 'S' pill. Click to toggle. */}
@@ -136,6 +156,11 @@ function SortableBonusRow({
             />
           </button>
           <span className="truncate">{bonus.slot}</span>
+          {bonus.deferred && (
+            <span className="shrink-0 px-1 py-0.5 text-[8px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">
+              Later
+            </span>
+          )}
         </span>
         {/* Caller — click to edit inline. */}
         {editingCaller ? (
@@ -173,6 +198,11 @@ function SortableBonusRow({
           </button>
         )}
       </div>
+      {opening ? (
+        <span className="w-20 px-2 py-1 text-sm text-right text-white/70 tabular-nums">
+          {fmt(bonus.stake)}
+        </span>
+      ) : (
       <input
         type="number"
         value={bonus.stake || ''}
@@ -181,6 +211,7 @@ function SortableBonusRow({
         aria-label="Stake"
         className="w-20 bg-zinc-broadcast/60 border border-white/10 px-2 py-1 text-sm text-right focus:border-emerald-signal/70 focus:outline-none placeholder:text-white/20 tabular-nums"
       />
+      )}
       <input
         type="number"
         value={bonus.win || ''}
@@ -196,14 +227,30 @@ function SortableBonusRow({
       >
         {x != null ? fmtX(x) : '—'}
       </span>
-      <button
-        type="button"
-        onClick={() => onRemove(bonus.id)}
-        className="p-1 border border-red-destructive/30 text-red-destructive/80 hover:bg-red-destructive/15 transition-colors"
-        aria-label="Remove bonus"
-      >
-        <X size={11} aria-hidden="true" />
-      </button>
+      {opening ? (
+        <button
+          type="button"
+          onClick={() => onToggleMarker(bonus.id, 'deferred')}
+          title={bonus.deferred ? 'Bring back into order' : 'Come back to this slot later'}
+          className={`p-1 border transition-colors ${
+            bonus.deferred
+              ? 'border-orange-admin/60 text-orange-admin bg-orange-admin/10'
+              : 'border-white/15 text-white/40 hover:text-white-body hover:border-white/30'
+          }`}
+          aria-label="Defer slot"
+        >
+          <Clock size={11} aria-hidden="true" />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => onRemove(bonus.id)}
+          className="p-1 border border-red-destructive/30 text-red-destructive/80 hover:bg-red-destructive/15 transition-colors"
+          aria-label="Remove bonus"
+        >
+          <X size={11} aria-hidden="true" />
+        </button>
+      )}
     </div>
   );
 }
@@ -278,6 +325,38 @@ export default function HuntTracker() {
   const startBalance = activeHunt.startBalance ?? '';
   const finishBalance = activeHunt.finishBalance ?? '';
   const bannedSlots = activeHunt.bannedSlots ?? '';
+  const phase = activeHunt.phase === 'opening' ? 'opening' : 'collecting';
+
+  // Opening-phase order + clamped current index.
+  const order = openingOrder(bonuses);
+  const openingIdx = Math.min(
+    Math.max(0, activeHunt.openingIndex ?? 0),
+    Math.max(0, order.length - 1)
+  );
+  const currentBonus = order[openingIdx] || null;
+  const nextBonus = order[openingIdx + 1] || null;
+  const openedCount = bonuses.filter((b) => (Number(b.win) || 0) > 0).length;
+
+  function startOpening() {
+    updateHunt({ phase: 'opening', openingIndex: 0 });
+  }
+  function backToCollecting() {
+    updateHunt({ phase: 'collecting' });
+  }
+  function gotoOpening(idx) {
+    updateHunt({ openingIndex: Math.min(Math.max(0, idx), Math.max(0, order.length - 1)) });
+  }
+  function advanceOpening() {
+    gotoOpening(openingIdx + 1);
+  }
+  function prevOpening() {
+    gotoOpening(openingIdx - 1);
+  }
+  function toggleDeferred(id) {
+    updateHunt({
+      bonuses: bonuses.map((b) => (b.id === id ? { ...b, deferred: !b.deferred } : b)),
+    });
+  }
 
   function addBonus() {
     if (!slotInput.trim()) return;
@@ -408,13 +487,16 @@ export default function HuntTracker() {
     setBonusSort((s) => (s == null ? 'stake-desc' : s === 'stake-desc' ? 'stake-asc' : null));
   }
 
+  // The list under the panel: opening order while opening, else the sort lens.
+  const rowList = phase === 'opening' ? order : displayBonuses;
+
   return (
     <div className="border border-white/8 bg-zinc-card/30">
       {/* Hunt header */}
       <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-white/8">
         <div className="min-w-0">
           <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono mb-0.5">
-            ▸ Active hunt
+            ▸ {phase === 'opening' ? 'Opening slots' : 'Active hunt'}
           </p>
           {editingName ? (
             <input
@@ -451,6 +533,26 @@ export default function HuntTracker() {
           )}
         </div>
         <div className="ml-auto flex gap-2" data-html2canvas-ignore="true">
+          {phase === 'collecting' ? (
+            <button
+              type="button"
+              onClick={startOpening}
+              disabled={bonuses.length === 0}
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-gamba text-white-body hover:bg-purple-bright transition-colors duration-150 disabled:opacity-40"
+            >
+              <Play size={12} aria-hidden="true" />
+              <span className="text-[10px] font-bold tracking-eyebrow-lg">START OPENING</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={backToCollecting}
+              className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/15 text-white/70 hover:text-white-body hover:border-white/30 transition-colors duration-150"
+            >
+              <ArrowLeft size={12} aria-hidden="true" />
+              <span className="text-[10px] font-bold tracking-eyebrow-lg">EDIT BONUSES</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => renderSplit(activeHunt)}
@@ -519,7 +621,107 @@ export default function HuntTracker() {
         <div className="grid lg:grid-cols-2 gap-6">
           {/* LEFT — Bonus list */}
           <div className="space-y-4">
-            <PanelLabel code="01" label="Bonus list" />
+            <PanelLabel
+              code="01"
+              label={phase === 'opening' ? 'Opening slots' : 'Bonus list'}
+              accent={phase === 'opening' ? 'purple' : 'emerald'}
+            />
+
+            {/* OPENING — current / next slot */}
+            {phase === 'opening' && currentBonus && (
+              <div className="space-y-3">
+                <div className="border border-purple-gamba/40 bg-purple-gamba/5 p-4">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-purple-bright font-mono">
+                      Current slot
+                    </span>
+                    <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono tabular-nums">
+                      {openedCount} / {bonuses.length} opened
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mb-1">
+                    {currentBonus.super && (
+                      <span className="shrink-0 px-1 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">S</span>
+                    )}
+                    {currentBonus.fiveScat && (
+                      <Star size={14} aria-label="5 scatter" className="shrink-0 fill-yellow-400 text-yellow-400" />
+                    )}
+                    {currentBonus.deferred && (
+                      <span className="shrink-0 px-1 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">Later</span>
+                    )}
+                    <p className="font-black text-white-body text-2xl leading-tight truncate">
+                      {currentBonus.slot}
+                    </p>
+                  </div>
+                  <p className="text-[11px] font-mono text-white/50 mb-3 tabular-nums">
+                    stake {fmt(currentBonus.stake)}
+                    {currentBonus.caller ? ` · 📣 ${currentBonus.caller}` : ''}
+                  </p>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      type="number"
+                      autoFocus
+                      value={currentBonus.win || ''}
+                      onChange={(e) => updateBonusWin(currentBonus.id, e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && advanceOpening()}
+                      placeholder="Win ($)"
+                      aria-label="Win for current slot"
+                      className="flex-1 min-w-[120px] bg-zinc-broadcast/70 border border-purple-gamba/50 px-3 py-2 text-base text-right text-white-body focus:border-purple-bright focus:outline-none tabular-nums"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => toggleDeferred(currentBonus.id)}
+                      title="Come back to this slot later"
+                      className={`inline-flex items-center gap-1.5 px-3 py-2 border transition-colors duration-150 ${
+                        currentBonus.deferred
+                          ? 'border-orange-admin bg-orange-admin/10 text-orange-admin'
+                          : 'border-white/15 text-white/60 hover:text-white-body hover:border-white/30'
+                      }`}
+                    >
+                      <Clock size={13} aria-hidden="true" />
+                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Later</span>
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <button
+                      type="button"
+                      onClick={prevOpening}
+                      disabled={openingIdx === 0}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-white/15 text-white/60 hover:text-white-body hover:border-white/30 transition-colors duration-150 disabled:opacity-30"
+                    >
+                      <ArrowLeft size={12} aria-hidden="true" />
+                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Prev</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={advanceOpening}
+                      disabled={openingIdx >= order.length - 1}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-gamba text-white-body hover:bg-purple-bright transition-colors duration-150 disabled:opacity-30"
+                    >
+                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Next</span>
+                      <SkipForward size={12} aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+                {/* Next up */}
+                <div className="border border-white/10 bg-zinc-broadcast/40 px-4 py-2.5">
+                  <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
+                    Next up
+                  </span>
+                  {nextBonus ? (
+                    <p className="font-bold text-white-body text-sm truncate mt-0.5 tabular-nums">
+                      {nextBonus.slot}
+                      <span className="text-white/40 font-normal"> · {fmt(nextBonus.stake)}</span>
+                    </p>
+                  ) : (
+                    <p className="text-white/40 text-sm mt-0.5">Last slot — complete the hunt when ready.</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* COLLECTING — add bonus form */}
+            {phase === 'collecting' && (
             <div className="border border-white/8 bg-zinc-broadcast/40 p-3 space-y-2">
               <SlotAutocomplete
                 value={slotInput}
@@ -591,6 +793,7 @@ export default function HuntTracker() {
                 <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Log bonus</span>
               </button>
             </div>
+            )}
 
             {bonuses.length === 0 ? (
               <p className="text-center text-white/60 py-6 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono">
@@ -603,6 +806,9 @@ export default function HuntTracker() {
                   <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-2 border-b border-white/10 bg-zinc-broadcast/50 text-white/65 text-[10px] uppercase tracking-eyebrow-md font-mono font-bold">
                     <span className="w-6" aria-hidden="true" />
                     <span className="text-left">Slot</span>
+                    {phase === 'opening' ? (
+                      <span className="text-right w-20 px-1">Stake</span>
+                    ) : (
                     <button
                       type="button"
                       onClick={cycleStakeSort}
@@ -626,6 +832,7 @@ export default function HuntTracker() {
                         <ArrowUpDown size={11} aria-hidden="true" className="text-white/30" />
                       )}
                     </button>
+                    )}
                     <span className="text-right w-24">Win</span>
                     <span className="text-right w-16 px-1">X</span>
                     <span className="w-6" aria-hidden="true" />
@@ -638,14 +845,17 @@ export default function HuntTracker() {
                     onDragEnd={handleBonusDragEnd}
                   >
                     <SortableContext
-                      items={displayBonuses.map((b) => b.id)}
+                      items={rowList.map((b) => b.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      {displayBonuses.map((b) => (
+                      {rowList.map((b) => (
                         <SortableBonusRow
                           key={b.id}
                           bonus={b}
                           reqX={reqX}
+                          opening={phase === 'opening'}
+                          isCurrent={phase === 'opening' && currentBonus?.id === b.id}
+                          onJump={(id) => gotoOpening(order.findIndex((o) => o.id === id))}
                           onWin={updateBonusWin}
                           onStake={updateBonusStake}
                           onRemove={removeBonus}

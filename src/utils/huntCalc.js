@@ -119,3 +119,15 @@ export function computeCallerStats(bonuses) {
 
   return { leaderboard, bestCall, worstCall, bestAvgCaller };
 }
+
+/**
+ * Order bonuses for the Opening phase: non-deferred slots first (in list
+ * order), then deferred slots (in list order) so "come back later" slots are
+ * revisited at the end.
+ */
+export function openingOrder(bonuses) {
+  const list = bonuses ?? [];
+  const active = list.filter((b) => !b.deferred);
+  const deferred = list.filter((b) => b.deferred);
+  return [...active, ...deferred];
+}

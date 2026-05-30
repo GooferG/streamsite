@@ -119,7 +119,12 @@ async function gatherHunts() {
     };
   });
 
-  // Enrich with owner display info — one read per distinct owner.
+  await attachOwners(hunts);
+  return hunts;
+}
+
+// Attach { owner } to each hunt — one user-doc read per distinct ownerTwitchId.
+async function attachOwners(hunts) {
   const ownerIds = [...new Set(hunts.map((h) => h.ownerTwitchId))];
   const ownerMap = {};
   if (ownerIds.length > 0) {
@@ -140,8 +145,33 @@ async function gatherHunts() {
   for (const h of hunts) {
     h.owner = ownerMap[h.ownerTwitchId] || null;
   }
+}
 
-  return hunts;
+// In-progress hunts — one doc per user at users/{id}/active_hunt/current.
+async function gatherLiveHunts() {
+  const snap = await adminDb.collectionGroup('active_hunt').get();
+  const docs = snap.docs.filter(
+    (d) => d.ref.parent.parent?.parent?.id === 'users'
+  );
+  const live = docs.map((d) => {
+    const data = d.data();
+    return {
+      id: d.id,
+      ownerTwitchId: d.ref.parent.parent.id,
+      name: data.name || 'Untitled',
+      startBalance: data.startBalance ?? '',
+      finishBalance: data.finishBalance ?? '',
+      startedAt: tsToMs(data.startedAt),
+      phase: data.phase === 'opening' ? 'opening' : 'collecting',
+      bonuses: Array.isArray(data.bonuses) ? data.bonuses : [],
+      gamblers: Array.isArray(data.gamblers) ? data.gamblers : [],
+      shared: !!data.shareId,
+    };
+  });
+  await attachOwners(live);
+  // Most recently started first (startedAt is a ms number).
+  live.sort((a, b) => (b.startedAt || 0) - (a.startedAt || 0));
+  return live;
 }
 
 export default async function handler(req, res) {
@@ -153,9 +183,14 @@ export default async function handler(req, res) {
   if (!actor) return;
 
   try {
-    const hunts = await gatherHunts();
+    const [hunts, live] = await Promise.all([gatherHunts(), gatherLiveHunts()]);
     const stats = aggregate(hunts);
-    return res.status(200).json({ stats, hunts, capped: hunts.length >= HUNT_LIMIT });
+    return res.status(200).json({
+      stats,
+      hunts,
+      live,
+      capped: hunts.length >= HUNT_LIMIT,
+    });
   } catch (err) {
     console.error('community-hunts error:', err);
     // A missing composite index surfaces here with a console link to create it.

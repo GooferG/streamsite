@@ -634,7 +634,7 @@ function RoundDetail({ round, onBack }) {
         <div className="pointer-events-none absolute -top-32 -right-24 w-96 h-96 rounded-full bg-orange-admin/15 blur-3xl motion-reduce:hidden" aria-hidden="true" />
         <div className="relative px-6 sm:px-8 py-7">
           <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-orange-admin mb-2 font-mono">
-            ▸ Community hunt
+            ▸ Prediction round
           </p>
           <p
             className="font-black text-white-body leading-[0.9] tracking-[-0.03em]"
@@ -755,18 +755,18 @@ export default function AdminHuntsPage() {
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
-            <span>HUNTS</span>
+            <span>PREDICTIONS</span>
           </span>
           <span className="text-white/20">·</span>
           <span>MODULE</span>
-          <span className="text-white/70 tracking-eyebrow-lg">HNT</span>
+          <span className="text-white/70 tracking-eyebrow-lg">PRD</span>
         </div>
         <h1
           className="font-black leading-[0.85] tracking-[-0.035em] text-white-body"
           style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: 'clamp(2.25rem, 6vw, 3.25rem)' }}
         >
-          <span className="block">Community</span>
-          <span className="block text-orange-admin">hunts.</span>
+          <span className="block">Prediction</span>
+          <span className="block text-orange-admin">rounds.</span>
         </h1>
       </header>
 

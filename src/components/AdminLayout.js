@@ -28,7 +28,7 @@ const NAV_ITEMS = [
   { to: '/admin/redemptions', label: 'Redemptions', code: 'RED', icon: Inbox },
   { to: '/admin/tickets', label: 'Tickets', code: 'TKT', icon: Ticket },
   { to: '/admin/giveaways', label: 'Giveaways', code: 'GVW', icon: Gift },
-  { to: '/admin/hunts', label: 'Hunts', code: 'HNT', icon: TrendingUp },
+  { to: '/admin/hunts', label: 'Predictions', code: 'PRD', icon: TrendingUp },
   { to: '/admin/community-hunts', label: 'Community Hunts', code: 'CHT', icon: Megaphone },
   { to: '/admin/users', label: 'Users', code: 'USR', icon: Users },
   { to: '/admin/moderators', label: 'Moderators', code: 'MOD', icon: ShieldCheck, ownerOnly: true },

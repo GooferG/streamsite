@@ -211,6 +211,7 @@ export default function AdminCommunityHuntsPage() {
 
   const stats = data?.stats;
   const hunts = data?.hunts ?? [];
+  const live = data?.live ?? [];
 
   return (
     <div className="p-6 sm:p-8 max-w-4xl mx-auto">
@@ -272,6 +273,49 @@ export default function AdminCommunityHuntsPage() {
               }
             />
           </div>
+
+          {/* Live now — in-progress hunts */}
+          {live.length > 0 && (
+            <div className="border border-emerald-signal/30 bg-emerald-signal/5 mb-6">
+              <header className="px-4 py-2.5 border-b border-white/10 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal animate-pulse" />
+                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono">
+                  Live now
+                </span>
+                <span className="ml-auto text-[10px] font-mono text-white/45 tabular-nums">{live.length}</span>
+              </header>
+              <div>
+                {live.map((h) => {
+                  const s = computeStats(h);
+                  const ownerName = h.owner?.displayName || h.owner?.twitchName || h.ownerTwitchId;
+                  return (
+                    <div
+                      key={`${h.ownerTwitchId}-${h.id}`}
+                      className="grid grid-cols-[1fr_auto_auto] gap-3 items-center px-4 py-2.5 border-t border-white/5 first:border-t-0"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-bold text-white-body text-sm truncate">
+                          {h.name}
+                          {h.shared && (
+                            <span className="ml-2 text-[9px] font-bold tracking-eyebrow-md uppercase text-red-destructive font-mono">● live link</span>
+                          )}
+                        </p>
+                        <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5 tabular-nums">
+                          {ownerName} · {h.phase} · {s.bonusCount} bonuses
+                        </p>
+                      </div>
+                      <span className="text-[10px] font-mono text-white/35 tabular-nums">
+                        best {s.bestX != null ? fmtX(s.bestX) : '—'}
+                      </span>
+                      <span className="text-sm font-bold tabular-nums text-white/60">
+                        {fmt(s.totalStakes)}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {/* Top hunts by profit */}
           {stats.topHuntsByProfit.length > 0 && (

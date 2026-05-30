@@ -63,3 +63,59 @@ export function computeStats(hunt) {
     bonusCount: bonuses.length,
   };
 }
+
+/**
+ * Slot-caller leaderboard + best/worst/most-consistent stats.
+ * Only bonuses with a non-empty `caller` count. Ranking uses X (win / stake).
+ * "Played" = stake > 0 && win > 0 — best/worst/avg ignore un-entered wins so
+ * they don't all tie at 0; the leaderboard counts every called bonus.
+ */
+export function computeCallerStats(bonuses) {
+  const called = (bonuses ?? []).filter((b) => (b.caller || '').trim() !== '');
+
+  // Leaderboard — all called bonuses, played or not.
+  const counts = new Map();
+  for (const b of called) {
+    const name = b.caller.trim();
+    counts.set(name, (counts.get(name) || 0) + 1);
+  }
+  const leaderboard = [...counts.entries()]
+    .map(([caller, calls]) => ({ caller, calls }))
+    .sort((a, b) => b.calls - a.calls || a.caller.localeCompare(b.caller));
+
+  // Played called bonuses, with X.
+  const played = called
+    .map((b) => {
+      const stake = Number(b.stake) || 0;
+      const win = Number(b.win) || 0;
+      return stake > 0 && win > 0
+        ? { caller: b.caller.trim(), slot: b.slot, x: win / stake }
+        : null;
+    })
+    .filter(Boolean);
+
+  let bestCall = null;
+  let worstCall = null;
+  for (const p of played) {
+    if (!bestCall || p.x > bestCall.x) bestCall = p;
+    if (!worstCall || p.x < worstCall.x) worstCall = p;
+  }
+
+  // Best average caller (mean X across each caller's played calls).
+  const byCaller = new Map();
+  for (const p of played) {
+    const cur = byCaller.get(p.caller) || { sum: 0, calls: 0 };
+    cur.sum += p.x;
+    cur.calls += 1;
+    byCaller.set(p.caller, cur);
+  }
+  let bestAvgCaller = null;
+  for (const [caller, { sum, calls }] of byCaller.entries()) {
+    const avgX = sum / calls;
+    if (!bestAvgCaller || avgX > bestAvgCaller.avgX) {
+      bestAvgCaller = { caller, avgX, calls };
+    }
+  }
+
+  return { leaderboard, bestCall, worstCall, bestAvgCaller };
+}

@@ -10,6 +10,8 @@ import {
   Star,
   GripVertical,
   Pencil,
+  Megaphone,
+  Trophy,
 } from 'lucide-react';
 import {
   DndContext,
@@ -30,7 +32,7 @@ import { CSS } from '@dnd-kit/utilities';
 import SlotAutocomplete from './SlotAutocomplete';
 import HuntStartScreen from './HuntStartScreen';
 import { useHuntStore } from '../hooks/useHuntStore';
-import { fmt, fmtX, makeId, computeStats } from '../utils/huntCalc';
+import { fmt, fmtX, makeId, computeStats, computeCallerStats } from '../utils/huntCalc';
 import { renderSplit, renderRecap } from '../utils/huntExport';
 
 const inputCls =
@@ -65,7 +67,16 @@ function StatCell({ label, value }) {
   );
 }
 
-function SortableBonusRow({ bonus, reqX, onWin, onRemove, onToggleMarker }) {
+function SortableBonusRow({
+  bonus,
+  reqX,
+  onWin,
+  onRemove,
+  onToggleMarker,
+  onCaller,
+  editingCaller,
+  setEditingCaller,
+}) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: bonus.id });
   const style = {
@@ -90,37 +101,74 @@ function SortableBonusRow({ bonus, reqX, onWin, onRemove, onToggleMarker }) {
       >
         <GripVertical size={14} aria-hidden="true" />
       </button>
-      <span className="flex items-center gap-1.5 min-w-0 font-bold text-white-body">
-        {/* 5-scat — rare, the standout: filled gold star. Click to toggle. */}
-        <button
-          type="button"
-          onClick={() => onToggleMarker(bonus.id, 'fiveScat')}
-          aria-pressed={!!bonus.fiveScat}
-          title={bonus.fiveScat ? '5-scatter — click to clear' : 'Mark as 5-scatter'}
-          className="shrink-0 leading-none"
-        >
-          <Star
-            size={13}
-            aria-label="5 scatter"
-            className={bonus.fiveScat ? 'fill-yellow-400 text-yellow-400' : 'text-white/25 hover:text-white/55'}
+      <div className="min-w-0">
+        <span className="flex items-center gap-1.5 min-w-0 font-bold text-white-body">
+          {/* Super — common, first: small 'S' pill. Click to toggle. */}
+          <button
+            type="button"
+            onClick={() => onToggleMarker(bonus.id, 'super')}
+            aria-pressed={!!bonus.super}
+            title={bonus.super ? 'Super — click to clear' : 'Mark as super'}
+            className={`shrink-0 px-1 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono border leading-none transition-colors ${
+              bonus.super
+                ? 'border-orange-admin bg-orange-admin/15 text-orange-admin'
+                : 'border-white/15 text-white/30 hover:text-white/60 hover:border-white/30'
+            }`}
+          >
+            S
+          </button>
+          {/* 5-scat — rare, second: filled gold star. Click to toggle. */}
+          <button
+            type="button"
+            onClick={() => onToggleMarker(bonus.id, 'fiveScat')}
+            aria-pressed={!!bonus.fiveScat}
+            title={bonus.fiveScat ? '5-scatter — click to clear' : 'Mark as 5-scatter'}
+            className="shrink-0 leading-none"
+          >
+            <Star
+              size={13}
+              aria-label="5 scatter"
+              className={bonus.fiveScat ? 'fill-yellow-400 text-yellow-400' : 'text-white/25 hover:text-white/55'}
+            />
+          </button>
+          <span className="truncate">{bonus.slot}</span>
+        </span>
+        {/* Caller — click to edit inline. */}
+        {editingCaller ? (
+          <input
+            type="text"
+            list="hunt-callers"
+            autoFocus
+            defaultValue={bonus.caller || ''}
+            onBlur={(e) => {
+              onCaller(bonus.id, e.target.value);
+              setEditingCaller(null);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                onCaller(bonus.id, e.target.value);
+                setEditingCaller(null);
+              }
+              if (e.key === 'Escape') setEditingCaller(null);
+            }}
+            placeholder="Caller"
+            className="mt-0.5 w-32 bg-zinc-broadcast/80 border border-purple-gamba/50 px-1.5 py-0.5 text-[11px] text-white-body focus:outline-none"
           />
-        </button>
-        {/* Super — secondary: small 'S' pill. Click to toggle. */}
-        <button
-          type="button"
-          onClick={() => onToggleMarker(bonus.id, 'super')}
-          aria-pressed={!!bonus.super}
-          title={bonus.super ? 'Super — click to clear' : 'Mark as super'}
-          className={`shrink-0 px-1 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono border leading-none transition-colors ${
-            bonus.super
-              ? 'border-orange-admin bg-orange-admin/15 text-orange-admin'
-              : 'border-white/15 text-white/30 hover:text-white/60 hover:border-white/30'
-          }`}
-        >
-          S
-        </button>
-        <span className="truncate">{bonus.slot}</span>
-      </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEditingCaller(bonus.id)}
+            title="Set slot caller"
+            className="mt-0.5 block text-[10px] font-mono tracking-eyebrow-md uppercase truncate max-w-full text-left transition-colors"
+          >
+            {bonus.caller ? (
+              <span className="text-purple-bright">📣 {bonus.caller}</span>
+            ) : (
+              <span className="text-white/25 hover:text-white/50">+ caller</span>
+            )}
+          </button>
+        )}
+      </div>
       <span className="text-right text-white/70 tabular-nums px-1 w-20">{fmt(bonus.stake)}</span>
       <input
         type="number"
@@ -169,6 +217,8 @@ export default function HuntTracker() {
   const [stakeInput, setStakeInput] = useState('');
   const [superInput, setSuperInput] = useState(false);
   const [fiveScatInput, setFiveScatInput] = useState(false);
+  const [callerInput, setCallerInput] = useState('');
+  const [editingCallerId, setEditingCallerId] = useState(null);
   const [gamblerNameInput, setGamblerNameInput] = useState('');
   const [gamblerInInput, setGamblerInInput] = useState('');
   const [editingGamblerId, setEditingGamblerId] = useState(null);
@@ -226,6 +276,7 @@ export default function HuntTracker() {
         win: 0,
         super: superInput,
         fiveScat: fiveScatInput,
+        caller: callerInput.trim(),
       },
     ];
     updateHunt({ bonuses: next });
@@ -233,6 +284,7 @@ export default function HuntTracker() {
     setStakeInput('');
     setSuperInput(false);
     setFiveScatInput(false);
+    setCallerInput('');
   }
   function removeBonus(id) {
     updateHunt({ bonuses: bonuses.filter((b) => b.id !== id) });
@@ -246,6 +298,11 @@ export default function HuntTracker() {
   function toggleBonusMarker(id, key) {
     updateHunt({
       bonuses: bonuses.map((b) => (b.id === id ? { ...b, [key]: !b[key] } : b)),
+    });
+  }
+  function updateBonusCaller(id, value) {
+    updateHunt({
+      bonuses: bonuses.map((b) => (b.id === id ? { ...b, caller: value.trim() } : b)),
     });
   }
   function saveName() {
@@ -301,6 +358,8 @@ export default function HuntTracker() {
       finishBalance !== '' && totalBuyIns > 0 ? (pct / 100) * Number(finishBalance) : null;
     return { ...g, pct, payout };
   });
+
+  const callerStats = computeCallerStats(bonuses);
 
   return (
     <div className="border border-white/8 bg-zinc-card/30">
@@ -433,21 +492,6 @@ export default function HuntTracker() {
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => setFiveScatInput((s) => !s)}
-                  aria-pressed={fiveScatInput}
-                  className={`inline-flex items-center justify-center gap-2 px-3 py-2 border transition-colors duration-150 ${
-                    fiveScatInput
-                      ? 'border-yellow-400 bg-yellow-400/10 text-yellow-400'
-                      : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
-                  }`}
-                >
-                  <Star size={13} aria-hidden="true" className={fiveScatInput ? 'fill-yellow-400' : ''} />
-                  <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                    5 scat
-                  </span>
-                </button>
-                <button
-                  type="button"
                   onClick={() => setSuperInput((s) => !s)}
                   aria-pressed={superInput}
                   className={`inline-flex items-center justify-center gap-2 px-3 py-2 border transition-colors duration-150 ${
@@ -461,7 +505,36 @@ export default function HuntTracker() {
                     Super
                   </span>
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setFiveScatInput((s) => !s)}
+                  aria-pressed={fiveScatInput}
+                  className={`inline-flex items-center justify-center gap-2 px-3 py-2 border transition-colors duration-150 ${
+                    fiveScatInput
+                      ? 'border-yellow-400 bg-yellow-400/10 text-yellow-400'
+                      : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
+                  }`}
+                >
+                  <Star size={13} aria-hidden="true" className={fiveScatInput ? 'fill-yellow-400' : ''} />
+                  <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                    5 scat
+                  </span>
+                </button>
               </div>
+              <input
+                type="text"
+                list="hunt-callers"
+                placeholder="Slot caller (optional)"
+                value={callerInput}
+                onChange={(e) => setCallerInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && addBonus()}
+                className={`w-full ${inputCls}`}
+              />
+              <datalist id="hunt-callers">
+                {gamblers.map((g) => (
+                  <option key={g.id} value={g.name} />
+                ))}
+              </datalist>
               <button
                 type="button"
                 onClick={addBonus}
@@ -506,6 +579,9 @@ export default function HuntTracker() {
                           onWin={updateBonusWin}
                           onRemove={removeBonus}
                           onToggleMarker={toggleBonusMarker}
+                          onCaller={updateBonusCaller}
+                          editingCaller={editingCallerId === b.id}
+                          setEditingCaller={setEditingCallerId}
                         />
                       ))}
                     </SortableContext>
@@ -693,6 +769,72 @@ export default function HuntTracker() {
                 rows={3}
                 className={`w-full ${inputCls} resize-none`}
               />
+            </div>
+
+            {/* Caller stats */}
+            <div className="space-y-3">
+              <PanelLabel code="05" icon={Megaphone} label="Caller calls" accent="purple" />
+              {callerStats.leaderboard.length === 0 ? (
+                <p className="text-center text-white/60 py-4 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  No calls tagged.
+                </p>
+              ) : (
+                <>
+                  {/* Leaderboard */}
+                  <div className="border border-white/8 bg-zinc-broadcast/40">
+                    {callerStats.leaderboard.map((row, i) => (
+                      <div
+                        key={row.caller}
+                        className="flex items-center gap-3 px-3 py-1.5 border-b border-white/5 last:border-b-0"
+                      >
+                        <span className="text-[10px] font-bold tabular-nums text-white/30 font-mono w-5">
+                          {String(i + 1).padStart(2, '0')}
+                        </span>
+                        <span className="flex-1 min-w-0 truncate font-bold text-white-body text-sm">
+                          {row.caller}
+                        </span>
+                        <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-purple-bright font-mono tabular-nums">
+                          {row.calls} {row.calls === 1 ? 'call' : 'calls'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Highlights */}
+                  <div className="grid grid-cols-1 gap-2">
+                    <div className="px-3 py-2 bg-zinc-broadcast/50 border border-emerald-signal/30">
+                      <p className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-emerald-signal mb-1 font-mono inline-flex items-center gap-1.5">
+                        <Trophy size={11} aria-hidden="true" /> Best call
+                      </p>
+                      <p className="text-sm font-bold text-white-body tabular-nums">
+                        {callerStats.bestCall
+                          ? `${callerStats.bestCall.slot} · ${fmtX(callerStats.bestCall.x)} · ${callerStats.bestCall.caller}`
+                          : '—'}
+                      </p>
+                    </div>
+                    <div className="px-3 py-2 bg-zinc-broadcast/50 border border-red-destructive/30">
+                      <p className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-red-destructive mb-1 font-mono">
+                        🧱 Brick of the hunt
+                      </p>
+                      <p className="text-sm font-bold text-white-body tabular-nums">
+                        {callerStats.worstCall
+                          ? `${callerStats.worstCall.slot} · ${fmtX(callerStats.worstCall.x)} · ${callerStats.worstCall.caller}`
+                          : '—'}
+                      </p>
+                    </div>
+                    <div className="px-3 py-2 bg-zinc-broadcast/50 border border-purple-gamba/30">
+                      <p className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-purple-bright mb-1 font-mono">
+                        Most consistent
+                      </p>
+                      <p className="text-sm font-bold text-white-body tabular-nums">
+                        {callerStats.bestAvgCaller
+                          ? `${callerStats.bestAvgCaller.caller} · avg ${fmtX(callerStats.bestAvgCaller.avgX)} · ${callerStats.bestAvgCaller.calls} calls`
+                          : '—'}
+                      </p>
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

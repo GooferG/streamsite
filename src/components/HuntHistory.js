@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ChevronDown, ChevronRight, Download, History, Star } from 'lucide-react';
-import { fmt, fmtX, computeStats } from '../utils/huntCalc';
+import { fmt, fmtX, computeStats, computeCallerStats } from '../utils/huntCalc';
 
 function tsToDate(ts) {
   if (!ts) return null;
@@ -12,6 +12,7 @@ function tsToDate(ts) {
 function HistoryRow({ hunt, onReexport }) {
   const [open, setOpen] = useState(false);
   const s = computeStats(hunt);
+  const callerStats = computeCallerStats(hunt.bonuses ?? []);
   const d = tsToDate(hunt.completedAt);
   const dateLabel = d
     ? d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
@@ -80,14 +81,19 @@ function HistoryRow({ hunt, onReexport }) {
                       <tr key={b.id} className="border-b border-white/5">
                         <td className="px-3 py-2 font-bold text-white-body max-w-[160px]">
                           <span className="flex items-center gap-1.5 min-w-0">
-                            {b.fiveScat && (
-                              <Star size={11} aria-label="5 scatter" className="shrink-0 fill-yellow-400 text-yellow-400" />
-                            )}
                             {b.super && (
                               <span className="shrink-0 px-1 py-0.5 text-[8px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">S</span>
                             )}
+                            {b.fiveScat && (
+                              <Star size={11} aria-label="5 scatter" className="shrink-0 fill-yellow-400 text-yellow-400" />
+                            )}
                             <span className="truncate">{b.slot}</span>
                           </span>
+                          {b.caller && (
+                            <span className="block text-[10px] font-mono tracking-eyebrow-md uppercase text-purple-bright truncate mt-0.5">
+                              📣 {b.caller}
+                            </span>
+                          )}
                         </td>
                         <td className="px-3 py-2 text-right text-white/70 tabular-nums">{fmt(b.stake)}</td>
                         <td className="px-3 py-2 text-right text-white/70 tabular-nums">{fmt(b.win)}</td>
@@ -135,6 +141,37 @@ function HistoryRow({ hunt, onReexport }) {
                   })}
                 </tbody>
               </table>
+            </div>
+          )}
+
+          {/* Caller calls */}
+          {callerStats.leaderboard.length > 0 && (
+            <div className="border border-white/8 bg-zinc-broadcast/30 px-3 py-2.5 space-y-2">
+              <p className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-purple-bright font-mono">
+                Caller calls
+              </p>
+              <div className="flex flex-wrap gap-x-3 gap-y-1">
+                {callerStats.leaderboard.map((row) => (
+                  <span key={row.caller} className="text-[11px] font-mono text-white/70">
+                    <span className="font-bold text-white-body">{row.caller}</span>
+                    <span className="text-purple-bright tabular-nums"> {row.calls}</span>
+                  </span>
+                ))}
+              </div>
+              <div className="text-[11px] font-mono text-white/60 space-y-0.5 tabular-nums">
+                {callerStats.bestCall && (
+                  <p>
+                    <span className="text-emerald-signal font-bold uppercase tracking-eyebrow-md">Best</span>{' '}
+                    {callerStats.bestCall.slot} · {fmtX(callerStats.bestCall.x)} · {callerStats.bestCall.caller}
+                  </p>
+                )}
+                {callerStats.worstCall && (
+                  <p>
+                    <span className="text-red-destructive font-bold uppercase tracking-eyebrow-md">Brick</span>{' '}
+                    {callerStats.worstCall.slot} · {fmtX(callerStats.worstCall.x)} · {callerStats.worstCall.caller}
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </div>

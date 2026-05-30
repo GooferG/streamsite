@@ -74,6 +74,7 @@ function SortableBonusRow({
   bonus,
   reqX,
   onWin,
+  onStake,
   onRemove,
   onToggleMarker,
   onCaller,
@@ -172,12 +173,20 @@ function SortableBonusRow({
           </button>
         )}
       </div>
-      <span className="text-right text-white/70 tabular-nums px-1 w-20">{fmt(bonus.stake)}</span>
+      <input
+        type="number"
+        value={bonus.stake || ''}
+        onChange={(e) => onStake(bonus.id, e.target.value)}
+        placeholder="—"
+        aria-label="Stake"
+        className="w-20 bg-zinc-broadcast/60 border border-white/10 px-2 py-1 text-sm text-right focus:border-emerald-signal/70 focus:outline-none placeholder:text-white/20 tabular-nums"
+      />
       <input
         type="number"
         value={bonus.win || ''}
         onChange={(e) => onWin(bonus.id, e.target.value)}
         placeholder="—"
+        aria-label="Win"
         className="w-24 bg-zinc-broadcast/60 border border-white/10 px-2 py-1 text-sm text-right focus:border-emerald-signal/70 focus:outline-none placeholder:text-white/20 tabular-nums"
       />
       <span
@@ -297,6 +306,11 @@ export default function HuntTracker() {
   function updateBonusWin(id, val) {
     updateHunt({
       bonuses: bonuses.map((b) => (b.id === id ? { ...b, win: Number(val) || 0 } : b)),
+    });
+  }
+  function updateBonusStake(id, val) {
+    updateHunt({
+      bonuses: bonuses.map((b) => (b.id === id ? { ...b, stake: Number(val) || 0 } : b)),
     });
   }
   // Toggle a boolean marker ('super' | 'fiveScat') on an existing bonus.
@@ -633,6 +647,7 @@ export default function HuntTracker() {
                           bonus={b}
                           reqX={reqX}
                           onWin={updateBonusWin}
+                          onStake={updateBonusStake}
                           onRemove={removeBonus}
                           onToggleMarker={toggleBonusMarker}
                           onCaller={updateBonusCaller}

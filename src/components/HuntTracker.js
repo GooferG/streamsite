@@ -12,6 +12,9 @@ import {
   Pencil,
   Megaphone,
   Trophy,
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
 } from 'lucide-react';
 import {
   DndContext,
@@ -219,6 +222,8 @@ export default function HuntTracker() {
   const [fiveScatInput, setFiveScatInput] = useState(false);
   const [callerInput, setCallerInput] = useState('');
   const [editingCallerId, setEditingCallerId] = useState(null);
+  // Bonus-list sort lens: null = manual order (drag enabled), or 'stake-desc'/'stake-asc'.
+  const [bonusSort, setBonusSort] = useState(null);
   const [gamblerNameInput, setGamblerNameInput] = useState('');
   const [gamblerInInput, setGamblerInInput] = useState('');
   const [editingGamblerId, setEditingGamblerId] = useState(null);
@@ -313,10 +318,22 @@ export default function HuntTracker() {
   function handleBonusDragEnd(event) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
-    const oldIndex = bonuses.findIndex((b) => b.id === active.id);
-    const newIndex = bonuses.findIndex((b) => b.id === over.id);
+    // Reorder against the CURRENTLY VISIBLE order. If a stake sort is active,
+    // dragging bakes that sorted order in as the new manual order and releases
+    // the sort — so you can sort by bet size, then hand-tweak from there.
+    const current =
+      bonusSort == null
+        ? bonuses
+        : [...bonuses].sort((a, b) =>
+            bonusSort === 'stake-asc'
+              ? (Number(a.stake) || 0) - (Number(b.stake) || 0)
+              : (Number(b.stake) || 0) - (Number(a.stake) || 0)
+          );
+    const oldIndex = current.findIndex((b) => b.id === active.id);
+    const newIndex = current.findIndex((b) => b.id === over.id);
     if (oldIndex === -1 || newIndex === -1) return;
-    updateHunt({ bonuses: arrayMove(bonuses, oldIndex, newIndex) });
+    if (bonusSort != null) setBonusSort(null);
+    updateHunt({ bonuses: arrayMove(current, oldIndex, newIndex) });
   }
   function addGambler() {
     if (!gamblerNameInput.trim() || !gamblerInInput || Number(gamblerInInput) <= 0) return;
@@ -360,6 +377,22 @@ export default function HuntTracker() {
   });
 
   const callerStats = computeCallerStats(bonuses);
+
+  // Sort is a display lens — it never rewrites the saved order. Manual
+  // (drag) order is preserved and restored when the sort is cleared.
+  const displayBonuses =
+    bonusSort == null
+      ? bonuses
+      : [...bonuses].sort((a, b) =>
+          bonusSort === 'stake-asc'
+            ? (Number(a.stake) || 0) - (Number(b.stake) || 0)
+            : (Number(b.stake) || 0) - (Number(a.stake) || 0)
+        );
+
+  // none -> desc -> asc -> none
+  function cycleStakeSort() {
+    setBonusSort((s) => (s == null ? 'stake-desc' : s === 'stake-desc' ? 'stake-asc' : null));
+  }
 
   return (
     <div className="border border-white/8 bg-zinc-card/30">
@@ -556,22 +589,45 @@ export default function HuntTracker() {
                   <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-2 border-b border-white/10 bg-zinc-broadcast/50 text-white/65 text-[10px] uppercase tracking-eyebrow-md font-mono font-bold">
                     <span className="w-6" aria-hidden="true" />
                     <span className="text-left">Slot</span>
-                    <span className="text-right w-20 px-1">Stake</span>
+                    <button
+                      type="button"
+                      onClick={cycleStakeSort}
+                      title={
+                        bonusSort == null
+                          ? 'Sort by stake (high to low)'
+                          : bonusSort === 'stake-desc'
+                            ? 'Sort by stake (low to high)'
+                            : 'Clear sort — back to manual order'
+                      }
+                      className={`text-right w-20 px-1 inline-flex items-center justify-end gap-1 uppercase tracking-eyebrow-md transition-colors ${
+                        bonusSort ? 'text-emerald-signal' : 'hover:text-white-body'
+                      }`}
+                    >
+                      Stake
+                      {bonusSort === 'stake-desc' ? (
+                        <ArrowDown size={11} aria-hidden="true" />
+                      ) : bonusSort === 'stake-asc' ? (
+                        <ArrowUp size={11} aria-hidden="true" />
+                      ) : (
+                        <ArrowUpDown size={11} aria-hidden="true" className="text-white/30" />
+                      )}
+                    </button>
                     <span className="text-right w-24">Win</span>
                     <span className="text-right w-16 px-1">X</span>
                     <span className="w-6" aria-hidden="true" />
                   </div>
-                  {/* Sortable rows */}
+                  {/* Sortable rows. Drag only in manual mode (bonusSort == null);
+                      while a stake sort is active the list is a read-only lens. */}
                   <DndContext
                     sensors={sensors}
                     collisionDetection={closestCenter}
                     onDragEnd={handleBonusDragEnd}
                   >
                     <SortableContext
-                      items={bonuses.map((b) => b.id)}
+                      items={displayBonuses.map((b) => b.id)}
                       strategy={verticalListSortingStrategy}
                     >
-                      {bonuses.map((b) => (
+                      {displayBonuses.map((b) => (
                         <SortableBonusRow
                           key={b.id}
                           bonus={b}

@@ -773,7 +773,7 @@ export default function HuntTracker() {
 
             {/* Caller stats */}
             <div className="space-y-3">
-              <PanelLabel code="05" icon={Megaphone} label="Caller calls" accent="purple" />
+              <PanelLabel code="05" icon={Megaphone} label="Slot calls" accent="purple" />
               {callerStats.leaderboard.length === 0 ? (
                 <p className="text-center text-white/60 py-4 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono">
                   No calls tagged.

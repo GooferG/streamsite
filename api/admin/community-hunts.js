@@ -1,5 +1,5 @@
 import { adminDb } from '../_lib/firebaseAdmin.js';
-import { applyCors, requireStaff } from '../_lib/verifyAuth.js';
+import { applyCors, requireStaff, requireOwner } from '../_lib/verifyAuth.js';
 
 // Admin community-hunts dashboard endpoint (read-only).
 //
@@ -177,6 +177,14 @@ async function gatherLiveHunts() {
 export default async function handler(req, res) {
   applyCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
+
+  // POST = owner-only delete action. GET = staff-readable dashboard.
+  if (req.method === 'POST') {
+    const owner = await requireOwner(req, res);
+    if (!owner) return;
+    return handleDelete(req, res);
+  }
+
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   const actor = await requireStaff(req, res);
@@ -195,5 +203,39 @@ export default async function handler(req, res) {
     console.error('community-hunts error:', err);
     // A missing composite index surfaces here with a console link to create it.
     return res.status(500).json({ error: 'Failed to load community hunts' });
+  }
+}
+
+// Owner-only deletion of a viewer's tracker hunt.
+//   { action: 'delete', kind: 'live', ownerTwitchId }
+//     -> deletes users/{ownerTwitchId}/active_hunt/current (+ its shared mirror)
+//   { action: 'delete', kind: 'completed', ownerTwitchId, huntId }
+//     -> deletes users/{ownerTwitchId}/hunts/{huntId}
+async function handleDelete(req, res) {
+  const { action, kind, ownerTwitchId, huntId } = req.body || {};
+  if (action !== 'delete') return res.status(400).json({ error: 'Unknown action' });
+  if (!ownerTwitchId) return res.status(400).json({ error: 'ownerTwitchId required' });
+
+  try {
+    if (kind === 'live') {
+      const ref = adminDb.collection('users').doc(ownerTwitchId).collection('active_hunt').doc('current');
+      const snap = await ref.get();
+      // Clean up the public live mirror if this hunt was being shared.
+      const shareId = snap.exists ? snap.data().shareId : null;
+      await ref.delete();
+      if (shareId) {
+        await adminDb.collection('shared_hunts').doc(shareId).delete().catch(() => {});
+      }
+      return res.status(200).json({ ok: true });
+    }
+    if (kind === 'completed') {
+      if (!huntId) return res.status(400).json({ error: 'huntId required' });
+      await adminDb.collection('users').doc(ownerTwitchId).collection('hunts').doc(huntId).delete();
+      return res.status(200).json({ ok: true });
+    }
+    return res.status(400).json({ error: 'Invalid kind' });
+  } catch (err) {
+    console.error('community-hunts delete error:', err);
+    return res.status(500).json({ error: 'Delete failed' });
   }
 }

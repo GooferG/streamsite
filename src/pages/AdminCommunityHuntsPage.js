@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   TrendingUp,
   Trophy,
@@ -7,8 +7,10 @@ import {
   ChevronDown,
   ChevronRight,
   Star,
+  Trash2,
 } from 'lucide-react';
 import { authedFetch } from '../utils/authedFetch';
+import { useAuth } from '../contexts/AuthContext';
 import { fmt, fmtX, computeStats, computeCallerStats } from '../utils/huntCalc';
 
 function formatDate(ms) {
@@ -143,8 +145,9 @@ function HuntDetail({ hunt }) {
   );
 }
 
-function HuntRow({ hunt }) {
+function HuntRow({ hunt, canDelete, onDelete, deleting }) {
   const [open, setOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const s = computeStats(hunt);
   const ownerName = hunt.owner?.displayName || hunt.owner?.twitchName || hunt.ownerTwitchId;
 
@@ -179,35 +182,156 @@ function HuntRow({ hunt }) {
           best {s.bestX != null ? fmtX(s.bestX) : '—'}
         </span>
       </button>
-      {open && <HuntDetail hunt={hunt} />}
+      {open && (
+        <>
+          <HuntDetail hunt={hunt} />
+          {canDelete && (
+            <div className="px-3 pb-3 flex justify-end" data-html2canvas-ignore="true">
+              {confirming ? (
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] font-mono uppercase tracking-eyebrow-md text-white/50">Delete this hunt?</span>
+                  <button
+                    type="button"
+                    disabled={!!deleting}
+                    onClick={() => onDelete({ kind: 'completed', ownerTwitchId: hunt.ownerTwitchId, huntId: hunt.id })}
+                    className="px-2 py-1 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono disabled:opacity-50"
+                  >
+                    {deleting ? 'Deleting…' : 'Confirm'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirming(false)}
+                    className="px-2 py-1 border border-white/10 text-white/55 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setConfirming(true)}
+                  className="inline-flex items-center gap-1.5 px-2 py-1 border border-red-destructive/30 text-red-destructive/70 hover:bg-red-destructive/10 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                >
+                  <Trash2 size={11} aria-hidden="true" />
+                  Delete
+                </button>
+              )}
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
+}
+
+function LiveRow({ hunt, canDelete, onDelete, deleting }) {
+  const [confirming, setConfirming] = useState(false);
+  const s = computeStats(hunt);
+  const ownerName = hunt.owner?.displayName || hunt.owner?.twitchName || hunt.ownerTwitchId;
+
+  return (
+    <div className="grid grid-cols-[1fr_auto_auto_auto] gap-3 items-center px-4 py-2.5 border-t border-white/5 first:border-t-0">
+      <div className="min-w-0">
+        <p className="font-bold text-white-body text-sm truncate">
+          {hunt.name}
+          {hunt.shared && (
+            <span className="ml-2 text-[9px] font-bold tracking-eyebrow-md uppercase text-red-destructive font-mono">● live link</span>
+          )}
+        </p>
+        <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5 tabular-nums">
+          {ownerName} · {hunt.phase} · {s.bonusCount} bonuses
+        </p>
+      </div>
+      <span className="text-[10px] font-mono text-white/35 tabular-nums">
+        best {s.bestX != null ? fmtX(s.bestX) : '—'}
+      </span>
+      <span className="text-sm font-bold tabular-nums text-white/60">{fmt(s.totalStakes)}</span>
+      {canDelete ? (
+        confirming ? (
+          <span className="flex items-center gap-1.5">
+            <button
+              type="button"
+              disabled={!!deleting}
+              onClick={() => onDelete({ kind: 'live', ownerTwitchId: hunt.ownerTwitchId })}
+              className="px-2 py-1 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono disabled:opacity-50"
+            >
+              {deleting ? '…' : 'Stop'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirming(false)}
+              className="px-2 py-1 border border-white/10 text-white/55 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+            >
+              ✕
+            </button>
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setConfirming(true)}
+            title="Stop & delete this in-progress hunt"
+            className="p-1 border border-red-destructive/30 text-red-destructive/70 hover:bg-red-destructive/10"
+            aria-label="Delete live hunt"
+          >
+            <Trash2 size={11} aria-hidden="true" />
+          </button>
+        )
+      ) : (
+        <span />
+      )}
     </div>
   );
 }
 
 export default function AdminCommunityHuntsPage() {
+  const { isOwner } = useAuth();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [deleting, setDeleting] = useState(null); // key of the row being deleted
+
+  const load = useCallback(async () => {
+    try {
+      const res = await authedFetch('/api/admin/community-hunts', { method: 'GET' });
+      const json = await res.json();
+      if (!res.ok) setError(json.error || 'Failed to load');
+      else {
+        setData(json);
+        setError(null);
+      }
+    } catch (e) {
+      setError('Network error');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
+    load();
+  }, [load]);
+
+  const deleteHunt = useCallback(
+    async (payload, key) => {
+      setDeleting(key);
       try {
-        const res = await authedFetch('/api/admin/community-hunts', { method: 'GET' });
-        const json = await res.json();
-        if (cancelled) return;
-        if (!res.ok) setError(json.error || 'Failed to load');
-        else setData(json);
+        const res = await authedFetch('/api/admin/community-hunts', {
+          method: 'POST',
+          body: JSON.stringify({ action: 'delete', ...payload }),
+        });
+        if (!res.ok) {
+          const j = await res.json().catch(() => ({}));
+          alert(`Delete failed: ${j.error || res.status}`);
+        } else {
+          await load();
+        }
       } catch (e) {
-        if (!cancelled) setError('Network error');
+        alert('Delete failed (network).');
       } finally {
-        if (!cancelled) setLoading(false);
+        setDeleting(null);
       }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    },
+    [load]
+  );
 
   const stats = data?.stats;
   const hunts = data?.hunts ?? [];
@@ -285,34 +409,15 @@ export default function AdminCommunityHuntsPage() {
                 <span className="ml-auto text-[10px] font-mono text-white/45 tabular-nums">{live.length}</span>
               </header>
               <div>
-                {live.map((h) => {
-                  const s = computeStats(h);
-                  const ownerName = h.owner?.displayName || h.owner?.twitchName || h.ownerTwitchId;
-                  return (
-                    <div
-                      key={`${h.ownerTwitchId}-${h.id}`}
-                      className="grid grid-cols-[1fr_auto_auto] gap-3 items-center px-4 py-2.5 border-t border-white/5 first:border-t-0"
-                    >
-                      <div className="min-w-0">
-                        <p className="font-bold text-white-body text-sm truncate">
-                          {h.name}
-                          {h.shared && (
-                            <span className="ml-2 text-[9px] font-bold tracking-eyebrow-md uppercase text-red-destructive font-mono">● live link</span>
-                          )}
-                        </p>
-                        <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5 tabular-nums">
-                          {ownerName} · {h.phase} · {s.bonusCount} bonuses
-                        </p>
-                      </div>
-                      <span className="text-[10px] font-mono text-white/35 tabular-nums">
-                        best {s.bestX != null ? fmtX(s.bestX) : '—'}
-                      </span>
-                      <span className="text-sm font-bold tabular-nums text-white/60">
-                        {fmt(s.totalStakes)}
-                      </span>
-                    </div>
-                  );
-                })}
+                {live.map((h) => (
+                  <LiveRow
+                    key={`${h.ownerTwitchId}-${h.id}`}
+                    hunt={h}
+                    canDelete={isOwner}
+                    onDelete={(payload) => deleteHunt(payload, `l-${h.ownerTwitchId}`)}
+                    deleting={deleting === `l-${h.ownerTwitchId}`}
+                  />
+                ))}
               </div>
             </div>
           )}
@@ -373,7 +478,13 @@ export default function AdminCommunityHuntsPage() {
             ) : (
               <div>
                 {hunts.map((h) => (
-                  <HuntRow key={`${h.ownerTwitchId}-${h.id}`} hunt={h} />
+                  <HuntRow
+                    key={`${h.ownerTwitchId}-${h.id}`}
+                    hunt={h}
+                    canDelete={isOwner}
+                    onDelete={(payload) => deleteHunt(payload, `c-${h.ownerTwitchId}-${h.id}`)}
+                    deleting={deleting === `c-${h.ownerTwitchId}-${h.id}`}
+                  />
                 ))}
               </div>
             )}

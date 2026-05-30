@@ -233,6 +233,45 @@ export function useHuntStore() {
     return completed;
   }, [activeHunt, isLoggedIn, uid]);
 
+  // Discard the in-progress hunt WITHOUT archiving it to history.
+  const discardActiveHunt = useCallback(async () => {
+    if (!activeHunt) return;
+    // Cancel any pending debounced write so it can't resurrect the hunt.
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    pendingWriteRef.current = null;
+    if (!isLoggedIn) {
+      saveLocal(null);
+      setActiveHunt(null);
+      return;
+    }
+    try {
+      await deleteDoc(doc(db, 'users', uid, 'active_hunt', 'current'));
+      if (activeHunt.shareId) {
+        await deleteDoc(doc(db, 'shared_hunts', activeHunt.shareId)).catch((e) =>
+          console.error('mirror cleanup failed:', e)
+        );
+      }
+      setActiveHunt(null);
+    } catch (e) {
+      console.error('discard failed:', e);
+      setError('Could not discard the hunt. Try again.');
+    }
+  }, [activeHunt, isLoggedIn, uid]);
+
+  // Delete one of the user's own completed hunts (logged-in only).
+  const deleteHistoryHunt = useCallback(
+    async (huntId) => {
+      if (!isLoggedIn || !huntId) return;
+      try {
+        await deleteDoc(doc(db, 'users', uid, 'hunts', huntId));
+      } catch (e) {
+        console.error('delete history hunt failed:', e);
+        setError('Could not delete that hunt.');
+      }
+    },
+    [isLoggedIn, uid]
+  );
+
   const claimLocalHunt = useCallback(async () => {
     const local = loadLocal();
     if (!local || !isLoggedIn) return;
@@ -267,6 +306,8 @@ export function useHuntStore() {
     startHunt,
     updateHunt,
     completeHunt,
+    discardActiveHunt,
+    deleteHistoryHunt,
     claimLocalHunt,
     discardLocalHunt,
     startSharing,

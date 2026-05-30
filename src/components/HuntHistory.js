@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Download, History, Star } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, History, Star, Trash2 } from 'lucide-react';
 import { fmt, fmtX, computeStats, computeCallerStats } from '../utils/huntCalc';
 
 function tsToDate(ts) {
@@ -9,8 +9,9 @@ function tsToDate(ts) {
   return new Date(ts);
 }
 
-function HistoryRow({ hunt, onReexport }) {
+function HistoryRow({ hunt, onReexport, onDelete }) {
   const [open, setOpen] = useState(false);
+  const [confirming, setConfirming] = useState(false);
   const s = computeStats(hunt);
   const callerStats = computeCallerStats(hunt.bonuses ?? []);
   const d = tsToDate(hunt.completedAt);
@@ -23,7 +24,7 @@ function HistoryRow({ hunt, onReexport }) {
 
   return (
     <div className="border-t border-white/8 first:border-t-0">
-      <div className="w-full grid grid-cols-[auto_1fr_auto_auto] gap-3 items-center px-3 py-2.5">
+      <div className="w-full grid grid-cols-[auto_1fr_auto_auto_auto] gap-3 items-center px-3 py-2.5">
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
@@ -58,6 +59,43 @@ function HistoryRow({ hunt, onReexport }) {
         >
           <Download size={12} aria-hidden="true" />
         </button>
+        {onDelete ? (
+          confirming ? (
+            <span className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  onDelete(hunt.id);
+                  setConfirming(false);
+                }}
+                className="p-1.5 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive text-[9px] font-bold tracking-eyebrow-md uppercase font-mono"
+                title="Confirm delete"
+              >
+                Del
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirming(false)}
+                className="p-1.5 border border-white/10 text-white/50 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono"
+                title="Cancel"
+              >
+                ✕
+              </button>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirming(true)}
+              className="p-1.5 border border-red-destructive/30 text-red-destructive/70 hover:bg-red-destructive/10 transition-colors duration-150"
+              aria-label="Delete hunt"
+              title="Delete this hunt"
+            >
+              <Trash2 size={12} aria-hidden="true" />
+            </button>
+          )
+        ) : (
+          <span />
+        )}
       </div>
 
       {open && (
@@ -180,7 +218,7 @@ function HistoryRow({ hunt, onReexport }) {
   );
 }
 
-export default function HuntHistory({ history, onReexport }) {
+export default function HuntHistory({ history, onReexport, onDelete }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/65 font-mono">
@@ -197,7 +235,7 @@ export default function HuntHistory({ history, onReexport }) {
       ) : (
         <div className="border border-white/8 bg-zinc-card/30">
           {history.map((h) => (
-            <HistoryRow key={h.id} hunt={h} onReexport={onReexport} />
+            <HistoryRow key={h.id} hunt={h} onReexport={onReexport} onDelete={onDelete} />
           ))}
         </div>
       )}

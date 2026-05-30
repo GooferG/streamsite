@@ -22,6 +22,7 @@ import {
   Radio,
   Check,
   Link as LinkIcon,
+  Trash2,
 } from 'lucide-react';
 import {
   DndContext,
@@ -270,6 +271,8 @@ export default function HuntTracker() {
     startHunt,
     updateHunt,
     completeHunt,
+    discardActiveHunt,
+    deleteHistoryHunt,
     claimLocalHunt,
     discardLocalHunt,
     shareId,
@@ -291,6 +294,7 @@ export default function HuntTracker() {
   const [gamblerInInput, setGamblerInInput] = useState('');
   const [editingGamblerId, setEditingGamblerId] = useState(null);
   const [confirmingComplete, setConfirmingComplete] = useState(false);
+  const [confirmingDiscard, setConfirmingDiscard] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
 
@@ -322,6 +326,7 @@ export default function HuntTracker() {
         onClaimLocal={claimLocalHunt}
         onDiscardLocal={discardLocalHunt}
         onReexport={renderRecap}
+        onDeleteHunt={deleteHistoryHunt}
       />
     );
   }
@@ -642,6 +647,40 @@ export default function HuntTracker() {
                 <span className="text-[10px] font-bold tracking-eyebrow-lg">CANCEL</span>
               </button>
             </div>
+          )}
+          {!confirmingComplete && (
+            confirmingDiscard ? (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={async () => {
+                    await discardActiveHunt();
+                    setConfirmingDiscard(false);
+                  }}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 transition-colors duration-150"
+                >
+                  <Trash2 size={12} aria-hidden="true" />
+                  <span className="text-[10px] font-bold tracking-eyebrow-lg">DISCARD HUNT</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmingDiscard(false)}
+                  className="px-3 py-1.5 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
+                >
+                  <span className="text-[10px] font-bold tracking-eyebrow-lg">KEEP</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmingDiscard(true)}
+                title="Discard this hunt without saving to history"
+                className="inline-flex items-center gap-2 px-2.5 py-1.5 border border-white/10 text-white/50 hover:text-red-destructive hover:border-red-destructive/50 transition-colors duration-150"
+              >
+                <Trash2 size={12} aria-hidden="true" />
+                <span className="text-[10px] font-bold tracking-eyebrow-lg">DISCARD</span>
+              </button>
+            )
           )}
         </div>
       </div>

@@ -14,6 +14,7 @@ export default function HuntStartScreen({
   onClaimLocal,
   onDiscardLocal,
   onReexport,
+  onDeleteHunt,
 }) {
   const { loginWithTwitch } = useTwitchAuth();
   const [name, setName] = useState('');
@@ -129,7 +130,7 @@ export default function HuntStartScreen({
         {/* History (logged in) */}
         {isLoggedIn && (
           <div className="pt-2">
-            <HuntHistory history={history} onReexport={onReexport} />
+            <HuntHistory history={history} onReexport={onReexport} onDelete={onDeleteHunt} />
           </div>
         )}
       </div>

@@ -8,10 +8,12 @@ import {
   ChevronRight,
   Star,
   Trash2,
+  Download,
 } from 'lucide-react';
 import { authedFetch } from '../utils/authedFetch';
 import { useAuth } from '../contexts/AuthContext';
 import { fmt, fmtX, computeStats, computeCallerStats } from '../utils/huntCalc';
+import { renderRecap } from '../utils/huntExport';
 
 function formatDate(ms) {
   if (!ms) return '—';
@@ -185,9 +187,18 @@ function HuntRow({ hunt, canDelete, onDelete, deleting }) {
       {open && (
         <>
           <HuntDetail hunt={hunt} />
-          {canDelete && (
-            <div className="px-3 pb-3 flex justify-end" data-html2canvas-ignore="true">
-              {confirming ? (
+          <div className="px-3 pb-3 flex items-center justify-end gap-2" data-html2canvas-ignore="true">
+            <button
+              type="button"
+              onClick={() => renderRecap(hunt)}
+              title="Re-export the recap image for this hunt"
+              className="inline-flex items-center gap-1.5 px-2 py-1 border border-emerald-signal/40 text-emerald-signal hover:bg-emerald-signal/10 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors"
+            >
+              <Download size={11} aria-hidden="true" />
+              Reprint results
+            </button>
+            {canDelete &&
+              (confirming ? (
                 <div className="flex items-center gap-2">
                   <span className="text-[10px] font-mono uppercase tracking-eyebrow-md text-white/50">Delete this hunt?</span>
                   <button
@@ -215,9 +226,8 @@ function HuntRow({ hunt, canDelete, onDelete, deleting }) {
                   <Trash2 size={11} aria-hidden="true" />
                   Delete
                 </button>
-              )}
-            </div>
-          )}
+              ))}
+          </div>
         </>
       )}
     </div>

@@ -19,8 +19,10 @@ const ALL_SLOTS = rawSlots.map((g) => ({
   id: g.id,
   slug: String(g.id),
   name: g.name,
-  providerName: g.provider,
-  providerSlug: g.provider.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+  providerName: g.provider || null,
+  providerSlug: g.provider
+    ? g.provider.toLowerCase().replace(/[^a-z0-9]/g, '-')
+    : 'unknown',
   thumbnail: g.image,
   rtp: g.rtp ?? null,
   volatility: g.volatility ?? null,
@@ -210,7 +212,7 @@ function SlotSearch() {
       if (
         term &&
         !g.name.toLowerCase().includes(term) &&
-        !g.providerName.toLowerCase().includes(term)
+        !(g.providerName || '').toLowerCase().includes(term)
       )
         return false;
       if (filterBonusBuy && !g.bonusBuy) return false;

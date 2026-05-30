@@ -33,10 +33,13 @@ const ALL_SLOTS = rawSlots.map((g) => ({
 
 const ALL_PROVIDERS = Array.from(
   new Map(
-    ALL_SLOTS.map((g) => [
-      g.providerSlug,
-      { name: g.providerName, slug: g.providerSlug, thumbnail: null },
-    ])
+    ALL_SLOTS
+      // Backfilled slots have no provider — keep them out of the provider filter.
+      .filter((g) => g.providerName)
+      .map((g) => [
+        g.providerSlug,
+        { name: g.providerName, slug: g.providerSlug, thumbnail: null },
+      ])
   ).values()
 ).sort((a, b) => a.name.localeCompare(b.name));
 

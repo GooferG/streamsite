@@ -228,7 +228,7 @@ export default function VodsPage({ videos, clips, loading }) {
               <p className="text-base text-white/70">
                 No {contentType === 'all' ? 'tapes' : contentType} on file.
               </p>
-              <p className="text-sm text-white/40 mt-1">
+              <p className="text-sm text-white/65 mt-1">
                 Check back after the next broadcast.
               </p>
             </div>

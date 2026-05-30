@@ -258,6 +258,38 @@ export function useHuntStore() {
     }
   }, [activeHunt, isLoggedIn, uid]);
 
+  // Re-open a completed hunt: move it back to active_hunt/current and remove it
+  // from history, so the user lands in the tracker on its previous state.
+  // Only valid when nothing is currently active (the history UI only shows on
+  // the idle screen, so there's no in-progress hunt to clobber).
+  const reopenHunt = useCallback(
+    async (huntId) => {
+      if (!isLoggedIn || !huntId || activeHunt) return;
+      const hunt = history.find((h) => h.id === huntId);
+      if (!hunt) return;
+      const restored = { ...hunt };
+      delete restored.id;
+      // Drop a stale shareId — the live mirror was deleted on completion, so a
+      // leftover id would show a dead "Live" badge until re-shared.
+      delete restored.shareId;
+      // Same for a suggestion-intake link: the old link is no longer wired to
+      // this (now re-activated) hunt. Owner can create a fresh one.
+      delete restored.intakeLinkId;
+      delete restored.intakeOpen;
+      restored.status = 'active';
+      restored.completedAt = null;
+      try {
+        await setDoc(doc(db, 'users', uid, 'active_hunt', 'current'), restored);
+        await deleteDoc(doc(db, 'users', uid, 'hunts', huntId));
+        // Active subscription will stream the restored hunt into state.
+      } catch (e) {
+        console.error('reopen failed:', e);
+        setError('Could not re-open that hunt.');
+      }
+    },
+    [isLoggedIn, uid, history, activeHunt]
+  );
+
   // Delete one of the user's own completed hunts (logged-in only).
   const deleteHistoryHunt = useCallback(
     async (huntId) => {
@@ -307,6 +339,7 @@ export function useHuntStore() {
     updateHunt,
     completeHunt,
     discardActiveHunt,
+    reopenHunt,
     deleteHistoryHunt,
     claimLocalHunt,
     discardLocalHunt,

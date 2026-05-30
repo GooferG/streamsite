@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Download, History, Star, Trash2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, History, Star, Trash2, RotateCcw } from 'lucide-react';
 import { fmt, fmtX, computeStats, computeCallerStats } from '../utils/huntCalc';
 
 function tsToDate(ts) {
@@ -9,9 +9,10 @@ function tsToDate(ts) {
   return new Date(ts);
 }
 
-function HistoryRow({ hunt, onReexport, onDelete }) {
+function HistoryRow({ hunt, onReexport, onReopen, onDelete }) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
+  const [confirmingReopen, setConfirmingReopen] = useState(false);
   const s = computeStats(hunt);
   const callerStats = computeCallerStats(hunt.bonuses ?? []);
   const d = tsToDate(hunt.completedAt);
@@ -24,7 +25,7 @@ function HistoryRow({ hunt, onReexport, onDelete }) {
 
   return (
     <div className="border-t border-white/8 first:border-t-0">
-      <div className="w-full grid grid-cols-[auto_1fr_auto_auto_auto] gap-3 items-center px-3 py-2.5">
+      <div className="w-full grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-3 items-center px-3 py-2.5">
         <button
           type="button"
           onClick={() => setOpen((o) => !o)}
@@ -59,6 +60,43 @@ function HistoryRow({ hunt, onReexport, onDelete }) {
         >
           <Download size={12} aria-hidden="true" />
         </button>
+        {onReopen ? (
+          confirmingReopen ? (
+            <span className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => {
+                  onReopen(hunt.id);
+                  setConfirmingReopen(false);
+                }}
+                className="p-1.5 bg-purple-gamba/20 border border-purple-gamba/60 text-purple-bright text-[9px] font-bold tracking-eyebrow-md uppercase font-mono"
+                title="Confirm re-open"
+              >
+                Open
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingReopen(false)}
+                className="p-1.5 border border-white/10 text-white/50 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono"
+                title="Cancel"
+              >
+                ✕
+              </button>
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setConfirmingReopen(true)}
+              className="p-1.5 border border-purple-gamba/40 text-purple-bright hover:bg-purple-gamba/15 transition-colors duration-150"
+              aria-label="Re-open hunt"
+              title="Re-open — bring this hunt back as active"
+            >
+              <RotateCcw size={12} aria-hidden="true" />
+            </button>
+          )
+        ) : (
+          <span />
+        )}
         {onDelete ? (
           confirming ? (
             <span className="flex items-center gap-1">
@@ -218,7 +256,7 @@ function HistoryRow({ hunt, onReexport, onDelete }) {
   );
 }
 
-export default function HuntHistory({ history, onReexport, onDelete }) {
+export default function HuntHistory({ history, onReexport, onReopen, onDelete }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/65 font-mono">
@@ -235,7 +273,13 @@ export default function HuntHistory({ history, onReexport, onDelete }) {
       ) : (
         <div className="border border-white/8 bg-zinc-card/30">
           {history.map((h) => (
-            <HistoryRow key={h.id} hunt={h} onReexport={onReexport} onDelete={onDelete} />
+            <HistoryRow
+              key={h.id}
+              hunt={h}
+              onReexport={onReexport}
+              onReopen={onReopen}
+              onDelete={onDelete}
+            />
           ))}
         </div>
       )}

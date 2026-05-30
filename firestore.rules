@@ -147,6 +147,14 @@ service cloud.firestore {
       }
     }
 
+    // Suggestion intake links. Holds a salted password hash for the public
+    // suggestion-submission form, so it must never be client-readable. All
+    // access goes through server endpoints (/api/hunt-suggest/*) which validate
+    // the password and write into the owner's active_hunt with admin creds.
+    match /suggestion_intakes/{linkId} {
+      allow read, write: if false;
+    }
+
     // Live-shared bonus hunt snapshots. The unguessable shareId is the access
     // capability, so reads are fully public (spectators, no login). Writes are
     // owner-only: a signed-in user may create/update/delete only a doc whose

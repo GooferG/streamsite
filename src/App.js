@@ -38,6 +38,7 @@ import DiscordCallbackPage from './pages/DiscordCallbackPage';
 import SuggestPage from './pages/SuggestPage';
 import SuggestOverlay from './pages/SuggestOverlay';
 import LiveHuntPage from './pages/LiveHuntPage';
+import HuntSuggestPage from './pages/HuntSuggestPage';
 import { AuthProvider } from './contexts/AuthContext';
 import { TwitchAuthProvider } from './contexts/TwitchAuthContext';
 
@@ -251,6 +252,7 @@ function StreamingSiteContent() {
           <Route path="/discord-callback" element={<DiscordCallbackPage />} />
           <Route path="/suggest-overlay" element={<SuggestOverlay />} />
           <Route path="/live/:shareId" element={<LiveHuntPage />} />
+          <Route path="/hunt-suggest/:linkId" element={<HuntSuggestPage />} />
         </Routes>
       </main>
 

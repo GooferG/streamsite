@@ -41,10 +41,12 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import SlotAutocomplete from './SlotAutocomplete';
+import SuggestionsPanel from './SuggestionsPanel';
 import HuntStartScreen from './HuntStartScreen';
 import { useHuntStore } from '../hooks/useHuntStore';
 import { fmt, fmtX, makeId, computeStats, computeCallerStats, openingOrder } from '../utils/huntCalc';
 import { renderSplit, renderRecap } from '../utils/huntExport';
+import { authedFetch } from '../utils/authedFetch';
 
 const inputCls =
   'bg-zinc-broadcast/60 border border-white/10 px-3 py-2 text-sm text-white-body placeholder:text-white/50 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';
@@ -272,6 +274,7 @@ export default function HuntTracker() {
     updateHunt,
     completeHunt,
     discardActiveHunt,
+    reopenHunt,
     deleteHistoryHunt,
     claimLocalHunt,
     discardLocalHunt,
@@ -297,6 +300,16 @@ export default function HuntTracker() {
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
   const [editingName, setEditingName] = useState(false);
   const [nameInput, setNameInput] = useState('');
+  // Stake prompt when promoting a suggestion to a real bonus.
+  // { person, slot } while open, else null.
+  const [landingSuggestion, setLandingSuggestion] = useState(null);
+  const [landStakeInput, setLandStakeInput] = useState('');
+  // "Hunt complete" wrap-up prompt — opened by Enter on the last opening slot.
+  // Asks for finish balance, then Complete + Export. Dismissible (non-destructive).
+  const [showWrapUp, setShowWrapUp] = useState(false);
+  // Suggestion-intake link controls.
+  const [linkBusy, setLinkBusy] = useState(false);
+  const [linkError, setLinkError] = useState(null);
 
   // Drag sensors must be created unconditionally (before any early return).
   const sensors = useSensors(
@@ -326,6 +339,7 @@ export default function HuntTracker() {
         onClaimLocal={claimLocalHunt}
         onDiscardLocal={discardLocalHunt}
         onReexport={renderRecap}
+        onReopenHunt={reopenHunt}
         onDeleteHunt={deleteHistoryHunt}
       />
     );
@@ -337,6 +351,7 @@ export default function HuntTracker() {
   const startBalance = activeHunt.startBalance ?? '';
   const finishBalance = activeHunt.finishBalance ?? '';
   const bannedSlots = activeHunt.bannedSlots ?? '';
+  const suggestions = activeHunt.suggestions ?? [];
   const phase = activeHunt.phase === 'opening' ? 'opening' : 'collecting';
 
   // Opening-phase order + clamped current index.
@@ -420,6 +435,120 @@ export default function HuntTracker() {
     if (trimmed && trimmed !== activeHunt.name) updateHunt({ name: trimmed });
     setEditingName(false);
   }
+
+  // ---- Slot suggestions (imported from the sheet) ----
+  // mode 'replace' swaps the whole list; 'merge' appends new people.
+  function importSuggestions(people, mode) {
+    const next = mode === 'merge' ? [...suggestions, ...people] : people;
+    updateHunt({ suggestions: next });
+  }
+  function setSuggestionStatus(slotId, status) {
+    updateHunt({
+      suggestions: suggestions.map((p) => ({
+        ...p,
+        slots: p.slots.map((s) => (s.id === slotId ? { ...s, status } : s)),
+      })),
+    });
+  }
+  function clearSuggestions() {
+    updateHunt({ suggestions: [] });
+  }
+  // "Got in" — open the stake prompt for this suggested slot.
+  function startLanding(person, slot) {
+    setLandingSuggestion({ person, slot });
+    setLandStakeInput('');
+  }
+  // Confirm the stake → push a real bonus (caller = suggester) and mark the
+  // suggestion done. One updateHunt call so both writes land together.
+  function confirmLanding() {
+    if (!landingSuggestion) return;
+    const { person, slot } = landingSuggestion;
+    const newBonus = {
+      id: makeId(),
+      slot: slot.name,
+      stake: Number(landStakeInput) || 0,
+      win: 0,
+      super: false,
+      fiveScat: false,
+      caller: person,
+    };
+    updateHunt({
+      bonuses: [...bonuses, newBonus],
+      suggestions: suggestions.map((p) => ({
+        ...p,
+        slots: p.slots.map((s) => (s.id === slot.id ? { ...s, status: 'done' } : s)),
+      })),
+    });
+    setLandingSuggestion(null);
+    setLandStakeInput('');
+  }
+
+  // ---- Suggestion-intake link (password-gated public submissions) ----
+  async function createIntakeLink(password) {
+    setLinkBusy(true);
+    setLinkError(null);
+    try {
+      const r = await authedFetch('/api/hunt-suggest/manage', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'create', password }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        setLinkError(
+          data.error === 'PASSWORD_TOO_SHORT'
+            ? 'Password too short.'
+            : data.error === 'NO_ACTIVE_HUNT'
+              ? 'Start a hunt first.'
+              : 'Could not create the link.'
+        );
+        return;
+      }
+      // Persist on the hunt so the link survives reloads + is owner-visible.
+      updateHunt({ intakeLinkId: data.linkId, intakeOpen: true });
+    } catch {
+      setLinkError('Could not create the link.');
+    } finally {
+      setLinkBusy(false);
+    }
+  }
+  async function toggleIntakeOpen(open) {
+    if (!activeHunt.intakeLinkId) return;
+    setLinkBusy(true);
+    setLinkError(null);
+    try {
+      const r = await authedFetch('/api/hunt-suggest/manage', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'toggle', linkId: activeHunt.intakeLinkId, open }),
+      });
+      if (!r.ok) {
+        setLinkError('Could not update the link.');
+        return;
+      }
+      updateHunt({ intakeOpen: open });
+    } catch {
+      setLinkError('Could not update the link.');
+    } finally {
+      setLinkBusy(false);
+    }
+  }
+  async function deleteIntakeLink() {
+    if (!activeHunt.intakeLinkId) return;
+    setLinkBusy(true);
+    setLinkError(null);
+    try {
+      await authedFetch('/api/hunt-suggest/manage', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'delete', linkId: activeHunt.intakeLinkId }),
+      });
+    } catch {
+      // Best-effort — clear locally regardless so the UI doesn't get stuck.
+    } finally {
+      // Null out rather than delete — updateHunt merges a patch, so explicit
+      // nulls are how we clear fields. The UI treats null linkId as "no link".
+      updateHunt({ intakeLinkId: null, intakeOpen: null });
+      setLinkBusy(false);
+    }
+  }
   function handleBonusDragEnd(event) {
     const { active, over } = event;
     if (!over || active.id === over.id) return;
@@ -464,6 +593,7 @@ export default function HuntTracker() {
     const completed = await completeHunt();
     if (completed) renderRecap(completed);
     setConfirmingComplete(false);
+    setShowWrapUp(false);
   }
 
   const shareUrl = shareId ? `${window.location.origin}/live/${shareId}` : null;
@@ -757,7 +887,14 @@ export default function HuntTracker() {
                       autoFocus
                       value={currentBonus.win || ''}
                       onChange={(e) => updateBonusWin(currentBonus.id, e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && advanceOpening()}
+                      onKeyDown={(e) => {
+                        if (e.key !== 'Enter') return;
+                        // Last slot: Enter opens the wrap-up prompt (finish balance
+                        // + export) instead of dead-ending on a clamped Next. It does
+                        // NOT auto-complete — the user confirms in the modal.
+                        if (openingIdx >= order.length - 1) setShowWrapUp(true);
+                        else advanceOpening();
+                      }}
                       placeholder="Win ($)"
                       aria-label="Win for current slot"
                       className="flex-1 min-w-[120px] bg-zinc-broadcast/70 border border-purple-gamba/50 px-3 py-2 text-base text-right text-white-body focus:border-purple-bright focus:outline-none tabular-nums"
@@ -1146,9 +1283,26 @@ export default function HuntTracker() {
               />
             </div>
 
+            {/* Slot suggestions imported from the sheet */}
+            <SuggestionsPanel
+              suggestions={suggestions}
+              onImport={importSuggestions}
+              onSetStatus={setSuggestionStatus}
+              onLand={startLanding}
+              onClear={clearSuggestions}
+              isLoggedIn={isLoggedIn}
+              linkId={activeHunt.intakeLinkId || null}
+              linkOpen={activeHunt.intakeOpen !== false}
+              linkBusy={linkBusy}
+              linkError={linkError}
+              onCreateLink={createIntakeLink}
+              onToggleLink={toggleIntakeOpen}
+              onDeleteLink={deleteIntakeLink}
+            />
+
             {/* Caller stats */}
             <div className="space-y-3">
-              <PanelLabel code="05" icon={Megaphone} label="Slot calls" accent="purple" />
+              <PanelLabel code="07" icon={Megaphone} label="Slot calls" accent="purple" />
               {callerStats.leaderboard.length === 0 ? (
                 <p className="text-center text-white/60 py-4 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono">
                   No calls tagged.
@@ -1214,6 +1368,142 @@ export default function HuntTracker() {
           </div>
         </div>
       </div>
+
+      {/* Wrap-up prompt — last slot opened, ready to finish the hunt */}
+      {showWrapUp && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
+          onMouseDown={() => setShowWrapUp(false)}
+        >
+          <div
+            className="w-full max-w-md border border-emerald-signal/40 bg-zinc-card p-5 space-y-4"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div>
+              <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono mb-1">
+                ▸ Hunt complete
+              </p>
+              <p className="text-sm text-white/65 leading-snug">
+                All slots opened. Fill in the finish balance, then export the results.
+              </p>
+            </div>
+            <label className="block">
+              <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
+                Finish balance ($)
+              </span>
+              <input
+                type="number"
+                autoFocus
+                placeholder="0.00"
+                value={finishBalance}
+                onChange={(e) => updateHunt({ finishBalance: e.target.value })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleComplete();
+                  if (e.key === 'Escape') setShowWrapUp(false);
+                }}
+                className={`w-full ${inputCls} tabular-nums`}
+              />
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <StatCell
+                label="Profit"
+                value={
+                  profit == null ? '—' : (
+                    <span className={profit >= 0 ? 'text-emerald-signal' : 'text-red-destructive'}>
+                      {profit >= 0 ? '+' : ''}{fmt(profit)}
+                    </span>
+                  )
+                }
+              />
+              <StatCell label="Total wins" value={fmt(totalWins)} />
+            </div>
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={handleComplete}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
+              >
+                <CheckCircle2 size={14} aria-hidden="true" />
+                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  Complete + Export
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowWrapUp(false)}
+                className="px-4 py-2 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
+              >
+                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  Keep editing
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Stake prompt — promoting a suggestion into a real bonus */}
+      {landingSuggestion && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
+          onMouseDown={() => setLandingSuggestion(null)}
+        >
+          <div
+            className="w-full max-w-sm border border-emerald-signal/40 bg-zinc-card p-5 space-y-3"
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono">
+              ▸ Bonus landed
+            </p>
+            <div>
+              <p className="font-black text-white-body text-xl leading-tight truncate">
+                {landingSuggestion.slot.name}
+              </p>
+              <p className="text-[11px] font-mono text-purple-bright mt-0.5 truncate">
+                📣 {landingSuggestion.person}
+              </p>
+            </div>
+            <label className="block">
+              <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
+                Stake ($)
+              </span>
+              <input
+                type="number"
+                autoFocus
+                placeholder="0.00"
+                value={landStakeInput}
+                onChange={(e) => setLandStakeInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') confirmLanding();
+                  if (e.key === 'Escape') setLandingSuggestion(null);
+                }}
+                className={`w-full ${inputCls} tabular-nums`}
+              />
+            </label>
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={confirmLanding}
+                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
+              >
+                <Plus size={14} aria-hidden="true" />
+                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  Add to hunt
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setLandingSuggestion(null)}
+                className="px-4 py-2 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
+              >
+                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  Cancel
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -83,7 +83,7 @@ export default function GearInteractive() {
               INTERACTIVE SETUP
             </span>
           </h1>
-          <p className="text-xl text-white/60 max-w-2xl mx-auto">
+          <p className="text-xl text-white/75 max-w-2xl mx-auto">
             Hover over any item in the setup to see detailed specs
           </p>
         </header>
@@ -104,7 +104,7 @@ export default function GearInteractive() {
                   <h3 className="text-xl font-black text-white-body">
                     {gearData[hoveredItem].brand}
                   </h3>
-                  <p className="text-sm text-white/60">
+                  <p className="text-sm text-white/75">
                     {gearData[hoveredItem].model}
                   </p>
                 </div>
@@ -277,7 +277,7 @@ export default function GearInteractive() {
 
           {/* Instruction */}
           <div className="mt-6 text-center">
-            <p className="text-white/40 text-sm">
+            <p className="text-white/65 text-sm">
               {hoveredItem ? (
                 <span className="text-emerald-bright font-bold">
                   Viewing: {gearData[hoveredItem].name}

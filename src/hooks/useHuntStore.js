@@ -41,7 +41,7 @@ function saveLocal(hunt) {
 }
 
 export function useHuntStore() {
-  const { twitchUser, firebaseUser } = useTwitchAuth();
+  const { twitchUser, firebaseUser, loading: authLoading } = useTwitchAuth();
   const uid = firebaseUser?.uid || twitchUser?.twitchId || null;
   const isLoggedIn = !!uid;
 
@@ -49,6 +49,10 @@ export function useHuntStore() {
   const [history, setHistory] = useState([]);
   const [localHuntPending, setLocalHuntPending] = useState(null);
   const debounceRef = useRef(null);
+  // Holds the latest un-flushed hunt + its target uid so a pending debounced
+  // write can be forced out on page unload / unmount (prevents losing the
+  // last <500ms of edits when the user refreshes mid-edit).
+  const pendingWriteRef = useRef(null);
   const [error, setError] = useState(null);
 
   // --- subscribe ---
@@ -96,10 +100,12 @@ export function useHuntStore() {
         return;
       }
       setActiveHunt(hunt); // optimistic
+      pendingWriteRef.current = { uid, hunt };
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(async () => {
         try {
           await setDoc(doc(db, 'users', uid, 'active_hunt', 'current'), hunt);
+          pendingWriteRef.current = null;
           setError(null);
         } catch (e) {
           console.error('active write failed:', e);
@@ -109,6 +115,27 @@ export function useHuntStore() {
     },
     [isLoggedIn, uid]
   );
+
+  // Flush any pending debounced write immediately — on unmount (e.g. tab/tool
+  // switch) and on page unload (refresh/close). Without this, an edit made in
+  // the 500ms before navigating away would never reach Firestore.
+  useEffect(() => {
+    const flush = () => {
+      const pending = pendingWriteRef.current;
+      if (!pending) return;
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      // Fire-and-forget; on unload the request is sent best-effort.
+      setDoc(doc(db, 'users', pending.uid, 'active_hunt', 'current'), pending.hunt).catch(
+        (e) => console.error('flush write failed:', e)
+      );
+      pendingWriteRef.current = null;
+    };
+    window.addEventListener('beforeunload', flush);
+    return () => {
+      window.removeEventListener('beforeunload', flush);
+      flush();
+    };
+  }, []);
 
   const startHunt = useCallback(
     ({ name, startBalance }) => {
@@ -170,8 +197,13 @@ export function useHuntStore() {
     setLocalHuntPending(null);
   }, []);
 
+  // While Firebase auth is still rehydrating we don't yet know if there's a
+  // saved hunt — report 'loading' so the UI doesn't flash the start screen
+  // before a logged-in user's active hunt streams in.
+  const status = authLoading ? 'loading' : activeHunt ? 'active' : 'idle';
+
   return {
-    status: activeHunt ? 'active' : 'idle',
+    status,
     activeHunt,
     history,
     isLoggedIn,

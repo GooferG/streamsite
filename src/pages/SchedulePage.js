@@ -207,7 +207,7 @@ function DarkWeekNotice() {
           <br />
           this week.
         </h2>
-        <p className="max-w-md text-sm sm:text-base text-white/50 leading-relaxed">
+        <p className="max-w-md text-sm sm:text-base text-white/70 leading-relaxed">
           The tower is quiet. Check back soon — or follow on Twitch for live
           alerts when the signal returns.
         </p>

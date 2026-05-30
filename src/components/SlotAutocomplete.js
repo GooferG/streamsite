@@ -65,17 +65,23 @@ export default function SlotAutocomplete({ value, onChange, onSelect, placeholde
               onMouseDown={() => select(s)}
               className="flex items-center gap-3 px-3 py-2 hover:bg-emerald-signal/10 cursor-pointer transition-colors"
             >
-              {s.thumbnail && (
+              {s.thumbnail ? (
                 <img
                   src={s.thumbnail}
                   alt=""
                   className="w-8 h-8 rounded object-cover flex-shrink-0 bg-white/10"
                   onError={(e) => { e.target.style.display = 'none'; }}
                 />
+              ) : (
+                <span className="w-8 h-8 rounded flex-shrink-0 bg-white/5 inline-flex items-center justify-center">
+                  <Dice6 size={14} className="text-emerald-bright/50" />
+                </span>
               )}
               <div className="min-w-0 flex-1">
                 <p className="text-sm text-white-body truncate">{s.name}</p>
-                <p className="text-xs text-white/40 truncate">{s.provider}</p>
+                {s.provider && (
+                  <p className="text-xs text-white/40 truncate">{s.provider}</p>
+                )}
               </div>
               <Dice6 size={12} className="text-emerald-bright/50 flex-shrink-0" />
             </li>

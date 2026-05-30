@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Star,
   GripVertical,
+  Pencil,
 } from 'lucide-react';
 import {
   DndContext,
@@ -64,7 +65,7 @@ function StatCell({ label, value }) {
   );
 }
 
-function SortableBonusRow({ bonus, reqX, onWin, onRemove }) {
+function SortableBonusRow({ bonus, reqX, onWin, onRemove, onToggleMarker }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id: bonus.id });
   const style = {
@@ -90,9 +91,34 @@ function SortableBonusRow({ bonus, reqX, onWin, onRemove }) {
         <GripVertical size={14} aria-hidden="true" />
       </button>
       <span className="flex items-center gap-1.5 min-w-0 font-bold text-white-body">
-        {bonus.super && (
-          <Star size={12} aria-label="Super" className="shrink-0 fill-orange-admin text-orange-admin" />
-        )}
+        {/* 5-scat — rare, the standout: filled gold star. Click to toggle. */}
+        <button
+          type="button"
+          onClick={() => onToggleMarker(bonus.id, 'fiveScat')}
+          aria-pressed={!!bonus.fiveScat}
+          title={bonus.fiveScat ? '5-scatter — click to clear' : 'Mark as 5-scatter'}
+          className="shrink-0 leading-none"
+        >
+          <Star
+            size={13}
+            aria-label="5 scatter"
+            className={bonus.fiveScat ? 'fill-yellow-400 text-yellow-400' : 'text-white/25 hover:text-white/55'}
+          />
+        </button>
+        {/* Super — secondary: small 'S' pill. Click to toggle. */}
+        <button
+          type="button"
+          onClick={() => onToggleMarker(bonus.id, 'super')}
+          aria-pressed={!!bonus.super}
+          title={bonus.super ? 'Super — click to clear' : 'Mark as super'}
+          className={`shrink-0 px-1 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono border leading-none transition-colors ${
+            bonus.super
+              ? 'border-orange-admin bg-orange-admin/15 text-orange-admin'
+              : 'border-white/15 text-white/30 hover:text-white/60 hover:border-white/30'
+          }`}
+        >
+          S
+        </button>
         <span className="truncate">{bonus.slot}</span>
       </span>
       <span className="text-right text-white/70 tabular-nums px-1 w-20">{fmt(bonus.stake)}</span>
@@ -142,10 +168,13 @@ export default function HuntTracker() {
   const [slotInput, setSlotInput] = useState('');
   const [stakeInput, setStakeInput] = useState('');
   const [superInput, setSuperInput] = useState(false);
+  const [fiveScatInput, setFiveScatInput] = useState(false);
   const [gamblerNameInput, setGamblerNameInput] = useState('');
   const [gamblerInInput, setGamblerInInput] = useState('');
   const [editingGamblerId, setEditingGamblerId] = useState(null);
   const [confirmingComplete, setConfirmingComplete] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState('');
 
   // Drag sensors must be created unconditionally (before any early return).
   const sensors = useSensors(
@@ -190,12 +219,20 @@ export default function HuntTracker() {
     if (!slotInput.trim()) return;
     const next = [
       ...bonuses,
-      { id: makeId(), slot: slotInput.trim(), stake: Number(stakeInput) || 0, win: 0, super: superInput },
+      {
+        id: makeId(),
+        slot: slotInput.trim(),
+        stake: Number(stakeInput) || 0,
+        win: 0,
+        super: superInput,
+        fiveScat: fiveScatInput,
+      },
     ];
     updateHunt({ bonuses: next });
     setSlotInput('');
     setStakeInput('');
     setSuperInput(false);
+    setFiveScatInput(false);
   }
   function removeBonus(id) {
     updateHunt({ bonuses: bonuses.filter((b) => b.id !== id) });
@@ -204,6 +241,17 @@ export default function HuntTracker() {
     updateHunt({
       bonuses: bonuses.map((b) => (b.id === id ? { ...b, win: Number(val) || 0 } : b)),
     });
+  }
+  // Toggle a boolean marker ('super' | 'fiveScat') on an existing bonus.
+  function toggleBonusMarker(id, key) {
+    updateHunt({
+      bonuses: bonuses.map((b) => (b.id === id ? { ...b, [key]: !b[key] } : b)),
+    });
+  }
+  function saveName() {
+    const trimmed = nameInput.trim();
+    if (trimmed && trimmed !== activeHunt.name) updateHunt({ name: trimmed });
+    setEditingName(false);
   }
   function handleBonusDragEnd(event) {
     const { active, over } = event;
@@ -262,9 +310,39 @@ export default function HuntTracker() {
           <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono mb-0.5">
             ▸ Active hunt
           </p>
-          <p className="font-black text-white-body text-lg leading-tight truncate">
-            {activeHunt.name}
-          </p>
+          {editingName ? (
+            <input
+              type="text"
+              autoFocus
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              onBlur={saveName}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveName();
+                if (e.key === 'Escape') setEditingName(false);
+              }}
+              className="font-black text-white-body text-lg leading-tight bg-zinc-broadcast/80 border border-emerald-signal/50 px-2 py-0.5 focus:outline-none w-full max-w-xs"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => {
+                setNameInput(activeHunt.name);
+                setEditingName(true);
+              }}
+              title="Click to rename hunt"
+              className="group inline-flex items-center gap-2 min-w-0 text-left"
+            >
+              <span className="font-black text-white-body text-lg leading-tight truncate">
+                {activeHunt.name}
+              </span>
+              <Pencil
+                size={12}
+                aria-hidden="true"
+                className="shrink-0 text-white/30 group-hover:text-emerald-signal transition-colors"
+              />
+            </button>
+          )}
         </div>
         <div className="ml-auto flex gap-2" data-html2canvas-ignore="true">
           <button
@@ -352,21 +430,38 @@ export default function HuntTracker() {
                 onKeyDown={(e) => e.key === 'Enter' && addBonus()}
                 className={`w-full ${inputCls}`}
               />
-              <button
-                type="button"
-                onClick={() => setSuperInput((s) => !s)}
-                aria-pressed={superInput}
-                className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2 border transition-colors duration-150 ${
-                  superInput
-                    ? 'border-orange-admin bg-orange-admin/10 text-orange-admin'
-                    : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
-                }`}
-              >
-                <Star size={13} aria-hidden="true" className={superInput ? 'fill-orange-admin' : ''} />
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                  {superInput ? 'Super on' : 'Mark super'}
-                </span>
-              </button>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setFiveScatInput((s) => !s)}
+                  aria-pressed={fiveScatInput}
+                  className={`inline-flex items-center justify-center gap-2 px-3 py-2 border transition-colors duration-150 ${
+                    fiveScatInput
+                      ? 'border-yellow-400 bg-yellow-400/10 text-yellow-400'
+                      : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
+                  }`}
+                >
+                  <Star size={13} aria-hidden="true" className={fiveScatInput ? 'fill-yellow-400' : ''} />
+                  <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                    5 scat
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSuperInput((s) => !s)}
+                  aria-pressed={superInput}
+                  className={`inline-flex items-center justify-center gap-2 px-3 py-2 border transition-colors duration-150 ${
+                    superInput
+                      ? 'border-orange-admin bg-orange-admin/10 text-orange-admin'
+                      : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
+                  }`}
+                >
+                  <span className={`text-[11px] font-bold font-mono leading-none ${superInput ? 'text-orange-admin' : ''}`}>S</span>
+                  <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                    Super
+                  </span>
+                </button>
+              </div>
               <button
                 type="button"
                 onClick={addBonus}
@@ -410,6 +505,7 @@ export default function HuntTracker() {
                           reqX={reqX}
                           onWin={updateBonusWin}
                           onRemove={removeBonus}
+                          onToggleMarker={toggleBonusMarker}
                         />
                       ))}
                     </SortableContext>

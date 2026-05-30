@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Download, History } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, History, Star } from 'lucide-react';
 import { fmt, fmtX, computeStats } from '../utils/huntCalc';
 
 function tsToDate(ts) {
@@ -78,7 +78,17 @@ function HistoryRow({ hunt, onReexport }) {
                     const x = b.stake > 0 ? b.win / b.stake : null;
                     return (
                       <tr key={b.id} className="border-b border-white/5">
-                        <td className="px-3 py-2 font-bold text-white-body truncate max-w-[140px]">{b.slot}</td>
+                        <td className="px-3 py-2 font-bold text-white-body max-w-[160px]">
+                          <span className="flex items-center gap-1.5 min-w-0">
+                            {b.fiveScat && (
+                              <Star size={11} aria-label="5 scatter" className="shrink-0 fill-yellow-400 text-yellow-400" />
+                            )}
+                            {b.super && (
+                              <span className="shrink-0 px-1 py-0.5 text-[8px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">S</span>
+                            )}
+                            <span className="truncate">{b.slot}</span>
+                          </span>
+                        </td>
                         <td className="px-3 py-2 text-right text-white/70 tabular-nums">{fmt(b.stake)}</td>
                         <td className="px-3 py-2 text-right text-white/70 tabular-nums">{fmt(b.win)}</td>
                         <td className="px-3 py-2 text-right font-bold text-white/70 tabular-nums">

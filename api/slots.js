@@ -1,4 +1,4 @@
-const API_KEY  = 'Vxqf1SnCumEuSoo4ucj6CYtzqUTypMjt2kCS0sQWkfHnrNFmsV';
+const API_KEY  = process.env.SLOTSLAUNCH_API_KEY;
 const BASE_URL = 'https://slotslaunch.com/api';
 const ORIGIN   = 'goofer.tv'; // domain registered in your SlotsLaunch account
 

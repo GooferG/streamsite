@@ -1,6 +1,6 @@
 // Vercel Serverless Function to fetch game covers from IGDB
-const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID || '6t0kocnv2iyqathfkgbn60tit8x12b';
-const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET || '8hmx5yuuk3nrlt74q9wq4os5r9y198';
+const TWITCH_CLIENT_ID = process.env.TWITCH_CLIENT_ID;
+const TWITCH_CLIENT_SECRET = process.env.TWITCH_CLIENT_SECRET;
 
 let cachedToken = null;
 let tokenExpiry = null;

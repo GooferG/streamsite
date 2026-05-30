@@ -43,6 +43,7 @@ import { CSS } from '@dnd-kit/utilities';
 import SlotAutocomplete from './SlotAutocomplete';
 import SuggestionsPanel from './SuggestionsPanel';
 import HuntStartScreen from './HuntStartScreen';
+import Modal from './Modal';
 import { useHuntStore } from '../hooks/useHuntStore';
 import { fmt, fmtX, makeId, computeStats, computeCallerStats, openingOrder } from '../utils/huntCalc';
 import { renderSplit, renderRecap } from '../utils/huntExport';
@@ -272,6 +273,7 @@ export default function HuntTracker() {
     error,
     startHunt,
     updateHunt,
+    updateSuggestions,
     completeHunt,
     discardActiveHunt,
     reopenHunt,
@@ -440,18 +442,18 @@ export default function HuntTracker() {
   // mode 'replace' swaps the whole list; 'merge' appends new people.
   function importSuggestions(people, mode) {
     const next = mode === 'merge' ? [...suggestions, ...people] : people;
-    updateHunt({ suggestions: next });
+    updateSuggestions(next);
   }
   function setSuggestionStatus(slotId, status) {
-    updateHunt({
-      suggestions: suggestions.map((p) => ({
+    updateSuggestions(
+      suggestions.map((p) => ({
         ...p,
         slots: p.slots.map((s) => (s.id === slotId ? { ...s, status } : s)),
-      })),
-    });
+      }))
+    );
   }
   function clearSuggestions() {
-    updateHunt({ suggestions: [] });
+    updateSuggestions([]);
   }
   // "Got in" — open the stake prompt for this suggested slot.
   function startLanding(person, slot) {
@@ -459,7 +461,9 @@ export default function HuntTracker() {
     setLandStakeInput('');
   }
   // Confirm the stake → push a real bonus (caller = suggester) and mark the
-  // suggestion done. One updateHunt call so both writes land together.
+  // suggestion done. Bonus goes via updateHunt (merge-safe debounced write);
+  // the suggestion status via updateSuggestions (targeted field write) so the
+  // two writes don't ride together and can't clobber a public submission.
   function confirmLanding() {
     if (!landingSuggestion) return;
     const { person, slot } = landingSuggestion;
@@ -472,13 +476,13 @@ export default function HuntTracker() {
       fiveScat: false,
       caller: person,
     };
-    updateHunt({
-      bonuses: [...bonuses, newBonus],
-      suggestions: suggestions.map((p) => ({
+    updateHunt({ bonuses: [...bonuses, newBonus] });
+    updateSuggestions(
+      suggestions.map((p) => ({
         ...p,
         slots: p.slots.map((s) => (s.id === slot.id ? { ...s, status: 'done' } : s)),
-      })),
-    });
+      }))
+    );
     setLandingSuggestion(null);
     setLandStakeInput('');
   }
@@ -1371,14 +1375,11 @@ export default function HuntTracker() {
 
       {/* Wrap-up prompt — last slot opened, ready to finish the hunt */}
       {showWrapUp && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
-          onMouseDown={() => setShowWrapUp(false)}
+        <Modal
+          onClose={() => setShowWrapUp(false)}
+          label="Hunt complete"
+          panelClassName="w-full max-w-md border border-emerald-signal/40 bg-zinc-card p-5 space-y-4"
         >
-          <div
-            className="w-full max-w-md border border-emerald-signal/40 bg-zinc-card p-5 space-y-4"
-            onMouseDown={(e) => e.stopPropagation()}
-          >
             <div>
               <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono mb-1">
                 ▸ Hunt complete
@@ -1438,20 +1439,16 @@ export default function HuntTracker() {
                 </span>
               </button>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
 
       {/* Stake prompt — promoting a suggestion into a real bonus */}
       {landingSuggestion && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/70 p-4"
-          onMouseDown={() => setLandingSuggestion(null)}
+        <Modal
+          onClose={() => setLandingSuggestion(null)}
+          label="Bonus landed — add to hunt"
+          panelClassName="w-full max-w-sm border border-emerald-signal/40 bg-zinc-card p-5 space-y-3"
         >
-          <div
-            className="w-full max-w-sm border border-emerald-signal/40 bg-zinc-card p-5 space-y-3"
-            onMouseDown={(e) => e.stopPropagation()}
-          >
             <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono">
               ▸ Bonus landed
             </p>
@@ -1501,8 +1498,7 @@ export default function HuntTracker() {
                 </span>
               </button>
             </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

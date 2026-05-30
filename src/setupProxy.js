@@ -1,9 +1,25 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
-const BONUS_HUNT_API_KEY = 'bnt_b493e9020cf2ecb1e4a8043cb1ea1941a8555a1fa2c90e62f411b6cdb0aba14c';
-const SLOTS_API_KEY  = 'Vxqf1SnCumEuSoo4ucj6CYtzqUTypMjt2kCS0sQWkfHnrNFmsV';
+// Dev-only secrets — read from env (.env.local), no longer committed. Set
+// BONUSHUNT_API_KEY / SLOTSLAUNCH_API_KEY in .env.local for local API mirrors.
+const BONUS_HUNT_API_KEY = process.env.BONUSHUNT_API_KEY || '';
+const SLOTS_API_KEY  = process.env.SLOTSLAUNCH_API_KEY || '';
 const SLOTS_BASE_URL = 'https://slotslaunch.com/api';
 const SLOTS_ORIGIN   = 'goofer.tv';
+
+// Hunt-suggest endpoints need Firebase admin, which can't run in the CRA dev
+// server. Mirror them by proxying to the deployed functions so the local UI
+// can be exercised end-to-end. Override with HUNT_SUGGEST_PROXY_TARGET.
+const HUNT_SUGGEST_TARGET =
+  process.env.HUNT_SUGGEST_PROXY_TARGET || 'https://goofer.tv';
+
+if (!BONUS_HUNT_API_KEY || !SLOTS_API_KEY) {
+  // eslint-disable-next-line no-console
+  console.warn(
+    '[setupProxy] BONUSHUNT_API_KEY / SLOTSLAUNCH_API_KEY not set in .env.local — ' +
+      '/api/bonus-hunts and /api/slots dev mirrors will fail until they are.'
+  );
+}
 
 module.exports = function (app) {
   // Dev proxy for direct /api/public calls
@@ -76,4 +92,17 @@ module.exports = function (app) {
       res.status(500).json({ error: 'Proxy error' });
     }
   });
+
+  // Hunt-suggest endpoints (info/manage/submit) run on Firebase admin and can't
+  // execute in the CRA dev server — proxy them to the deployed functions so the
+  // suggestion-intake UI works under `npm start`.
+  app.use(
+    '/api/hunt-suggest',
+    createProxyMiddleware({
+      target: HUNT_SUGGEST_TARGET,
+      changeOrigin: true,
+      secure: true,
+      pathRewrite: { '^/api/hunt-suggest': '/api/hunt-suggest' },
+    })
+  );
 };

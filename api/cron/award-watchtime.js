@@ -1,3 +1,4 @@
+import crypto from 'crypto';
 import { adminDb, FieldValue } from '../_lib/firebaseAdmin.js';
 
 // Award tickets to currently-active chatters in GooferG's stream.
@@ -87,12 +88,19 @@ async function fetchAllChatters(broadcasterId, accessToken) {
 
 export default async function handler(req, res) {
   // CORS not relevant — cron is server-to-server.
+  // Fail closed: a missing CRON_SECRET must NOT skip auth (that would let
+  // anyone trigger ticket awards). Require it and compare timing-safely.
   const expected = process.env.CRON_SECRET;
-  if (expected) {
-    const auth = req.headers.authorization || '';
-    if (auth !== `Bearer ${expected}`) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+  if (!expected) {
+    console.error('award-watchtime: CRON_SECRET is not set — refusing to run.');
+    return res.status(500).json({ error: 'CRON_SECRET not configured' });
+  }
+  const auth = req.headers.authorization || '';
+  const expectedHeader = `Bearer ${expected}`;
+  const authBuf = Buffer.from(auth);
+  const expBuf = Buffer.from(expectedHeader);
+  if (authBuf.length !== expBuf.length || !crypto.timingSafeEqual(authBuf, expBuf)) {
+    return res.status(401).json({ error: 'Unauthorized' });
   }
 
   try {

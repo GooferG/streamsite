@@ -8,8 +8,7 @@ import { applyCors, requireAdmin } from '../_lib/verifyAuth.js';
 // POST { action, ...payload }
 
 const BONUSHUNT_API = 'https://bonushunt.gg/api/public';
-const BONUSHUNT_KEY = process.env.BONUSHUNT_API_KEY ||
-  'bnt_b493e9020cf2ecb1e4a8043cb1ea1941a8555a1fa2c90e62f411b6cdb0aba14c';
+const BONUSHUNT_KEY = process.env.BONUSHUNT_API_KEY;
 
 async function fetchCurrentHunt() {
   const r = await fetch(`${BONUSHUNT_API}/hunts`, {

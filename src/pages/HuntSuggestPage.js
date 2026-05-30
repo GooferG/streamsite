@@ -69,6 +69,7 @@ export default function HuntSuggestPage() {
           BAD_PASSWORD: 'Wrong password.',
           CLOSED: 'Submissions are closed for this hunt.',
           HUNT_ENDED: 'This hunt has ended.',
+          LIST_FULL: 'The suggestion list is full.',
           COOLDOWN: 'Slow down a moment, then try again.',
           NO_SLOTS: 'Add at least one slot.',
           MISSING_NAME: 'Enter your name.',

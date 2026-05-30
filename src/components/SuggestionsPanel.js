@@ -138,14 +138,14 @@ function LinkControls({
               type="text"
               value={pw}
               onChange={(e) => setPw(e.target.value)}
-              placeholder="Set a password"
+              placeholder="Set a password (min 8 chars)"
               className={`w-full ${inputCls}`}
             />
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => onCreateLink(pw)}
-                disabled={linkBusy || pw.trim().length < 3}
+                disabled={linkBusy || pw.trim().length < 8}
                 className="flex-1 px-3 py-2 bg-purple-gamba text-white-body hover:bg-purple-bright transition-colors duration-150 disabled:opacity-40"
               >
                 <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">

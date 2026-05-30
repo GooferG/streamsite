@@ -19,6 +19,9 @@ import {
   Play,
   SkipForward,
   Clock,
+  Radio,
+  Check,
+  Link as LinkIcon,
 } from 'lucide-react';
 import {
   DndContext,
@@ -269,6 +272,9 @@ export default function HuntTracker() {
     completeHunt,
     claimLocalHunt,
     discardLocalHunt,
+    shareId,
+    startSharing,
+    stopSharing,
   } = store;
 
   // transient input state (not persisted until added)
@@ -278,6 +284,7 @@ export default function HuntTracker() {
   const [fiveScatInput, setFiveScatInput] = useState(false);
   const [callerInput, setCallerInput] = useState('');
   const [editingCallerId, setEditingCallerId] = useState(null);
+  const [shareCopied, setShareCopied] = useState(false);
   // Bonus-list sort lens: null = manual order (drag enabled), or 'stake-desc'/'stake-asc'.
   const [bonusSort, setBonusSort] = useState(null);
   const [gamblerNameInput, setGamblerNameInput] = useState('');
@@ -454,6 +461,18 @@ export default function HuntTracker() {
     setConfirmingComplete(false);
   }
 
+  const shareUrl = shareId ? `${window.location.origin}/live/${shareId}` : null;
+  function copyShareLink() {
+    if (!shareUrl) return;
+    navigator.clipboard?.writeText(shareUrl).then(
+      () => {
+        setShareCopied(true);
+        setTimeout(() => setShareCopied(false), 1500);
+      },
+      () => {}
+    );
+  }
+
   const stats = computeStats(activeHunt);
   const totalStakes = stats.totalStakes;
   const totalWins = stats.totalWins;
@@ -552,6 +571,42 @@ export default function HuntTracker() {
               <ArrowLeft size={12} aria-hidden="true" />
               <span className="text-[10px] font-bold tracking-eyebrow-lg">EDIT BONUSES</span>
             </button>
+          )}
+          {isLoggedIn && (
+            shareId ? (
+              <div className="inline-flex items-center gap-1.5 px-2 py-1 border border-red-destructive/40 bg-red-destructive/5">
+                <span className="inline-flex items-center gap-1.5 text-red-destructive text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-destructive animate-pulse" />
+                  Live
+                </span>
+                <button
+                  type="button"
+                  onClick={copyShareLink}
+                  title={shareUrl}
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 text-white/70 hover:text-white-body"
+                >
+                  {shareCopied ? <Check size={11} aria-hidden="true" /> : <LinkIcon size={11} aria-hidden="true" />}
+                  <span className="text-[10px] font-bold tracking-eyebrow-lg">{shareCopied ? 'COPIED' : 'COPY'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={stopSharing}
+                  className="px-1.5 py-0.5 text-white/55 hover:text-red-destructive"
+                  title="Stop sharing — link dies"
+                >
+                  <span className="text-[10px] font-bold tracking-eyebrow-lg">STOP</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={startSharing}
+                className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/15 text-white/70 hover:text-white-body hover:border-white/30 transition-colors duration-150"
+              >
+                <Radio size={12} aria-hidden="true" />
+                <span className="text-[10px] font-bold tracking-eyebrow-lg">SHARE LIVE</span>
+              </button>
+            )
           )}
           <button
             type="button"

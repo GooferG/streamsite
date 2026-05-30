@@ -28,6 +28,23 @@ const EMPTY_HUNT = (name, startBalance) => ({
   completedAt: null,
 });
 
+// Public mirror shape for a live-shared hunt. Built explicitly so we control
+// exactly what spectators can see. ownerTwitchId gates writes in the rules.
+function buildMirror(hunt, ownerTwitchId) {
+  return {
+    ownerTwitchId,
+    name: hunt.name || 'Untitled',
+    startBalance: hunt.startBalance ?? '',
+    finishBalance: hunt.finishBalance ?? '',
+    bonuses: Array.isArray(hunt.bonuses) ? hunt.bonuses : [],
+    gamblers: Array.isArray(hunt.gamblers) ? hunt.gamblers : [],
+    bannedSlots: hunt.bannedSlots || '',
+    phase: hunt.phase === 'opening' ? 'opening' : 'collecting',
+    openingIndex: hunt.openingIndex ?? 0,
+    updatedAt: Date.now(),
+  };
+}
+
 function loadLocal() {
   try {
     return JSON.parse(localStorage.getItem(LS_KEY)) || null;
@@ -105,6 +122,10 @@ export function useHuntStore() {
       debounceRef.current = setTimeout(async () => {
         try {
           await setDoc(doc(db, 'users', uid, 'active_hunt', 'current'), hunt);
+          // Mirror to the public live doc while sharing is on.
+          if (hunt.shareId) {
+            await setDoc(doc(db, 'shared_hunts', hunt.shareId), buildMirror(hunt, uid));
+          }
           pendingWriteRef.current = null;
           setError(null);
         } catch (e) {
@@ -153,6 +174,33 @@ export function useHuntStore() {
     [activeHunt, writeActive]
   );
 
+  const startSharing = useCallback(async () => {
+    if (!isLoggedIn || !activeHunt) return;
+    if (activeHunt.shareId) return; // already sharing
+    const shareId = makeId();
+    try {
+      await setDoc(doc(db, 'shared_hunts', shareId), buildMirror(activeHunt, uid));
+      // Persist shareId on the active hunt (also re-mirrors via writeActive).
+      writeActive({ ...activeHunt, shareId });
+    } catch (e) {
+      console.error('start sharing failed:', e);
+      setError('Could not start sharing.');
+    }
+  }, [isLoggedIn, uid, activeHunt, writeActive]);
+
+  const stopSharing = useCallback(async () => {
+    if (!activeHunt?.shareId) return;
+    const shareId = activeHunt.shareId;
+    try {
+      await deleteDoc(doc(db, 'shared_hunts', shareId));
+    } catch (e) {
+      console.error('stop sharing failed:', e);
+    }
+    const next = { ...activeHunt };
+    delete next.shareId;
+    writeActive(next);
+  }, [activeHunt, writeActive]);
+
   const completeHunt = useCallback(async () => {
     if (!activeHunt) return;
     const completed = {
@@ -171,6 +219,12 @@ export function useHuntStore() {
     try {
       await setDoc(doc(db, 'users', uid, 'hunts', huntId), completed);
       await deleteDoc(doc(db, 'users', uid, 'active_hunt', 'current'));
+      // End the live share cleanly when the hunt completes.
+      if (activeHunt.shareId) {
+        await deleteDoc(doc(db, 'shared_hunts', activeHunt.shareId)).catch((e) =>
+          console.error('mirror cleanup failed:', e)
+        );
+      }
       setActiveHunt(null);
     } catch (e) {
       console.error('complete failed:', e);
@@ -209,10 +263,13 @@ export function useHuntStore() {
     isLoggedIn,
     localHuntPending,
     error,
+    shareId: activeHunt?.shareId || null,
     startHunt,
     updateHunt,
     completeHunt,
     claimLocalHunt,
     discardLocalHunt,
+    startSharing,
+    stopSharing,
   };
 }

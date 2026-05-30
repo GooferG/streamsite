@@ -146,5 +146,17 @@ service cloud.firestore {
         allow write: if false;
       }
     }
+
+    // Live-shared bonus hunt snapshots. The unguessable shareId is the access
+    // capability, so reads are fully public (spectators, no login). Writes are
+    // owner-only: a signed-in user may create/update/delete only a doc whose
+    // ownerTwitchId matches their uid (= their Twitch id for viewer logins).
+    match /shared_hunts/{shareId} {
+      allow read: if true;
+      allow create, update: if isSignedIn()
+        && request.resource.data.ownerTwitchId == request.auth.uid;
+      allow delete: if isSignedIn()
+        && resource.data.ownerTwitchId == request.auth.uid;
+    }
   }
 }

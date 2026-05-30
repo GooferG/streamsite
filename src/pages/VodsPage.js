@@ -218,7 +218,7 @@ export default function VodsPage({ videos, clips, loading }) {
             ))}
           </div>
         ) : (
-          <div className="border border-white/8 bg-zinc-card/40 px-6 py-12 flex items-center justify-between gap-6">
+          <div className="border border-white/10 bg-zinc-card/60 px-6 py-12 flex items-center justify-between gap-6">
             <div>
               <div
                 className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono"

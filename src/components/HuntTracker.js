@@ -7,7 +7,25 @@ import {
   TrendingDown,
   Download,
   CheckCircle2,
+  Star,
+  GripVertical,
 } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import SlotAutocomplete from './SlotAutocomplete';
 import HuntStartScreen from './HuntStartScreen';
 import { useHuntStore } from '../hooks/useHuntStore';
@@ -46,6 +64,64 @@ function StatCell({ label, value }) {
   );
 }
 
+function SortableBonusRow({ bonus, reqX, onWin, onRemove }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
+    useSortable({ id: bonus.id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+  const x = bonus.stake > 0 ? bonus.win / bonus.stake : null;
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-1.5 border-b border-white/5 hover:bg-zinc-broadcast/40 transition-colors"
+    >
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="p-1 text-white/25 hover:text-white/65 cursor-grab active:cursor-grabbing shrink-0"
+        aria-label="Drag to reorder"
+      >
+        <GripVertical size={14} aria-hidden="true" />
+      </button>
+      <span className="flex items-center gap-1.5 min-w-0 font-bold text-white-body">
+        {bonus.super && (
+          <Star size={12} aria-label="Super" className="shrink-0 fill-orange-admin text-orange-admin" />
+        )}
+        <span className="truncate">{bonus.slot}</span>
+      </span>
+      <span className="text-right text-white/70 tabular-nums px-1 w-20">{fmt(bonus.stake)}</span>
+      <input
+        type="number"
+        value={bonus.win || ''}
+        onChange={(e) => onWin(bonus.id, e.target.value)}
+        placeholder="—"
+        className="w-24 bg-zinc-broadcast/60 border border-white/10 px-2 py-1 text-sm text-right focus:border-emerald-signal/70 focus:outline-none placeholder:text-white/20 tabular-nums"
+      />
+      <span
+        className={`text-right font-bold tabular-nums px-1 w-16 ${
+          x != null && x >= (reqX ?? 0) ? 'text-emerald-signal' : 'text-white/70'
+        }`}
+      >
+        {x != null ? fmtX(x) : '—'}
+      </span>
+      <button
+        type="button"
+        onClick={() => onRemove(bonus.id)}
+        className="p-1 border border-red-destructive/30 text-red-destructive/80 hover:bg-red-destructive/15 transition-colors"
+        aria-label="Remove bonus"
+      >
+        <X size={11} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
 export default function HuntTracker() {
   const store = useHuntStore();
   const {
@@ -65,10 +141,28 @@ export default function HuntTracker() {
   // transient input state (not persisted until added)
   const [slotInput, setSlotInput] = useState('');
   const [stakeInput, setStakeInput] = useState('');
+  const [superInput, setSuperInput] = useState(false);
   const [gamblerNameInput, setGamblerNameInput] = useState('');
   const [gamblerInInput, setGamblerInInput] = useState('');
   const [editingGamblerId, setEditingGamblerId] = useState(null);
   const [confirmingComplete, setConfirmingComplete] = useState(false);
+
+  // Drag sensors must be created unconditionally (before any early return).
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  // ---------- LOADING (auth rehydrating) ----------
+  if (status === 'loading') {
+    return (
+      <div className="border border-white/8 bg-zinc-card/30 py-16 text-center">
+        <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
+          Loading hunt…
+        </p>
+      </div>
+    );
+  }
 
   // ---------- IDLE ----------
   if (status === 'idle') {
@@ -96,11 +190,12 @@ export default function HuntTracker() {
     if (!slotInput.trim()) return;
     const next = [
       ...bonuses,
-      { id: makeId(), slot: slotInput.trim(), stake: Number(stakeInput) || 0, win: 0 },
+      { id: makeId(), slot: slotInput.trim(), stake: Number(stakeInput) || 0, win: 0, super: superInput },
     ];
     updateHunt({ bonuses: next });
     setSlotInput('');
     setStakeInput('');
+    setSuperInput(false);
   }
   function removeBonus(id) {
     updateHunt({ bonuses: bonuses.filter((b) => b.id !== id) });
@@ -110,9 +205,16 @@ export default function HuntTracker() {
       bonuses: bonuses.map((b) => (b.id === id ? { ...b, win: Number(val) || 0 } : b)),
     });
   }
+  function handleBonusDragEnd(event) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = bonuses.findIndex((b) => b.id === active.id);
+    const newIndex = bonuses.findIndex((b) => b.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    updateHunt({ bonuses: arrayMove(bonuses, oldIndex, newIndex) });
+  }
   function addGambler() {
     if (!gamblerNameInput.trim() || !gamblerInInput || Number(gamblerInInput) <= 0) return;
-    if (gamblers.length >= 10) return;
     updateHunt({
       gamblers: [
         ...gamblers,
@@ -252,6 +354,21 @@ export default function HuntTracker() {
               />
               <button
                 type="button"
+                onClick={() => setSuperInput((s) => !s)}
+                aria-pressed={superInput}
+                className={`w-full inline-flex items-center justify-center gap-2 px-4 py-2 border transition-colors duration-150 ${
+                  superInput
+                    ? 'border-orange-admin bg-orange-admin/10 text-orange-admin'
+                    : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
+                }`}
+              >
+                <Star size={13} aria-hidden="true" className={superInput ? 'fill-orange-admin' : ''} />
+                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  {superInput ? 'Super on' : 'Mark super'}
+                </span>
+              </button>
+              <button
+                type="button"
                 onClick={addBonus}
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
               >
@@ -266,60 +383,47 @@ export default function HuntTracker() {
               </p>
             ) : (
               <div className="border border-white/8 overflow-x-auto [scrollbar-width:thin]">
-                <table className="w-full text-sm min-w-[480px]">
-                  <thead>
-                    <tr className="border-b border-white/10 text-white/65 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono">
-                      <th className="text-left px-3 py-2 font-bold">Slot</th>
-                      <th className="text-right px-3 py-2 font-bold">Stake</th>
-                      <th className="text-right px-3 py-2 font-bold">Win</th>
-                      <th className="text-right px-3 py-2 font-bold">X</th>
-                      <th className="px-2 py-2" />
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {bonuses.map((b) => {
-                      const x = b.stake > 0 ? b.win / b.stake : null;
-                      return (
-                        <tr key={b.id} className="border-b border-white/5 hover:bg-zinc-broadcast/40 transition-colors">
-                          <td className="px-3 py-2.5 font-bold text-white-body truncate max-w-[140px]">{b.slot}</td>
-                          <td className="px-3 py-2.5 text-right text-white/70 tabular-nums">{fmt(b.stake)}</td>
-                          <td className="px-2 py-1.5 text-right">
-                            <input
-                              type="number"
-                              value={b.win || ''}
-                              onChange={(e) => updateBonusWin(b.id, e.target.value)}
-                              placeholder="—"
-                              className="w-24 bg-zinc-broadcast/60 border border-white/10 px-2 py-1 text-sm text-right focus:border-emerald-signal/70 focus:outline-none placeholder:text-white/20 tabular-nums"
-                            />
-                          </td>
-                          <td className={`px-3 py-2.5 text-right font-bold tabular-nums ${
-                            x != null && x >= (reqX ?? 0) ? 'text-emerald-signal' : 'text-white/70'
-                          }`}>
-                            {x != null ? fmtX(x) : '—'}
-                          </td>
-                          <td className="px-2 py-2.5">
-                            <button
-                              type="button"
-                              onClick={() => removeBonus(b.id)}
-                              className="p-1 border border-red-destructive/30 text-red-destructive/80 hover:bg-red-destructive/15 transition-colors"
-                              aria-label="Remove bonus"
-                            >
-                              <X size={11} aria-hidden="true" />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                  <tfoot>
-                    <tr className="border-t border-white/10 bg-zinc-broadcast/50 text-[10px] uppercase tracking-eyebrow-md font-mono">
-                      <td className="px-3 py-2 font-bold text-white/65">Totals</td>
-                      <td className="px-3 py-2 text-right font-bold text-white/70 tabular-nums">{fmt(totalStakes)}</td>
-                      <td className="px-3 py-2 text-right font-bold text-white/70 tabular-nums">{fmt(totalWins)}</td>
-                      <td colSpan={2} />
-                    </tr>
-                  </tfoot>
-                </table>
+                <div className="min-w-[480px] text-sm">
+                  {/* Column headers */}
+                  <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-2 border-b border-white/10 bg-zinc-broadcast/50 text-white/65 text-[10px] uppercase tracking-eyebrow-md font-mono font-bold">
+                    <span className="w-6" aria-hidden="true" />
+                    <span className="text-left">Slot</span>
+                    <span className="text-right w-20 px-1">Stake</span>
+                    <span className="text-right w-24">Win</span>
+                    <span className="text-right w-16 px-1">X</span>
+                    <span className="w-6" aria-hidden="true" />
+                  </div>
+                  {/* Sortable rows */}
+                  <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleBonusDragEnd}
+                  >
+                    <SortableContext
+                      items={bonuses.map((b) => b.id)}
+                      strategy={verticalListSortingStrategy}
+                    >
+                      {bonuses.map((b) => (
+                        <SortableBonusRow
+                          key={b.id}
+                          bonus={b}
+                          reqX={reqX}
+                          onWin={updateBonusWin}
+                          onRemove={removeBonus}
+                        />
+                      ))}
+                    </SortableContext>
+                  </DndContext>
+                  {/* Totals */}
+                  <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-2 border-t border-white/10 bg-zinc-broadcast/50 text-[10px] uppercase tracking-eyebrow-md font-mono font-bold text-white/70">
+                    <span className="w-6" aria-hidden="true" />
+                    <span className="text-left text-white/65">Totals</span>
+                    <span className="text-right w-20 px-1 tabular-nums">{fmt(totalStakes)}</span>
+                    <span className="text-right w-24 tabular-nums">{fmt(totalWins)}</span>
+                    <span className="w-16 px-1" aria-hidden="true" />
+                    <span className="w-6" aria-hidden="true" />
+                  </div>
+                </div>
               </div>
             )}
           </div>
@@ -392,8 +496,7 @@ export default function HuntTracker() {
                 <button
                   type="button"
                   onClick={addGambler}
-                  disabled={gamblers.length >= 10}
-                  className="px-3 py-2 border border-purple-gamba/40 text-purple-bright hover:bg-purple-gamba/15 transition-colors duration-150 disabled:opacity-40"
+                  className="px-3 py-2 border border-purple-gamba/40 text-purple-bright hover:bg-purple-gamba/15 transition-colors duration-150"
                   aria-label="Add gambler"
                 >
                   <Plus size={14} aria-hidden="true" />

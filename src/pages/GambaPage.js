@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Target,
@@ -10,10 +10,24 @@ import {
   X,
 } from 'lucide-react';
 import BonusHuntsPage from './BonusHunts';
-import HuntTracker from '../components/HuntTracker';
-import SlotPicker from '../components/SlotPicker';
 import SuggestAdminTab from '../components/SuggestAdminTab';
 import Leaderboard from '../components/Leaderboard';
+
+// Code-split the two tools that pull in the slot DB (~874KB via ../data/slots).
+// SlotPicker imports it directly; HuntTracker reaches it through SlotAutocomplete.
+// Both must be lazy or the data stays in the main bundle. The data now lives in
+// its own chunk and only downloads when one of these tools is opened.
+const SlotPicker = lazy(() => import('../components/SlotPicker'));
+const HuntTracker = lazy(() => import('../components/HuntTracker'));
+
+// Shared on-brand fallback while a tool chunk loads.
+const ToolLoading = ({ label }) => (
+  <div className="border border-white/8 bg-zinc-card/30 px-4 py-16 text-center font-mono">
+    <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal motion-safe:animate-pulse">
+      {label}
+    </p>
+  </div>
+);
 
 const TOOLS = [
   { id: 'leaderboard', label: 'Leaderboard', icon: Radio },
@@ -304,8 +318,16 @@ export default function GambaPage() {
           {activeTool === 'leaderboard' && <Leaderboard />}
           {activeTool === 'suggest' && <SuggestAdminTab />}
           {activeTool === 'bonus-hunts' && <BonusHuntsPage />}
-          {activeTool === 'hunt-tracker' && <HuntTracker />}
-          {activeTool === 'wheel' && <SlotPicker />}
+          {activeTool === 'hunt-tracker' && (
+            <Suspense fallback={<ToolLoading label="Loading hunt tracker…" />}>
+              <HuntTracker />
+            </Suspense>
+          )}
+          {activeTool === 'wheel' && (
+            <Suspense fallback={<ToolLoading label="Tuning slot signal…" />}>
+              <SlotPicker />
+            </Suspense>
+          )}
         </div>
       </div>
 

@@ -1,23 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Lock, Mail, AlertCircle, ShieldCheck, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
-
-function useNowTimestamp() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  return now;
-}
-
-function formatTimecode(d) {
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  const ss = String(d.getSeconds()).padStart(2, '0');
-  return `${hh}:${mm}:${ss}`;
-}
+import { useNowTimestamp, formatTimecode } from '../utils/timecode';
 
 function Field({ label, code, icon: Icon, type, value, onChange, placeholder, autoComplete }) {
   return (

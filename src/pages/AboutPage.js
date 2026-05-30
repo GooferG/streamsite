@@ -1,23 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Twitch, Youtube, Twitter } from 'lucide-react';
 import { SOCIAL_LINKS } from '../constants';
-
-function useNowTimestamp() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  return now;
-}
-
-function formatTimecode(d) {
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  const ss = String(d.getSeconds()).padStart(2, '0');
-  const ff = String(d.getMilliseconds()).slice(0, 2).padStart(2, '0');
-  return `${hh}:${mm}:${ss}:${ff}`;
-}
+import { useNowTimestamp, formatTimecode } from '../utils/timecode';
 
 function StationRail({ now }) {
   return (
@@ -52,7 +36,7 @@ function StationRail({ now }) {
       <div className="flex flex-col gap-1">
         <span className="text-white/30">Timecode</span>
         <span className="text-emerald-signal text-xs tracking-eyebrow-sm tabular-nums">
-          {formatTimecode(now)}
+          {formatTimecode(now, { frames: true })}
         </span>
       </div>
       <div className="mt-2 w-12 h-px bg-white/15" />
@@ -193,7 +177,7 @@ export default function AboutPage() {
               <span>STATION ID</span>
               <span className="text-white/20">·</span>
               <span className="text-white/30 tabular-nums">
-                {formatTimecode(now)}
+                {formatTimecode(now, { frames: true })}
               </span>
             </div>
 
@@ -361,7 +345,7 @@ export default function AboutPage() {
               <span className="text-white/50">REEL #A-013</span>
               <span className="text-white/15">·</span>
               <span className="text-emerald-signal/70 tabular-nums">
-                {formatTimecode(now)}
+                {formatTimecode(now, { frames: true })}
               </span>
             </div>
           </section>

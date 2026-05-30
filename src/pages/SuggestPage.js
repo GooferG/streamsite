@@ -14,27 +14,12 @@ import {
 import { Filter } from 'bad-words';
 import { db } from '../config/firebase';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
+import { useNowTimestamp, formatTimecode } from '../utils/timecode';
 
 const filter = new Filter();
 
 const inputCls =
   'w-full bg-zinc-broadcast/60 border border-white/10 px-4 py-3 text-sm text-white-body placeholder:text-white/25 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';
-
-function useNowTimestamp() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  return now;
-}
-
-function formatTimecode(d) {
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  const ss = String(d.getSeconds()).padStart(2, '0');
-  return `${hh}:${mm}:${ss}`;
-}
 
 function StatusBar({ label, value, tone = 'emerald' }) {
   const color =

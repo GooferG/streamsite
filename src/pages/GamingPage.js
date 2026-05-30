@@ -8,6 +8,7 @@ import {
   RefreshCcw,
 } from 'lucide-react';
 import GameWheel from '../components/GameWheel';
+import { useNowTimestamp, formatTimecode } from '../utils/timecode';
 
 const inputCls =
   'w-full bg-zinc-broadcast/60 border border-white/10 pl-10 pr-4 py-2.5 text-sm text-white-body placeholder:text-white/25 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';
@@ -16,22 +17,6 @@ const TOOLS = [
   { id: 'browse', label: 'Browse', code: 'LIB', icon: List },
   { id: 'wheel', label: 'Wheel', code: 'WHL', icon: Shuffle },
 ];
-
-function useNowTimestamp() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  return now;
-}
-
-function formatTimecode(d) {
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  const ss = String(d.getSeconds()).padStart(2, '0');
-  return `${hh}:${mm}:${ss}`;
-}
 
 function ScanlineOverlay() {
   return (

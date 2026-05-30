@@ -37,7 +37,7 @@ export default async function handler(req, res) {
   try {
     if (action === 'create') {
       const { password } = req.body || {};
-      if (!password || String(password).length < 3) {
+      if (!password || String(password).length < 8) {
         return res.status(400).json({ error: 'PASSWORD_TOO_SHORT' });
       }
       // Pull the active hunt name for display on the submit page.
@@ -49,8 +49,21 @@ export default async function handler(req, res) {
 
       const salt = crypto.randomBytes(16).toString('hex');
       const passwordHash = hashPassword(password, salt);
-      const linkId = makeLinkId();
 
+      // Idempotency: if this owner already has an open intake link, reuse it
+      // (rotating its password) instead of minting a duplicate on retry. Query
+      // is by ownerUid only (single-field, auto-indexed); filter open in code.
+      const existing = await adminDb
+        .collection('suggestion_intakes')
+        .where('ownerUid', '==', uid)
+        .get();
+      const reuse = existing.docs.find((d) => d.data().open !== false);
+      if (reuse) {
+        await reuse.ref.update({ huntName, passwordHash, passwordSalt: salt, open: true });
+        return res.status(200).json({ ok: true, linkId: reuse.id, open: true, reused: true });
+      }
+
+      const linkId = makeLinkId();
       await adminDb.doc(`suggestion_intakes/${linkId}`).set({
         ownerUid: uid,
         huntName,

@@ -11,6 +11,7 @@ import { applyCors } from '../_lib/verifyAuth.js';
 const MAX_SLOTS = 6;
 const MAX_NAME_LEN = 40;
 const MAX_SLOT_LEN = 80;
+const MAX_PEOPLE = 300; // cap link-sourced submitters to keep the hunt doc well under Firestore's 1MB limit
 const SUBMIT_COOLDOWN_MS = 5 * 1000;
 
 function hashPassword(password, salt) {
@@ -74,6 +75,9 @@ export default async function handler(req, res) {
         const prev = suggestions[existingIdx];
         const last = typeof prev.submittedAt === 'number' ? prev.submittedAt : 0;
         if (Date.now() - last < SUBMIT_COOLDOWN_MS) throw new Error('COOLDOWN');
+      } else if (suggestions.length >= MAX_PEOPLE) {
+        // Cap only applies to NEW submitters; existing ones can always update.
+        throw new Error('LIST_FULL');
       }
 
       const slotObjs = cleanSlots.map((nm) => ({
@@ -103,6 +107,7 @@ export default async function handler(req, res) {
     const code = err.message;
     if (code === 'NO_ACTIVE_HUNT') return res.status(409).json({ error: 'HUNT_ENDED' });
     if (code === 'COOLDOWN') return res.status(429).json({ error: 'COOLDOWN' });
+    if (code === 'LIST_FULL') return res.status(409).json({ error: 'LIST_FULL' });
     console.error('hunt-suggest/submit error', err);
     return res.status(500).json({ error: 'INTERNAL' });
   }

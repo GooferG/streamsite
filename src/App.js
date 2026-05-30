@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import {
   Routes,
   Route,
@@ -8,40 +8,13 @@ import {
 } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import GrainOverlay from './components/GrainOverlay';
-import TVStaticIntro from './components/TVStaticIntro';
 import LiveIndicator from './components/LiveIndicator';
-import HomePage from './pages/HomePage';
-import SchedulePage from './pages/SchedulePage';
-import VodsPage from './pages/VodsPage';
-import AboutPage from './pages/AboutPage';
-import GambaPage from './pages/GambaPage';
-import GamingPage from './pages/GamingPage';
-import GearPage from './pages/Gear';
-import GearInteractive from './pages/GearInteractive';
 import AdminLayout from './components/AdminLayout';
-import AdminHubPage from './pages/AdminHubPage';
-import AdminSchedulePage from './pages/AdminSchedulePage';
-import AdminSuggestionsPage from './pages/AdminSuggestionsPage';
-import AdminStorePage from './pages/AdminStorePage';
-import AdminRedemptionsPage from './pages/AdminRedemptionsPage';
-import AdminTicketsPage from './pages/AdminTicketsPage';
-import AdminGiveawaysPage from './pages/AdminGiveawaysPage';
-import AdminHuntsPage from './pages/AdminHuntsPage';
-import AdminCommunityHuntsPage from './pages/AdminCommunityHuntsPage';
-import AdminUsersPage from './pages/AdminUsersPage';
-import AdminModeratorsPage from './pages/AdminModeratorsPage';
-import StorePage from './pages/StorePage';
-import GiveawayPage from './pages/GiveawayPage';
-import MyAccountPage from './pages/MyAccountPage';
-import TwitchCallbackPage from './pages/TwitchCallbackPage';
-import DiscordCallbackPage from './pages/DiscordCallbackPage';
-import SuggestPage from './pages/SuggestPage';
-import SuggestOverlay from './pages/SuggestOverlay';
-import LiveHuntPage from './pages/LiveHuntPage';
-import HuntSuggestPage from './pages/HuntSuggestPage';
+import ErrorBoundary from './components/ErrorBoundary';
+import HomePage from './pages/HomePage';
+import GambaPage from './pages/GambaPage';
 import { AuthProvider } from './contexts/AuthContext';
 import { TwitchAuthProvider } from './contexts/TwitchAuthContext';
-
 import {
   getTwitchAccessToken,
   getTwitchUserId,
@@ -52,6 +25,39 @@ import {
   getTwitchFollowers,
   getGameNames,
 } from './utils/twitchApi';
+
+// Lazy-loaded so they don't bloat the main bundle. TVStaticIntro pulls in
+// three.js + postprocessing (~145KB gzip) for a one-time intro most visitors
+// skip; HuntSuggestPage pulls the full slot catalog; admin pages are gated to
+// staff. Secondary public pages split per route. HomePage + GambaPage stay
+// eager (landing paint / GambaPage already code-splits its own heavy children).
+const TVStaticIntro = lazy(() => import('./components/TVStaticIntro'));
+const SchedulePage = lazy(() => import('./pages/SchedulePage'));
+const VodsPage = lazy(() => import('./pages/VodsPage'));
+const AboutPage = lazy(() => import('./pages/AboutPage'));
+const GamingPage = lazy(() => import('./pages/GamingPage'));
+const GearPage = lazy(() => import('./pages/Gear'));
+const GearInteractive = lazy(() => import('./pages/GearInteractive'));
+const AdminHubPage = lazy(() => import('./pages/AdminHubPage'));
+const AdminSchedulePage = lazy(() => import('./pages/AdminSchedulePage'));
+const AdminSuggestionsPage = lazy(() => import('./pages/AdminSuggestionsPage'));
+const AdminStorePage = lazy(() => import('./pages/AdminStorePage'));
+const AdminRedemptionsPage = lazy(() => import('./pages/AdminRedemptionsPage'));
+const AdminTicketsPage = lazy(() => import('./pages/AdminTicketsPage'));
+const AdminGiveawaysPage = lazy(() => import('./pages/AdminGiveawaysPage'));
+const AdminHuntsPage = lazy(() => import('./pages/AdminHuntsPage'));
+const AdminCommunityHuntsPage = lazy(() => import('./pages/AdminCommunityHuntsPage'));
+const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
+const AdminModeratorsPage = lazy(() => import('./pages/AdminModeratorsPage'));
+const StorePage = lazy(() => import('./pages/StorePage'));
+const GiveawayPage = lazy(() => import('./pages/GiveawayPage'));
+const MyAccountPage = lazy(() => import('./pages/MyAccountPage'));
+const TwitchCallbackPage = lazy(() => import('./pages/TwitchCallbackPage'));
+const DiscordCallbackPage = lazy(() => import('./pages/DiscordCallbackPage'));
+const SuggestPage = lazy(() => import('./pages/SuggestPage'));
+const SuggestOverlay = lazy(() => import('./pages/SuggestOverlay'));
+const LiveHuntPage = lazy(() => import('./pages/LiveHuntPage'));
+const HuntSuggestPage = lazy(() => import('./pages/HuntSuggestPage'));
 
 function StreamingSiteContent() {
   const navigate = useNavigate();
@@ -178,7 +184,11 @@ function StreamingSiteContent() {
 
   return (
     <div className="min-h-screen bg-zinc-broadcast text-white-body">
-      {showTVIntro && <TVStaticIntro onComplete={handleIntroComplete} />}
+      {showTVIntro && (
+        <Suspense fallback={null}>
+          <TVStaticIntro onComplete={handleIntroComplete} />
+        </Suspense>
+      )}
 
       <GrainOverlay />
 
@@ -192,6 +202,16 @@ function StreamingSiteContent() {
       <main
         className={`transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
       >
+        <ErrorBoundary key={location.pathname}>
+        <Suspense
+          fallback={
+            <div className="min-h-[60vh] flex items-center justify-center">
+              <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
+                Loading…
+              </p>
+            </div>
+          }
+        >
         <Routes>
           <Route
             path="/"
@@ -254,6 +274,8 @@ function StreamingSiteContent() {
           <Route path="/live/:shareId" element={<LiveHuntPage />} />
           <Route path="/hunt-suggest/:linkId" element={<HuntSuggestPage />} />
         </Routes>
+        </Suspense>
+        </ErrorBoundary>
       </main>
 
     </div>

@@ -1,4 +1,4 @@
-const API_KEY = 'bnt_b493e9020cf2ecb1e4a8043cb1ea1941a8555a1fa2c90e62f411b6cdb0aba14c';
+const API_KEY = process.env.BONUSHUNT_API_KEY;
 const BASE_URL = 'https://bonushunt.gg';
 
 // In-memory cache: { [path]: { data, expiresAt } }
@@ -19,10 +19,20 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
+  if (!API_KEY) {
+    console.error('bonus-hunts: BONUSHUNT_API_KEY is not set.');
+    return res.status(500).json({ error: 'Upstream not configured' });
+  }
+
   // path param allows: /api/bonus-hunts?path=hunts or ?path=hunt/someId
   const { path } = req.query;
   if (!path) {
     return res.status(400).json({ error: 'Missing path param' });
+  }
+  // Allowlist the upstream path shape to prevent path traversal / SSRF-style
+  // abuse of the proxy. Only the two real call patterns are permitted.
+  if (!/^hunts$/.test(path) && !/^hunt\/[A-Za-z0-9_-]+$/.test(path)) {
+    return res.status(400).json({ error: 'Invalid path' });
   }
 
   // Serve from cache if still fresh

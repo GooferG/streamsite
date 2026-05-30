@@ -4,6 +4,7 @@ import {
   collection,
   onSnapshot,
   setDoc,
+  updateDoc,
   deleteDoc,
   query,
   orderBy,
@@ -12,6 +13,22 @@ import {
 import { db } from '../config/firebase';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 import { makeId } from '../utils/huntCalc';
+import { authedFetch } from '../utils/authedFetch';
+
+// Best-effort deletion of a hunt's suggestion-intake link via the server
+// endpoint (the intake doc is server-only; rules block client deletes). Called
+// when a hunt ends so links don't outlive their hunt.
+async function deleteIntake(linkId) {
+  if (!linkId) return;
+  try {
+    await authedFetch('/api/hunt-suggest/manage', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'delete', linkId }),
+    });
+  } catch (e) {
+    console.error('intake cleanup failed:', e);
+  }
+}
 
 const LS_KEY = 'hunt_tracker_active';
 
@@ -121,8 +138,14 @@ export function useHuntStore() {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       debounceRef.current = setTimeout(async () => {
         try {
-          await setDoc(doc(db, 'users', uid, 'active_hunt', 'current'), hunt);
-          // Mirror to the public live doc while sharing is on.
+          // Merge-write WITHOUT suggestions: this debounced write fires on every
+          // keystroke, and the public submission endpoint mutates suggestions[]
+          // via a transaction. A full-doc setDoc here would clobber an in-flight
+          // submission. Suggestions are written separately via updateSuggestions.
+          const { suggestions, ...rest } = hunt;
+          await setDoc(doc(db, 'users', uid, 'active_hunt', 'current'), rest, { merge: true });
+          // Mirror to the public live doc while sharing is on. (buildMirror never
+          // includes suggestions, so the mirror is unaffected.)
           if (hunt.shareId) {
             await setDoc(doc(db, 'shared_hunts', hunt.shareId), buildMirror(hunt, uid));
           }
@@ -145,8 +168,11 @@ export function useHuntStore() {
       const pending = pendingWriteRef.current;
       if (!pending) return;
       if (debounceRef.current) clearTimeout(debounceRef.current);
-      // Fire-and-forget; on unload the request is sent best-effort.
-      setDoc(doc(db, 'users', pending.uid, 'active_hunt', 'current'), pending.hunt).catch(
+      // Fire-and-forget; on unload the request is sent best-effort. Same
+      // suggestions-excluded merge as the debounced write so a last-moment
+      // flush can't clobber a concurrent public submission.
+      const { suggestions, ...rest } = pending.hunt;
+      setDoc(doc(db, 'users', pending.uid, 'active_hunt', 'current'), rest, { merge: true }).catch(
         (e) => console.error('flush write failed:', e)
       );
       pendingWriteRef.current = null;
@@ -172,6 +198,35 @@ export function useHuntStore() {
       writeActive({ ...activeHunt, ...patch });
     },
     [activeHunt, writeActive]
+  );
+
+  // Owner-side suggestions writer. Writes ONLY the suggestions[] field, and does
+  // it immediately (not debounced) via a targeted update, so it never rides
+  // along in the keystroke-debounced full-doc write that could clobber a public
+  // submission. Local state updates optimistically; the snapshot reconciles.
+  const updateSuggestions = useCallback(
+    (nextSuggestions) => {
+      if (!activeHunt) return;
+      // Functional update so this composes with a same-tick updateHunt (e.g.
+      // landing a bonus writes bonuses via updateHunt + suggestions here) —
+      // each patches the latest local state instead of a stale snapshot.
+      if (!isLoggedIn) {
+        setActiveHunt((prev) => {
+          const next = { ...(prev || activeHunt), suggestions: nextSuggestions };
+          saveLocal(next);
+          return next;
+        });
+        return;
+      }
+      setActiveHunt((prev) => ({ ...(prev || activeHunt), suggestions: nextSuggestions }));
+      updateDoc(doc(db, 'users', uid, 'active_hunt', 'current'), {
+        suggestions: nextSuggestions,
+      }).catch((e) => {
+        console.error('suggestions write failed:', e);
+        setError('Could not save suggestions.');
+      });
+    },
+    [activeHunt, isLoggedIn, uid]
   );
 
   const startSharing = useCallback(async () => {
@@ -225,6 +280,8 @@ export function useHuntStore() {
           console.error('mirror cleanup failed:', e)
         );
       }
+      // Kill the suggestion-intake link so it doesn't outlive the hunt.
+      await deleteIntake(activeHunt.intakeLinkId);
       setActiveHunt(null);
     } catch (e) {
       console.error('complete failed:', e);
@@ -251,6 +308,7 @@ export function useHuntStore() {
           console.error('mirror cleanup failed:', e)
         );
       }
+      await deleteIntake(activeHunt.intakeLinkId);
       setActiveHunt(null);
     } catch (e) {
       console.error('discard failed:', e);
@@ -337,6 +395,7 @@ export function useHuntStore() {
     shareId: activeHunt?.shareId || null,
     startHunt,
     updateHunt,
+    updateSuggestions,
     completeHunt,
     discardActiveHunt,
     reopenHunt,

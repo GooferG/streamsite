@@ -5,9 +5,11 @@ import {
   LogOut,
   User as UserIcon,
   Store as StoreIcon,
+  ChevronDown,
 } from 'lucide-react';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 import { useAuth } from '../contexts/AuthContext';
+import { GAMBA_TOOLS } from '../data/gambaTools';
 
 const ADMIN_EMAIL = 'luimeneghim@gmail.com';
 
@@ -15,7 +17,7 @@ const NAV_ITEMS = [
   { id: 'home', label: 'Home', code: '01' },
   { id: 'schedule', label: 'Schedule', code: '02' },
   { id: 'vods', label: 'Vods', code: '03' },
-  { id: 'gamba', label: 'Gamba', code: '04' },
+  { id: 'gamba', label: 'Gamba', code: '04', dropdown: GAMBA_TOOLS },
   { id: 'gaming', label: 'Gaming', code: '05' },
   { id: 'store', label: 'Store', code: '06' },
   { id: 'giveaway', label: 'Giveaway', code: '07' },
@@ -87,6 +89,119 @@ function NavLink({ item, active, accent = 'emerald', onClick, size = 'md' }) {
         />
       )}
     </button>
+  );
+}
+
+function NavDropdown({ item, items, active, setPage }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+  const closeTimer = useRef(null);
+
+  // Outside-click closes (same pattern as ViewerAuthControl).
+  useEffect(() => {
+    if (!open) return undefined;
+    const onClick = (e) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    };
+    document.addEventListener('mousedown', onClick);
+    return () => document.removeEventListener('mousedown', onClick);
+  }, [open]);
+
+  // Clear any pending close timer on unmount.
+  useEffect(() => () => clearTimeout(closeTimer.current), []);
+
+  const openNow = () => {
+    clearTimeout(closeTimer.current);
+    setOpen(true);
+  };
+  // Small delay so diagonal mouse travel into the menu doesn't dismiss it.
+  const closeSoon = () => {
+    clearTimeout(closeTimer.current);
+    closeTimer.current = setTimeout(() => setOpen(false), 120);
+  };
+
+  const go = (toolId) => {
+    setOpen(false);
+    setPage(`${item.id}/${toolId}`);
+  };
+
+  const onKeyDown = (e) => {
+    if (e.key === 'Escape') {
+      setOpen(false);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setOpen(true);
+      const first = wrapRef.current?.querySelector('[role="menuitem"]');
+      first?.focus();
+    }
+  };
+
+  const onItemKeyDown = (e, idx) => {
+    const menuItems = wrapRef.current?.querySelectorAll('[role="menuitem"]');
+    if (!menuItems) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      menuItems[Math.min(idx + 1, menuItems.length - 1)]?.focus();
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      menuItems[Math.max(idx - 1, 0)]?.focus();
+    } else if (e.key === 'Escape') {
+      setOpen(false);
+    }
+  };
+
+  return (
+    <div
+      ref={wrapRef}
+      className="relative"
+      onMouseEnter={openNow}
+      onMouseLeave={closeSoon}
+    >
+      <div className="inline-flex items-center gap-1">
+        <NavLink item={item} active={active} onClick={() => setPage(item.id)} />
+        <button
+          type="button"
+          aria-haspopup="menu"
+          aria-expanded={open}
+          aria-label={`${item.label} tools`}
+          onClick={() => setOpen((o) => !o)}
+          onKeyDown={onKeyDown}
+          className="p-0.5 text-white/45 hover:text-white-body transition-colors duration-150"
+        >
+          <ChevronDown
+            size={14}
+            className={`transition-transform duration-150 ${open ? 'rotate-180' : ''}`}
+            aria-hidden="true"
+          />
+        </button>
+      </div>
+      {open && (
+        <div
+          role="menu"
+          aria-label={`${item.label} tools`}
+          className="absolute left-0 top-full mt-2 w-48 border border-white/10 bg-zinc-card shadow-lg z-50 motion-safe:animate-[gamba-sheet-fade_0.15s_ease-out]"
+        >
+          {items.map((tool, idx) => {
+            const Icon = tool.icon;
+            return (
+              <button
+                key={tool.id}
+                type="button"
+                role="menuitem"
+                onClick={() => go(tool.id)}
+                onKeyDown={(e) => onItemKeyDown(e, idx)}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-white/75 hover:text-white-body hover:bg-zinc-broadcast/50 transition-colors duration-150"
+              >
+                {Icon && <Icon size={13} aria-hidden="true" />}
+                <span className="text-[11px] font-bold tracking-eyebrow uppercase font-mono">
+                  {tool.label}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -222,14 +337,24 @@ export default function Navigation({ currentPage, setPage }) {
 
           {/* Desktop nav — centered, flexible mid */}
           <div className="hidden md:flex items-center justify-center md:gap-3 lg:gap-5 flex-1 min-w-0">
-            {NAV_ITEMS.map((item) => (
-              <NavLink
-                key={item.id}
-                item={item}
-                active={currentPage === item.id}
-                onClick={() => setPage(item.id)}
-              />
-            ))}
+            {NAV_ITEMS.map((item) =>
+              item.dropdown ? (
+                <NavDropdown
+                  key={item.id}
+                  item={item}
+                  items={item.dropdown}
+                  active={currentPage === item.id}
+                  setPage={setPage}
+                />
+              ) : (
+                <NavLink
+                  key={item.id}
+                  item={item}
+                  active={currentPage === item.id}
+                  onClick={() => setPage(item.id)}
+                />
+              )
+            )}
           </div>
 
           {/* Right cluster: exactly one identity — admin XOR viewer — never shrinks */}

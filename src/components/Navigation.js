@@ -317,6 +317,7 @@ function ViewerAuthControl({ onNavigate }) {
 
 export default function Navigation({ currentPage, setPage }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [expandedMobile, setExpandedMobile] = useState(null);
   const { twitchUser, loginWithTwitch, logout } = useTwitchAuth();
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.email === ADMIN_EMAIL;
@@ -490,6 +491,67 @@ export default function Navigation({ currentPage, setPage }) {
         <nav className="flex flex-col">
           {NAV_ITEMS.map((item) => {
             const isActive = currentPage === item.id;
+            if (item.dropdown) {
+              const isOpen = expandedMobile === item.id;
+              return (
+                <div key={item.id}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setExpandedMobile((cur) => (cur === item.id ? null : item.id))
+                    }
+                    aria-expanded={isOpen}
+                    className={`group w-full flex items-center gap-3 px-5 py-3.5 border-l-2 transition-colors duration-150 ${
+                      isActive
+                        ? 'bg-zinc-card border-emerald-signal'
+                        : 'border-transparent hover:bg-zinc-card/50'
+                    }`}
+                  >
+                    <span
+                      className={`text-sm font-bold tracking-tight ${
+                        isActive ? 'text-white-body' : 'text-white/70'
+                      }`}
+                    >
+                      {item.label}
+                    </span>
+                    <ChevronDown
+                      size={15}
+                      className={`ml-auto text-white/40 transition-transform duration-150 ${
+                        isOpen ? 'rotate-180' : ''
+                      }`}
+                      aria-hidden="true"
+                    />
+                  </button>
+                  {isOpen && (
+                    <div className="bg-zinc-broadcast/40">
+                      {item.dropdown.map((tool) => {
+                        const Icon = tool.icon;
+                        const toolActive =
+                          currentPage === item.id &&
+                          window.location.pathname.split('/')[2] === tool.id;
+                        return (
+                          <button
+                            key={tool.id}
+                            type="button"
+                            onClick={() => handleNavClick(`${item.id}/${tool.id}`)}
+                            className={`w-full flex items-center gap-2.5 pl-10 pr-5 py-3 border-l-2 transition-colors duration-150 ${
+                              toolActive
+                                ? 'border-emerald-signal text-white-body'
+                                : 'border-transparent text-white/60 hover:text-white-body hover:bg-zinc-card/40'
+                            }`}
+                          >
+                            {Icon && <Icon size={14} aria-hidden="true" />}
+                            <span className="text-[11px] font-bold tracking-eyebrow uppercase font-mono">
+                              {tool.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
             return (
               <button
                 key={item.id}

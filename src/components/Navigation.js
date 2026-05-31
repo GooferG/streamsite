@@ -232,18 +232,25 @@ export default function Navigation({ currentPage, setPage }) {
             ))}
           </div>
 
-          {/* Right cluster: viewer auth + admin — never shrinks */}
+          {/* Right cluster: exactly one identity — admin XOR viewer — never shrinks */}
           <div className="hidden md:flex items-center gap-2 lg:gap-3 flex-shrink-0">
-            <ViewerAuthControl onNavigate={(id) => setPage(id)} />
-            {isAdmin && (
-              <div className="pl-2 lg:pl-3 border-l border-white/10">
-                <NavLink
-                  item={ADMIN_ITEM}
-                  active={currentPage === ADMIN_ITEM.id}
-                  accent="orange"
-                  onClick={() => setPage(ADMIN_ITEM.id)}
-                />
+            {isAdmin ? (
+              <div className="flex items-center gap-2 lg:gap-3">
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 border border-orange-admin/30 bg-orange-admin/5 text-[10px] font-bold tracking-eyebrow-lg uppercase text-orange-admin font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" aria-hidden="true" />
+                  Operator
+                </span>
+                <div className="pl-2 lg:pl-3 border-l border-white/10">
+                  <NavLink
+                    item={ADMIN_ITEM}
+                    active={currentPage === ADMIN_ITEM.id}
+                    accent="orange"
+                    onClick={() => setPage(ADMIN_ITEM.id)}
+                  />
+                </div>
               </div>
+            ) : (
+              <ViewerAuthControl onNavigate={(id) => setPage(id)} />
             )}
           </div>
 
@@ -275,9 +282,21 @@ export default function Navigation({ currentPage, setPage }) {
         }`}
         aria-hidden={!mobileMenuOpen}
       >
-        {/* Viewer identity / login */}
+        {/* Identity / login — admin XOR viewer XOR signed-out */}
         <div className="px-5 py-4 border-b border-white/10">
-          {twitchUser ? (
+          {isAdmin ? (
+            <div className="flex items-center gap-3">
+              <span className="w-9 h-9 inline-flex items-center justify-center border border-orange-admin/40 bg-orange-admin/5">
+                <span className="w-2 h-2 rounded-full bg-orange-admin" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-white-body truncate">Operator</p>
+                <p className="text-[9px] font-bold tracking-eyebrow-lg uppercase text-orange-admin/80 font-mono">
+                  Signed in · Admin
+                </p>
+              </div>
+            </div>
+          ) : twitchUser ? (
             <div className="space-y-3">
               <div className="flex items-center gap-3">
                 {twitchUser.profileImageUrl && (

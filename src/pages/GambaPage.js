@@ -1,17 +1,10 @@
 import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import {
-  Target,
-  Gamepad2,
-  MessageSquarePlus,
-  Layers,
-  Radio,
-  ChevronDown,
-  X,
-} from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import BonusHuntsPage from './BonusHunts';
 import SuggestAdminTab from '../components/SuggestAdminTab';
 import Leaderboard from '../components/Leaderboard';
+import { GAMBA_TOOLS } from '../data/gambaTools';
 
 // Code-split the two tools that pull in the slot DB (~874KB via ../data/slots).
 // SlotPicker imports it directly; HuntTracker reaches it through SlotAutocomplete.
@@ -28,14 +21,6 @@ const ToolLoading = ({ label }) => (
     </p>
   </div>
 );
-
-const TOOLS = [
-  { id: 'leaderboard', label: 'Leaderboard', icon: Radio },
-  { id: 'hunt-tracker', label: 'Hunt Tracker', icon: Target },
-  { id: 'bonus-hunts', label: 'Bonus Hunts', icon: Layers },
-  { id: 'wheel', label: 'Slot Picker', icon: Gamepad2 },
-  { id: 'suggest', label: 'Suggestions', icon: MessageSquarePlus },
-];
 
 function pad2(n) {
   return String(n).padStart(2, '0');
@@ -78,7 +63,7 @@ function ChannelTab({ tool, channelNumber, active, onClick }) {
 }
 
 function MobileChannelTrigger({ activeIndex, onOpen }) {
-  const tool = TOOLS[activeIndex];
+  const tool = GAMBA_TOOLS[activeIndex];
   const Icon = tool.icon;
   return (
     <button
@@ -196,7 +181,7 @@ function MobileChannelSheet({ open, activeId, onSelect, onClose }) {
 
         {/* Channel list */}
         <ul className="relative">
-          {TOOLS.map((tool, i) => {
+          {GAMBA_TOOLS.map((tool, i) => {
             const Icon = tool.icon;
             const isActive = tool.id === activeId;
             return (
@@ -267,7 +252,7 @@ export default function GambaPage() {
   const activeTool = location.pathname.split('/')[2] || 'leaderboard';
   const activeIndex = Math.max(
     0,
-    TOOLS.findIndex((t) => t.id === activeTool)
+    GAMBA_TOOLS.findIndex((t) => t.id === activeTool)
   );
   const setActiveTool = (tool) => navigate(`/gamba/${tool}`);
   const stripRef = useRef(null);
@@ -301,7 +286,7 @@ export default function GambaPage() {
             role="tablist"
             aria-label="Gamba tools"
           >
-            {TOOLS.map((tool, i) => (
+            {GAMBA_TOOLS.map((tool, i) => (
               <ChannelTab
                 key={tool.id}
                 tool={tool}

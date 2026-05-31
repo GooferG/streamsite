@@ -41,6 +41,7 @@ export default async function handler(req, res) {
           twitchId: d.id,
           twitchName: data.displayName || data.twitchName || 'Viewer',
           defaultSlots,
+          rainbetUsername: data.payoutProfile?.rainbetUsername || '',
         };
       })
       // A discoverable profile with no slots has nothing to add — hide it.

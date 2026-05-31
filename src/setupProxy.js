@@ -105,4 +105,25 @@ module.exports = function (app) {
       pathRewrite: { '^/api/hunt-suggest': '/api/hunt-suggest' },
     })
   );
+
+  // /api/me/* and /api/roster/* also need Firebase admin — proxy them to the
+  // deployed functions so the slot-profile + roster UI work under `npm start`.
+  app.use(
+    '/api/me',
+    createProxyMiddleware({
+      target: HUNT_SUGGEST_TARGET,
+      changeOrigin: true,
+      secure: true,
+      pathRewrite: { '^/api/me': '/api/me' },
+    })
+  );
+  app.use(
+    '/api/roster',
+    createProxyMiddleware({
+      target: HUNT_SUGGEST_TARGET,
+      changeOrigin: true,
+      secure: true,
+      pathRewrite: { '^/api/roster': '/api/roster' },
+    })
+  );
 };

@@ -269,7 +269,7 @@ export default function GambaPage() {
 
   return (
     <div className="pt-20 pb-16 px-4 sm:px-6">
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto">
         {/* Mobile/tablet — single tuner button */}
         <div className="lg:hidden">
           <MobileChannelTrigger

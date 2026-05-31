@@ -91,7 +91,7 @@ export default function HomePage({
       {/* Live Stream Embed - Only shown when live */}
       {isLive && !loading && (
         <section className="py-16 px-6 sm:px-10">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto">
             <SectionHeader
               segment="01"
               eyebrow={`On air now${streamData?.viewers ? ` · ${streamData.viewers} watching` : ''}`}
@@ -141,7 +141,7 @@ export default function HomePage({
       {/* Latest VOD Section */}
       {!loading && latestVod && (
         <section className="py-16 px-6 sm:px-10 bg-zinc-card/40 border-y border-white/5">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto">
             <SectionHeader
               segment="02"
               eyebrow="Tape index · Most recent"
@@ -242,7 +242,7 @@ export default function HomePage({
 
       {/* Featured Clips Section */}
       <section className="py-16 px-6 sm:px-10">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto">
           <SectionHeader
             segment="04"
             eyebrow="Tape index · Highlights"

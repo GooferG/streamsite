@@ -107,7 +107,7 @@ export default function StatsTicker({ channelData, streamData, isLive, clips, vi
       aria-label="Channel stats"
       className="relative border-t border-emerald-signal/15"
     >
-      <div className="max-w-7xl mx-auto px-6 sm:px-10 pt-10 sm:pt-12 pb-6 sm:pb-8">
+      <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-6 sm:px-10 pt-10 sm:pt-12 pb-6 sm:pb-8">
         <div
           className="text-[10px] sm:text-xs font-bold tracking-eyebrow-lg uppercase text-white/45 mb-4 font-mono"
       >
@@ -129,7 +129,7 @@ export default function StatsTicker({ channelData, streamData, isLive, clips, vi
           style={{ background: 'linear-gradient(to left, rgba(9,9,11,1), rgba(9,9,11,0))' }}
           aria-hidden="true"
         />
-        <div className="max-w-7xl mx-auto sm:flex sm:justify-between sm:divide-x sm:divide-white/5 overflow-x-auto sm:overflow-visible scrollbar-hide motion-safe:sm:overflow-visible">
+        <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto sm:flex sm:justify-between sm:divide-x sm:divide-white/5 overflow-x-auto sm:overflow-visible scrollbar-hide motion-safe:sm:overflow-visible">
           <div className="flex sm:flex sm:flex-1 sm:justify-between sm:divide-x sm:divide-white/5 motion-safe:animate-[ticker_28s_linear_infinite] sm:motion-safe:animate-none whitespace-nowrap sm:whitespace-normal">
             {cells.map((cell) => (
               <Cell
@@ -155,7 +155,7 @@ export default function StatsTicker({ channelData, streamData, isLive, clips, vi
 
         {allFailed && (
           <div
-            className="max-w-7xl mx-auto px-6 sm:px-10 pb-3 text-[10px] sm:text-xs font-bold tracking-eyebrow-lg uppercase text-red-destructive font-mono"
+            className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-6 sm:px-10 pb-3 text-[10px] sm:text-xs font-bold tracking-eyebrow-lg uppercase text-red-destructive font-mono"
       >
             Signal lost
           </div>

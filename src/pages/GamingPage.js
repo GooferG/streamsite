@@ -144,7 +144,7 @@ export default function GamingPage() {
     <div className="relative pt-32 pb-24 px-6 sm:px-10">
       <ScanlineOverlay />
 
-      <div className="relative max-w-7xl mx-auto">
+      <div className="relative max-w-7xl 2xl:max-w-[1440px] mx-auto">
         {/* Slate header */}
         <header className="mb-10 sm:mb-12">
           <div

@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 - `npm start` — dev server on `localhost:3000` with proxy (`src/setupProxy.js`) for `/api/public` (bonushunt.gg) and dev mirrors of `/api/bonus-hunts` and `/api/slots`. Vercel serverless functions in `/api` only run in production unless you use `vercel dev`.
 - `npm run build` — production build to `build/`.
-- `npm test` — Jest watch mode (react-scripts). Single test: `npm test -- --testPathPattern=Foo` or `--watchAll=false` for one-shot run. No tests currently exist.
+- `npm test` — Jest watch mode (react-scripts). Single test: `npm test -- --testPathPattern=Foo` or `--watchAll=false` for one-shot run. A few unit tests live under `src/**/__tests__/` (leaderboard format/mock data, `useCountdown`, `useLeaderboardData`); not wired into CI.
 - Env: copy `.env.example` to `.env.local`. `REACT_APP_*` vars exposed to client (Firebase config, Twitch client id); non-prefixed vars (`TWITCH_CLIENT_SECRET`, `STEAM_API_KEY`, `FIREBASE_PRIVATE_KEY`, etc.) are server-only and consumed by `/api/*` functions.
 
 ## Architecture
@@ -64,9 +64,9 @@ All files are Vercel function handlers (`export default async function handler(r
 
 ## Gotchas
 
-- Two API keys are committed in `api/bonus-hunts.js` and `src/setupProxy.js`. Rotating them requires updating both locations.
+- Third-party API keys (BonusHunt, SlotsLaunch) and Twitch secrets now live in env only — `BONUSHUNT_API_KEY`, `SLOTSLAUNCH_API_KEY`, `TWITCH_CLIENT_SECRET`. Set them in Vercel (prod) and `.env.local` (for `vercel dev`). The proxies fail closed when unset. The previously-committed keys are dead (rotated) but remain in git history.
 - `FIREBASE_SETUP.md` step 9's "Update Your App.js" snippet is stale — the app already uses react-router routes for `/admin`, not the `setPage` state pattern shown there.
-- `src/components/` has both `GameWheel.js` and `GameWheel.jsx` — verify which is imported before editing.
+- Most page-level routes (admin pages, secondary public pages, `TVStaticIntro`, `HuntSuggestPage`) are `lazy()`-loaded in `App.js` behind a single `<Suspense>`; only `HomePage` and `GambaPage` are eager. `GENERATE_SOURCEMAP=false` is set in committed `.env.production`.
 
 ## Design Context
 

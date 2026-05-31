@@ -44,6 +44,7 @@ import SlotAutocomplete from './SlotAutocomplete';
 import SuggestionsPanel from './SuggestionsPanel';
 import HuntStartScreen from './HuntStartScreen';
 import Modal from './Modal';
+import StatCell from './StatCell';
 import { useHuntStore } from '../hooks/useHuntStore';
 import { fmt, fmtX, makeId, computeStats, computeCallerStats, openingOrder } from '../utils/huntCalc';
 import { renderSplit, renderRecap } from '../utils/huntExport';
@@ -66,17 +67,6 @@ function PanelLabel({ code, icon: Icon, label, accent = 'emerald' }) {
         {Icon && <Icon size={12} aria-hidden="true" className={color} />}
         <span>{label}</span>
       </span>
-    </div>
-  );
-}
-
-function StatCell({ label, value }) {
-  return (
-    <div className="px-3 py-2.5 bg-zinc-broadcast/50 border border-white/8">
-      <p className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/65 mb-1 font-mono">
-        {label}
-      </p>
-      <p className="font-bold text-white-body text-base tabular-nums">{value}</p>
     </div>
   );
 }

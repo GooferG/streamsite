@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { getGameCovers } from '../utils/igdbApi';
 import { useSchedule } from '../hooks/useSchedule';
+import { useNowTimestamp, formatTimecode } from '../utils/timecode';
 
 const DAY_INDEX = {
   SUNDAY: 0,
@@ -22,22 +23,6 @@ const WEEK_ORDER = [
   'SATURDAY',
   'SUNDAY',
 ];
-
-function useNowTimestamp() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const t = setInterval(() => setNow(new Date()), 1000);
-    return () => clearInterval(t);
-  }, []);
-  return now;
-}
-
-function formatTimecode(d) {
-  const hh = String(d.getHours()).padStart(2, '0');
-  const mm = String(d.getMinutes()).padStart(2, '0');
-  const ss = String(d.getSeconds()).padStart(2, '0');
-  return `${hh}:${mm}:${ss}`;
-}
 
 function dayAbbrev(day) {
   if (day === 'FRY-DAY') return 'FRI';

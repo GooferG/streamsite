@@ -1,4 +1,4 @@
-﻿# Slot Profiles + Host Roster-Add â€” Design Spec
+# Slot Profiles + Host Roster-Add â€” Design Spec
 
 **Date:** 2026-05-30
 

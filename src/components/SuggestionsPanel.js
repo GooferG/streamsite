@@ -171,6 +171,15 @@ function RosterSearch() {
               <div className="min-w-0">
                 <p className="text-sm text-white-body truncate">{v.twitchName}</p>
                 <p className="text-xs text-white/40 truncate">{v.defaultSlots.join(', ')}</p>
+                {v.rainbetUsername ? (
+                  <p className="text-[10px] font-mono tracking-eyebrow-md uppercase text-emerald-signal/80 truncate mt-0.5">
+                    Rainbet: {v.rainbetUsername}
+                  </p>
+                ) : (
+                  <p className="text-[10px] font-mono tracking-eyebrow-md uppercase text-white/30 truncate mt-0.5">
+                    No Rainbet set
+                  </p>
+                )}
               </div>
               <button
                 type="button"

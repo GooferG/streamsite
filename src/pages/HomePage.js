@@ -6,6 +6,7 @@ import SteamGames from '../components/SteamGames';
 import HomeHero from '../components/HomeHero';
 import StatsTicker from '../components/StatsTicker';
 import SectionHeader from '../components/SectionHeader';
+import HomeGambaTools from '../components/HomeGambaTools';
 import HomeLeaderboardCallout from '../components/HomeLeaderboardCallout';
 import VideoModal from '../components/VideoModal';
 import { useVideoModal } from '../hooks/useVideoModal';
@@ -137,6 +138,8 @@ export default function HomePage({
       )}
 
       <HomeLeaderboardCallout />
+
+      <HomeGambaTools setPage={setPage} />
 
       {/* Latest VOD Section */}
       {!loading && latestVod && (

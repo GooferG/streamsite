@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { ClipboardList, Check, X, Radio, RotateCcw, Ban, Link as LinkIcon, Trash2 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { ClipboardList, Check, X, Radio, RotateCcw, Ban, Link as LinkIcon, Trash2, UserPlus } from 'lucide-react';
 import { parseSuggestions, countSlots } from '../utils/suggestionsParse';
+import { authedFetch } from '../utils/authedFetch';
 
 const inputCls =
   'bg-zinc-broadcast/60 border border-white/10 px-3 py-2 text-sm text-white-body placeholder:text-white/50 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';
@@ -83,6 +84,112 @@ function SlotPill({ person, slot, onSetStatus, onLand }) {
     >
       <span className="truncate">{slot.name}</span>
     </button>
+  );
+}
+
+// Owner control: search registered viewers who opted in and add their saved
+// default slots straight into this hunt's list (source: 'roster'). Independent
+// of the password link — the host is authenticated on their own hunt.
+function RosterSearch() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+  const debounceRef = useRef(null);
+
+  function onQueryChange(value) {
+    setQuery(value);
+    setMsg(null);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    const q = value.trim();
+    if (!q) {
+      setResults([]);
+      return;
+    }
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const r = await authedFetch(`/api/roster/search?q=${encodeURIComponent(q)}`);
+        const data = await r.json().catch(() => ({}));
+        setResults(r.ok && Array.isArray(data.results) ? data.results : []);
+      } catch {
+        setResults([]);
+      }
+    }, 250);
+  }
+
+  async function add(viewer) {
+    setBusy(true);
+    setMsg(null);
+    try {
+      const r = await authedFetch('/api/roster/add', {
+        method: 'POST',
+        body: JSON.stringify({ twitchId: viewer.twitchId }),
+      });
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) {
+        const map = {
+          NO_ACTIVE_HUNT: 'Start a hunt first.',
+          LIST_FULL: 'The list is full.',
+          NOT_FOUND: 'That viewer is no longer available.',
+          NO_DEFAULTS: 'That viewer has no saved slots.',
+          NOT_DISCOVERABLE: 'That viewer is no longer shared.',
+        };
+        setMsg(map[data.error] || 'Could not add.');
+      } else if (data.added === 0) {
+        setMsg(`${viewer.twitchName} is already on the list.`);
+      } else {
+        setMsg(
+          `Added ${data.added} slot${data.added === 1 ? '' : 's'} for ${viewer.twitchName}.`
+        );
+        setQuery('');
+        setResults([]);
+      }
+    } catch {
+      setMsg('Could not add.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="border border-white/8 bg-zinc-broadcast/40 p-3 space-y-2">
+      <span className="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono text-white/65">
+        <UserPlus size={12} aria-hidden="true" className="text-purple-bright" />
+        Add a registered viewer
+      </span>
+      <input
+        type="text"
+        value={query}
+        onChange={(e) => onQueryChange(e.target.value)}
+        placeholder="Search by name…"
+        className={`w-full ${inputCls}`}
+      />
+      {results.length > 0 && (
+        <ul className="border border-white/10 divide-y divide-white/8">
+          {results.map((v) => (
+            <li key={v.twitchId} className="flex items-center justify-between gap-3 px-3 py-2">
+              <div className="min-w-0">
+                <p className="text-sm text-white-body truncate">{v.twitchName}</p>
+                <p className="text-xs text-white/40 truncate">{v.defaultSlots.join(', ')}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => add(v)}
+                disabled={busy}
+                className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-40"
+              >
+                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  Add
+                </span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {msg && (
+        <p className="text-[11px] tracking-eyebrow uppercase text-white/55 font-mono">{msg}</p>
+      )}
+    </div>
   );
 }
 
@@ -327,6 +434,9 @@ export default function SuggestionsPanel({
           onDeleteLink={onDeleteLink}
         />
       )}
+
+      {/* Owner: add a registered viewer's saved default slots */}
+      {isLoggedIn && <RosterSearch />}
 
       {/* Import flow */}
       {importing && (

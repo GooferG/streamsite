@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Lock, Mail, AlertCircle, ShieldCheck, LogOut } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
+import { confirmSwitch, switchToAdminMsg } from '../utils/authSwitch';
 
 function useNowTimestamp() {
   const [now, setNow] = useState(() => new Date());
@@ -52,7 +53,7 @@ export default function AdminLoginPage({ onLoginSuccess, signedIn = false }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login, logout } = useAuth();
-  const { loginWithTwitch } = useTwitchAuth();
+  const { loginWithTwitch, twitchUser } = useTwitchAuth();
   const now = useNowTimestamp();
 
   const handleSubmit = async (e) => {
@@ -60,6 +61,10 @@ export default function AdminLoginPage({ onLoginSuccess, signedIn = false }) {
     setError('');
     setLoading(true);
     try {
+      if (!confirmSwitch(switchToAdminMsg(twitchUser?.displayName), !!twitchUser)) {
+        setLoading(false);
+        return;
+      }
       await login(email, password);
       onLoginSuccess();
     } catch (err) {

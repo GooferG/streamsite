@@ -11,14 +11,22 @@ const TOOL_BLURBS = {
   suggest: 'Drop a slot for the next hunt.',
 };
 
-export default function HomeGambaTools({ setPage }) {
+export default function HomeGambaTools({
+  setPage,
+  sectionId = 'gamba-tools',
+  className = 'py-16 px-6 sm:px-10',
+  innerClassName = 'max-w-7xl 2xl:max-w-[1440px] mx-auto',
+  segment = '05',
+  eyebrow = 'Back of house · The gamba wing',
+  title = 'The gamba tools',
+}) {
   return (
-    <section id="gamba-tools" className="py-16 px-6 sm:px-10">
-      <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto">
+    <section id={sectionId} className={className}>
+      <div className={innerClassName}>
         <SectionHeader
-          segment="05"
-          eyebrow="Back of house · The gamba wing"
-          title="The gamba tools"
+          segment={segment}
+          eyebrow={eyebrow}
+          title={title}
           accent="white"
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">

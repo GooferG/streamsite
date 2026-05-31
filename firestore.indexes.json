@@ -63,6 +63,14 @@
         { "fieldPath": "status", "order": "ASCENDING" },
         { "fieldPath": "completedAt", "order": "DESCENDING" }
       ]
+    },
+    {
+      "collectionGroup": "users",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "slotProfile.discoverable", "order": "ASCENDING" },
+        { "fieldPath": "slotProfile.twitchNameLower", "order": "ASCENDING" }
+      ]
     }
   ],
   "fieldOverrides": [

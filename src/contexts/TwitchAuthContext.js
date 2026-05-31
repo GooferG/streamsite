@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { signInWithCustomToken, signOut, onAuthStateChanged } from 'firebase/auth';
 import { auth } from '../config/firebase';
+import { isViewerSession, confirmSwitch, SWITCH_TO_TWITCH_MSG } from '../utils/authSwitch';
 
 const TwitchAuthContext = createContext({});
 
@@ -19,16 +20,24 @@ export function TwitchAuthProvider({ children }) {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (user) => {
       setFirebaseUser(user);
-      if (!user) {
-        setTwitchUser(null);
+      // Keep the stored Twitch profile honest: clear it whenever the real
+      // session isn't this viewer (signed out, or an admin account took over).
+      // Functional update reads the latest stored profile without making it an
+      // effect dep (which would re-subscribe on every login).
+      setTwitchUser((prev) => {
+        if (isViewerSession(user, prev)) return prev;
         localStorage.removeItem('twitch_user');
-      }
+        return null;
+      });
       setLoading(false);
     });
     return unsub;
   }, []);
 
   const loginWithTwitch = () => {
+    // If an admin/staff session is active, warn before clobbering it.
+    const adminActive = !!auth.currentUser?.email;
+    if (!confirmSwitch(SWITCH_TO_TWITCH_MSG, adminActive)) return;
     const params = new URLSearchParams({
       client_id: CLIENT_ID,
       redirect_uri: REDIRECT_URI,

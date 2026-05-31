@@ -7,6 +7,7 @@ import HomeHero from '../components/HomeHero';
 import StatsTicker from '../components/StatsTicker';
 import SectionHeader from '../components/SectionHeader';
 import HomeGambaTools from '../components/HomeGambaTools';
+import WelcomeSignOn from '../components/WelcomeSignOn';
 import HomeLeaderboardCallout from '../components/HomeLeaderboardCallout';
 import VideoModal from '../components/VideoModal';
 import { useVideoModal } from '../hooks/useVideoModal';
@@ -41,6 +42,7 @@ export default function HomePage({
   loading,
   clips,
   videos,
+  introDone,
 }) {
   const { current, open, close } = useVideoModal();
 
@@ -80,6 +82,7 @@ export default function HomePage({
 
   return (
     <div>
+      <WelcomeSignOn introDone={introDone} />
       <HomeHero
         isLive={isLive}
         streamData={streamData}

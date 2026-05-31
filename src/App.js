@@ -224,6 +224,7 @@ function StreamingSiteContent() {
                 loading={loading}
                 clips={clips}
                 videos={videos}
+                introDone={!showTVIntro}
               />
             }
           />

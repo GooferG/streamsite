@@ -57,8 +57,10 @@ imports from GambaPage if they are not referenced elsewhere in the file).
 
 #### `src/components/Navigation.js`
 
-- **`NAV_ITEMS`:** add `hasDropdown: true` to the Gamba entry. (Generic: any item with
-  a children source can opt in.)
+- **`NAV_ITEMS`:** give the Gamba entry a `dropdown: GAMBA_TOOLS` field. (Generic: any
+  item with a `dropdown` list opts in and carries its own tools — the flag and the data
+  are the same field, so the nav map needs no second lookup. The implementation plan uses
+  this `dropdown:` form rather than a separate `hasDropdown` flag.)
 - **New `NavDropdown` component** (desktop), wrapping the existing `NavLink`:
   - A relatively-positioned wrapper with `onMouseEnter` → open, `onMouseLeave` → close
     after a short delay (~120ms) so diagonal mouse travel into the menu doesn't dismiss it.
@@ -74,8 +76,8 @@ imports from GambaPage if they are not referenced elsewhere in the file).
     `setPage('gamba/' + tool.id)` then closes.
   - Respect `prefers-reduced-motion`: skip the fade/slide animation when set (matches
     the codebase convention, e.g. the gamba sheet keyframes).
-- **Desktop nav map:** when an item has `hasDropdown`, render `<NavDropdown item={item}
-  items={GAMBA_TOOLS} setPage={setPage} active={currentPage === item.id} />`
+- **Desktop nav map:** when an item has a `dropdown` list, render `<NavDropdown item={item}
+  items={item.dropdown} setPage={setPage} active={currentPage === item.id} />`
   (prop is named `items`, not `children` — `children` is reserved in React);
   otherwise render the plain `NavLink` as today. `currentPage` already resolves to the
   first path segment, so "Gamba" shows active for any `/gamba/*` route.

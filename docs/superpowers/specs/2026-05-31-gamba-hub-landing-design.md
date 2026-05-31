@@ -115,7 +115,15 @@ values so the home page is unchanged:
 - `eyebrow` (default `'Back of house · The gamba wing'`)
 - `title` (default `'The gamba tools'`)
 - `showSegment` (default `true`) — lets the hub omit the segment number if it reads oddly
-  as a standalone page heading.
+  as a standalone page heading. (Implementation note: `SectionHeader` already hides the
+  segment when `segment` is falsy, so the hub passes `segment={null}` rather than a separate
+  `showSegment` flag.)
+
+Additionally, the section **wrapper** is home-specific (it hardcodes `id="gamba-tools"` and
+the home width/padding `max-w-7xl 2xl:max-w-[1440px]`). Since the hub renders inside
+GambaPage's own `2xl:max-w-[1600px]` container, generalize the wrapper too: optional
+`sectionId`, `className` (outer section padding), and `innerClassName` (the width wrapper,
+which the hub sets to `""` to avoid double-wrapping). Defaults reproduce today's home values.
 
 The hub passes a plainer heading (it is the whole page, not one feed segment), e.g.
 `title="Pick a tool"` and no segment. The home page calls `HomeGambaTools` with no new props

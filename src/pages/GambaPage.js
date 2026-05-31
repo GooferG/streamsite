@@ -1,17 +1,11 @@
 import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import {
-  Target,
-  Gamepad2,
-  MessageSquarePlus,
-  Layers,
-  Radio,
-  ChevronDown,
-  X,
-} from 'lucide-react';
+import { ChevronDown, X, LayoutGrid } from 'lucide-react';
 import BonusHuntsPage from './BonusHunts';
 import SuggestAdminTab from '../components/SuggestAdminTab';
 import Leaderboard from '../components/Leaderboard';
+import GambaHub from '../components/GambaHub';
+import { GAMBA_TOOLS } from '../data/gambaTools';
 
 // Code-split the two tools that pull in the slot DB (~874KB via ../data/slots).
 // SlotPicker imports it directly; HuntTracker reaches it through SlotAutocomplete.
@@ -28,14 +22,6 @@ const ToolLoading = ({ label }) => (
     </p>
   </div>
 );
-
-const TOOLS = [
-  { id: 'leaderboard', label: 'Leaderboard', icon: Radio },
-  { id: 'hunt-tracker', label: 'Hunt Tracker', icon: Target },
-  { id: 'bonus-hunts', label: 'Bonus Hunts', icon: Layers },
-  { id: 'wheel', label: 'Slot Picker', icon: Gamepad2 },
-  { id: 'suggest', label: 'Suggestions', icon: MessageSquarePlus },
-];
 
 function pad2(n) {
   return String(n).padStart(2, '0');
@@ -78,7 +64,7 @@ function ChannelTab({ tool, channelNumber, active, onClick }) {
 }
 
 function MobileChannelTrigger({ activeIndex, onOpen }) {
-  const tool = TOOLS[activeIndex];
+  const tool = GAMBA_TOOLS[activeIndex];
   const Icon = tool.icon;
   return (
     <button
@@ -110,7 +96,7 @@ function MobileChannelTrigger({ activeIndex, onOpen }) {
   );
 }
 
-function MobileChannelSheet({ open, activeId, onSelect, onClose }) {
+function MobileChannelSheet({ open, activeId, onSelect, onClose, onHub }) {
   useEffect(() => {
     if (!open) return;
     const onKey = (e) => {
@@ -194,9 +180,21 @@ function MobileChannelSheet({ open, activeId, onSelect, onClose }) {
           </button>
         </div>
 
+        {/* Back to hub */}
+        <button
+          type="button"
+          onClick={onHub}
+          className="relative w-full flex items-center gap-3 px-4 py-3 border-b border-white/8 text-white/65 hover:text-white-body hover:bg-white/5 transition-colors duration-150"
+        >
+          <LayoutGrid size={14} aria-hidden="true" />
+          <span className="text-xs font-bold tracking-eyebrow-sm uppercase font-mono">
+            Back to hub
+          </span>
+        </button>
+
         {/* Channel list */}
         <ul className="relative">
-          {TOOLS.map((tool, i) => {
+          {GAMBA_TOOLS.map((tool, i) => {
             const Icon = tool.icon;
             const isActive = tool.id === activeId;
             return (
@@ -264,16 +262,18 @@ function MobileChannelSheet({ open, activeId, onSelect, onClose }) {
 export default function GambaPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const activeTool = location.pathname.split('/')[2] || 'leaderboard';
+  const activeTool = location.pathname.split('/')[2] || null;
   const activeIndex = Math.max(
     0,
-    TOOLS.findIndex((t) => t.id === activeTool)
+    GAMBA_TOOLS.findIndex((t) => t.id === activeTool)
   );
   const setActiveTool = (tool) => navigate(`/gamba/${tool}`);
+  const goToHub = () => navigate('/gamba');
   const stripRef = useRef(null);
   const [sheetOpen, setSheetOpen] = useState(false);
 
   useEffect(() => {
+    if (!activeTool) return;
     const strip = stripRef.current;
     if (!strip) return;
     const activeBtn = strip.querySelector('[data-active="true"]');
@@ -284,62 +284,82 @@ export default function GambaPage() {
 
   return (
     <div className="pt-20 pb-16 px-4 sm:px-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Mobile/tablet — single tuner button */}
-        <div className="lg:hidden">
-          <MobileChannelTrigger
-            activeIndex={activeIndex}
-            onOpen={() => setSheetOpen(true)}
-          />
-        </div>
-
-        {/* Desktop — equal-width strip */}
-        <div className="hidden lg:block">
-          <div
-            ref={stripRef}
-            className="flex border border-white/8 bg-zinc-card/30"
-            role="tablist"
-            aria-label="Gamba tools"
-          >
-            {TOOLS.map((tool, i) => (
-              <ChannelTab
-                key={tool.id}
-                tool={tool}
-                channelNumber={i + 1}
-                active={activeTool === tool.id}
-                onClick={() => setActiveTool(tool.id)}
+      <div className="max-w-7xl 2xl:max-w-[1600px] mx-auto">
+        {activeTool ? (
+          <>
+            {/* Mobile/tablet — single tuner button */}
+            <div className="lg:hidden">
+              <MobileChannelTrigger
+                activeIndex={activeIndex}
+                onOpen={() => setSheetOpen(true)}
               />
-            ))}
-          </div>
-        </div>
+            </div>
 
-        {/* Tool surface */}
-        <div className="mt-4">
-          {activeTool === 'leaderboard' && <Leaderboard />}
-          {activeTool === 'suggest' && <SuggestAdminTab />}
-          {activeTool === 'bonus-hunts' && <BonusHuntsPage />}
-          {activeTool === 'hunt-tracker' && (
-            <Suspense fallback={<ToolLoading label="Loading hunt tracker…" />}>
-              <HuntTracker />
-            </Suspense>
-          )}
-          {activeTool === 'wheel' && (
-            <Suspense fallback={<ToolLoading label="Tuning slot signal…" />}>
-              <SlotPicker />
-            </Suspense>
-          )}
-        </div>
+            {/* Desktop — equal-width strip with a leading Hub control */}
+            <div className="hidden lg:block">
+              <div
+                ref={stripRef}
+                className="flex border border-white/8 bg-zinc-card/30"
+                role="tablist"
+                aria-label="Gamba tools"
+              >
+                <button
+                  type="button"
+                  onClick={goToHub}
+                  className="flex items-center gap-2 px-4 py-3 border-r border-white/8 text-white/55 hover:text-white-body hover:bg-white/5 transition-colors duration-150"
+                  aria-label="Back to gamba hub"
+                >
+                  <LayoutGrid size={13} aria-hidden="true" />
+                  <span className="text-xs font-bold tracking-eyebrow-sm uppercase font-mono">
+                    Hub
+                  </span>
+                </button>
+                {GAMBA_TOOLS.map((tool, i) => (
+                  <ChannelTab
+                    key={tool.id}
+                    tool={tool}
+                    channelNumber={i + 1}
+                    active={activeTool === tool.id}
+                    onClick={() => setActiveTool(tool.id)}
+                  />
+                ))}
+              </div>
+            </div>
+
+            {/* Tool surface */}
+            <div className="mt-4">
+              {activeTool === 'leaderboard' && <Leaderboard />}
+              {activeTool === 'suggest' && <SuggestAdminTab />}
+              {activeTool === 'bonus-hunts' && <BonusHuntsPage />}
+              {activeTool === 'hunt-tracker' && (
+                <Suspense fallback={<ToolLoading label="Loading hunt tracker…" />}>
+                  <HuntTracker />
+                </Suspense>
+              )}
+              {activeTool === 'wheel' && (
+                <Suspense fallback={<ToolLoading label="Tuning slot signal…" />}>
+                  <SlotPicker />
+                </Suspense>
+              )}
+            </div>
+          </>
+        ) : (
+          <GambaHub setPage={(id) => navigate(`/${id}`)} />
+        )}
       </div>
 
-      <MobileChannelSheet
-        open={sheetOpen}
-        activeId={activeTool}
-        onSelect={(id) => {
-          setActiveTool(id);
-          setSheetOpen(false);
-        }}
-        onClose={() => setSheetOpen(false)}
-      />
+      {activeTool && (
+        <MobileChannelSheet
+          open={sheetOpen}
+          activeId={activeTool}
+          onSelect={(id) => {
+            setActiveTool(id);
+            setSheetOpen(false);
+          }}
+          onClose={() => setSheetOpen(false)}
+          onHub={goToHub}
+        />
+      )}
     </div>
   );
 }

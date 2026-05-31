@@ -2,7 +2,6 @@ import { useState, useEffect, lazy, Suspense } from 'react';
 import {
   Routes,
   Route,
-  Navigate,
   useNavigate,
   useLocation,
 } from 'react-router-dom';
@@ -224,6 +223,7 @@ function StreamingSiteContent() {
                 loading={loading}
                 clips={clips}
                 videos={videos}
+                introDone={!showTVIntro}
               />
             }
           />
@@ -238,10 +238,6 @@ function StreamingSiteContent() {
           <Route path="/gear-interactive" element={<GearInteractive />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/gamba" element={<GambaPage />}>
-            <Route
-              index
-              element={<Navigate to="/gamba/leaderboard" replace />}
-            />
             <Route path="leaderboard" element={null} />
             <Route path="wheel" element={null} />
             <Route path="equity" element={null} />

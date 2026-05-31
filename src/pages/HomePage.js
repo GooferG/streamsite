@@ -6,6 +6,8 @@ import SteamGames from '../components/SteamGames';
 import HomeHero from '../components/HomeHero';
 import StatsTicker from '../components/StatsTicker';
 import SectionHeader from '../components/SectionHeader';
+import HomeGambaTools from '../components/HomeGambaTools';
+import WelcomeSignOn from '../components/WelcomeSignOn';
 import HomeLeaderboardCallout from '../components/HomeLeaderboardCallout';
 import VideoModal from '../components/VideoModal';
 import { useVideoModal } from '../hooks/useVideoModal';
@@ -40,6 +42,7 @@ export default function HomePage({
   loading,
   clips,
   videos,
+  introDone,
 }) {
   const { current, open, close } = useVideoModal();
 
@@ -79,6 +82,7 @@ export default function HomePage({
 
   return (
     <div>
+      <WelcomeSignOn introDone={introDone} />
       <HomeHero
         isLive={isLive}
         streamData={streamData}
@@ -91,7 +95,7 @@ export default function HomePage({
       {/* Live Stream Embed - Only shown when live */}
       {isLive && !loading && (
         <section className="py-16 px-6 sm:px-10">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto">
             <SectionHeader
               segment="01"
               eyebrow={`On air now${streamData?.viewers ? ` · ${streamData.viewers} watching` : ''}`}
@@ -138,10 +142,12 @@ export default function HomePage({
 
       <HomeLeaderboardCallout />
 
+      <HomeGambaTools setPage={setPage} />
+
       {/* Latest VOD Section */}
       {!loading && latestVod && (
         <section className="py-16 px-6 sm:px-10 bg-zinc-card/40 border-y border-white/5">
-          <div className="max-w-7xl mx-auto">
+          <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto">
             <SectionHeader
               segment="02"
               eyebrow="Tape index · Most recent"
@@ -242,7 +248,7 @@ export default function HomePage({
 
       {/* Featured Clips Section */}
       <section className="py-16 px-6 sm:px-10">
-        <div className="max-w-7xl mx-auto">
+        <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto">
           <SectionHeader
             segment="04"
             eyebrow="Tape index · Highlights"

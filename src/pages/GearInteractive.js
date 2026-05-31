@@ -75,7 +75,7 @@ export default function GearInteractive() {
 
   return (
     <div className="pt-32 pb-24 px-6">
-      <div className="max-w-7xl mx-auto space-y-12">
+      <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto space-y-12">
         {/* Header */}
         <header className="text-center space-y-4">
           <h1 className="text-6xl md:text-7xl font-black tracking-tighter">

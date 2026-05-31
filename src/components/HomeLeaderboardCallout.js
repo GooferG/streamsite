@@ -225,7 +225,10 @@ function useInView(ref, { rootMargin = '0px', threshold = 0 } = {}) {
   return inView;
 }
 
-export default function HomeLeaderboardCallout() {
+export default function HomeLeaderboardCallout({
+  ctaTarget = '/gamba/leaderboard',
+  ctaLabel = 'View standings',
+} = {}) {
   const navigate = useNavigate();
   const data = useLeaderboardData();
   const remaining = useCountdown(data.endsAt);
@@ -240,7 +243,7 @@ export default function HomeLeaderboardCallout() {
     runWhen: inView,
   });
 
-  const handleClick = () => navigate('/gamba/leaderboard');
+  const handleClick = () => navigate(ctaTarget);
 
   return (
     <section ref={sectionRef} className="py-12 px-6 sm:px-10">
@@ -326,7 +329,7 @@ export default function HomeLeaderboardCallout() {
         }
       `}</style>
 
-      <div className="max-w-7xl mx-auto">
+      <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto">
         <div className="relative overflow-hidden">
           {/* Searchlight stage — anchored at the lower outside corners, sweep up & inward */}
           <div
@@ -465,7 +468,7 @@ export default function HomeLeaderboardCallout() {
                   month.
                 </p>
                 <div className="flex items-center gap-3 pt-2 text-sm font-bold tracking-eyebrow-sm uppercase font-mono text-emerald-bright group-hover:text-emerald-signal transition-colors duration-200 motion-reduce:transition-none">
-                  <span>View standings</span>
+                  <span>{ctaLabel}</span>
                   <span
                     aria-hidden="true"
                     className="inline-block transition-transform duration-200 group-hover:translate-x-1 motion-reduce:transition-none"

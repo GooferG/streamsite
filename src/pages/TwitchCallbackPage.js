@@ -21,7 +21,7 @@ export default function TwitchCallbackPage() {
       return;
     }
     signInWithTwitchCode(code)
-      .then(() => navigate('/suggest', { replace: true }))
+      .then(() => navigate('/me', { replace: true }))
       .catch((err) => {
         console.error('Twitch login error:', err);
         setError(`Login failed: ${err?.message || 'Unknown error'}. Check console for details.`);
@@ -34,10 +34,10 @@ export default function TwitchCallbackPage() {
         <div className="text-center space-y-4">
           <p className="text-red-destructive font-bold">{error}</p>
           <button
-            onClick={() => navigate('/suggest')}
+            onClick={() => navigate('/me')}
             className="px-6 py-3 rounded-lg bg-white/10 border border-white/20 hover:border-purple-bright/60 transition-all"
           >
-            Back to Suggest
+            Back to My Account
           </button>
         </div>
       </div>

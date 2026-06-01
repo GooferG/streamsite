@@ -8,17 +8,16 @@ import SponsorBanner from '../SponsorBanner';
 import TickerCrawl from '../TickerCrawl';
 import StationID from '../StationID';
 
-const TAKEOVER_THRESHOLD = 1.3;
-
 export default function BroadcastTheme({ data, now }) {
   const [leader, runnerUp, third, ...rest] = data.players;
-  const showTakeover =
-    leader && runnerUp && leader.wagered >= runnerUp.wagered * TAKEOVER_THRESHOLD;
-  const racers = showTakeover
-    ? rest.slice(0, 7)
-    : [leader, runnerUp, third, ...rest].filter(Boolean).slice(0, 7);
-  const roster = showTakeover ? data.players.slice(10) : data.players.slice(7);
-  const racerLeader = showTakeover ? racers[0] : leader;
+  // The top 3 always headline the broadcast (leader takeover + 2nd/3rd podium),
+  // matching the other themes. The race bars below cover ranks 4+ and the roster
+  // table the tail. (Previously this was gated on the leader being >=1.3x the
+  // runner-up, which made the top-3 block vanish once the live poll narrowed the
+  // gap below that ratio — surprising on theme switch.)
+  const racers = rest.slice(0, 7);
+  const roster = data.players.slice(10);
+  const racerLeader = racers[0];
 
   return (
     <div data-theme="broadcast">
@@ -32,7 +31,7 @@ export default function BroadcastTheme({ data, now }) {
           now={now}
         />
 
-        {showTakeover && (
+        {leader && (
           <div className="px-4 sm:px-6 py-6 border-b border-white/8">
             <div className="grid grid-cols-1 lg:grid-cols-[5fr_3fr] gap-4 lg:gap-5">
               <LeaderTakeover leader={leader} runnerUp={runnerUp} />

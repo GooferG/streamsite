@@ -110,13 +110,54 @@ export default function BroadcastHeader({
           {remaining.isOver ? 'STATUS' : 'T-MINUS'}
         </div>
         {remaining.isOver ? (
-          <div className="text-xl sm:text-2xl font-bold tracking-eyebrow-sm font-mono text-red-destructive">
-            LEADERBOARD OVER
+          <div className="inline-flex items-center gap-2 px-2.5 py-1.5 rounded-sm border border-red-destructive/35 bg-black/55 sm:ml-auto" style={{ boxShadow: 'inset 0 1px 4px rgba(0,0,0,0.7)' }}>
+            <span
+              className="inline-block w-2 h-2 rounded-full bg-red-destructive animate-pulse motion-reduce:animate-none"
+              style={{ boxShadow: '0 0 8px rgba(239,68,68,0.9)' }}
+              aria-hidden="true"
+            />
+            <span
+              className="text-base sm:text-lg font-extrabold tracking-eyebrow-sm font-mono text-red-destructive leading-none"
+              style={{ textShadow: '0 0 10px rgba(239,68,68,0.7), 0 0 2px rgba(239,68,68,0.9)' }}
+            >
+              LEADERBOARD OVER
+            </span>
           </div>
         ) : (
-          <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tabular-nums font-mono text-white-body leading-none">
-            {pad2(remaining.days)}d {pad2(remaining.hours)}h{' '}
-            {pad2(remaining.minutes)}m {pad2(remaining.seconds)}s
+          <div className="flex items-start gap-1 sm:justify-end">
+            {[
+              ['DAY', remaining.days],
+              ['HR', remaining.hours],
+              ['MIN', remaining.minutes],
+              ['SEC', remaining.seconds],
+            ].map(([label, value], i) => (
+              <div key={label} className="flex items-start gap-1">
+                {i > 0 && (
+                  <span
+                    className="text-lg sm:text-2xl font-extrabold font-mono text-phosphor/70 leading-[1.1] animate-pulse motion-reduce:animate-none"
+                    style={{ textShadow: '0 0 8px rgba(31,243,154,0.7)' }}
+                    aria-hidden="true"
+                  >
+                    :
+                  </span>
+                )}
+                <div className="flex flex-col items-center">
+                  <span
+                    className="px-1.5 py-0.5 rounded-sm border border-phosphor/25 bg-black/55 text-xl sm:text-2xl lg:text-3xl font-extrabold tabular-nums font-mono text-phosphor leading-none"
+                    style={{
+                      textShadow:
+                        '0 0 10px rgba(31,243,154,0.7), 0 0 2px rgba(31,243,154,0.9)',
+                      boxShadow: 'inset 0 1px 4px rgba(0,0,0,0.7)',
+                    }}
+                  >
+                    {pad2(value)}
+                  </span>
+                  <span className="mt-1 text-[8px] tracking-eyebrow-sm text-white/40 font-mono">
+                    {label}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

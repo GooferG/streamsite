@@ -9,6 +9,7 @@ import {
   getPrizeForPosition,
   PRIZE_POOL_TOTAL,
 } from '../components/Leaderboard/format';
+import { LEADERBOARD } from '../constants';
 
 function attachPositions(players, previousIds = null, deltasById = {}) {
   const previousIndexById = previousIds
@@ -51,10 +52,15 @@ const DEFAULT_OPTIONS = {
   mock: true,
   pollMs: 45000,
   prizePool: PRIZE_POOL_TOTAL,
+  referralCode: LEADERBOARD.referralCode,
+  brand: LEADERBOARD.brand,
 };
 
 export function useLeaderboardData(options = {}) {
-  const { mock, pollMs, prizePool } = { ...DEFAULT_OPTIONS, ...options };
+  const { mock, pollMs, prizePool, referralCode, brand } = {
+    ...DEFAULT_OPTIONS,
+    ...options,
+  };
 
   const baselineRef = useRef(null);
   if (baselineRef.current === null) {
@@ -111,6 +117,8 @@ export function useLeaderboardData(options = {}) {
   return {
     players: state.players,
     prizePool,
+    referralCode,
+    brand,
     periodLabel: state.periodLabel,
     weekLabel: state.weekLabel,
     endsAt: state.endsAt,

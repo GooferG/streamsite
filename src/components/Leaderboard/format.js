@@ -19,6 +19,16 @@ export function formatPosition(position) {
   return `P${String(position).padStart(2, '0')}`;
 }
 
+// Headline prize formatting shared across themes. Round thousands collapse to
+// "$50K"; everything else is comma-grouped ("$7,000").
+export function formatPrizeHeadline(amount) {
+  if (!amount && amount !== 0) return '$0';
+  if (amount >= 1000 && amount % 1000 === 0) {
+    return `$${(amount / 1000).toLocaleString('en-US')}K`;
+  }
+  return `$${amount.toLocaleString('en-US')}`;
+}
+
 // $120,000 split across top 20. Sums to exactly $120,000.
 export const PRIZE_TABLE = [
   40000, 22000, 15000, 9000, 6000, 5000, 4000, 3000, 2500, 2000,

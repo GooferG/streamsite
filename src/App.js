@@ -6,6 +6,7 @@ import {
   useLocation,
 } from 'react-router-dom';
 import Navigation from './components/Navigation';
+import SiteFooter from './components/SiteFooter';
 import GrainOverlay from './components/GrainOverlay';
 import LiveIndicator from './components/LiveIndicator';
 import AdminLayout from './components/AdminLayout';
@@ -54,9 +55,20 @@ const MyAccountPage = lazy(() => import('./pages/MyAccountPage'));
 const TwitchCallbackPage = lazy(() => import('./pages/TwitchCallbackPage'));
 const DiscordCallbackPage = lazy(() => import('./pages/DiscordCallbackPage'));
 const SuggestPage = lazy(() => import('./pages/SuggestPage'));
+const TermsPage = lazy(() => import('./pages/TermsPage'));
 const SuggestOverlay = lazy(() => import('./pages/SuggestOverlay'));
 const LiveHuntPage = lazy(() => import('./pages/LiveHuntPage'));
 const HuntSuggestPage = lazy(() => import('./pages/HuntSuggestPage'));
+
+// Product/overlay routes render without the brand chrome (footer, brand body
+// class). Everything else is a public brand page.
+const PRODUCT_PREFIXES = [
+  '/gamba',
+  '/admin',
+  '/twitch-callback',
+  '/discord-callback',
+  '/suggest-overlay',
+];
 
 function StreamingSiteContent() {
   const navigate = useNavigate();
@@ -145,12 +157,14 @@ function StreamingSiteContent() {
     }
   };
 
+  const isBrandRoute = !PRODUCT_PREFIXES.some((p) =>
+    location.pathname.startsWith(p)
+  );
+
   useEffect(() => {
-    const productPrefixes = ['/gamba', '/admin', '/twitch-callback', '/discord-callback', '/suggest-overlay'];
-    const isProduct = productPrefixes.some((p) => location.pathname.startsWith(p));
-    document.body.classList.toggle('brand-route', !isProduct);
+    document.body.classList.toggle('brand-route', isBrandRoute);
     return () => document.body.classList.remove('brand-route');
-  }, [location.pathname]);
+  }, [isBrandRoute]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -264,6 +278,7 @@ function StreamingSiteContent() {
           <Route path="/giveaway" element={<GiveawayPage />} />
           <Route path="/me" element={<MyAccountPage />} />
           <Route path="/suggest" element={<SuggestPage />} />
+          <Route path="/terms" element={<TermsPage />} />
           <Route path="/twitch-callback" element={<TwitchCallbackPage />} />
           <Route path="/discord-callback" element={<DiscordCallbackPage />} />
           <Route path="/suggest-overlay" element={<SuggestOverlay />} />
@@ -274,6 +289,7 @@ function StreamingSiteContent() {
         </ErrorBoundary>
       </main>
 
+      {isBrandRoute && <SiteFooter />}
     </div>
   );
 }

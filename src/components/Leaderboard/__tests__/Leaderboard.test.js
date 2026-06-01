@@ -46,4 +46,12 @@ describe('Leaderboard theme resolution', () => {
     const { container } = renderWithTheme('neon');
     expect(container.querySelector('[data-theme="neon"]')).toBeTruthy();
   });
+
+  it('always shows the demo-data disclaimer, regardless of theme', () => {
+    ['broadcast', 'casino', 'minimal', 'neon'].forEach((theme) => {
+      const { container } = renderWithTheme(theme);
+      expect(container.textContent).toMatch(/demo only/i);
+      expect(container.textContent).toMatch(/sample data/i);
+    });
+  });
 });

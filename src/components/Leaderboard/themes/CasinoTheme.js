@@ -1,5 +1,5 @@
 import { useCountdown } from '../../../hooks/useCountdown';
-import { formatUSD, formatPosition, formatPrizeHeadline } from '../format';
+import { formatUSD, formatPrizeHeadline, formatOrdinalPlace } from '../format';
 import { gapToClimb } from '../gap';
 import useCountUp from '../useCountUp';
 import FlipTile from '../FlipTile';
@@ -53,7 +53,10 @@ function Seal({ position, first }) {
         />
         <span
           className={`font-serif-luxe font-bold ${first ? 'text-[34px]' : 'text-[26px]'}`}
-          style={{ color: '#3a2a08', textShadow: '0 1px 0 rgba(255,255,255,0.4)' }}
+          style={{
+            color: '#3a2a08',
+            textShadow: '0 1px 0 rgba(255,255,255,0.4)',
+          }}
         >
           {position}
         </span>
@@ -64,7 +67,8 @@ function Seal({ position, first }) {
 
 function PodiumCard({ player, first, animatedWagered }) {
   if (!player) return null;
-  const wag = first && animatedWagered != null ? animatedWagered : player.wagered;
+  const wag =
+    first && animatedWagered != null ? animatedWagered : player.wagered;
   return (
     <div
       className={`relative text-center px-5 ${
@@ -88,7 +92,7 @@ function PodiumCard({ player, first, animatedWagered }) {
     >
       <Seal position={player.position} first={first} />
       <div className="text-[11px] tracking-eyebrow text-cream/45 uppercase font-mono">
-        {formatPosition(player.position)}
+        {formatOrdinalPlace(player.position)}
       </div>
       <div className="mt-1.5 font-serif-luxe font-bold text-2xl sm:text-3xl text-cream tracking-wide break-all">
         {player.maskedUsername}
@@ -171,14 +175,27 @@ export default function CasinoTheme({ data, now }) {
 
             {/* Diamond rule */}
             <div className="flex items-center justify-center gap-3.5 mx-auto mt-3.5 max-w-[320px]">
-              <span className="h-px flex-1" style={{ background: 'linear-gradient(90deg,transparent,#a9812f)' }} />
-              <span className="w-1.5 h-1.5 rotate-45 bg-gold" style={{ boxShadow: '0 0 10px rgba(231,194,103,0.7)' }} />
-              <span className="h-px flex-1" style={{ background: 'linear-gradient(90deg,#a9812f,transparent)' }} />
+              <span
+                className="h-px flex-1"
+                style={{
+                  background: 'linear-gradient(90deg,transparent,#a9812f)',
+                }}
+              />
+              <span
+                className="w-1.5 h-1.5 rotate-45 bg-gold"
+                style={{ boxShadow: '0 0 10px rgba(231,194,103,0.7)' }}
+              />
+              <span
+                className="h-px flex-1"
+                style={{
+                  background: 'linear-gradient(90deg,#a9812f,transparent)',
+                }}
+              />
             </div>
 
             <div className="mt-3 text-[11px] tracking-eyebrow-sm uppercase font-mono text-cream/60">
-              Join code <span className="text-gold">{data.referralCode}</span> on{' '}
-              <span className="text-gold">{data.brand}</span>
+              Join code <span className="text-gold">{data.referralCode}</span>{' '}
+              on <span className="text-gold">{data.brand}</span>
             </div>
 
             {/* Countdown — engraved tiles */}
@@ -223,7 +240,11 @@ export default function CasinoTheme({ data, now }) {
               <PodiumCard player={second} />
             </div>
             <div className="sm:order-2">
-              <PodiumCard player={first} first animatedWagered={animatedWagered} />
+              <PodiumCard
+                player={first}
+                first
+                animatedWagered={animatedWagered}
+              />
             </div>
             <div className="sm:order-3">
               <PodiumCard player={third} />

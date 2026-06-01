@@ -30,4 +30,10 @@ describe('Leaderboard theme resolution', () => {
     const { container } = renderWithTheme('broadcast');
     expect(container.querySelector('[data-theme="broadcast"]')).toBeTruthy();
   });
+
+  it('renders the minimal theme when ?theme=minimal', () => {
+    const { container } = renderWithTheme('minimal');
+    expect(container.querySelector('[data-theme="minimal"]')).toBeTruthy();
+    expect(container.querySelector('[data-theme="broadcast"]')).toBeNull();
+  });
 });

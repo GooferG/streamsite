@@ -67,7 +67,7 @@ export default function BroadcastHeader({
               <span className="text-white/55">BTC</span>{' '}
               <span className="text-white-body">{btcPriceText}</span>{' '}
               {btcChangeText && (
-                <span className={btcUp ? 'text-emerald-signal' : 'text-red-destructive'}>
+                <span className={btcUp ? 'text-phosphor' : 'text-red-destructive'}>
                   {btcChangeText}
                 </span>
               )}
@@ -86,7 +86,21 @@ export default function BroadcastHeader({
           {periodLabel}
         </div>
         <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-none mt-1 uppercase">
-          <span className="text-emerald-signal">{formatPrizeHeadline(prizePool)}</span>{' '}
+          <span
+            className="relative text-phosphor"
+            style={{
+              textShadow:
+                '0 0 18px rgba(31,243,154,0.6), 0 0 4px rgba(31,243,154,0.9)',
+            }}
+          >
+            {formatPrizeHeadline(prizePool)}
+            <span
+              aria-hidden="true"
+              className="absolute left-[1.5px] top-0 text-[#ff3b6b] mix-blend-screen opacity-40"
+            >
+              {formatPrizeHeadline(prizePool)}
+            </span>
+          </span>{' '}
           <span className="text-white-body">MONTHLY LEADERBOARD</span>
         </h1>
       </div>

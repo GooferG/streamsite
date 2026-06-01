@@ -40,6 +40,29 @@ Use case: "Go to my leaderboard page and check out some examples."
 - Path-segment routing for theme (`/gamba/leaderboard/neon`). Query param chosen.
 - New themes beyond the 4. Registry makes a 5th trivial later.
 
+## Visual approach & sourcing
+
+Themes are built design-led (via the `frontend-design` / `impeccable` skill),
+landing as production React + Tailwind in the repo — not Figma mockups. The
+goal is four *genuinely distinct* looks, not recolors, so the visual work gets
+real art direction rather than being designed incidentally while coding.
+
+**21st.dev usage — per-theme, decided during implementation:**
+
+- Default to **hand-rolling** components in the project's existing tokens.
+- Pull a 21st.dev primitive **only** when a specific motion is clearly worth it
+  (most likely `neon`'s glow pulse / animated bar fills). When pulled, strip it
+  to mechanics and **reskin into project tokens** — nothing ships with its stock
+  gradient/shadcn skin.
+- **Never** import whole landing-style layouts (hero / bento / gradient-text /
+  marquee). Those are `PRODUCT.md` hard anti-references and would make the themes
+  read as generic AI-landing default — defeating the distinctiveness goal.
+- Likely outcomes: `neon` may borrow motion primitives; `casino` hand-rolled;
+  `broadcast` unchanged; `minimal` hand-rolled (its restraint is the point —
+  imported flashy components fight it).
+
+Any 21st.dev dependency added is justified at the point of use, not preemptively.
+
 ## Architecture
 
 The codebase already separates **data** (`useLeaderboardData` hook) from

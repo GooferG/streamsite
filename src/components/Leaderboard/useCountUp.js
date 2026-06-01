@@ -11,17 +11,19 @@ function prefersReducedMotion() {
 // Under prefers-reduced-motion, jumps straight to target (no animation).
 export default function useCountUp(target, { durationMs = 1500, delayMs = 200 } = {}) {
   const safeTarget = Number.isFinite(target) ? target : 0;
-  const [val, setVal] = useState(safeTarget && prefersReducedMotion() ? safeTarget : 0);
-  const prevRef = useRef(prefersReducedMotion() ? safeTarget : 0);
+  const [val, setVal] = useState(prefersReducedMotion() ? safeTarget : 0);
+  // Mirrors the value currently on screen so a mid-ramp target change continues
+  // from the displayed value instead of jumping back to the last settled one.
+  const valRef = useRef(prefersReducedMotion() ? safeTarget : 0);
 
   useEffect(() => {
     if (prefersReducedMotion()) {
       setVal(safeTarget);
-      prevRef.current = safeTarget;
+      valRef.current = safeTarget;
       return undefined;
     }
 
-    const from = prevRef.current;
+    const from = valRef.current;
     const delta = safeTarget - from;
     let raf;
     let start;
@@ -31,12 +33,14 @@ export default function useCountUp(target, { durationMs = 1500, delayMs = 200 } 
       if (start == null) start = now;
       const p = Math.min(1, (now - start) / durationMs);
       const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
-      setVal(from + delta * eased);
+      const next = from + delta * eased;
+      setVal(next);
+      valRef.current = next;
       if (p < 1) {
         raf = requestAnimationFrame(tick);
       } else {
         setVal(safeTarget);
-        prevRef.current = safeTarget;
+        valRef.current = safeTarget;
       }
     };
 

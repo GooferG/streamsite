@@ -36,4 +36,9 @@ describe('Leaderboard theme resolution', () => {
     expect(container.querySelector('[data-theme="minimal"]')).toBeTruthy();
     expect(container.querySelector('[data-theme="broadcast"]')).toBeNull();
   });
+
+  it('renders the casino theme when ?theme=casino', () => {
+    const { container } = renderWithTheme('casino');
+    expect(container.querySelector('[data-theme="casino"]')).toBeTruthy();
+  });
 });

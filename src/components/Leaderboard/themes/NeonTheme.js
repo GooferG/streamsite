@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useCountdown } from '../../../hooks/useCountdown';
 import { formatUSD, formatPosition, formatPrizeHeadline } from '../format';
 import NeonShaderBackground from './NeonShaderBackground';
+import NeonPodium from './NeonPodium';
 
 function pad2(n) {
   return String(n).padStart(2, '0');
@@ -71,14 +72,17 @@ export default function NeonTheme({ data, now }) {
         </div>
       </div>
 
-      {/* Ranked list with animated bar fills; leader carries the glow */}
+      {/* Top-3 cards */}
+      <NeonPodium players={players} />
+
+      {/* Ranked list (positions 4+) with animated bar fills */}
       <div className="relative divide-y divide-purple-gamba/15">
-        {players.map((p, i) => {
+        {players.slice(3).map((p, idx) => {
+          const i = idx + 3;
           const pct =
             leaderWagered > 0
               ? Math.max(2, Math.min(100, (p.wagered / leaderWagered) * 100))
               : 0;
-          const isLeader = i === 0;
           return (
             <div
               key={p.id}
@@ -89,13 +93,7 @@ export default function NeonTheme({ data, now }) {
               </span>
 
               <div className="min-w-0">
-                <div
-                  className={`truncate text-sm font-bold ${
-                    isLeader
-                      ? 'text-purple-bright animate-neon-pulse motion-reduce:animate-none motion-reduce:[text-shadow:0_0_8px_rgba(192,132,252,0.9)]'
-                      : 'text-white-body'
-                  }`}
-                >
+                <div className="truncate text-sm font-bold text-white-body">
                   {p.maskedUsername}
                 </div>
                 <div className="mt-1.5 h-2 bg-purple-gamba/10 overflow-hidden">

@@ -59,9 +59,20 @@ module.exports = {
           '50%': { transform: 'scale(1.08) translate(-1%, -1%)' },
           '100%': { transform: 'scale(1) translate(0, 0)' },
         },
+        'neon-pulse': {
+          '0%, 100%': {
+            textShadow:
+              '0 0 6px rgba(192,132,252,0.8), 0 0 18px rgba(168,85,247,0.6)',
+          },
+          '50%': {
+            textShadow:
+              '0 0 10px rgba(192,132,252,1), 0 0 30px rgba(168,85,247,0.9)',
+          },
+        },
       },
       animation: {
         'slow-zoom': 'slow-zoom 18s ease-in-out infinite',
+        'neon-pulse': 'neon-pulse 2.4s ease-in-out infinite',
       },
     },
   },

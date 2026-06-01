@@ -41,4 +41,9 @@ describe('Leaderboard theme resolution', () => {
     const { container } = renderWithTheme('casino');
     expect(container.querySelector('[data-theme="casino"]')).toBeTruthy();
   });
+
+  it('renders the neon theme when ?theme=neon', () => {
+    const { container } = renderWithTheme('neon');
+    expect(container.querySelector('[data-theme="neon"]')).toBeTruthy();
+  });
 });

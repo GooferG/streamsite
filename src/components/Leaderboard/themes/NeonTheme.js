@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useCountdown } from '../../../hooks/useCountdown';
 import { formatUSD, formatPosition, formatPrizeHeadline } from '../format';
+import NeonShaderBackground from './NeonShaderBackground';
 
 function pad2(n) {
   return String(n).padStart(2, '0');
@@ -33,8 +34,10 @@ export default function NeonTheme({ data, now }) {
   return (
     <div
       data-theme="neon"
-      className="relative overflow-hidden border border-purple-gamba/40 bg-zinc-broadcast/80"
+      className="relative overflow-hidden border border-purple-gamba/40 bg-zinc-broadcast/55 backdrop-blur-sm"
     >
+      <NeonShaderBackground />
+
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-screen motion-reduce:hidden"
         aria-hidden="true"

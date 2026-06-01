@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useCountdown } from '../../../hooks/useCountdown';
 import { formatUSD, formatPosition, formatPrizeHeadline } from '../format';
-import NeonShaderBackground from './NeonShaderBackground';
+import { gapToClimb } from '../gap';
+import useCountUp from '../useCountUp';
+import FlipTile from '../FlipTile';
 import NeonPodium from './NeonPodium';
 
 function pad2(n) {
@@ -15,17 +17,29 @@ function freshness(now, lastUpdatedAt) {
   return `${Math.floor(ms / 3_600_000)}H AGO`;
 }
 
-// Arcade/neon register. Signature motion: glow pulse on the leader + animated
-// bar fills. Motion is gated by motion-reduce:* utilities so reduced-motion
-// users keep the static neon glow without movement. Renders the full info
-// contract (prize, period, code, countdown, top-3 emphasis, ranked list,
-// last-updated).
+function deltaInfo(player) {
+  const d = (player.previousPosition || player.position) - player.position;
+  if (d > 0) return { glyph: '▲', cls: 'text-nn-cyan' };
+  if (d < 0) return { glyph: '▼', cls: 'text-nn-pink-lite' };
+  return { glyph: '–', cls: 'text-white/30' };
+}
+
+const STREAKS = [
+  { left: '12%', dur: '5.5s', delay: '0s' },
+  { left: '48%', dur: '7s', delay: '2s' },
+  { left: '78%', dur: '6s', delay: '4s' },
+];
+
+// Synthwave / Miami-sunset nightlife. Pure-CSS signature elements (sunset disc,
+// 3D grid horizon, light streaks) — no WebGL. Renders the full info contract.
+// Motion is the theme; all ambient motion gates on motion-reduce.
 export default function NeonTheme({ data, now }) {
   const remaining = useCountdown(data.endsAt);
   const players = data.players.slice(0, 20);
+  const rest = players.slice(3);
   const leaderWagered = players[0] ? players[0].wagered : 0;
+  const animatedWagered = useCountUp(leaderWagered, { durationMs: 1500, delayMs: 200 });
 
-  // Drive the bar fill-in on mount (mirrors RaceBars' pattern).
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
     const id = requestAnimationFrame(() => setMounted(true));
@@ -35,112 +49,259 @@ export default function NeonTheme({ data, now }) {
   return (
     <div
       data-theme="neon"
-      className="relative overflow-hidden border border-purple-gamba/40 bg-zinc-broadcast/55 backdrop-blur-sm"
+      className="relative overflow-hidden font-rajdhani text-white-body rounded-2xl"
+      style={{
+        background:
+          'radial-gradient(80% 50% at 50% 8%, rgba(255,45,149,0.18), transparent 60%), radial-gradient(70% 60% at 50% 20%, rgba(122,61,255,0.18), transparent 60%), linear-gradient(180deg, #0a0420 0%, #120636 45%, #1a0a3e 70%, #2a0f4a 100%)',
+      }}
     >
-      <NeonShaderBackground />
+      <style>{`
+        @keyframes nn-streak {
+          0% { transform: translate(0, -200px) rotate(35deg); opacity: 0; }
+          10% { opacity: 0.6; }
+          100% { transform: translate(60vw, 110vh) rotate(35deg); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .nn-streak, .nn-grid-plane { animation: none !important; }
+        }
+      `}</style>
 
+      {/* Sunset disc */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-screen motion-reduce:hidden"
+        className="pointer-events-none absolute left-1/2 -translate-x-1/2 z-0"
         aria-hidden="true"
         style={{
-          backgroundImage:
-            'repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(192,132,252,0.7) 2px, rgba(192,132,252,0.7) 3px)',
+          top: '-90px',
+          width: '560px',
+          height: '560px',
+          borderRadius: '50%',
+          background:
+            'radial-gradient(circle, rgba(255,138,61,0.2), rgba(255,45,149,0.12) 45%, transparent 68%)',
+          filter: 'blur(8px)',
         }}
       />
 
-      {/* Header: prize headline + period + code/brand + countdown */}
-      <div className="relative px-4 sm:px-6 py-6 border-b border-purple-gamba/30 text-center">
-        <div className="text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono text-purple-bright">
-          {data.periodLabel}
-        </div>
-        <h2
-          className="mt-1 font-display text-4xl sm:text-5xl tracking-tight uppercase leading-none text-purple-bright animate-neon-pulse motion-reduce:animate-none motion-reduce:[text-shadow:0_0_10px_rgba(192,132,252,0.9)]"
-        >
-          {formatPrizeHeadline(data.prizePool)} LEADERBOARD
-        </h2>
-        <div className="mt-3 text-[11px] font-bold tracking-eyebrow-sm uppercase font-mono text-white/65">
-          CODE{' '}
-          <span className="text-purple-bright">{data.referralCode}</span>{' '}
-          ON{' '}
-          <span className="text-purple-bright">{data.brand}</span>
-        </div>
-
-        {/* Countdown — big glowing tiles to hype the deadline */}
-        {remaining.isOver ? (
-          <div className="mt-5 font-display text-3xl sm:text-4xl tracking-tight uppercase text-red-destructive animate-neon-pulse motion-reduce:animate-none">
-            LEADERBOARD OVER
-          </div>
-        ) : (
-          <div className="mt-5 flex items-end justify-center gap-2 sm:gap-3">
-            {[
-              ['DAYS', remaining.days],
-              ['HRS', remaining.hours],
-              ['MIN', remaining.minutes],
-              ['SEC', remaining.seconds],
-            ].map(([label, value]) => (
-              <div key={label} className="flex flex-col items-center">
-                <span className="min-w-[2.2ch] px-2 py-1 border border-purple-gamba/50 bg-purple-gamba/10 text-3xl sm:text-5xl font-extrabold tabular-nums font-mono text-purple-bright leading-none shadow-[0_0_14px_rgba(168,85,247,0.55)]">
-                  {pad2(value)}
-                </span>
-                <span className="mt-1.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono text-white/45">
-                  {label}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
+      {/* Grid horizon */}
+      <div
+        className="pointer-events-none absolute bottom-0 z-0 overflow-hidden"
+        aria-hidden="true"
+        style={{
+          left: '-20%',
+          right: '-20%',
+          height: '42%',
+          perspective: '340px',
+          perspectiveOrigin: '50% 0%',
+          opacity: 0.6,
+          WebkitMaskImage: 'linear-gradient(180deg, transparent, #000 35%)',
+          maskImage: 'linear-gradient(180deg, transparent, #000 35%)',
+        }}
+      >
+        <div
+          className="nn-grid-plane absolute inset-0 motion-safe:animate-nn-grid"
+          style={{
+            top: '-50%',
+            transform: 'rotateX(72deg)',
+            transformOrigin: '50% 0',
+            backgroundImage:
+              'linear-gradient(90deg, rgba(33,230,255,0.5) 1px, transparent 1px), linear-gradient(0deg, rgba(255,45,149,0.5) 1px, transparent 1px)',
+            backgroundSize: '46px 46px',
+          }}
+        />
       </div>
 
-      {/* Top-3 cards */}
-      <NeonPodium players={players} />
+      {/* Light streaks */}
+      {STREAKS.map((s, i) => (
+        <span
+          key={i}
+          className="nn-streak pointer-events-none absolute z-[1] motion-reduce:hidden"
+          aria-hidden="true"
+          style={{
+            left: s.left,
+            width: '2px',
+            height: '160px',
+            borderRadius: '2px',
+            background: 'linear-gradient(180deg, transparent, #21e6ff, transparent)',
+            filter: 'blur(0.5px)',
+            opacity: 0.5,
+            animationName: 'nn-streak',
+            animationTimingFunction: 'linear',
+            animationIterationCount: 'infinite',
+            animationDuration: s.dur,
+            animationDelay: s.delay,
+          }}
+        />
+      ))}
 
-      {/* Ranked list (positions 4+) with animated bar fills */}
-      <div className="relative divide-y divide-purple-gamba/15">
-        {players.slice(3).map((p, idx) => {
-          const i = idx + 3;
-          const pct =
-            leaderWagered > 0
-              ? Math.max(2, Math.min(100, (p.wagered / leaderWagered) * 100))
-              : 0;
-          return (
+      {/* Faint scanline */}
+      <div
+        className="pointer-events-none absolute inset-0 z-[2] opacity-40 motion-reduce:hidden"
+        aria-hidden="true"
+        style={{
+          backgroundImage:
+            'repeating-linear-gradient(0deg, transparent 0 2px, rgba(10,4,32,0.4) 3px, transparent 4px)',
+        }}
+      />
+
+      {/* Glass card */}
+      <div
+        className="relative z-[5] rounded-2xl border border-nn-purple/25"
+        style={{
+          background:
+            'linear-gradient(180deg, rgba(20,8,48,0.55), rgba(10,4,32,0.35))',
+          boxShadow:
+            '0 0 60px rgba(122,61,255,0.18), inset 0 1px 0 rgba(177,77,255,0.18)',
+          backdropFilter: 'blur(2px)',
+        }}
+      >
+        {/* Header */}
+        <div className="px-4 sm:px-6 py-6 border-b border-nn-purple/25 text-center">
+          <div
+            className="text-[13px] tracking-eyebrow-lg text-nn-cyan-lite"
+            style={{ textShadow: '0 0 12px rgba(33,230,255,0.6)' }}
+          >
+            {data.periodLabel}
+          </div>
+          <h2
+            className="mt-1.5 font-orbitron font-extrabold text-4xl sm:text-6xl leading-none tracking-wide motion-safe:animate-nn-flicker"
+            style={{
+              backgroundImage: 'linear-gradient(180deg, #fff 0%, #ff7ac4 60%, #ff2d95 100%)',
+              WebkitBackgroundClip: 'text',
+              backgroundClip: 'text',
+              color: 'transparent',
+              filter:
+                'drop-shadow(0 0 18px rgba(255,45,149,0.65)) drop-shadow(0 0 4px rgba(255,255,255,0.5))',
+            }}
+          >
+            {formatPrizeHeadline(data.prizePool)} LEADERBOARD
+          </h2>
+          <div className="mt-2 text-[15px] tracking-eyebrow-md text-white/55 uppercase">
+            Code{' '}
+            <span className="text-nn-cyan" style={{ textShadow: '0 0 10px rgba(33,230,255,0.6)' }}>
+              {data.referralCode}
+            </span>{' '}
+            on{' '}
+            <span className="text-nn-cyan" style={{ textShadow: '0 0 10px rgba(33,230,255,0.6)' }}>
+              {data.brand}
+            </span>
+          </div>
+
+          {/* Countdown — neon split-flap tiles (reuses FlipTile) */}
+          {remaining.isOver ? (
             <div
-              key={p.id}
-              className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 px-4 sm:px-6 py-3"
+              className="mt-6 font-orbitron font-extrabold text-3xl sm:text-4xl uppercase text-nn-pink"
+              style={{ textShadow: '0 0 16px rgba(255,45,149,0.8)' }}
             >
-              <span className="w-12 text-sm font-bold tabular-nums font-mono text-purple-bright">
-                {formatPosition(p.position)}
-              </span>
-
-              <div className="min-w-0">
-                <div className="truncate text-sm font-bold text-white-body">
-                  {p.maskedUsername}
-                </div>
-                <div className="mt-1.5 h-2 bg-purple-gamba/10 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-purple-gamba to-purple-bright shadow-[0_0_8px_rgba(168,85,247,0.8)] transition-[width] duration-700 ease-out motion-reduce:transition-none motion-reduce:duration-0"
-                    style={{
-                      width: mounted ? `${pct}%` : '0%',
-                      transitionDelay: `${i * 60}ms`,
-                    }}
-                  />
-                </div>
-              </div>
-
-              <span className="text-sm sm:text-base font-bold tabular-nums font-mono text-white-body text-right">
-                {formatUSD(p.wagered)}
-              </span>
-
-              <span className="w-20 sm:w-24 text-right text-sm font-bold tabular-nums font-mono text-purple-bright">
-                {p.prize > 0 ? formatUSD(p.prize) : '—'}
-              </span>
+              LEADERBOARD OVER
             </div>
-          );
-        })}
-      </div>
+          ) : (
+            <div className="mt-6 flex justify-center gap-3">
+              {[
+                ['Days', remaining.days],
+                ['Hrs', remaining.hours],
+                ['Min', remaining.minutes],
+                ['Sec', remaining.seconds],
+              ].map(([label, value]) => (
+                <div key={label} className="text-center">
+                  <FlipTile
+                    value={pad2(value)}
+                    widthClass="min-w-[56px] sm:min-w-[80px] py-2.5"
+                    className="border rounded-xl"
+                    style={{
+                      borderColor: 'rgba(255,45,149,0.5)',
+                      background:
+                        'linear-gradient(180deg, rgba(40,12,70,0.7), rgba(16,6,40,0.7))',
+                      boxShadow:
+                        '0 0 18px rgba(255,45,149,0.3), inset 0 0 14px rgba(177,77,255,0.18)',
+                    }}
+                    textClass="font-orbitron font-bold text-2xl sm:text-4xl tabular-nums text-nn-pink-lite"
+                    seamColor="rgba(255,45,149,0.35)"
+                    nudge="translateY(0.02em)"
+                  />
+                  <div className="mt-2 text-[11px] tracking-eyebrow-md text-white/35 uppercase">
+                    {label}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-      {/* Last-updated freshness */}
-      <div className="relative px-4 sm:px-6 py-3 border-t border-purple-gamba/25 text-center text-[10px] font-bold tracking-eyebrow-md uppercase font-mono text-white/40 tabular-nums">
-        SIGNAL UPDATED {freshness(now, data.lastUpdatedAt)}
+        {/* Podium */}
+        <NeonPodium players={players} animatedWagered={animatedWagered} />
+
+        {/* Table header */}
+        <div className="grid grid-cols-[74px_minmax(0,1fr)_auto_auto] gap-4 px-4 sm:px-6 pt-4 pb-2 text-[11px] tracking-eyebrow uppercase text-white/30">
+          <span>Pos</span>
+          <span>Player</span>
+          <span className="text-right">Wagered</span>
+          <span className="w-24 text-right">Prize</span>
+        </div>
+
+        {/* Table (4–20) — gradient bars + gap-to-climb */}
+        <div className="relative">
+          {rest.map((p, idx) => {
+            // overallIndex = position in the FULL sorted list (rest starts at 4th),
+            // used for the gap-to-climb neighbor lookup. The bar `transitionDelay`
+            // below intentionally uses the LOCAL idx so the stagger starts at the
+            // first visible row (delay 0ms) — do not unify these two indices.
+            const overallIndex = idx + 3;
+            const climb = gapToClimb(data.players, overallIndex);
+            const d = deltaInfo(p);
+            // min 7% so the pink→violet→cyan gradient bar always shows its stops.
+            const pct =
+              leaderWagered > 0
+                ? Math.max(7, Math.min(100, (p.wagered / leaderWagered) * 100))
+                : 0;
+            return (
+              <div
+                key={p.id}
+                className="group grid grid-cols-[74px_minmax(0,1fr)_auto_auto] gap-4 items-center px-4 sm:px-6 py-3 border-t border-nn-purple/15 relative transition-colors hover:bg-nn-purple/[0.08]"
+              >
+                <span className="flex items-center gap-2 font-orbitron font-bold text-sm text-nn-pink-lite">
+                  {formatPosition(p.position)}
+                  <span className={`text-[8px] ${d.cls}`} aria-hidden="true">
+                    {d.glyph}
+                  </span>
+                </span>
+
+                <div className="min-w-0">
+                  <div className="truncate text-base font-semibold text-white">{p.maskedUsername}</div>
+                  <div className="mt-1.5 h-1.5 rounded bg-nn-purple/10 overflow-hidden">
+                    <div
+                      className="h-full rounded transition-[width] duration-700 ease-out motion-reduce:transition-none motion-reduce:duration-0"
+                      style={{
+                        width: mounted ? `${pct}%` : '0%',
+                        transitionDelay: `${idx * 60}ms`,
+                        background: 'linear-gradient(90deg, #ff2d95, #7a3dff 55%, #21e6ff)',
+                        boxShadow: '0 0 12px rgba(255,45,149,0.6)',
+                      }}
+                    />
+                  </div>
+                  {climb > 0 && (
+                    <div className="pointer-events-none absolute left-[90px] -bottom-0.5 hidden sm:block text-[11px] text-nn-cyan opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                      +{formatUSD(climb)} to climb
+                    </div>
+                  )}
+                </div>
+
+                <span className="text-right text-base font-bold tabular-nums text-white">
+                  {formatUSD(p.wagered)}
+                </span>
+                <span
+                  className="w-24 text-right text-sm font-bold tabular-nums text-nn-pink-lite"
+                  style={{ textShadow: '0 0 8px rgba(255,45,149,0.4)' }}
+                >
+                  {p.prize > 0 ? formatUSD(p.prize) : '—'}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Last-updated */}
+        <div className="px-4 sm:px-6 py-4 border-t border-nn-purple/25 text-center text-[11px] tracking-eyebrow-md uppercase text-white/40 tabular-nums">
+          Signal updated {freshness(now, data.lastUpdatedAt)}
+        </div>
       </div>
     </div>
   );

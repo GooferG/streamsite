@@ -20,6 +20,9 @@ function prefersReducedMotion() {
 //   seamColor  : string — CSS color for the center fold seam line.
 //   widthClass : string — width/padding utility classes for the tile.
 //   textClass  : string — font/size/color utilities for the digit.
+//   nudge      : string — vertical optical-centering transform for the digit.
+//                Defaults to a small upward shift tuned for a serif (Cormorant);
+//                sans fonts (e.g. Orbitron) sit higher and want a smaller value.
 export default function FlipTile({
   value,
   className = '',
@@ -27,6 +30,7 @@ export default function FlipTile({
   seamColor = 'rgba(0,0,0,0.6)',
   widthClass = '',
   textClass = '',
+  nudge = 'translateY(-0.07em)',
 }) {
   // Normalize so string "07" and number 7 both behave; SSR/undefined safe.
   const current = value == null ? '' : String(value);
@@ -75,12 +79,11 @@ export default function FlipTile({
   //   half "bottom": shows the fill's bottom half — offset up by the full tile
   //               height, digit pulled up so its lower half lands in view.
   const fillStyle = style ? { background: style.background } : undefined;
-  // Optical centering: with lineHeight:1 a serif numeral's glyph sits a touch
-  // low in its line box (Cormorant carries descender space even on digits), so
-  // it reads low in the card. A small upward nudge centers it. The SAME nudge is
-  // applied to the static layer and both leaf faces so the split halves stay
+  // Optical centering: with lineHeight:1 a numeral's glyph can sit slightly off
+  // the box center (serifs like Cormorant carry descender space and read low;
+  // sans like Orbitron read high). The caller-tuned `nudge` corrects it, applied
+  // identically to the static layer and both leaf faces so the split halves stay
   // aligned during the fold.
-  const DIGIT_NUDGE = 'translateY(-0.07em)';
   const Leaf = ({ digit, half, leafClass }) => (
     <div
       className={`ftile-leaf ${leafClass} absolute left-0 right-0 overflow-hidden ${
@@ -98,7 +101,7 @@ export default function FlipTile({
           height: '200%',
           top: half === 'bottom' ? '-100%' : 0,
           lineHeight: 1,
-          transform: DIGIT_NUDGE,
+          transform: nudge,
         }}
       >
         {digit}
@@ -116,8 +119,8 @@ export default function FlipTile({
           is revealed BY the flip (the bottom leaf), not ahead of it. Once the
           fold completes, `animating` is false and it shows the current value. */}
       <div
-        className={`relative flex items-center justify-center ${textClass}`}
-        style={{ lineHeight: 1, transform: DIGIT_NUDGE }}
+        className={`relative z-[3] flex items-center justify-center ${textClass}`}
+        style={{ lineHeight: 1, transform: nudge }}
       >
         {animating ? prevValue : current}
       </div>
@@ -131,9 +134,11 @@ export default function FlipTile({
         </>
       )}
 
-      {/* Center fold seam — matches the original tile's seam line. */}
+      {/* Center fold seam — the card's crease. Sits BELOW the digit (z-[1] vs the
+          static digit's z-[3]) so it reads as a line behind the number, not one
+          painted across it. The folding leaves (z-5) still cover it mid-flip. */}
       <span
-        className="absolute left-1.5 right-1.5 top-1/2 h-px z-10"
+        className="absolute left-1.5 right-1.5 top-1/2 h-px z-[1]"
         style={{ background: seamColor }}
       />
 

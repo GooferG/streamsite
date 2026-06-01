@@ -1,96 +1,109 @@
 import { formatUSD, formatPosition } from '../format';
 
-// Top-3 cards for the Neon theme. Each card layers a skewed purple gradient
-// panel + a blurred glow clone behind frosted content — arcade/neon styling in
-// the purple-gamba palette, carrying real leaderboard data. Hover straightens
-// the skew and lifts the card; all motion is motion-reduce safe.
-const RANKS = [
-  {
-    label: '1ST',
-    from: '#c084fc',
-    to: '#a855f7',
-    accent: 'text-purple-bright',
-    order: 'sm:order-2',
-    lift: 'sm:-translate-y-3',
-  },
-  {
-    label: '2ND',
-    from: '#a855f7',
-    to: '#7c3aed',
-    accent: 'text-purple-bright',
-    order: 'sm:order-1',
-    lift: '',
-  },
-  {
-    label: '3RD',
-    from: '#9333ea',
-    to: '#6d28d9',
-    accent: 'text-purple-bright',
-    order: 'sm:order-3',
-    lift: '',
-  },
-];
+// Top-3 cards for the Neon theme — synthwave pink/cyan glass. Order 2nd · 1st ·
+// 3rd; 1st is taller with a gradient pink→cyan border (mask technique) and a
+// stronger glow. Carries real top-3 data + an optional animated wager for 1st.
+const RANKS = {
+  1: { label: '1ST', order: 'sm:order-2' },
+  2: { label: '2ND', order: 'sm:order-1' },
+  3: { label: '3RD', order: 'sm:order-3' },
+};
 
-function PodiumCard({ player, rank }) {
+function PodiumCard({ player, animatedWagered }) {
   if (!player) return null;
-  const cfg = RANKS[rank];
-  const gradient = `linear-gradient(315deg, ${cfg.from}, ${cfg.to})`;
+  const cfg = RANKS[player.position] || { label: formatPosition(player.position), order: '' };
+  const first = player.position === 1;
+  const wag = first && animatedWagered != null ? animatedWagered : player.wagered;
 
   return (
     <div
-      className={`group relative h-44 ${cfg.order} ${cfg.lift} transition-transform duration-500 motion-reduce:transition-none`}
+      className={`relative rounded-2xl overflow-hidden ${cfg.order} ${
+        first ? 'p-7 sm:-translate-y-2' : 'p-5'
+      }`}
+      style={{
+        border: first ? '1px solid #ff2d95' : '1px solid rgba(177,77,255,0.4)',
+        background: first
+          ? 'linear-gradient(165deg, rgba(120,30,110,0.55), rgba(30,10,60,0.5))'
+          : 'linear-gradient(165deg, rgba(60,20,90,0.5), rgba(20,8,48,0.4))',
+        boxShadow: first
+          ? '0 0 46px rgba(255,45,149,0.35), inset 0 0 30px rgba(255,45,149,0.12)'
+          : '0 10px 40px -18px rgba(122,61,255,0.7)',
+      }}
     >
-      {/* Skewed gradient panel */}
-      <span
-        aria-hidden="true"
-        className="absolute inset-y-0 left-6 right-6 rounded-lg skew-x-[12deg] transition-all duration-500 motion-reduce:transition-none group-hover:skew-x-0 group-hover:left-3 group-hover:right-3"
-        style={{ background: gradient }}
-      />
-      {/* Blurred glow clone behind */}
-      <span
-        aria-hidden="true"
-        className="absolute inset-y-0 left-6 right-6 rounded-lg skew-x-[12deg] blur-2xl opacity-70 transition-all duration-500 motion-reduce:transition-none group-hover:skew-x-0 group-hover:left-3 group-hover:right-3"
-        style={{ background: gradient }}
-      />
+      {/* Gradient pink→cyan border on 1st (mask technique) */}
+      {first && (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 rounded-2xl opacity-80"
+          style={{
+            padding: '1px',
+            background: 'linear-gradient(120deg, #ff2d95, #21e6ff)',
+            WebkitMask:
+              'linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0)',
+            WebkitMaskComposite: 'xor',
+            maskComposite: 'exclude',
+          }}
+        />
+      )}
 
-      {/* Frosted content */}
-      <div className="relative z-10 h-full flex flex-col justify-between p-4 rounded-lg bg-zinc-broadcast/70 backdrop-blur-md border border-white/10 transition-transform duration-500 motion-reduce:transition-none group-hover:-translate-y-1">
-        <div className="flex items-center justify-between">
-          <span className="font-display text-2xl tracking-tight text-white-body leading-none">
-            {cfg.label}
-          </span>
-          <span className={`text-[11px] font-bold tracking-eyebrow-sm font-mono ${cfg.accent}`}>
-            {formatPosition(player.position)}
-          </span>
-        </div>
+      <div className="relative flex items-center justify-between mb-3.5">
+        <span
+          className={`font-orbitron font-extrabold text-2xl sm:text-3xl tracking-wide ${
+            first ? '' : 'text-white-body'
+          }`}
+          style={
+            first
+              ? {
+                  backgroundImage: 'linear-gradient(90deg, #ff7ac4, #8af6ff)',
+                  WebkitBackgroundClip: 'text',
+                  backgroundClip: 'text',
+                  color: 'transparent',
+                }
+              : { textShadow: '0 0 14px rgba(255,122,196,0.7)' }
+          }
+        >
+          {cfg.label}
+        </span>
+        <span
+          className="text-[12px] tracking-eyebrow text-nn-cyan"
+          style={{ textShadow: '0 0 8px rgba(33,230,255,0.5)' }}
+        >
+          {formatPosition(player.position)}
+        </span>
+      </div>
 
-        <div className="min-w-0">
-          <div className="truncate text-base font-extrabold uppercase tracking-tight text-white-body">
-            {player.maskedUsername}
-          </div>
-          <div className="mt-1 text-xl font-extrabold tabular-nums font-mono text-white-body">
-            {formatUSD(player.wagered)}
-          </div>
-        </div>
+      <div className="relative font-orbitron font-bold text-base sm:text-lg tracking-wide text-white truncate">
+        {player.maskedUsername}
+      </div>
+      <div
+        className="relative mt-1.5 text-2xl sm:text-[36px] font-bold tabular-nums text-nn-cyan-lite leading-none"
+        style={{ textShadow: '0 0 14px rgba(33,230,255,0.5)' }}
+      >
+        {formatUSD(wag)}
+      </div>
 
-        <div className="flex items-center justify-between text-[11px] font-bold tracking-eyebrow-sm uppercase font-mono">
-          <span className="text-white/55">PRIZE</span>
-          <span className={cfg.accent}>{formatUSD(player.prize)}</span>
-        </div>
+      <div className="relative flex items-center justify-between mt-4 pt-3 border-t border-nn-purple/25 text-[13px] tracking-eyebrow-sm uppercase text-white/55">
+        <span>Prize</span>
+        <span
+          className="text-nn-pink-lite font-bold"
+          style={{ textShadow: '0 0 10px rgba(255,45,149,0.5)' }}
+        >
+          {formatUSD(player.prize)}
+        </span>
       </div>
     </div>
   );
 }
 
-export default function NeonPodium({ players }) {
+export default function NeonPodium({ players, animatedWagered }) {
   const [first, second, third] = players;
   if (!first) return null;
 
   return (
-    <div className="relative grid grid-cols-1 sm:grid-cols-3 gap-4 px-4 sm:px-6 py-7 border-b border-purple-gamba/25">
-      <PodiumCard player={first} rank={0} />
-      <PodiumCard player={second} rank={1} />
-      <PodiumCard player={third} rank={2} />
+    <div className="relative grid grid-cols-1 sm:grid-cols-[1fr_1.12fr_1fr] gap-4 items-end px-4 sm:px-6 py-8 border-b border-nn-purple/25">
+      <PodiumCard player={first} animatedWagered={animatedWagered} />
+      <PodiumCard player={second} />
+      <PodiumCard player={third} />
     </div>
   );
 }

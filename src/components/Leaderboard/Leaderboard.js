@@ -1,80 +1,53 @@
-import { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useLeaderboardData } from '../../hooks/useLeaderboardData';
-import BroadcastFrame from './BroadcastFrame';
-import BroadcastHeader from './BroadcastHeader';
-import LeaderTakeover from './LeaderTakeover';
-import PodiumCard from './PodiumCard';
-import RaceBars from './RaceBars';
-import RosterTable from './RosterTable';
-import SponsorBanner from './SponsorBanner';
-import TickerCrawl from './TickerCrawl';
-import StationID from './StationID';
+import useNow from './useNow';
+import { THEMES, DEFAULT_THEME_ID } from './themes';
+import ThemeSwitcher from './ThemeSwitcher';
 
-const TAKEOVER_THRESHOLD = 1.3;
-
-function useNow() {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(id);
-  }, []);
-  return now;
+function resolveTheme(requestedId) {
+  return THEMES.find((t) => t.id === requestedId) || THEMES[0];
 }
 
 export default function Leaderboard() {
   const data = useLeaderboardData();
   const now = useNow();
-  const [leader, runnerUp, third, ...rest] = data.players;
-  const showTakeover =
-    leader && runnerUp && leader.wagered >= runnerUp.wagered * TAKEOVER_THRESHOLD;
-  const racers = showTakeover
-    ? rest.slice(0, 7)
-    : [leader, runnerUp, third, ...rest].filter(Boolean).slice(0, 7);
-  const roster = showTakeover ? data.players.slice(10) : data.players.slice(7);
-  const racerLeader = showTakeover ? racers[0] : leader;
+  const [params, setParams] = useSearchParams();
+
+  const active = resolveTheme(params.get('theme'));
+  const ActiveTheme = active.Component;
+
+  const handleSelect = (id) => {
+    setParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (id === DEFAULT_THEME_ID) {
+          next.delete('theme');
+        } else {
+          next.set('theme', id);
+        }
+        return next;
+      },
+      { replace: true }
+    );
+  };
 
   return (
-    <BroadcastFrame>
-      <BroadcastHeader
-        weekLabel={data.weekLabel}
-        periodLabel={data.periodLabel}
-        prizePool={data.prizePool}
-        endsAt={data.endsAt}
-        lastUpdatedAt={data.lastUpdatedAt}
-        now={now}
+    <div>
+      <ThemeSwitcher
+        themes={THEMES}
+        activeId={active.id}
+        defaultId={DEFAULT_THEME_ID}
+        onSelect={handleSelect}
       />
-
-      {showTakeover && (
-        <div className="px-4 sm:px-6 py-6 border-b border-white/8">
-          <div className="grid grid-cols-1 lg:grid-cols-[5fr_3fr] gap-4 lg:gap-5">
-            <LeaderTakeover leader={leader} runnerUp={runnerUp} />
-            <div className="grid grid-cols-1 gap-4 lg:gap-5">
-              <PodiumCard player={runnerUp} tier="runnerUp" />
-              <PodiumCard player={third} tier="third" />
-            </div>
-          </div>
-        </div>
-      )}
-
-      <SponsorBanner />
-
-      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 px-4 sm:px-6 py-3 border-b border-white/8 text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono">
-        <span className="w-16 sm:w-20" aria-hidden="true" />
-        <span aria-hidden="true" />
-        <span className="text-right">WAGERED</span>
-        <span className="text-right w-20 sm:w-24">PRIZE</span>
+      <div className="relative">
+        <ActiveTheme data={data} now={now} />
       </div>
-
-      <RaceBars
-        players={racers}
-        leaderWagered={racerLeader ? racerLeader.wagered : 0}
-      />
-      <RosterTable
-        players={roster}
-        leaderWagered={racerLeader ? racerLeader.wagered : 0}
-      />
-      <TickerCrawl />
-      <StationID />
-    </BroadcastFrame>
+      <p className="mt-2 px-1 text-center text-[10px] font-bold tracking-eyebrow-sm uppercase font-mono text-white/35">
+        Demo only — sample data for layout preview. Not a real leaderboard or
+        live standings.
+      </p>
+    </div>
   );
 }
+
+export { DEFAULT_THEME_ID };

@@ -14,13 +14,25 @@ describe('useCountdown', () => {
   it('returns days/hours/minutes/seconds remaining until endsAt', () => {
     const endsAt = new Date('2026-05-03T01:02:03Z').getTime();
     const { result } = renderHook(() => useCountdown(endsAt));
-    expect(result.current).toEqual({ days: 2, hours: 1, minutes: 2, seconds: 3 });
+    expect(result.current).toEqual({
+      days: 2,
+      hours: 1,
+      minutes: 2,
+      seconds: 3,
+      isOver: false,
+    });
   });
 
-  it('returns zeros when endsAt is in the past', () => {
+  it('returns zeros and isOver=true when endsAt is in the past', () => {
     const endsAt = new Date('2026-04-30T00:00:00Z').getTime();
     const { result } = renderHook(() => useCountdown(endsAt));
-    expect(result.current).toEqual({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+    expect(result.current).toEqual({
+      days: 0,
+      hours: 0,
+      minutes: 0,
+      seconds: 0,
+      isOver: true,
+    });
   });
 
   it('ticks down every second', () => {

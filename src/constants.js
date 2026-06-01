@@ -8,6 +8,13 @@ export const SOCIAL_LINKS = {
   twitter: 'https://twitter.com/Goofer_G',
 };
 
+// Leaderboard sponsor/referral identity. Single source of truth for the join
+// code and brand shown across every leaderboard theme (and the home callout).
+export const LEADERBOARD = {
+  referralCode: 'BEAN',
+  brand: 'Rainbet',
+};
+
 export const SCHEDULE = [
   {
     day: 'MONDAY',

@@ -11,7 +11,8 @@ export default function BroadcastFrame({ children }) {
   const timecode = useSessionTimecode();
 
   return (
-    <div className="relative overflow-hidden border border-white/10 bg-zinc-card/40">
+    <div className="relative overflow-hidden border border-phosphor/20 bg-zinc-card/40 motion-safe:animate-bc-flicker">
+      {/* Scanlines */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.04] mix-blend-screen motion-reduce:hidden"
         aria-hidden="true"
@@ -20,11 +21,30 @@ export default function BroadcastFrame({ children }) {
             'repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(255,255,255,0.6) 2px, rgba(255,255,255,0.6) 3px)',
         }}
       />
+      {/* Vignette */}
+      <div
+        className="pointer-events-none absolute inset-0 z-[1]"
+        aria-hidden="true"
+        style={{
+          background:
+            'radial-gradient(120% 120% at 50% 50%, transparent 55%, rgba(0,0,0,0.55) 100%)',
+        }}
+      />
+      {/* CRT light sweep */}
+      <div
+        className="pointer-events-none absolute left-0 right-0 z-[2] h-36 motion-reduce:hidden motion-safe:animate-bc-sweep"
+        aria-hidden="true"
+        style={{
+          top: '-160px',
+          background:
+            'linear-gradient(180deg, transparent, rgba(31,243,154,0.05), transparent)',
+        }}
+      />
 
       {CORNERS.map(({ pos, glyph }) => (
         <span
           key={pos}
-          className={`pointer-events-none absolute ${pos} text-white/45 text-xs font-bold leading-none select-none`}
+          className={`pointer-events-none absolute ${pos} z-10 text-phosphor/70 text-xs font-bold leading-none select-none`}
           aria-hidden="true"
         >
           {glyph}
@@ -39,7 +59,7 @@ export default function BroadcastFrame({ children }) {
         <span aria-hidden="true">SESSION {timecode}</span>
       </div>
 
-      <div className="relative">{children}</div>
+      <div className="relative z-[3]">{children}</div>
     </div>
   );
 }

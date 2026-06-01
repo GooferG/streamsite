@@ -45,6 +45,20 @@ describe('useLeaderboardData (mock mode)', () => {
     expect(typeof result.current.lastUpdatedAt).toBe('number');
   });
 
+  it('exposes referralCode and brand for the information contract', () => {
+    const { result } = renderHook(() => useLeaderboardData({ mock: true, pollMs: 60000 }));
+    expect(result.current.referralCode).toBe('BEAN');
+    expect(result.current.brand).toBe('Rainbet');
+  });
+
+  it('allows referralCode and brand to be overridden via options', () => {
+    const { result } = renderHook(() =>
+      useLeaderboardData({ mock: true, pollMs: 60000, referralCode: 'GOOF', brand: 'Stake' }),
+    );
+    expect(result.current.referralCode).toBe('GOOF');
+    expect(result.current.brand).toBe('Stake');
+  });
+
   it('updates players and lastUpdatedAt on each poll tick', () => {
     const { result } = renderHook(() => useLeaderboardData({ mock: true, pollMs: 30000 }));
     const initialLastUpdated = result.current.lastUpdatedAt;

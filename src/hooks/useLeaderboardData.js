@@ -9,6 +9,7 @@ import {
   getPrizeForPosition,
   PRIZE_POOL_TOTAL,
 } from '../components/Leaderboard/format';
+import { LEADERBOARD } from '../constants';
 
 function attachPositions(players, previousIds = null, deltasById = {}) {
   const previousIndexById = previousIds
@@ -27,10 +28,12 @@ function attachPositions(players, previousIds = null, deltasById = {}) {
   }));
 }
 
-function thirtyDaysFromMonthStart() {
-  const now = new Date();
-  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  return monthStart.getTime() + 30 * 24 * 60 * 60 * 1000;
+// Fixed demo end date. Set this to whenever you want the leaderboard race to
+// end; once it passes, the countdown shows the "leaderboard over" state. To
+// "reset" the demo, change this to a future date.
+// NOTE: month is 0-indexed — January = 0, June = 5, December = 11.
+function leaderboardEndsAt() {
+  return new Date(2026, 5, 13, 23, 59, 59).getTime(); // 2026-06-13 23:59:59
 }
 
 function currentPeriodLabel() {
@@ -51,10 +54,15 @@ const DEFAULT_OPTIONS = {
   mock: true,
   pollMs: 45000,
   prizePool: PRIZE_POOL_TOTAL,
+  referralCode: LEADERBOARD.referralCode,
+  brand: LEADERBOARD.brand,
 };
 
 export function useLeaderboardData(options = {}) {
-  const { mock, pollMs, prizePool } = { ...DEFAULT_OPTIONS, ...options };
+  const { mock, pollMs, prizePool, referralCode, brand } = {
+    ...DEFAULT_OPTIONS,
+    ...options,
+  };
 
   const baselineRef = useRef(null);
   if (baselineRef.current === null) {
@@ -66,7 +74,7 @@ export function useLeaderboardData(options = {}) {
     return {
       players: attachPositions(initial),
       lastUpdatedAt: Date.now(),
-      endsAt: thirtyDaysFromMonthStart(),
+      endsAt: leaderboardEndsAt(),
       periodLabel: currentPeriodLabel(),
       weekLabel: currentWeekLabel(),
     };
@@ -89,7 +97,7 @@ export function useLeaderboardData(options = {}) {
         seedRef.current += 1;
         const deltas = generatePollDeltas(stripped, { seed });
         const next = applyDeltas(stripped, deltas);
-        const nextEndsAt = thirtyDaysFromMonthStart();
+        const nextEndsAt = leaderboardEndsAt();
         const nextPeriodLabel = currentPeriodLabel();
         const nextWeekLabel = currentWeekLabel();
         return {
@@ -111,6 +119,8 @@ export function useLeaderboardData(options = {}) {
   return {
     players: state.players,
     prizePool,
+    referralCode,
+    brand,
     periodLabel: state.periodLabel,
     weekLabel: state.weekLabel,
     endsAt: state.endsAt,

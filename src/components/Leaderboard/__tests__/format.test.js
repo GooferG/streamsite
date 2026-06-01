@@ -1,4 +1,9 @@
-import { formatUSD, maskUsername, formatPosition } from '../format';
+import {
+  formatUSD,
+  maskUsername,
+  formatPosition,
+  formatOrdinalPlace,
+} from '../format';
 
 describe('formatUSD', () => {
   it('formats whole dollars with commas and dollar sign', () => {
@@ -50,5 +55,36 @@ describe('formatPosition', () => {
 
   it('does not truncate 3-digit positions', () => {
     expect(formatPosition(100)).toBe('P100');
+  });
+});
+
+describe('formatOrdinalPlace', () => {
+  it('uses st/nd/rd for 1/2/3', () => {
+    expect(formatOrdinalPlace(1)).toBe('1st place');
+    expect(formatOrdinalPlace(2)).toBe('2nd place');
+    expect(formatOrdinalPlace(3)).toBe('3rd place');
+  });
+
+  it('uses th for 4 through 10', () => {
+    expect(formatOrdinalPlace(4)).toBe('4th place');
+    expect(formatOrdinalPlace(10)).toBe('10th place');
+  });
+
+  it('uses th for the 11/12/13 exception (not st/nd/rd)', () => {
+    expect(formatOrdinalPlace(11)).toBe('11th place');
+    expect(formatOrdinalPlace(12)).toBe('12th place');
+    expect(formatOrdinalPlace(13)).toBe('13th place');
+  });
+
+  it('resumes st/nd/rd for 21/22/23', () => {
+    expect(formatOrdinalPlace(21)).toBe('21st place');
+    expect(formatOrdinalPlace(22)).toBe('22nd place');
+    expect(formatOrdinalPlace(23)).toBe('23rd place');
+  });
+
+  it('returns empty string for non-positive or invalid input', () => {
+    expect(formatOrdinalPlace(0)).toBe('');
+    expect(formatOrdinalPlace(-1)).toBe('');
+    expect(formatOrdinalPlace(undefined)).toBe('');
   });
 });

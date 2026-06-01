@@ -20,6 +20,10 @@ Use case: "Go to my leaderboard page and check out some examples."
 
 **In scope**
 
+- A shared **information contract** (7 facts — see Information Contract below)
+  that every theme must render in full; only presentation varies.
+- Data-layer additions (`referralCode`, `brand`) so the join code and brand are
+  a single source of truth, not hardcoded per theme.
 - 4 themes total, sharing one data source:
   - `broadcast` — existing CRT/broadcast look (default). No visual change.
   - `casino` — casino-classic: podium-heavy, rank medals, gold/red register.
@@ -133,11 +137,51 @@ export default function XTheme({ data, now }) { ... }
 
 - `data` — the object returned by `useLeaderboardData()`:
   `{ players, prizePool, periodLabel, weekLabel, endsAt, lastUpdatedAt,
-  isLoading, error }`.
+  referralCode, brand, isLoading, error }`.
 - `now` — the ticking `Date.now()` value from `useNow()` (for countdowns).
 
-A theme uses whatever subset it needs. It must not call `useLeaderboardData()`
-itself (data is shared from the wrapper).
+A theme must not call `useLeaderboardData()` itself (data is shared from the
+wrapper).
+
+### Information contract (MANDATORY for every theme)
+
+The point of the feature is to show a streamer a *complete, real* leaderboard
+they could ship — only the look changes between themes, never the information.
+A reference Rainbet leaderboard carries a fixed set of facts; **every theme must
+render all of them.** A theme may arrange/style them however fits its look, but
+may not omit any.
+
+| # | Information | Source field(s) |
+|---|-------------|-----------------|
+| 1 | Prize-pool headline (e.g. "$7,000") | `data.prizePool` |
+| 2 | Period / title (e.g. "MONTHLY LEADERBOARD") | `data.periodLabel` |
+| 3 | Referral/join code + brand (e.g. "code BEAN on Rainbet") | `data.referralCode`, `data.brand` |
+| 4 | Countdown to period end (days/hrs/min/sec) | `data.endsAt`, `now` |
+| 5 | Top-3 highlight (podium or equivalent emphasis) | `data.players[0..2]` |
+| 6 | Full ranked list — position, masked name, wagered, prize | `data.players` |
+| 7 | Last-updated freshness indicator | `data.lastUpdatedAt`, `now` |
+
+"Fits the theme" governs *presentation*, not *inclusion*: e.g. Minimal renders
+the countdown as a quiet inline line rather than flip-clock tiles, but it still
+renders it. Broadcast already satisfies all seven.
+
+### Shared building blocks
+
+To keep the seven facts consistent (single source of truth, no 4× duplication)
+the data and a few presentational primitives are shared; themes compose them
+with their own styling:
+
+- **Data layer additions** — `useLeaderboardData()` gains `referralCode` and
+  `brand`, sourced from `src/constants.js` (new `LEADERBOARD` constant) so the
+  code/brand strings live in one place instead of being hardcoded inside
+  `SponsorBanner`/theme bodies. Default values: `referralCode: 'BEAN'`,
+  `brand: 'Rainbet'` (matching current hardcoded values).
+- **`useCountdown(endsAt)`** — already exists (`src/hooks/useCountdown.js`); all
+  themes use it for fact #4 rather than re-deriving.
+- Themes are free to build their own visual treatment of the top-3 and ranked
+  list (they already differ structurally — podium vs race-bars vs flat table).
+  No shared *visual* component is mandated; sharing is at the data/derivation
+  level so the facts can't drift.
 
 ## Data flow
 

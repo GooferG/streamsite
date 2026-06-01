@@ -1,5 +1,13 @@
 # Leaderboard Theme Rotation Implementation Plan
 
+> **STATUS: IMPLEMENTED (2026-05-31).** Built on branch `feat/leaderboard-themes`.
+> The tasks below are the original plan and are kept as history. Execution
+> expanded the scope mid-build (a shared **information contract**, a WebGL
+> shader backdrop, gradient podium cards, a demo disclaimer, a fixed/expirable
+> end date with a "leaderboard over" state, and enlarged countdowns). See the
+> **Implementation Addendum** at the bottom of this file for what was actually
+> built, the deviations, and the final file inventory.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Let the gamba leaderboard rotate through 4 distinct visual themes (broadcast/casino/minimal/neon) sharing one mock data source, switched manually via named chips and persisted in the URL `?theme=` param.
@@ -1060,3 +1068,103 @@ Expected: build completes with no errors (ESLint `react-app` preset runs here; w
 - **Spec coverage:** registry + pluggable view (Tasks 3–4), data lifts to wrapper (Task 4), 4 themes (Tasks 2, 8, 9, 10), chips + conditional reset (Task 6), URL `?theme=` set/clear with default→bare-URL (Task 6), unknown-value fallback (Task 4 test), param/tool-routing isolation (Tasks 7, 11), motion on broadcast+neon only with reduced-motion handling (Task 10), minimal stays calm/casino subtle (Tasks 8–9), per-theme `data-theme` markers for tests (all theme tasks). 21st.dev is decided per-theme at build time — neon hand-rolls glow/bars here; if a primitive is later judged worth pulling, that's an additive change, not a plan gap.
 - **Type/contract consistency:** every theme is `({ data, now })`; `THEMES` entries are `{ id, label, Component }`; `DEFAULT_THEME_ID === 'broadcast'`; `resolveTheme` falls back to `THEMES[0]`; `onSelect(id)` is the single switcher callback used for both chips and reset.
 - **No placeholders:** every code step contains full file or full edit content.
+
+---
+
+## Implementation Addendum (as-built, 2026-05-31)
+
+The plan above was followed through the core architecture (Tasks 1–7) and then
+the scope grew during review. This addendum is the authoritative record of what
+shipped on `feat/leaderboard-themes`.
+
+### Deviations from the original plan
+
+1. **Jest stub for react-router-dom (Task 4).** react-router v7 ships its core
+   as ESM-only, which CRA's Jest resolver can't load. Added
+   `src/test/reactRouterDomStub.js` + a `jest.moduleNameMapper` entry in
+   `package.json` mapping `^react-router-dom$` to the stub. The wrapper test
+   mocks `useSearchParams` per-file. Production webpack build is unaffected.
+
+2. **Information contract (new requirement).** The reference Rainbet leaderboard
+   carries a fixed set of facts; the first Minimal build dropped most of them.
+   The spec was revised to mandate **7 facts on every theme** (prize headline,
+   period, referral code + brand, countdown, top-3 highlight, ranked list,
+   last-updated). Only presentation varies between themes; information does not.
+   This drove:
+   - `LEADERBOARD` constant in `src/constants.js` (`referralCode: 'BEAN'`,
+     `brand: 'Rainbet'`) — single source of truth.
+   - `useLeaderboardData` now returns `referralCode` + `brand` (overridable via
+     options).
+   - Shared `formatPrizeHeadline` added to `format.js`.
+   - Minimal was rebuilt to the full contract; Casino and Neon built to it.
+
+3. **Neon enrichment (21st.dev, adapted not dropped-in).**
+   - `NeonShaderBackground.js` — a fixed full-viewport WebGL aurora/plasma
+     shader (three.js, already a project dep). Adapted from a 21st.dev shader:
+     retuned to the purple-gamba palette, dimmed for legibility, WebGL-
+     unavailable guard, and a **static single-frame fallback under
+     `prefers-reduced-motion`**. Mounts only while Neon is active.
+   - `NeonPodium.js` — skewed purple gradient top-3 cards with a blurred glow
+     clone behind frosted content and a motion-safe hover lift. Mechanics
+     adapted from a 21st.dev gradient-card pattern; reskinned to the palette and
+     fed real top-3 data. Neon's ranked list now starts at position 4.
+
+4. **Demo disclaimer (legal cover).** A footer line in the wrapper
+   (`Leaderboard.js`) renders on every theme: "Demo only — sample data for
+   layout preview. Not a real leaderboard or live standings." A regression test
+   asserts it is always present regardless of active theme. (An earlier
+   top-corner badge was removed because it collided with Broadcast's T-MINUS.)
+
+5. **Fixed, expirable end date + "leaderboard over" state.** `endsAt` now comes
+   from a single editable `leaderboardEndsAt()` in `useLeaderboardData.js`
+   (currently `2026-06-13 23:59:59`). To reset or expire the demo, edit that
+   date. `useCountdown` exposes an `isOver` flag; every theme renders
+   "LEADERBOARD OVER" instead of `00d 00h 00m 00s` once the date passes.
+
+6. **Enlarged countdown (hype focal point).** The countdown was promoted to a
+   focal element in every theme: Broadcast T-MINUS digits scaled up; Minimal got
+   large calm digits with unit labels; Casino got gold flip-style tiles; Neon
+   got glowing purple tiles. The over-state scales up too.
+
+### Final file inventory
+
+**Created**
+- `src/components/Leaderboard/useNow.js`
+- `src/components/Leaderboard/ThemeSwitcher.js`
+- `src/components/Leaderboard/themes/index.js` (registry)
+- `src/components/Leaderboard/themes/BroadcastTheme.js`
+- `src/components/Leaderboard/themes/CasinoTheme.js`
+- `src/components/Leaderboard/themes/MinimalTheme.js`
+- `src/components/Leaderboard/themes/NeonTheme.js`
+- `src/components/Leaderboard/themes/NeonShaderBackground.js`
+- `src/components/Leaderboard/themes/NeonPodium.js`
+- `src/test/reactRouterDomStub.js`
+- Tests: `themes/__tests__/registry.test.js`, `__tests__/Leaderboard.test.js`,
+  `__tests__/ThemeSwitcher.test.js`
+
+**Modified**
+- `src/components/Leaderboard/Leaderboard.js` (wrapper + disclaimer)
+- `src/components/Leaderboard/format.js` (`formatPrizeHeadline`)
+- `src/components/Leaderboard/BroadcastHeader.js` (over-state + bigger T-MINUS)
+- `src/hooks/useLeaderboardData.js` (`referralCode`/`brand`, `leaderboardEndsAt`)
+- `src/hooks/useCountdown.js` (`isOver`)
+- `src/constants.js` (`LEADERBOARD`)
+- `tailwind.config.js` (`neon-pulse` keyframe/animation)
+- `package.json` (Jest `moduleNameMapper`)
+- Tests: `useLeaderboardData.test.js`, `useCountdown.test.js`
+
+### Verification at completion
+
+- Full suite: **58 tests across 8 suites passing** (`npm test -- --watchAll=false`).
+- `npm run build` compiles successfully.
+- Manual verification confirmed by the user: all four themes render the full
+  info contract; theme switching + URL `?theme=` behavior; tool-routing
+  isolation; Neon reduced-motion (shader freezes, glow stops).
+
+### Still open / not done
+
+- Plan tasks were not literally checkbox-ticked in this file during inline
+  execution; this addendum supersedes that tracking.
+- A deeper design-led polish pass (further refining each theme's look) was not
+  performed — the themes are functional and on-register but can be pushed
+  further later.

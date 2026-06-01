@@ -64,22 +64,37 @@ export default function CasinoTheme({ data, now }) {
           <span className="text-amber-rust">{formatPrizeHeadline(data.prizePool)}</span>{' '}
           <span className="text-white-body">PRIZE POOL</span>
         </h2>
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-[11px] font-bold tracking-eyebrow-sm uppercase font-mono">
-          <span className="text-white/60">
-            JOIN CODE{' '}
-            <span className="text-amber-rust">{data.referralCode}</span>{' '}
-            ON{' '}
-            <span className="text-amber-rust">{data.brand}</span>
-          </span>
-          {remaining.isOver ? (
-            <span className="text-red-destructive">LEADERBOARD OVER</span>
-          ) : (
-            <span className="text-white/55 tabular-nums">
-              ENDS IN {pad2(remaining.days)}D {pad2(remaining.hours)}H{' '}
-              {pad2(remaining.minutes)}M {pad2(remaining.seconds)}S
-            </span>
-          )}
+        <div className="mt-3 text-[11px] font-bold tracking-eyebrow-sm uppercase font-mono text-white/60">
+          JOIN CODE{' '}
+          <span className="text-amber-rust">{data.referralCode}</span>{' '}
+          ON{' '}
+          <span className="text-amber-rust">{data.brand}</span>
         </div>
+
+        {/* Countdown — big flip-style tiles to hype the deadline */}
+        {remaining.isOver ? (
+          <div className="mt-5 font-display text-3xl sm:text-4xl tracking-tight uppercase text-red-destructive">
+            LEADERBOARD OVER
+          </div>
+        ) : (
+          <div className="mt-5 flex items-end justify-center gap-2 sm:gap-3">
+            {[
+              ['DAYS', remaining.days],
+              ['HRS', remaining.hours],
+              ['MIN', remaining.minutes],
+              ['SEC', remaining.seconds],
+            ].map(([label, value]) => (
+              <div key={label} className="flex flex-col items-center">
+                <span className="min-w-[2.2ch] px-2 py-1 border border-amber-rust/40 bg-gradient-to-b from-amber-rust/15 to-transparent text-3xl sm:text-5xl font-extrabold tabular-nums font-mono text-amber-rust leading-none">
+                  {pad2(value)}
+                </span>
+                <span className="mt-1.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono text-white/45">
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Podium — visual order 2nd, 1st, 3rd */}

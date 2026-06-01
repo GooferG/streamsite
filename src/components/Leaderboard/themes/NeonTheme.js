@@ -58,22 +58,37 @@ export default function NeonTheme({ data, now }) {
         >
           {formatPrizeHeadline(data.prizePool)} LEADERBOARD
         </h2>
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-x-5 gap-y-1.5 text-[11px] font-bold tracking-eyebrow-sm uppercase font-mono">
-          <span className="text-white/65">
-            CODE{' '}
-            <span className="text-purple-bright">{data.referralCode}</span>{' '}
-            ON{' '}
-            <span className="text-purple-bright">{data.brand}</span>
-          </span>
-          {remaining.isOver ? (
-            <span className="text-red-destructive">LEADERBOARD OVER</span>
-          ) : (
-            <span className="text-white/55 tabular-nums">
-              ENDS IN {pad2(remaining.days)}D {pad2(remaining.hours)}H{' '}
-              {pad2(remaining.minutes)}M {pad2(remaining.seconds)}S
-            </span>
-          )}
+        <div className="mt-3 text-[11px] font-bold tracking-eyebrow-sm uppercase font-mono text-white/65">
+          CODE{' '}
+          <span className="text-purple-bright">{data.referralCode}</span>{' '}
+          ON{' '}
+          <span className="text-purple-bright">{data.brand}</span>
         </div>
+
+        {/* Countdown — big glowing tiles to hype the deadline */}
+        {remaining.isOver ? (
+          <div className="mt-5 font-display text-3xl sm:text-4xl tracking-tight uppercase text-red-destructive animate-neon-pulse motion-reduce:animate-none">
+            LEADERBOARD OVER
+          </div>
+        ) : (
+          <div className="mt-5 flex items-end justify-center gap-2 sm:gap-3">
+            {[
+              ['DAYS', remaining.days],
+              ['HRS', remaining.hours],
+              ['MIN', remaining.minutes],
+              ['SEC', remaining.seconds],
+            ].map(([label, value]) => (
+              <div key={label} className="flex flex-col items-center">
+                <span className="min-w-[2.2ch] px-2 py-1 border border-purple-gamba/50 bg-purple-gamba/10 text-3xl sm:text-5xl font-extrabold tabular-nums font-mono text-purple-bright leading-none shadow-[0_0_14px_rgba(168,85,247,0.55)]">
+                  {pad2(value)}
+                </span>
+                <span className="mt-1.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono text-white/45">
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Top-3 cards */}

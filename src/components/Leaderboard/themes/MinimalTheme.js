@@ -37,28 +37,45 @@ export default function MinimalTheme({ data, now }) {
           </span>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2">
-          <div className="text-sm text-white/50">
-            Play on{' '}
-            <span className="font-semibold text-white-body">{data.brand}</span>{' '}
-            with code{' '}
-            <span className="font-semibold text-white-body tracking-wide">
-              {data.referralCode}
-            </span>
-          </div>
-          <div className="text-sm tabular-nums text-white/45">
-            {remaining.isOver ? (
-              <span className="font-medium text-white/70">Leaderboard over</span>
-            ) : (
-              <>
-                Ends in{' '}
-                <span className="font-medium text-white/70">
-                  {pad2(remaining.days)}d {pad2(remaining.hours)}h{' '}
-                  {pad2(remaining.minutes)}m {pad2(remaining.seconds)}s
-                </span>
-              </>
-            )}
-          </div>
+        <div className="mt-4 text-sm text-white/50">
+          Play on{' '}
+          <span className="font-semibold text-white-body">{data.brand}</span>{' '}
+          with code{' '}
+          <span className="font-semibold text-white-body tracking-wide">
+            {data.referralCode}
+          </span>
+        </div>
+
+        {/* Countdown — the hype element, given weight even in the calm register */}
+        <div className="mt-6">
+          {remaining.isOver ? (
+            <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-white/70">
+              Leaderboard over
+            </div>
+          ) : (
+            <>
+              <div className="text-[11px] font-semibold tracking-eyebrow text-white/35 uppercase mb-2">
+                Ends in
+              </div>
+              <div className="flex items-end gap-4 sm:gap-6">
+                {[
+                  ['Days', remaining.days],
+                  ['Hours', remaining.hours],
+                  ['Min', remaining.minutes],
+                  ['Sec', remaining.seconds],
+                ].map(([label, value]) => (
+                  <div key={label} className="flex flex-col">
+                    <span className="text-4xl sm:text-5xl font-semibold tabular-nums text-white-body leading-none">
+                      {pad2(value)}
+                    </span>
+                    <span className="mt-1.5 text-[10px] font-semibold tracking-eyebrow text-white/30 uppercase">
+                      {label}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
 

@@ -96,11 +96,11 @@ export default function BroadcastHeader({
           {remaining.isOver ? 'STATUS' : 'T-MINUS'}
         </div>
         {remaining.isOver ? (
-          <div className="text-base sm:text-lg font-bold tracking-eyebrow-sm font-mono text-red-destructive">
+          <div className="text-xl sm:text-2xl font-bold tracking-eyebrow-sm font-mono text-red-destructive">
             LEADERBOARD OVER
           </div>
         ) : (
-          <div className="text-base sm:text-lg font-bold tabular-nums font-mono text-white-body">
+          <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tabular-nums font-mono text-white-body leading-none">
             {pad2(remaining.days)}d {pad2(remaining.hours)}h{' '}
             {pad2(remaining.minutes)}m {pad2(remaining.seconds)}s
           </div>

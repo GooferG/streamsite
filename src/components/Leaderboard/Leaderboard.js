@@ -27,7 +27,7 @@ export default function Leaderboard() {
         }
         return next;
       },
-      { replace: true },
+      { replace: true }
     );
   };
 
@@ -40,13 +40,11 @@ export default function Leaderboard() {
         onSelect={handleSelect}
       />
       <div className="relative">
-        <span className="pointer-events-none absolute top-2 right-2 z-20 px-2 py-1 text-[9px] font-bold tracking-eyebrow-sm uppercase font-mono text-white/55 bg-zinc-broadcast/70 border border-white/10 rounded">
-          Demo · sample data
-        </span>
         <ActiveTheme data={data} now={now} />
       </div>
       <p className="mt-2 px-1 text-center text-[10px] font-bold tracking-eyebrow-sm uppercase font-mono text-white/35">
-        Demo only — sample data for layout preview. Not a real leaderboard or live standings.
+        Demo only — sample data for layout preview. Not a real leaderboard or
+        live standings.
       </p>
     </div>
   );

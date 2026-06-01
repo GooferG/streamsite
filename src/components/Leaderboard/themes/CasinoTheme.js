@@ -71,10 +71,14 @@ export default function CasinoTheme({ data, now }) {
             ON{' '}
             <span className="text-amber-rust">{data.brand}</span>
           </span>
-          <span className="text-white/55 tabular-nums">
-            ENDS IN {pad2(remaining.days)}D {pad2(remaining.hours)}H{' '}
-            {pad2(remaining.minutes)}M {pad2(remaining.seconds)}S
-          </span>
+          {remaining.isOver ? (
+            <span className="text-red-destructive">LEADERBOARD OVER</span>
+          ) : (
+            <span className="text-white/55 tabular-nums">
+              ENDS IN {pad2(remaining.days)}D {pad2(remaining.hours)}H{' '}
+              {pad2(remaining.minutes)}M {pad2(remaining.seconds)}S
+            </span>
+          )}
         </div>
       </div>
 

@@ -93,12 +93,18 @@ export default function BroadcastHeader({
 
       <div className="sm:text-right space-y-1">
         <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/65 font-mono">
-          T-MINUS
+          {remaining.isOver ? 'STATUS' : 'T-MINUS'}
         </div>
-        <div className="text-base sm:text-lg font-bold tabular-nums font-mono text-white-body">
-          {pad2(remaining.days)}d {pad2(remaining.hours)}h{' '}
-          {pad2(remaining.minutes)}m {pad2(remaining.seconds)}s
-        </div>
+        {remaining.isOver ? (
+          <div className="text-base sm:text-lg font-bold tracking-eyebrow-sm font-mono text-red-destructive">
+            LEADERBOARD OVER
+          </div>
+        ) : (
+          <div className="text-base sm:text-lg font-bold tabular-nums font-mono text-white-body">
+            {pad2(remaining.days)}d {pad2(remaining.hours)}h{' '}
+            {pad2(remaining.minutes)}m {pad2(remaining.seconds)}s
+          </div>
+        )}
       </div>
     </div>
   );

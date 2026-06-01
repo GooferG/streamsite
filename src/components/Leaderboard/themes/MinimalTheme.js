@@ -47,11 +47,17 @@ export default function MinimalTheme({ data, now }) {
             </span>
           </div>
           <div className="text-sm tabular-nums text-white/45">
-            Ends in{' '}
-            <span className="font-medium text-white/70">
-              {pad2(remaining.days)}d {pad2(remaining.hours)}h{' '}
-              {pad2(remaining.minutes)}m {pad2(remaining.seconds)}s
-            </span>
+            {remaining.isOver ? (
+              <span className="font-medium text-white/70">Leaderboard over</span>
+            ) : (
+              <>
+                Ends in{' '}
+                <span className="font-medium text-white/70">
+                  {pad2(remaining.days)}d {pad2(remaining.hours)}h{' '}
+                  {pad2(remaining.minutes)}m {pad2(remaining.seconds)}s
+                </span>
+              </>
+            )}
           </div>
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Plus,
   X,
@@ -6,7 +6,6 @@ import {
   TrendingDown,
   Download,
   CheckCircle2,
-  Star,
   GripVertical,
   Pencil,
   Megaphone,
@@ -42,6 +41,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import SlotAutocomplete from './SlotAutocomplete';
 import SuggestionsPanel from './SuggestionsPanel';
+import ScatterPill from './ScatterPill';
 import HuntStartScreen from './HuntStartScreen';
 import Modal from './Modal';
 import StatCell from './StatCell';
@@ -60,6 +60,7 @@ import {
   openingOrder,
 } from '../utils/huntCalc';
 import { renderSplit, renderRecap } from '../utils/huntExport';
+import { scatterTierKey } from '../utils/scatterTier';
 import { authedFetch } from '../utils/authedFetch';
 
 const inputCls =
@@ -94,7 +95,9 @@ function SortableBonusRow({
   onWin,
   onStake,
   onRemove,
-  onToggleMarker,
+  onSetTier,
+  onToggleHidden,
+  onDefer,
   onCaller,
   editingCaller,
   setEditingCaller,
@@ -146,41 +149,30 @@ function SortableBonusRow({
       )}
       <div className="min-w-0">
         <span className="flex items-center gap-1.5 min-w-0 font-bold text-white-body">
-          {/* Super — common, first: small 'S' pill. Click to toggle. */}
+          {/* Tier pill — click cycles regular → super → five → regular.
+              Shift-click toggles the hidden modifier when already at five. */}
           <button
             type="button"
-            onClick={() => onToggleMarker(bonus.id, 'super')}
-            aria-pressed={!!bonus.super}
-            title={bonus.super ? 'Super — click to clear' : 'Mark as super'}
-            className={`shrink-0 px-1 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono border leading-none transition-colors ${
-              bonus.super
-                ? 'border-orange-admin bg-orange-admin/15 text-orange-admin'
-                : 'border-white/15 text-white/30 hover:text-white/60 hover:border-white/30'
-            }`}
-          >
-            S
-          </button>
-          {/* 5-scat — rare, second: filled gold star. Click to toggle. */}
-          <button
-            type="button"
-            onClick={() => onToggleMarker(bonus.id, 'fiveScat')}
-            aria-pressed={!!bonus.fiveScat}
-            title={
-              bonus.fiveScat
-                ? '5-scatter — click to clear'
-                : 'Mark as 5-scatter'
-            }
+            onClick={(e) => {
+              const tier = scatterTierKey(bonus);
+              if (e.shiftKey && tier === 'five') {
+                onToggleHidden(bonus.id);
+                return;
+              }
+              const nextTier =
+                tier === 'regular' ? 'super' : tier === 'super' ? 'five' : 'regular';
+              onSetTier(bonus.id, nextTier);
+            }}
+            title="Click: cycle tier (regular → super → 5 scatter). Shift-click on 5 scatter: toggle hidden."
             className="shrink-0 leading-none"
           >
-            <Star
-              size={13}
-              aria-label="5 scatter"
-              className={
-                bonus.fiveScat
-                  ? 'fill-gold-scatter text-gold-scatter'
-                  : 'text-white/25 hover:text-white/55'
-              }
-            />
+            {scatterTierKey(bonus) === 'regular' ? (
+              <span className="px-1 py-0.5 text-[8px] font-bold tracking-eyebrow-md uppercase font-mono border border-white/15 text-white/30 hover:text-white/60 hover:border-white/30 leading-none">
+                tier
+              </span>
+            ) : (
+              <ScatterPill bonus={bonus} size="sm" />
+            )}
           </button>
           <span className="truncate">{bonus.slot}</span>
           {bonus.deferred && (
@@ -237,7 +229,7 @@ function SortableBonusRow({
           value={bonus.stake || ''}
           onChange={(e) => onStake(bonus.id, e.target.value)}
           placeholder="—"
-          aria-label="Stake"
+          aria-label="Bet"
           className="w-20 bg-zinc-broadcast/60 border border-white/10 px-2 py-1 text-sm text-right focus:border-emerald-signal/70 focus:outline-none placeholder:text-white/20 tabular-nums"
         />
       )}
@@ -261,7 +253,7 @@ function SortableBonusRow({
       {opening ? (
         <button
           type="button"
-          onClick={() => onToggleMarker(bonus.id, 'deferred')}
+          onClick={() => onDefer(bonus.id)}
           title={
             bonus.deferred
               ? 'Bring back into order'
@@ -316,9 +308,15 @@ export default function HuntTracker() {
   // transient input state (not persisted until added)
   const [slotInput, setSlotInput] = useState('');
   const [stakeInput, setStakeInput] = useState('');
-  const [superInput, setSuperInput] = useState(false);
-  const [fiveScatInput, setFiveScatInput] = useState(false);
+  // Add-form scatter tier: 'regular' | 'super' | 'five'. `hiddenInput` only applies to 'five'.
+  const [tierInput, setTierInput] = useState('regular');
+  const [hiddenInput, setHiddenInput] = useState(false);
   const [callerInput, setCallerInput] = useState('');
+  // "Caller is hot": when on, the caller persists across adds (one person calling
+  // several slots in a row). Session-only, not persisted. Focus returns to the slot
+  // field after each add via slotRef.
+  const [callerHot, setCallerHot] = useState(false);
+  const slotRef = useRef(null);
   const [editingCallerId, setEditingCallerId] = useState(null);
   // Header overflow menu + coachmark tour.
   const [menuOpen, setMenuOpen] = useState(false);
@@ -440,17 +438,19 @@ export default function HuntTracker() {
         slot: slotInput.trim(),
         stake: Number(stakeInput) || 0,
         win: 0,
-        super: superInput,
-        fiveScat: fiveScatInput,
+        super: tierInput === 'super',
+        fiveScat: tierInput === 'five',
+        hidden: tierInput === 'five' && hiddenInput,
         caller: callerInput.trim(),
       },
     ];
     updateHunt({ bonuses: next });
     setSlotInput('');
     setStakeInput('');
-    setSuperInput(false);
-    setFiveScatInput(false);
-    setCallerInput('');
+    setTierInput('regular');
+    setHiddenInput(false);
+    if (!callerHot) setCallerInput('');
+    slotRef.current?.focus();
   }
   function removeBonus(id) {
     updateHunt({ bonuses: bonuses.filter((b) => b.id !== id) });
@@ -469,10 +469,23 @@ export default function HuntTracker() {
       ),
     });
   }
-  // Toggle a boolean marker ('super' | 'fiveScat') on an existing bonus.
-  function toggleBonusMarker(id, key) {
+  // Set the exclusive scatter tier on an existing bonus. tier ∈ 'regular'|'super'|'five'.
+  // Keeps the legacy booleans mutually exclusive and resets `hidden` on any tier change.
+  function setBonusTier(id, tier) {
     updateHunt({
-      bonuses: bonuses.map((b) => (b.id === id ? { ...b, [key]: !b[key] } : b)),
+      bonuses: bonuses.map((b) =>
+        b.id === id
+          ? { ...b, super: tier === 'super', fiveScat: tier === 'five', hidden: false }
+          : b
+      ),
+    });
+  }
+  // Toggle the `hidden` modifier (only meaningful on a five-scatter bonus).
+  function toggleBonusHidden(id) {
+    updateHunt({
+      bonuses: bonuses.map((b) =>
+        b.id === id ? { ...b, hidden: b.fiveScat ? !b.hidden : false } : b
+      ),
     });
   }
   function updateBonusCaller(id, value) {
@@ -524,6 +537,7 @@ export default function HuntTracker() {
       win: 0,
       super: false,
       fiveScat: false,
+      hidden: false,
       caller: person,
     };
     updateHunt({ bonuses: [...bonuses, newBonus] });
@@ -1096,18 +1110,7 @@ export default function HuntTracker() {
                     />
                   </div>
                   <div className="flex items-center gap-2 mb-1">
-                    {currentBonus.super && (
-                      <span className="shrink-0 px-1 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">
-                        S
-                      </span>
-                    )}
-                    {currentBonus.fiveScat && (
-                      <Star
-                        size={14}
-                        aria-label="5 scatter"
-                        className="shrink-0 fill-gold-scatter text-gold-scatter"
-                      />
-                    )}
+                    <ScatterPill bonus={currentBonus} size="md" />
                     {currentBonus.deferred && (
                       <span className="shrink-0 px-1 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">
                         Later
@@ -1118,7 +1121,7 @@ export default function HuntTracker() {
                     </p>
                   </div>
                   <p className="text-[11px] font-mono text-white/50 mb-3 tabular-nums">
-                    stake {fmt(currentBonus.stake)}
+                    bet {fmt(currentBonus.stake)}
                     {currentBonus.caller ? ` · 📣 ${currentBonus.caller}` : ''}
                   </p>
                   <input
@@ -1209,6 +1212,7 @@ export default function HuntTracker() {
                 className="border border-white/8 bg-zinc-broadcast/40 p-4 space-y-3"
               >
                 <SlotAutocomplete
+                  ref={slotRef}
                   value={slotInput}
                   onChange={setSlotInput}
                   placeholder="Slot name"
@@ -1218,65 +1222,80 @@ export default function HuntTracker() {
                 />
                 <input
                   type="number"
-                  placeholder="Stake ($)"
+                  placeholder="Bet ($)"
                   value={stakeInput}
                   onChange={(e) => setStakeInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addBonus()}
                   className={`w-full ${inputCls}`}
                 />
-                <input
-                  type="text"
-                  list="hunt-callers"
-                  placeholder="Slot caller (optional)"
-                  value={callerInput}
-                  onChange={(e) => setCallerInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && addBonus()}
-                  className={`w-full ${inputCls}`}
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    list="hunt-callers"
+                    placeholder="Slot caller (optional)"
+                    value={callerInput}
+                    onChange={(e) => setCallerInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && addBonus()}
+                    className={`flex-1 ${inputCls}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setCallerHot((h) => !h)}
+                    aria-pressed={callerHot}
+                    title={callerHot ? 'Caller is hot — kept after each bonus. Click to clear after add.' : 'Keep this caller after logging each bonus'}
+                    className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-2.5 border transition-colors duration-150 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono ${
+                      callerHot
+                        ? 'border-orange-admin bg-orange-admin/10 text-orange-admin'
+                        : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
+                    }`}
+                  >
+                    {callerHot ? '🔥 Hot' : 'Hot?'}
+                  </button>
+                </div>
                 <datalist id="hunt-callers">
                   {gamblers.map((g) => (
                     <option key={g.id} value={g.name} />
                   ))}
                 </datalist>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setSuperInput((s) => !s)}
-                    aria-pressed={superInput}
-                    className={`inline-flex items-center justify-center gap-2 px-3 py-2.5 border transition-colors duration-150 ${
-                      superInput
-                        ? 'border-orange-admin bg-orange-admin/10 text-orange-admin'
-                        : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
-                    }`}
-                  >
-                    <span
-                      className={`text-[11px] font-bold font-mono leading-none ${superInput ? 'text-orange-admin' : ''}`}
+                <div className="space-y-2">
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { key: 'regular', label: 'Regular', active: 'border-white/30 bg-white/5 text-white-body' },
+                      { key: 'super', label: 'Super', active: 'border-orange-admin bg-orange-admin/10 text-orange-admin' },
+                      { key: 'five', label: '5 Scatter', active: 'border-gold-scatter bg-gold-scatter/10 text-gold-scatter' },
+                    ].map((opt) => (
+                      <button
+                        key={opt.key}
+                        type="button"
+                        onClick={() => {
+                          setTierInput(opt.key);
+                          if (opt.key !== 'five') setHiddenInput(false);
+                        }}
+                        aria-pressed={tierInput === opt.key}
+                        className={`inline-flex items-center justify-center px-3 py-2.5 border transition-colors duration-150 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono ${
+                          tierInput === opt.key
+                            ? opt.active
+                            : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
+                        }`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                  {tierInput === 'five' && (
+                    <button
+                      type="button"
+                      onClick={() => setHiddenInput((h) => !h)}
+                      aria-pressed={hiddenInput}
+                      className={`w-full inline-flex items-center justify-center gap-2 px-3 py-2 border transition-colors duration-150 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono ${
+                        hiddenInput
+                          ? 'border-gold-scatter bg-gold-scatter text-zinc-broadcast'
+                          : 'border-gold-scatter/40 text-gold-scatter/80 hover:border-gold-scatter'
+                      }`}
                     >
-                      S
-                    </span>
-                    <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                      Super
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFiveScatInput((s) => !s)}
-                    aria-pressed={fiveScatInput}
-                    className={`inline-flex items-center justify-center gap-2 px-3 py-2.5 border transition-colors duration-150 ${
-                      fiveScatInput
-                        ? 'border-gold-scatter bg-gold-scatter/10 text-gold-scatter'
-                        : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
-                    }`}
-                  >
-                    <Star
-                      size={13}
-                      aria-hidden="true"
-                      className={fiveScatInput ? 'fill-gold-scatter' : ''}
-                    />
-                    <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                      5 scat
-                    </span>
-                  </button>
+                      {hiddenInput ? '★ Hidden 5 scatter' : 'Mark as hidden'}
+                    </button>
+                  )}
                 </div>
                 <button
                   type="button"
@@ -1303,16 +1322,16 @@ export default function HuntTracker() {
                     <span className="w-6" aria-hidden="true" />
                     <span className="text-left">Slot</span>
                     {phase === 'opening' ? (
-                      <span className="text-right w-20 px-1">Stake</span>
+                      <span className="text-right w-20 px-1">Bet</span>
                     ) : (
                       <button
                         type="button"
                         onClick={cycleStakeSort}
                         title={
                           bonusSort == null
-                            ? 'Sort by stake (high to low)'
+                            ? 'Sort by bet (high to low)'
                             : bonusSort === 'stake-desc'
-                              ? 'Sort by stake (low to high)'
+                              ? 'Sort by bet (low to high)'
                               : 'Clear sort — back to manual order'
                         }
                         className={`text-right w-20 px-1 inline-flex items-center justify-end gap-1 uppercase tracking-eyebrow-md transition-colors ${
@@ -1321,7 +1340,7 @@ export default function HuntTracker() {
                             : 'hover:text-white-body'
                         }`}
                       >
-                        Stake
+                        Bet
                         {bonusSort === 'stake-desc' ? (
                           <ArrowDown size={11} aria-hidden="true" />
                         ) : bonusSort === 'stake-asc' ? (
@@ -1368,7 +1387,9 @@ export default function HuntTracker() {
                             onWin={updateBonusWin}
                             onStake={updateBonusStake}
                             onRemove={removeBonus}
-                            onToggleMarker={toggleBonusMarker}
+                            onSetTier={setBonusTier}
+                            onToggleHidden={toggleBonusHidden}
+                            onDefer={toggleDeferred}
                             onCaller={updateBonusCaller}
                             editingCaller={editingCallerId === b.id}
                             setEditingCaller={setEditingCallerId}
@@ -1741,7 +1762,7 @@ export default function HuntTracker() {
           </div>
           <label className="block">
             <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
-              Stake ($)
+              Bet ($)
             </span>
             <input
               type="number"

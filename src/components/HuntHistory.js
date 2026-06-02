@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight, Download, History, Star, Trash2, RotateCcw } from 'lucide-react';
+import { ChevronDown, ChevronRight, Download, History, Trash2, RotateCcw } from 'lucide-react';
 import { fmt, fmtX, computeStats, computeCallerStats } from '../utils/huntCalc';
+import ScatterPill from './ScatterPill';
 
 function tsToDate(ts) {
   if (!ts) return null;
@@ -145,7 +146,7 @@ function HistoryRow({ hunt, onReexport, onReopen, onDelete }) {
                 <thead>
                   <tr className="border-b border-white/10 text-white/65 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono">
                     <th className="text-left px-3 py-2 font-bold">Slot</th>
-                    <th className="text-right px-3 py-2 font-bold">Stake</th>
+                    <th className="text-right px-3 py-2 font-bold">Bet</th>
                     <th className="text-right px-3 py-2 font-bold">Win</th>
                     <th className="text-right px-3 py-2 font-bold">X</th>
                   </tr>
@@ -157,12 +158,7 @@ function HistoryRow({ hunt, onReexport, onReopen, onDelete }) {
                       <tr key={b.id} className="border-b border-white/5">
                         <td className="px-3 py-2 font-bold text-white-body max-w-[160px]">
                           <span className="flex items-center gap-1.5 min-w-0">
-                            {b.super && (
-                              <span className="shrink-0 px-1 py-0.5 text-[8px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">S</span>
-                            )}
-                            {b.fiveScat && (
-                              <Star size={11} aria-label="5 scatter" className="shrink-0 fill-yellow-400 text-yellow-400" />
-                            )}
+                            <ScatterPill bonus={b} size="sm" />
                             <span className="truncate">{b.slot}</span>
                           </span>
                           {b.caller && (

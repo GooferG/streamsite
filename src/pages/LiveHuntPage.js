@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { Radio, Star, RadioTower } from 'lucide-react';
+import { Radio, RadioTower } from 'lucide-react';
 import { db } from '../config/firebase';
 import { fmt, fmtX, computeStats, openingOrder } from '../utils/huntCalc';
 import StatCell from '../components/StatCell';
+import ScatterPill from '../components/ScatterPill';
 
 export default function LiveHuntPage() {
   const { shareId } = useParams();
@@ -157,7 +158,7 @@ export default function LiveHuntPage() {
                   {bonusCount === 1 ? 'bonus' : 'bonuses'} lined up
                 </p>
                 <p className="text-[12px] font-mono text-white/50 mb-3 tabular-nums">
-                  {fmt(stats.totalStakes)} staked so far
+                  {fmt(stats.totalStakes)} bet so far
                 </p>
                 <p className="text-sm text-white/55">
                   Slots are still going in. Opening starts once the list is locked.
@@ -185,24 +186,13 @@ export default function LiveHuntPage() {
                   />
                 </div>
                 <div className="flex items-center gap-2 mb-1">
-                  {currentBonus.super && (
-                    <span className="shrink-0 px-1 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">
-                      S
-                    </span>
-                  )}
-                  {currentBonus.fiveScat && (
-                    <Star
-                      size={18}
-                      aria-label="5 scatter"
-                      className="shrink-0 fill-gold-scatter text-gold-scatter"
-                    />
-                  )}
+                  <ScatterPill bonus={currentBonus} size="md" />
                   <p className="font-black text-white-body text-3xl sm:text-4xl leading-tight truncate">
                     {currentBonus.slot}
                   </p>
                 </div>
                 <p className="text-[12px] font-mono text-white/50 tabular-nums">
-                  stake {fmt(currentBonus.stake)}
+                  bet {fmt(currentBonus.stake)}
                   {currentBonus.caller ? ` · 📣 ${currentBonus.caller}` : ''}
                 </p>
                 {nextBonus && (
@@ -227,7 +217,7 @@ export default function LiveHuntPage() {
               />
               <StatCell label="Start" value={fmt(stats.start)} />
               <StatCell
-                label={opening ? 'Finish' : 'Total staked'}
+                label={opening ? 'Finish' : 'Total bet'}
                 value={opening ? fmt(stats.finish) : fmt(stats.totalStakes)}
               />
               <StatCell label="Best X" value={stats.bestX != null ? fmtX(stats.bestX) : '—'} />
@@ -245,7 +235,7 @@ export default function LiveHuntPage() {
                       <thead>
                         <tr className="border-b border-white/10 text-white/65 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono sticky top-0 z-10">
                           <th className="text-left px-3 py-2 font-bold">Slot</th>
-                          <th className="text-right px-3 py-2 font-bold">Stake</th>
+                          <th className="text-right px-3 py-2 font-bold">Bet</th>
                           <th className="text-right px-3 py-2 font-bold">Win</th>
                           <th className="text-right px-3 py-2 font-bold">X</th>
                         </tr>
@@ -265,12 +255,7 @@ export default function LiveHuntPage() {
                             >
                               <td className="px-3 py-2 font-bold text-white-body max-w-[200px]">
                                 <span className="flex items-center gap-1.5 min-w-0">
-                                  {b.super && (
-                                    <span className="shrink-0 px-1 py-0.5 text-[8px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">S</span>
-                                  )}
-                                  {b.fiveScat && (
-                                    <Star size={11} aria-label="5 scatter" className="shrink-0 fill-gold-scatter text-gold-scatter" />
-                                  )}
+                                  <ScatterPill bonus={b} size="sm" />
                                   <span className="truncate" title={b.slot}>{b.slot}</span>
                                 </span>
                                 {b.caller && (

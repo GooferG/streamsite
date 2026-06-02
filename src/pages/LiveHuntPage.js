@@ -158,7 +158,7 @@ export default function LiveHuntPage() {
                   {bonusCount === 1 ? 'bonus' : 'bonuses'} lined up
                 </p>
                 <p className="text-[12px] font-mono text-white/50 mb-3 tabular-nums">
-                  {fmt(stats.totalStakes)} staked so far
+                  {fmt(stats.totalStakes)} bet so far
                 </p>
                 <p className="text-sm text-white/55">
                   Slots are still going in. Opening starts once the list is locked.
@@ -192,7 +192,7 @@ export default function LiveHuntPage() {
                   </p>
                 </div>
                 <p className="text-[12px] font-mono text-white/50 tabular-nums">
-                  stake {fmt(currentBonus.stake)}
+                  bet {fmt(currentBonus.stake)}
                   {currentBonus.caller ? ` · 📣 ${currentBonus.caller}` : ''}
                 </p>
                 {nextBonus && (
@@ -217,7 +217,7 @@ export default function LiveHuntPage() {
               />
               <StatCell label="Start" value={fmt(stats.start)} />
               <StatCell
-                label={opening ? 'Finish' : 'Total staked'}
+                label={opening ? 'Finish' : 'Total bet'}
                 value={opening ? fmt(stats.finish) : fmt(stats.totalStakes)}
               />
               <StatCell label="Best X" value={stats.bestX != null ? fmtX(stats.bestX) : '—'} />
@@ -235,7 +235,7 @@ export default function LiveHuntPage() {
                       <thead>
                         <tr className="border-b border-white/10 text-white/65 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono sticky top-0 z-10">
                           <th className="text-left px-3 py-2 font-bold">Slot</th>
-                          <th className="text-right px-3 py-2 font-bold">Stake</th>
+                          <th className="text-right px-3 py-2 font-bold">Bet</th>
                           <th className="text-right px-3 py-2 font-bold">Win</th>
                           <th className="text-right px-3 py-2 font-bold">X</th>
                         </tr>

@@ -146,7 +146,7 @@ function HistoryRow({ hunt, onReexport, onReopen, onDelete }) {
                 <thead>
                   <tr className="border-b border-white/10 text-white/65 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono">
                     <th className="text-left px-3 py-2 font-bold">Slot</th>
-                    <th className="text-right px-3 py-2 font-bold">Stake</th>
+                    <th className="text-right px-3 py-2 font-bold">Bet</th>
                     <th className="text-right px-3 py-2 font-bold">Win</th>
                     <th className="text-right px-3 py-2 font-bold">X</th>
                   </tr>

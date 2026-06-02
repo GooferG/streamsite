@@ -347,8 +347,8 @@ export default function SuggestionsPanel({
       {/* List */}
       {!hasList ? (
         !importing && (
-          <p className="text-center text-white/60 py-4 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono">
-            No suggestions imported.
+          <p className="text-center text-white/55 py-4 text-[12px] font-mono">
+            Nothing imported yet.
           </p>
         )
       ) : (

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { Check, Link as LinkIcon } from 'lucide-react';
 
 // Calm dark copy button: readable light label, accent only on the small icon.
@@ -10,13 +10,17 @@ export default function CopyLinkButton({
   iconClassName = 'text-emerald-signal',
 }) {
   const [copied, setCopied] = useState(false);
+  const timer = useRef(null);
+
+  useEffect(() => () => clearTimeout(timer.current), []);
 
   function copy() {
     if (!url) return;
     navigator.clipboard?.writeText(url).then(
       () => {
         setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
+        clearTimeout(timer.current);
+        timer.current = setTimeout(() => setCopied(false), 1500);
       },
       () => {}
     );

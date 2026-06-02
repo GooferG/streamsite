@@ -1,4 +1,4 @@
-import { fmt, fmtX, computeStats } from './huntCalc';
+import { fmt, fmtX, computeStats, bestWorstSlot } from './huntCalc';
 
 const COLORS = {
   bgTop: '#0b0f17',
@@ -206,7 +206,44 @@ export function renderSplit(hunt) {
   triggerDownload(canvas, `hunt-split-${new Date().toISOString().slice(0, 10)}.png`);
 }
 
-/** Full recap — completed hunts (adds stat band above the split). */
+// Draws the "Top slot" / "Lowest slot" rows starting at startY. Returns the y
+// after the block. Shows slot name + multiplier for the best/worst played slot.
+function drawSlotRows(ctx, W, padding, startY, hunt) {
+  const { best, worst } = bestWorstSlot(hunt?.bonuses);
+  const rowGap = 26;
+  const labelX = padding;
+  const xValX = W - padding;
+  let y = startY;
+
+  const line = (label, accent, entry) => {
+    ctx.textAlign = 'left';
+    ctx.fillStyle = COLORS.faint;
+    ctx.font = `bold 10px ${MONO}`;
+    ctx.fillText(label.toUpperCase(), labelX, y);
+
+    if (entry) {
+      ctx.fillStyle = COLORS.white;
+      ctx.font = `bold 16px ${SANS}`;
+      ctx.fillText(entry.slot || '—', labelX + 92, y);
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = accent;
+      ctx.font = `bold 16px ${SANS}`;
+      ctx.fillText(fmtX(entry.x), xValX, y);
+    } else {
+      ctx.fillStyle = COLORS.faint;
+      ctx.font = `15px ${SANS}`;
+      ctx.fillText('—', labelX + 92, y);
+    }
+    y += rowGap;
+  };
+
+  line('Top slot', COLORS.emerald, best);
+  line('Lowest slot', '#f87171', worst);
+  return y;
+}
+
+/** Full recap — completed hunts (adds stat band + top/lowest slots above split). */
 export function renderRecap(hunt) {
   const s = computeStats(hunt);
   const rows = hunt?.gamblers ?? [];
@@ -214,7 +251,8 @@ export function renderRecap(hunt) {
   const padding = 40;
   const headerH = 110;
   const statBandH = 84;
-  const tableTop = padding + headerH + statBandH;
+  const slotsBandH = 64; // two rows (Top slot / Lowest slot) + spacing
+  const tableTop = padding + headerH + statBandH + slotsBandH;
   const H = tableTop + 40 + 48 * rows.length + 56 + 50 + padding;
 
   const { canvas, ctx } = makeCanvas(W, H);
@@ -250,6 +288,15 @@ export function renderRecap(hunt) {
   ctx.beginPath();
   ctx.moveTo(padding, bandY + statBandH - 14);
   ctx.lineTo(W - padding, bandY + statBandH - 14);
+  ctx.stroke();
+
+  // Top / lowest slot rows, in the slots band between stat band and table.
+  const slotsY = bandY + statBandH + 14;
+  drawSlotRows(ctx, W, padding, slotsY, hunt);
+  ctx.strokeStyle = COLORS.line;
+  ctx.beginPath();
+  ctx.moveTo(padding, bandY + statBandH + slotsBandH - 14);
+  ctx.lineTo(W - padding, bandY + statBandH + slotsBandH - 14);
   ctx.stroke();
 
   drawSplitTable(ctx, W, padding, tableTop, hunt);

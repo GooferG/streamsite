@@ -158,7 +158,9 @@ export default function LiveHuntPage() {
                   {bonusCount === 1 ? 'bonus' : 'bonuses'} lined up
                 </p>
                 <p className="text-[12px] font-mono text-white/50 mb-3 tabular-nums">
-                  {fmt(stats.totalStakes)} bet so far
+                  {bonusCount > 0
+                    ? `avg bet ${fmt(stats.totalStakes / bonusCount)}`
+                    : 'no bonuses yet'}
                 </p>
                 <p className="text-sm text-white/55">
                   Slots are still going in. Opening starts once the list is locked.
@@ -205,7 +207,7 @@ export default function LiveHuntPage() {
             )}
 
             {/* Supporting stats strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-6">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-6">
               <StatCell
                 label="Bonuses"
                 value={
@@ -217,8 +219,25 @@ export default function LiveHuntPage() {
               />
               <StatCell label="Start" value={fmt(stats.start)} />
               <StatCell
-                label={opening ? 'Finish' : 'Total bet'}
-                value={opening ? fmt(stats.finish) : fmt(stats.totalStakes)}
+                label="Req. X"
+                value={stats.reqX != null ? fmtX(stats.reqX) : '—'}
+              />
+              <StatCell
+                label="Profit"
+                value={
+                  stats.profit == null ? (
+                    '—'
+                  ) : (
+                    <span
+                      className={
+                        stats.profit >= 0 ? 'text-emerald-signal' : 'text-red-destructive'
+                      }
+                    >
+                      {stats.profit >= 0 ? '+' : '−'}
+                      {fmt(Math.abs(stats.profit))}
+                    </span>
+                  )
+                }
               />
               <StatCell label="Best X" value={stats.bestX != null ? fmtX(stats.bestX) : '—'} />
             </div>

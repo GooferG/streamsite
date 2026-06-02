@@ -99,6 +99,30 @@ export function computeStats(hunt) {
 }
 
 /**
+ * Best and worst slot by multiplier across all PLAYED bonuses (stake > 0 &&
+ * win > 0), independent of who called them. Used in the hunt recap export to
+ * show the ending top/lowest performers.
+ * Returns { best: { slot, x } | null, worst: { slot, x } | null }.
+ */
+export function bestWorstSlot(bonuses) {
+  const played = (bonuses ?? [])
+    .map((b) => {
+      const stake = Number(b.stake) || 0;
+      const win = Number(b.win) || 0;
+      return stake > 0 && win > 0 ? { slot: b.slot, x: win / stake } : null;
+    })
+    .filter(Boolean);
+
+  let best = null;
+  let worst = null;
+  for (const p of played) {
+    if (!best || p.x > best.x) best = p;
+    if (!worst || p.x < worst.x) worst = p;
+  }
+  return { best, worst };
+}
+
+/**
  * Slot-caller leaderboard + best/worst/most-consistent stats.
  * Only bonuses with a non-empty `caller` count. Ranking uses X (win / stake).
  * "Played" = stake > 0 && win > 0 — best/worst/avg ignore un-entered wins so

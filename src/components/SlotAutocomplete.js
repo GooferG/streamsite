@@ -9,7 +9,7 @@ const ALL_SLOTS = rawSlots.map((g) => ({
   thumbnail: g.image,
 }));
 
-export default function SlotAutocomplete({ value, onChange, onSelect, placeholder, className, onKeyDown }) {
+export default function SlotAutocomplete({ value, onChange, onSelect, placeholder, className, onKeyDown, autoFocus, 'aria-label': ariaLabel }) {
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -56,6 +56,8 @@ export default function SlotAutocomplete({ value, onChange, onSelect, placeholde
         onKeyDown={onKeyDown}
         placeholder={placeholder}
         className={className}
+        autoFocus={autoFocus}
+        aria-label={ariaLabel}
       />
       {open && (
         <ul className="absolute z-50 left-0 right-0 mt-1 bg-zinc-900 border border-emerald-signal/30 rounded-lg overflow-hidden shadow-xl max-h-64 overflow-y-auto">

@@ -89,7 +89,7 @@ export default function HuntStartScreen({
         )}
 
         {/* Start form */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           <label className="block">
             <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
               <span className="text-emerald-signal tabular-nums">01</span> Hunt name <span className="text-emerald-signal">*</span>
@@ -121,7 +121,7 @@ export default function HuntStartScreen({
             type="button"
             onClick={() => onStart({ name, startBalance })}
             disabled={!canStart}
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-40"
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-40"
           >
             <Play size={14} aria-hidden="true" />
             <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Start hunt</span>

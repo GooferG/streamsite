@@ -1,9 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Plus,
   X,
   Users,
-  DollarSign,
   TrendingDown,
   Download,
   CheckCircle2,
@@ -20,9 +19,10 @@ import {
   SkipForward,
   Clock,
   Radio,
-  Check,
-  Link as LinkIcon,
   Trash2,
+  MoreHorizontal,
+  HelpCircle,
+  Target,
 } from 'lucide-react';
 import {
   DndContext,
@@ -45,15 +45,27 @@ import SuggestionsPanel from './SuggestionsPanel';
 import HuntStartScreen from './HuntStartScreen';
 import Modal from './Modal';
 import StatCell from './StatCell';
+import CopyLinkButton from './CopyLinkButton';
+import HuntLinkControls from './HuntLinkControls';
+import CappedScroll from './CappedScroll';
+import HuntTour from './HuntTour';
 import { useHuntStore } from '../hooks/useHuntStore';
-import { fmt, fmtX, makeId, computeStats, computeCallerStats, openingOrder } from '../utils/huntCalc';
+import { useFirstVisit } from '../hooks/useFirstVisit';
+import {
+  fmt,
+  fmtX,
+  makeId,
+  computeStats,
+  computeCallerStats,
+  openingOrder,
+} from '../utils/huntCalc';
 import { renderSplit, renderRecap } from '../utils/huntExport';
 import { authedFetch } from '../utils/authedFetch';
 
 const inputCls =
-  'bg-zinc-broadcast/60 border border-white/10 px-3 py-2 text-sm text-white-body placeholder:text-white/50 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';
+  'bg-zinc-broadcast/60 border border-white/10 px-3.5 py-2.5 text-sm text-white-body placeholder:text-white/50 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';
 
-function PanelLabel({ code, icon: Icon, label, accent = 'emerald' }) {
+function PanelLabel({ code, icon: Icon, label, accent = 'emerald', quiet = false }) {
   const color =
     accent === 'orange'
       ? 'text-orange-admin'
@@ -61,8 +73,10 @@ function PanelLabel({ code, icon: Icon, label, accent = 'emerald' }) {
         ? 'text-purple-bright'
         : 'text-emerald-signal';
   return (
-    <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/65 font-mono">
-      <span className={`${color} tabular-nums`}>{code}</span>
+    <div
+      className={`flex items-center gap-3 text-[10px] font-bold uppercase tracking-eyebrow-lg font-mono ${quiet ? 'text-white/50' : 'text-white/65'}`}
+    >
+      {code && <span className={`${color} tabular-nums`}>{code}</span>}
       <span className="inline-flex items-center gap-1.5">
         {Icon && <Icon size={12} aria-hidden="true" className={color} />}
         <span>{label}</span>
@@ -85,8 +99,14 @@ function SortableBonusRow({
   editingCaller,
   setEditingCaller,
 }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id: bonus.id, disabled: opening });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: bonus.id, disabled: opening });
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -99,7 +119,9 @@ function SortableBonusRow({
       ref={setNodeRef}
       style={style}
       className={`grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-1.5 border-b border-white/5 transition-colors ${
-        isCurrent ? 'bg-purple-gamba/15 border-purple-gamba/30' : 'hover:bg-zinc-broadcast/40'
+        isCurrent
+          ? 'bg-purple-gamba/15 border-purple-gamba/30'
+          : 'hover:bg-zinc-broadcast/40'
       }`}
     >
       {opening ? (
@@ -112,15 +134,15 @@ function SortableBonusRow({
           <Play size={13} aria-hidden="true" />
         </button>
       ) : (
-      <button
-        type="button"
-        {...attributes}
-        {...listeners}
-        className="p-1 text-white/25 hover:text-white/65 cursor-grab active:cursor-grabbing shrink-0"
-        aria-label="Drag to reorder"
-      >
-        <GripVertical size={14} aria-hidden="true" />
-      </button>
+        <button
+          type="button"
+          {...attributes}
+          {...listeners}
+          className="p-1 text-white/25 hover:text-white/65 cursor-grab active:cursor-grabbing shrink-0"
+          aria-label="Drag to reorder"
+        >
+          <GripVertical size={14} aria-hidden="true" />
+        </button>
       )}
       <div className="min-w-0">
         <span className="flex items-center gap-1.5 min-w-0 font-bold text-white-body">
@@ -143,13 +165,21 @@ function SortableBonusRow({
             type="button"
             onClick={() => onToggleMarker(bonus.id, 'fiveScat')}
             aria-pressed={!!bonus.fiveScat}
-            title={bonus.fiveScat ? '5-scatter — click to clear' : 'Mark as 5-scatter'}
+            title={
+              bonus.fiveScat
+                ? '5-scatter — click to clear'
+                : 'Mark as 5-scatter'
+            }
             className="shrink-0 leading-none"
           >
             <Star
               size={13}
               aria-label="5 scatter"
-              className={bonus.fiveScat ? 'fill-yellow-400 text-yellow-400' : 'text-white/25 hover:text-white/55'}
+              className={
+                bonus.fiveScat
+                  ? 'fill-gold-scatter text-gold-scatter'
+                  : 'text-white/25 hover:text-white/55'
+              }
             />
           </button>
           <span className="truncate">{bonus.slot}</span>
@@ -190,7 +220,9 @@ function SortableBonusRow({
             {bonus.caller ? (
               <span className="text-purple-bright">📣 {bonus.caller}</span>
             ) : (
-              <span className="text-white/25 hover:text-white/50">+ caller</span>
+              <span className="text-white/25 hover:text-white/50">
+                + caller
+              </span>
             )}
           </button>
         )}
@@ -200,14 +232,14 @@ function SortableBonusRow({
           {fmt(bonus.stake)}
         </span>
       ) : (
-      <input
-        type="number"
-        value={bonus.stake || ''}
-        onChange={(e) => onStake(bonus.id, e.target.value)}
-        placeholder="—"
-        aria-label="Stake"
-        className="w-20 bg-zinc-broadcast/60 border border-white/10 px-2 py-1 text-sm text-right focus:border-emerald-signal/70 focus:outline-none placeholder:text-white/20 tabular-nums"
-      />
+        <input
+          type="number"
+          value={bonus.stake || ''}
+          onChange={(e) => onStake(bonus.id, e.target.value)}
+          placeholder="—"
+          aria-label="Stake"
+          className="w-20 bg-zinc-broadcast/60 border border-white/10 px-2 py-1 text-sm text-right focus:border-emerald-signal/70 focus:outline-none placeholder:text-white/20 tabular-nums"
+        />
       )}
       <input
         type="number"
@@ -219,7 +251,9 @@ function SortableBonusRow({
       />
       <span
         className={`text-right font-bold tabular-nums px-1 w-16 ${
-          x != null && x >= (reqX ?? 0) ? 'text-emerald-signal' : 'text-white/70'
+          x != null && x >= (reqX ?? 0)
+            ? 'text-emerald-signal'
+            : 'text-white/70'
         }`}
       >
         {x != null ? fmtX(x) : '—'}
@@ -228,7 +262,11 @@ function SortableBonusRow({
         <button
           type="button"
           onClick={() => onToggleMarker(bonus.id, 'deferred')}
-          title={bonus.deferred ? 'Bring back into order' : 'Come back to this slot later'}
+          title={
+            bonus.deferred
+              ? 'Bring back into order'
+              : 'Come back to this slot later'
+          }
           className={`p-1 border transition-colors ${
             bonus.deferred
               ? 'border-orange-admin/60 text-orange-admin bg-orange-admin/10'
@@ -282,7 +320,10 @@ export default function HuntTracker() {
   const [fiveScatInput, setFiveScatInput] = useState(false);
   const [callerInput, setCallerInput] = useState('');
   const [editingCallerId, setEditingCallerId] = useState(null);
-  const [shareCopied, setShareCopied] = useState(false);
+  // Header overflow menu + coachmark tour.
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [tourOpen, setTourOpen] = useState(false);
+  const [tourSeen, markTourSeen] = useFirstVisit('huntTourSeen');
   // Bonus-list sort lens: null = manual order (drag enabled), or 'stake-desc'/'stake-asc'.
   const [bonusSort, setBonusSort] = useState(null);
   const [gamblerNameInput, setGamblerNameInput] = useState('');
@@ -308,6 +349,15 @@ export default function HuntTracker() {
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
+
+  // First-visit coachmark tour: auto-open once on the first active view, for
+  // both owners and logged-out visitors (the tour rewords its owner-only steps
+  // for anon and nudges login). Replay is via the header overflow.
+  useEffect(() => {
+    if (status === 'active' && !tourSeen) {
+      setTourOpen(true);
+    }
+  }, [status, tourSeen]);
 
   // ---------- LOADING (auth rehydrating) ----------
   if (status === 'loading') {
@@ -363,7 +413,9 @@ export default function HuntTracker() {
     updateHunt({ phase: 'collecting' });
   }
   function gotoOpening(idx) {
-    updateHunt({ openingIndex: Math.min(Math.max(0, idx), Math.max(0, order.length - 1)) });
+    updateHunt({
+      openingIndex: Math.min(Math.max(0, idx), Math.max(0, order.length - 1)),
+    });
   }
   function advanceOpening() {
     gotoOpening(openingIdx + 1);
@@ -373,7 +425,9 @@ export default function HuntTracker() {
   }
   function toggleDeferred(id) {
     updateHunt({
-      bonuses: bonuses.map((b) => (b.id === id ? { ...b, deferred: !b.deferred } : b)),
+      bonuses: bonuses.map((b) =>
+        b.id === id ? { ...b, deferred: !b.deferred } : b
+      ),
     });
   }
 
@@ -403,12 +457,16 @@ export default function HuntTracker() {
   }
   function updateBonusWin(id, val) {
     updateHunt({
-      bonuses: bonuses.map((b) => (b.id === id ? { ...b, win: Number(val) || 0 } : b)),
+      bonuses: bonuses.map((b) =>
+        b.id === id ? { ...b, win: Number(val) || 0 } : b
+      ),
     });
   }
   function updateBonusStake(id, val) {
     updateHunt({
-      bonuses: bonuses.map((b) => (b.id === id ? { ...b, stake: Number(val) || 0 } : b)),
+      bonuses: bonuses.map((b) =>
+        b.id === id ? { ...b, stake: Number(val) || 0 } : b
+      ),
     });
   }
   // Toggle a boolean marker ('super' | 'fiveScat') on an existing bonus.
@@ -419,7 +477,9 @@ export default function HuntTracker() {
   }
   function updateBonusCaller(id, value) {
     updateHunt({
-      bonuses: bonuses.map((b) => (b.id === id ? { ...b, caller: value.trim() } : b)),
+      bonuses: bonuses.map((b) =>
+        b.id === id ? { ...b, caller: value.trim() } : b
+      ),
     });
   }
   function saveName() {
@@ -470,7 +530,9 @@ export default function HuntTracker() {
     updateSuggestions(
       suggestions.map((p) => ({
         ...p,
-        slots: p.slots.map((s) => (s.id === slot.id ? { ...s, status: 'done' } : s)),
+        slots: p.slots.map((s) =>
+          s.id === slot.id ? { ...s, status: 'done' } : s
+        ),
       }))
     );
     setLandingSuggestion(null);
@@ -512,7 +574,11 @@ export default function HuntTracker() {
     try {
       const r = await authedFetch('/api/hunt-suggest/manage', {
         method: 'POST',
-        body: JSON.stringify({ action: 'toggle', linkId: activeHunt.intakeLinkId, open }),
+        body: JSON.stringify({
+          action: 'toggle',
+          linkId: activeHunt.intakeLinkId,
+          open,
+        }),
       });
       if (!r.ok) {
         setLinkError('Could not update the link.');
@@ -532,7 +598,10 @@ export default function HuntTracker() {
     try {
       await authedFetch('/api/hunt-suggest/manage', {
         method: 'POST',
-        body: JSON.stringify({ action: 'delete', linkId: activeHunt.intakeLinkId }),
+        body: JSON.stringify({
+          action: 'delete',
+          linkId: activeHunt.intakeLinkId,
+        }),
       });
     } catch {
       // Best-effort — clear locally regardless so the UI doesn't get stuck.
@@ -564,11 +633,20 @@ export default function HuntTracker() {
     updateHunt({ bonuses: arrayMove(current, oldIndex, newIndex) });
   }
   function addGambler() {
-    if (!gamblerNameInput.trim() || !gamblerInInput || Number(gamblerInInput) <= 0) return;
+    if (
+      !gamblerNameInput.trim() ||
+      !gamblerInInput ||
+      Number(gamblerInInput) <= 0
+    )
+      return;
     updateHunt({
       gamblers: [
         ...gamblers,
-        { id: makeId(), name: gamblerNameInput.trim(), inFor: Number(gamblerInInput) },
+        {
+          id: makeId(),
+          name: gamblerNameInput.trim(),
+          inFor: Number(gamblerInInput),
+        },
       ],
     });
     setGamblerNameInput('');
@@ -580,7 +658,9 @@ export default function HuntTracker() {
   function updateGamblerInFor(id, value) {
     const num = value === '' ? 0 : Number(value);
     if (Number.isNaN(num) || num < 0) return;
-    updateHunt({ gamblers: gamblers.map((g) => (g.id === id ? { ...g, inFor: num } : g)) });
+    updateHunt({
+      gamblers: gamblers.map((g) => (g.id === id ? { ...g, inFor: num } : g)),
+    });
   }
 
   async function handleComplete() {
@@ -591,16 +671,6 @@ export default function HuntTracker() {
   }
 
   const shareUrl = shareId ? `${window.location.origin}/live/${shareId}` : null;
-  function copyShareLink() {
-    if (!shareUrl) return;
-    navigator.clipboard?.writeText(shareUrl).then(
-      () => {
-        setShareCopied(true);
-        setTimeout(() => setShareCopied(false), 1500);
-      },
-      () => {}
-    );
-  }
 
   const stats = computeStats(activeHunt);
   const totalStakes = stats.totalStakes;
@@ -613,7 +683,9 @@ export default function HuntTracker() {
   const gamblerRows = gamblers.map((g) => {
     const pct = totalBuyIns > 0 ? (g.inFor / totalBuyIns) * 100 : 0;
     const payout =
-      finishBalance !== '' && totalBuyIns > 0 ? (pct / 100) * Number(finishBalance) : null;
+      finishBalance !== '' && totalBuyIns > 0
+        ? (pct / 100) * Number(finishBalance)
+        : null;
     return { ...g, pct, payout };
   });
 
@@ -632,7 +704,9 @@ export default function HuntTracker() {
 
   // none -> desc -> asc -> none
   function cycleStakeSort() {
-    setBonusSort((s) => (s == null ? 'stake-desc' : s === 'stake-desc' ? 'stake-asc' : null));
+    setBonusSort((s) =>
+      s == null ? 'stake-desc' : s === 'stake-desc' ? 'stake-asc' : null
+    );
   }
 
   // The list under the panel: opening order while opening, else the sort lens.
@@ -680,134 +754,224 @@ export default function HuntTracker() {
             </button>
           )}
         </div>
-        <div className="ml-auto flex gap-2" data-html2canvas-ignore="true">
-          {phase === 'collecting' ? (
+        {/* Phase toggle — grouped with identity, it is a mode switch */}
+        {phase === 'collecting' ? (
+          <button
+            type="button"
+            onClick={startOpening}
+            disabled={bonuses.length === 0}
+            data-html2canvas-ignore="true"
+            className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-gamba text-white-body hover:bg-purple-bright transition-colors duration-150 disabled:opacity-40"
+          >
+            <Play size={12} aria-hidden="true" />
+            <span className="text-[10px] font-bold tracking-eyebrow-lg">
+              START OPENING
+            </span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={backToCollecting}
+            data-html2canvas-ignore="true"
+            className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/15 text-white/70 hover:text-white-body hover:border-white/30 transition-colors duration-150"
+          >
+            <ArrowLeft size={12} aria-hidden="true" />
+            <span className="text-[10px] font-bold tracking-eyebrow-lg">
+              EDIT BONUSES
+            </span>
+          </button>
+        )}
+        <div className="ml-auto flex gap-2 items-center" data-html2canvas-ignore="true">
+          {/* Primary actions — spotlit by the tour */}
+          <div data-tour="complete-actions" className="flex gap-2 items-center">
             <button
               type="button"
-              onClick={startOpening}
-              disabled={bonuses.length === 0}
-              className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-gamba text-white-body hover:bg-purple-bright transition-colors duration-150 disabled:opacity-40"
+              onClick={() => renderSplit(activeHunt)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 border border-emerald-signal/40 text-emerald-signal hover:bg-emerald-signal/10 transition-colors duration-150"
             >
-              <Play size={12} aria-hidden="true" />
-              <span className="text-[10px] font-bold tracking-eyebrow-lg">START OPENING</span>
+              <Download size={12} aria-hidden="true" />
+              <span className="text-[10px] font-bold tracking-eyebrow-lg">
+                EXPORT SPLIT
+              </span>
             </button>
-          ) : (
-            <button
-              type="button"
-              onClick={backToCollecting}
-              className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/15 text-white/70 hover:text-white-body hover:border-white/30 transition-colors duration-150"
-            >
-              <ArrowLeft size={12} aria-hidden="true" />
-              <span className="text-[10px] font-bold tracking-eyebrow-lg">EDIT BONUSES</span>
-            </button>
-          )}
-          {isLoggedIn && (
-            shareId ? (
-              <div className="inline-flex items-center gap-1.5 px-2 py-1 border border-red-destructive/40 bg-red-destructive/5">
-                <span className="inline-flex items-center gap-1.5 text-red-destructive text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-destructive animate-pulse" />
-                  Live
+            {!confirmingComplete ? (
+              <button
+                type="button"
+                onClick={() => setConfirmingComplete(true)}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150"
+              >
+                <CheckCircle2 size={12} aria-hidden="true" />
+                <span className="text-[10px] font-bold tracking-eyebrow-lg">
+                  COMPLETE
                 </span>
+              </button>
+            ) : (
+              <div className="flex gap-2">
                 <button
                   type="button"
-                  onClick={copyShareLink}
-                  title={shareUrl}
-                  className="inline-flex items-center gap-1 px-1.5 py-0.5 text-white/70 hover:text-white-body"
+                  onClick={handleComplete}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
                 >
-                  {shareCopied ? <Check size={11} aria-hidden="true" /> : <LinkIcon size={11} aria-hidden="true" />}
-                  <span className="text-[10px] font-bold tracking-eyebrow-lg">{shareCopied ? 'COPIED' : 'COPY'}</span>
+                  <span className="text-[10px] font-bold tracking-eyebrow-lg">
+                    CONFIRM + EXPORT
+                  </span>
                 </button>
                 <button
                   type="button"
-                  onClick={stopSharing}
-                  className="px-1.5 py-0.5 text-white/55 hover:text-red-destructive"
-                  title="Stop sharing — link dies"
+                  onClick={() => setConfirmingComplete(false)}
+                  className="px-3 py-1.5 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
                 >
-                  <span className="text-[10px] font-bold tracking-eyebrow-lg">STOP</span>
+                  <span className="text-[10px] font-bold tracking-eyebrow-lg">
+                    CANCEL
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
+          {/* Discard confirm — only while confirming, never an always-on button */}
+          {confirmingDiscard && (
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={async () => {
+                  await discardActiveHunt();
+                  setConfirmingDiscard(false);
+                }}
+                className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 transition-colors duration-150"
+              >
+                <Trash2 size={12} aria-hidden="true" />
+                <span className="text-[10px] font-bold tracking-eyebrow-lg">
+                  DISCARD HUNT
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingDiscard(false)}
+                className="px-3 py-1.5 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
+              >
+                <span className="text-[10px] font-bold tracking-eyebrow-lg">
+                  KEEP
+                </span>
+              </button>
+            </div>
+          )}
+          {/* Overflow: tour replay + discard */}
+          {!confirmingComplete && !confirmingDiscard && (
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setMenuOpen((v) => !v)}
+                aria-haspopup="menu"
+                aria-expanded={menuOpen}
+                title="More"
+                className="w-8 h-8 inline-flex items-center justify-center border border-white/10 text-white/45 hover:text-white-body hover:border-white/30 transition-colors"
+              >
+                <MoreHorizontal size={14} aria-hidden="true" />
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 top-full mt-1 z-30 w-44 border border-white/15 bg-zinc-card shadow-xl">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setTourOpen(true);
+                    }}
+                    className="w-full text-left px-3 py-2 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono text-white/70 hover:bg-white/5 inline-flex items-center gap-2"
+                  >
+                    <HelpCircle size={12} aria-hidden="true" /> How it works
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setConfirmingDiscard(true);
+                    }}
+                    className="w-full text-left px-3 py-2 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono text-white/60 hover:text-red-destructive hover:bg-red-destructive/10 inline-flex items-center gap-2"
+                  >
+                    <Trash2 size={12} aria-hidden="true" /> Discard hunt
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Broadcast & collect bar — owner only */}
+      {isLoggedIn && (
+        <div
+          data-tour="share-bar"
+          data-html2canvas-ignore="true"
+          className="grid grid-cols-1 sm:grid-cols-2 gap-2 px-4 py-3 border-b border-white/8 bg-purple-gamba/5"
+        >
+          {/* WATCH track */}
+          <div className="border border-white/10 bg-zinc-broadcast/40 p-2.5">
+            <p className="flex items-center gap-2 text-[9px] font-bold tracking-eyebrow-lg uppercase font-mono text-red-destructive mb-2">
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${shareId ? 'bg-red-destructive animate-pulse' : 'bg-white/25'}`}
+              />
+              Watch{shareId ? ' · live' : ''}
+            </p>
+            {shareId ? (
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  readOnly
+                  value={shareUrl}
+                  onFocus={(e) => e.target.select()}
+                  className="flex-1 min-w-0 bg-zinc-broadcast/60 border border-white/10 px-2.5 py-2 text-[11px] font-mono text-white/70 focus:outline-none"
+                />
+                <CopyLinkButton
+                  url={shareUrl}
+                  label="Copy watch link"
+                  iconClassName="text-red-destructive"
+                />
+                <button
+                  type="button"
+                  onClick={stopSharing}
+                  title="Stop sharing. Link dies."
+                  className="px-2.5 py-2 border border-red-destructive/55 text-red-300 hover:bg-red-destructive/15 transition-colors text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                >
+                  Stop
                 </button>
               </div>
             ) : (
               <button
                 type="button"
                 onClick={startSharing}
-                className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/15 text-white/70 hover:text-white-body hover:border-white/30 transition-colors duration-150"
+                className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 border border-red-destructive/40 text-red-300 hover:bg-red-destructive/10 transition-colors duration-150"
               >
-                <Radio size={12} aria-hidden="true" />
-                <span className="text-[10px] font-bold tracking-eyebrow-lg">SHARE LIVE</span>
+                <Radio size={13} aria-hidden="true" />
+                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  Go live
+                </span>
               </button>
-            )
-          )}
-          <button
-            type="button"
-            onClick={() => renderSplit(activeHunt)}
-            className="inline-flex items-center gap-2 px-3 py-1.5 border border-emerald-signal/40 text-emerald-signal hover:bg-emerald-signal/10 transition-colors duration-150"
-          >
-            <Download size={12} aria-hidden="true" />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg">EXPORT SPLIT</span>
-          </button>
-          {!confirmingComplete ? (
-            <button
-              type="button"
-              onClick={() => setConfirmingComplete(true)}
-              className="inline-flex items-center gap-2 px-3 py-1.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150"
-            >
-              <CheckCircle2 size={12} aria-hidden="true" />
-              <span className="text-[10px] font-bold tracking-eyebrow-lg">COMPLETE</span>
-            </button>
-          ) : (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={handleComplete}
-                className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
-              >
-                <span className="text-[10px] font-bold tracking-eyebrow-lg">CONFIRM + EXPORT</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmingComplete(false)}
-                className="px-3 py-1.5 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
-              >
-                <span className="text-[10px] font-bold tracking-eyebrow-lg">CANCEL</span>
-              </button>
-            </div>
-          )}
-          {!confirmingComplete && (
-            confirmingDiscard ? (
-              <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={async () => {
-                    await discardActiveHunt();
-                    setConfirmingDiscard(false);
-                  }}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 transition-colors duration-150"
-                >
-                  <Trash2 size={12} aria-hidden="true" />
-                  <span className="text-[10px] font-bold tracking-eyebrow-lg">DISCARD HUNT</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setConfirmingDiscard(false)}
-                  className="px-3 py-1.5 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
-                >
-                  <span className="text-[10px] font-bold tracking-eyebrow-lg">KEEP</span>
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setConfirmingDiscard(true)}
-                title="Discard this hunt without saving to history"
-                className="inline-flex items-center gap-2 px-2.5 py-1.5 border border-white/10 text-white/50 hover:text-red-destructive hover:border-red-destructive/50 transition-colors duration-150"
-              >
-                <Trash2 size={12} aria-hidden="true" />
-                <span className="text-[10px] font-bold tracking-eyebrow-lg">DISCARD</span>
-              </button>
-            )
-          )}
+            )}
+          </div>
+          {/* COLLECT track */}
+          <div className="border border-white/10 bg-zinc-broadcast/40 p-2.5">
+            <p className="flex items-center gap-2 text-[9px] font-bold tracking-eyebrow-lg uppercase font-mono text-purple-bright mb-2">
+              <span
+                className={`w-1.5 h-1.5 rounded-full ${
+                  activeHunt.intakeLinkId && activeHunt.intakeOpen !== false
+                    ? 'bg-emerald-signal animate-pulse'
+                    : 'bg-white/25'
+                }`}
+              />
+              Collect
+            </p>
+            <HuntLinkControls
+              linkId={activeHunt.intakeLinkId || null}
+              linkOpen={activeHunt.intakeOpen !== false}
+              linkBusy={linkBusy}
+              linkError={linkError}
+              onCreateLink={createIntakeLink}
+              onToggleLink={toggleIntakeOpen}
+              onDeleteLink={deleteIntakeLink}
+            />
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Status bar */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
@@ -829,9 +993,75 @@ export default function HuntTracker() {
         {error && (
           <>
             <span className="text-white/15">·</span>
-            <span className="text-red-destructive normal-case tracking-normal">{error}</span>
+            <span className="text-red-destructive normal-case tracking-normal">
+              {error}
+            </span>
           </>
         )}
+      </div>
+
+      {/* Overall stats band */}
+      <div data-tour="stats" className="border-b border-white/8 bg-emerald-signal/[0.03]">
+        <div className="flex flex-wrap divide-x divide-white/10">
+          <StatCell
+            variant="bare"
+            hero
+            label="Profit"
+            value={
+              profit == null ? (
+                '—'
+              ) : (
+                <span
+                  className={
+                    profit >= 0 ? 'text-emerald-signal' : 'text-red-destructive'
+                  }
+                >
+                  {profit >= 0 ? '+' : ''}
+                  {fmt(profit)}
+                </span>
+              )
+            }
+          />
+          <StatCell
+            variant="bare"
+            label="Req X"
+            value={reqX != null ? `${reqX.toFixed(1)}x` : '—'}
+          />
+          <StatCell
+            variant="bare"
+            label="W/L mult"
+            value={
+              wlMultiplier != null
+                ? fmtX(Math.round(wlMultiplier * 100) / 100)
+                : '—'
+            }
+          />
+          <StatCell variant="bare" label="Total wins" value={fmt(totalWins)} />
+          <label className="px-3 py-2.5 block">
+            <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
+              Start bal
+            </span>
+            <input
+              type="number"
+              placeholder="0.00"
+              value={startBalance}
+              onChange={(e) => updateHunt({ startBalance: e.target.value })}
+              className={`w-28 ${inputCls} tabular-nums`}
+            />
+          </label>
+          <label className="px-3 py-2.5 block">
+            <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
+              Finish bal
+            </span>
+            <input
+              type="number"
+              placeholder="0.00"
+              value={finishBalance}
+              onChange={(e) => updateHunt({ finishBalance: e.target.value })}
+              className={`w-28 ${inputCls} tabular-nums`}
+            />
+          </label>
+        </div>
       </div>
 
       {/* Body */}
@@ -857,15 +1087,31 @@ export default function HuntTracker() {
                       {openedCount} / {bonuses.length} opened
                     </span>
                   </div>
+                  <div className="h-0.5 bg-white/10 mb-2">
+                    <div
+                      className="h-full bg-purple-bright transition-all"
+                      style={{
+                        width: `${bonuses.length ? (openedCount / bonuses.length) * 100 : 0}%`,
+                      }}
+                    />
+                  </div>
                   <div className="flex items-center gap-2 mb-1">
                     {currentBonus.super && (
-                      <span className="shrink-0 px-1 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">S</span>
+                      <span className="shrink-0 px-1 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">
+                        S
+                      </span>
                     )}
                     {currentBonus.fiveScat && (
-                      <Star size={14} aria-label="5 scatter" className="shrink-0 fill-yellow-400 text-yellow-400" />
+                      <Star
+                        size={14}
+                        aria-label="5 scatter"
+                        className="shrink-0 fill-gold-scatter text-gold-scatter"
+                      />
                     )}
                     {currentBonus.deferred && (
-                      <span className="shrink-0 px-1 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">Later</span>
+                      <span className="shrink-0 px-1 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">
+                        Later
+                      </span>
                     )}
                     <p className="font-black text-white-body text-2xl leading-tight truncate">
                       {currentBonus.slot}
@@ -875,55 +1121,61 @@ export default function HuntTracker() {
                     stake {fmt(currentBonus.stake)}
                     {currentBonus.caller ? ` · 📣 ${currentBonus.caller}` : ''}
                   </p>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <input
-                      type="number"
-                      autoFocus
-                      value={currentBonus.win || ''}
-                      onChange={(e) => updateBonusWin(currentBonus.id, e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key !== 'Enter') return;
-                        // Last slot: Enter opens the wrap-up prompt (finish balance
-                        // + export) instead of dead-ending on a clamped Next. It does
-                        // NOT auto-complete — the user confirms in the modal.
-                        if (openingIdx >= order.length - 1) setShowWrapUp(true);
-                        else advanceOpening();
-                      }}
-                      placeholder="Win ($)"
-                      aria-label="Win for current slot"
-                      className="flex-1 min-w-[120px] bg-zinc-broadcast/70 border border-purple-gamba/50 px-3 py-2 text-base text-right text-white-body focus:border-purple-bright focus:outline-none tabular-nums"
-                    />
+                  <input
+                    type="number"
+                    autoFocus
+                    value={currentBonus.win || ''}
+                    onChange={(e) =>
+                      updateBonusWin(currentBonus.id, e.target.value)
+                    }
+                    onKeyDown={(e) => {
+                      if (e.key !== 'Enter') return;
+                      // Last slot: Enter opens the wrap-up prompt (finish balance
+                      // + export) instead of dead-ending on a clamped Next. It does
+                      // NOT auto-complete — the user confirms in the modal.
+                      if (openingIdx >= order.length - 1) setShowWrapUp(true);
+                      else advanceOpening();
+                    }}
+                    placeholder="Win ($)"
+                    aria-label="Win for current slot"
+                    className="w-full bg-zinc-broadcast/70 border border-purple-gamba/50 px-3 py-2 text-base text-right text-white-body focus:border-purple-bright focus:outline-none tabular-nums"
+                  />
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    <button
+                      type="button"
+                      onClick={prevOpening}
+                      disabled={openingIdx === 0}
+                      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border border-white/15 text-white/60 hover:text-white-body hover:border-white/30 transition-colors duration-150 disabled:opacity-30"
+                    >
+                      <ArrowLeft size={12} aria-hidden="true" />
+                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                        Prev
+                      </span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => toggleDeferred(currentBonus.id)}
                       title="Come back to this slot later"
-                      className={`inline-flex items-center gap-1.5 px-3 py-2 border transition-colors duration-150 ${
+                      className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border transition-colors duration-150 ${
                         currentBonus.deferred
                           ? 'border-orange-admin bg-orange-admin/10 text-orange-admin'
                           : 'border-white/15 text-white/60 hover:text-white-body hover:border-white/30'
                       }`}
                     >
                       <Clock size={13} aria-hidden="true" />
-                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Later</span>
-                    </button>
-                  </div>
-                  <div className="flex items-center gap-2 mt-2">
-                    <button
-                      type="button"
-                      onClick={prevOpening}
-                      disabled={openingIdx === 0}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-white/15 text-white/60 hover:text-white-body hover:border-white/30 transition-colors duration-150 disabled:opacity-30"
-                    >
-                      <ArrowLeft size={12} aria-hidden="true" />
-                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Prev</span>
+                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                        Later
+                      </span>
                     </button>
                     <button
                       type="button"
                       onClick={advanceOpening}
                       disabled={openingIdx >= order.length - 1}
-                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-purple-gamba text-white-body hover:bg-purple-bright transition-colors duration-150 disabled:opacity-30"
+                      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-purple-gamba text-white-body hover:bg-purple-bright transition-colors duration-150 disabled:opacity-30"
                     >
-                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Next</span>
+                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                        Next
+                      </span>
                       <SkipForward size={12} aria-hidden="true" />
                     </button>
                   </div>
@@ -936,10 +1188,15 @@ export default function HuntTracker() {
                   {nextBonus ? (
                     <p className="font-bold text-white-body text-sm truncate mt-0.5 tabular-nums">
                       {nextBonus.slot}
-                      <span className="text-white/40 font-normal"> · {fmt(nextBonus.stake)}</span>
+                      <span className="text-white/40 font-normal">
+                        {' '}
+                        · {fmt(nextBonus.stake)}
+                      </span>
                     </p>
                   ) : (
-                    <p className="text-white/40 text-sm mt-0.5">Last slot — complete the hunt when ready.</p>
+                    <p className="text-white/40 text-sm mt-0.5">
+                      Last slot — complete the hunt when ready.
+                    </p>
                   )}
                 </div>
               </div>
@@ -947,157 +1204,189 @@ export default function HuntTracker() {
 
             {/* COLLECTING — add bonus form */}
             {phase === 'collecting' && (
-            <div className="border border-white/8 bg-zinc-broadcast/40 p-3 space-y-2">
-              <SlotAutocomplete
-                value={slotInput}
-                onChange={setSlotInput}
-                placeholder="Slot name"
-                className={`w-full ${inputCls}`}
-                onKeyDown={(e) => e.key === 'Enter' && addBonus()}
-              />
-              <input
-                type="number"
-                placeholder="Stake ($)"
-                value={stakeInput}
-                onChange={(e) => setStakeInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && addBonus()}
-                className={`w-full ${inputCls}`}
-              />
-              <div className="grid grid-cols-2 gap-2">
+              <div
+                data-tour="add-form"
+                className="border border-white/8 bg-zinc-broadcast/40 p-4 space-y-3"
+              >
+                <SlotAutocomplete
+                  value={slotInput}
+                  onChange={setSlotInput}
+                  placeholder="Slot name"
+                  className={`w-full ${inputCls}`}
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && addBonus()}
+                />
+                <input
+                  type="number"
+                  placeholder="Stake ($)"
+                  value={stakeInput}
+                  onChange={(e) => setStakeInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addBonus()}
+                  className={`w-full ${inputCls}`}
+                />
+                <input
+                  type="text"
+                  list="hunt-callers"
+                  placeholder="Slot caller (optional)"
+                  value={callerInput}
+                  onChange={(e) => setCallerInput(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addBonus()}
+                  className={`w-full ${inputCls}`}
+                />
+                <datalist id="hunt-callers">
+                  {gamblers.map((g) => (
+                    <option key={g.id} value={g.name} />
+                  ))}
+                </datalist>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSuperInput((s) => !s)}
+                    aria-pressed={superInput}
+                    className={`inline-flex items-center justify-center gap-2 px-3 py-2.5 border transition-colors duration-150 ${
+                      superInput
+                        ? 'border-orange-admin bg-orange-admin/10 text-orange-admin'
+                        : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
+                    }`}
+                  >
+                    <span
+                      className={`text-[11px] font-bold font-mono leading-none ${superInput ? 'text-orange-admin' : ''}`}
+                    >
+                      S
+                    </span>
+                    <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                      Super
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFiveScatInput((s) => !s)}
+                    aria-pressed={fiveScatInput}
+                    className={`inline-flex items-center justify-center gap-2 px-3 py-2.5 border transition-colors duration-150 ${
+                      fiveScatInput
+                        ? 'border-gold-scatter bg-gold-scatter/10 text-gold-scatter'
+                        : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
+                    }`}
+                  >
+                    <Star
+                      size={13}
+                      aria-hidden="true"
+                      className={fiveScatInput ? 'fill-gold-scatter' : ''}
+                    />
+                    <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                      5 scat
+                    </span>
+                  </button>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setSuperInput((s) => !s)}
-                  aria-pressed={superInput}
-                  className={`inline-flex items-center justify-center gap-2 px-3 py-2 border transition-colors duration-150 ${
-                    superInput
-                      ? 'border-orange-admin bg-orange-admin/10 text-orange-admin'
-                      : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
-                  }`}
+                  onClick={addBonus}
+                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
                 >
-                  <span className={`text-[11px] font-bold font-mono leading-none ${superInput ? 'text-orange-admin' : ''}`}>S</span>
+                  <Plus size={14} aria-hidden="true" />
                   <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                    Super
-                  </span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setFiveScatInput((s) => !s)}
-                  aria-pressed={fiveScatInput}
-                  className={`inline-flex items-center justify-center gap-2 px-3 py-2 border transition-colors duration-150 ${
-                    fiveScatInput
-                      ? 'border-yellow-400 bg-yellow-400/10 text-yellow-400'
-                      : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
-                  }`}
-                >
-                  <Star size={13} aria-hidden="true" className={fiveScatInput ? 'fill-yellow-400' : ''} />
-                  <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                    5 scat
+                    Log bonus
                   </span>
                 </button>
               </div>
-              <input
-                type="text"
-                list="hunt-callers"
-                placeholder="Slot caller (optional)"
-                value={callerInput}
-                onChange={(e) => setCallerInput(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && addBonus()}
-                className={`w-full ${inputCls}`}
-              />
-              <datalist id="hunt-callers">
-                {gamblers.map((g) => (
-                  <option key={g.id} value={g.name} />
-                ))}
-              </datalist>
-              <button
-                type="button"
-                onClick={addBonus}
-                className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
-              >
-                <Plus size={14} aria-hidden="true" />
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Log bonus</span>
-              </button>
-            </div>
             )}
 
             {bonuses.length === 0 ? (
-              <p className="text-center text-white/60 py-6 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                No bonuses logged.
+              <p className="text-center text-white/55 py-6 text-[12px] font-mono">
+                Nothing logged yet.
               </p>
             ) : (
               <div className="border border-white/8 overflow-x-auto [scrollbar-width:thin]">
                 <div className="min-w-[480px] text-sm">
                   {/* Column headers */}
-                  <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-2 border-b border-white/10 bg-zinc-broadcast/50 text-white/65 text-[10px] uppercase tracking-eyebrow-md font-mono font-bold">
+                  <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-2 border-b border-white/10 bg-zinc-broadcast/50 sticky top-0 z-10 text-white/65 text-[10px] uppercase tracking-eyebrow-md font-mono font-bold">
                     <span className="w-6" aria-hidden="true" />
                     <span className="text-left">Slot</span>
                     {phase === 'opening' ? (
                       <span className="text-right w-20 px-1">Stake</span>
                     ) : (
-                    <button
-                      type="button"
-                      onClick={cycleStakeSort}
-                      title={
-                        bonusSort == null
-                          ? 'Sort by stake (high to low)'
-                          : bonusSort === 'stake-desc'
-                            ? 'Sort by stake (low to high)'
-                            : 'Clear sort — back to manual order'
-                      }
-                      className={`text-right w-20 px-1 inline-flex items-center justify-end gap-1 uppercase tracking-eyebrow-md transition-colors ${
-                        bonusSort ? 'text-emerald-signal' : 'hover:text-white-body'
-                      }`}
-                    >
-                      Stake
-                      {bonusSort === 'stake-desc' ? (
-                        <ArrowDown size={11} aria-hidden="true" />
-                      ) : bonusSort === 'stake-asc' ? (
-                        <ArrowUp size={11} aria-hidden="true" />
-                      ) : (
-                        <ArrowUpDown size={11} aria-hidden="true" className="text-white/30" />
-                      )}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={cycleStakeSort}
+                        title={
+                          bonusSort == null
+                            ? 'Sort by stake (high to low)'
+                            : bonusSort === 'stake-desc'
+                              ? 'Sort by stake (low to high)'
+                              : 'Clear sort — back to manual order'
+                        }
+                        className={`text-right w-20 px-1 inline-flex items-center justify-end gap-1 uppercase tracking-eyebrow-md transition-colors ${
+                          bonusSort
+                            ? 'text-emerald-signal'
+                            : 'hover:text-white-body'
+                        }`}
+                      >
+                        Stake
+                        {bonusSort === 'stake-desc' ? (
+                          <ArrowDown size={11} aria-hidden="true" />
+                        ) : bonusSort === 'stake-asc' ? (
+                          <ArrowUp size={11} aria-hidden="true" />
+                        ) : (
+                          <ArrowUpDown
+                            size={11}
+                            aria-hidden="true"
+                            className="text-white/30"
+                          />
+                        )}
+                      </button>
                     )}
                     <span className="text-right w-24">Win</span>
                     <span className="text-right w-16 px-1">X</span>
                     <span className="w-6" aria-hidden="true" />
                   </div>
                   {/* Sortable rows. Drag only in manual mode (bonusSort == null);
-                      while a stake sort is active the list is a read-only lens. */}
-                  <DndContext
-                    sensors={sensors}
-                    collisionDetection={closestCenter}
-                    onDragEnd={handleBonusDragEnd}
-                  >
-                    <SortableContext
-                      items={rowList.map((b) => b.id)}
-                      strategy={verticalListSortingStrategy}
+                      while a stake sort is active the list is a read-only lens.
+                      Capped height with internal scroll so a long hunt does not
+                      stretch the page; header + totals pin above/below. */}
+                  <CappedScroll maxClass="max-h-[60vh]">
+                    <DndContext
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleBonusDragEnd}
                     >
-                      {rowList.map((b) => (
-                        <SortableBonusRow
-                          key={b.id}
-                          bonus={b}
-                          reqX={reqX}
-                          opening={phase === 'opening'}
-                          isCurrent={phase === 'opening' && currentBonus?.id === b.id}
-                          onJump={(id) => gotoOpening(order.findIndex((o) => o.id === id))}
-                          onWin={updateBonusWin}
-                          onStake={updateBonusStake}
-                          onRemove={removeBonus}
-                          onToggleMarker={toggleBonusMarker}
-                          onCaller={updateBonusCaller}
-                          editingCaller={editingCallerId === b.id}
-                          setEditingCaller={setEditingCallerId}
-                        />
-                      ))}
-                    </SortableContext>
-                  </DndContext>
+                      <SortableContext
+                        items={rowList.map((b) => b.id)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        {rowList.map((b) => (
+                          <SortableBonusRow
+                            key={b.id}
+                            bonus={b}
+                            reqX={reqX}
+                            opening={phase === 'opening'}
+                            isCurrent={
+                              phase === 'opening' && currentBonus?.id === b.id
+                            }
+                            onJump={(id) =>
+                              gotoOpening(order.findIndex((o) => o.id === id))
+                            }
+                            onWin={updateBonusWin}
+                            onStake={updateBonusStake}
+                            onRemove={removeBonus}
+                            onToggleMarker={toggleBonusMarker}
+                            onCaller={updateBonusCaller}
+                            editingCaller={editingCallerId === b.id}
+                            setEditingCaller={setEditingCallerId}
+                          />
+                        ))}
+                      </SortableContext>
+                    </DndContext>
+                  </CappedScroll>
                   {/* Totals */}
-                  <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-2 border-t border-white/10 bg-zinc-broadcast/50 text-[10px] uppercase tracking-eyebrow-md font-mono font-bold text-white/70">
+                  <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-2 border-t border-white/10 bg-zinc-broadcast/50 sticky bottom-0 z-10 text-[10px] uppercase tracking-eyebrow-md font-mono font-bold text-white/70">
                     <span className="w-6" aria-hidden="true" />
                     <span className="text-left text-white/65">Totals</span>
-                    <span className="text-right w-20 px-1 tabular-nums">{fmt(totalStakes)}</span>
-                    <span className="text-right w-24 tabular-nums">{fmt(totalWins)}</span>
+                    <span className="text-right w-20 px-1 tabular-nums">
+                      {fmt(totalStakes)}
+                    </span>
+                    <span className="text-right w-24 tabular-nums">
+                      {fmt(totalWins)}
+                    </span>
                     <span className="w-16 px-1" aria-hidden="true" />
                     <span className="w-6" aria-hidden="true" />
                   </div>
@@ -1106,54 +1395,16 @@ export default function HuntTracker() {
             )}
           </div>
 
-          {/* RIGHT — Stats / Split / Banned */}
+          {/* RIGHT — Split / Banned / Suggestions / Callers (quiet) */}
           <div className="space-y-5">
-            <div className="space-y-3">
-              <PanelLabel code="02" icon={DollarSign} label="Financials" />
-              <div className="grid grid-cols-2 gap-3">
-                <label className="block">
-                  <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">Start balance</span>
-                  <input
-                    type="number"
-                    placeholder="0.00"
-                    value={startBalance}
-                    onChange={(e) => updateHunt({ startBalance: e.target.value })}
-                    className={`w-full ${inputCls} tabular-nums`}
-                  />
-                </label>
-                <label className="block">
-                  <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">Finish balance</span>
-                  <input
-                    type="number"
-                    placeholder="0.00"
-                    value={finishBalance}
-                    onChange={(e) => updateHunt({ finishBalance: e.target.value })}
-                    className={`w-full ${inputCls} tabular-nums`}
-                  />
-                </label>
-              </div>
-              <div className="grid grid-cols-2 gap-2 pt-1">
-                <StatCell
-                  label="Profit"
-                  value={
-                    profit == null ? '—' : (
-                      <span className={profit >= 0 ? 'text-emerald-signal' : 'text-red-destructive'}>
-                        {profit >= 0 ? '+' : ''}{fmt(profit)}
-                      </span>
-                    )
-                  }
-                />
-                <StatCell label="Req X" value={reqX != null ? `${reqX.toFixed(1)}x` : '—'} />
-                <StatCell
-                  label="W/L Multiplier"
-                  value={wlMultiplier != null ? fmtX(Math.round(wlMultiplier * 100) / 100) : '—'}
-                />
-                <StatCell label="Total wins" value={fmt(totalWins)} />
-              </div>
-            </div>
 
             <div className="space-y-3">
-              <PanelLabel code="03" icon={Users} label="Squad split" accent="purple" />
+              <PanelLabel
+                icon={Users}
+                label="Squad split"
+                accent="purple"
+                quiet
+              />
               <div className="flex gap-2">
                 <input
                   type="text"
@@ -1182,25 +1433,34 @@ export default function HuntTracker() {
               </div>
 
               {gamblers.length === 0 ? (
-                <p className="text-center text-white/60 py-4 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                  No squad added.
+                <p className="text-center text-white/55 py-4 text-[12px] font-mono">
+                  No squad yet.
                 </p>
               ) : (
-                <div className="border border-white/8 overflow-x-auto [scrollbar-width:thin]">
+                <div className="border border-white/8 overflow-x-auto overflow-y-auto max-h-[60vh] [scrollbar-width:thin]">
                   <table className="w-full text-sm min-w-[480px]">
                     <thead>
-                      <tr className="border-b border-white/10 text-white/65 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono">
+                      <tr className="border-b border-white/10 text-white/65 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono sticky top-0 z-10">
                         <th className="text-left px-3 py-2 font-bold">Name</th>
-                        <th className="text-right px-3 py-2 font-bold">In for</th>
+                        <th className="text-right px-3 py-2 font-bold">
+                          In for
+                        </th>
                         <th className="text-right px-3 py-2 font-bold">%</th>
-                        <th className="text-right px-3 py-2 font-bold">Payout</th>
+                        <th className="text-right px-3 py-2 font-bold">
+                          Payout
+                        </th>
                         <th className="px-2 py-2" />
                       </tr>
                     </thead>
                     <tbody>
                       {gamblerRows.map((g) => (
-                        <tr key={g.id} className="border-b border-white/5 hover:bg-zinc-broadcast/40 transition-colors">
-                          <td className="px-3 py-2.5 font-bold text-white-body">{g.name}</td>
+                        <tr
+                          key={g.id}
+                          className="border-b border-white/5 hover:bg-zinc-broadcast/40 transition-colors"
+                        >
+                          <td className="px-3 py-2.5 font-bold text-white-body">
+                            {g.name}
+                          </td>
                           <td className="px-3 py-2.5 text-right text-white/70 tabular-nums">
                             {editingGamblerId === g.id ? (
                               <input
@@ -1209,10 +1469,13 @@ export default function HuntTracker() {
                                 step="0.01"
                                 autoFocus
                                 value={g.inFor}
-                                onChange={(e) => updateGamblerInFor(g.id, e.target.value)}
+                                onChange={(e) =>
+                                  updateGamblerInFor(g.id, e.target.value)
+                                }
                                 onBlur={() => setEditingGamblerId(null)}
                                 onKeyDown={(e) => {
-                                  if (e.key === 'Enter' || e.key === 'Escape') setEditingGamblerId(null);
+                                  if (e.key === 'Enter' || e.key === 'Escape')
+                                    setEditingGamblerId(null);
                                 }}
                                 className="w-24 bg-zinc-broadcast/80 border border-purple-gamba/50 px-2 py-1 text-right text-white-body focus:outline-none tabular-nums"
                               />
@@ -1230,11 +1493,15 @@ export default function HuntTracker() {
                           <td className="px-3 py-2.5 text-right text-purple-bright font-bold tabular-nums">
                             {g.pct.toFixed(2)}%
                           </td>
-                          <td className={`px-3 py-2.5 text-right font-bold tabular-nums ${
-                            g.payout != null
-                              ? g.payout >= g.inFor ? 'text-emerald-signal' : 'text-red-destructive'
-                              : 'text-white/60'
-                          }`}>
+                          <td
+                            className={`px-3 py-2.5 text-right font-bold tabular-nums ${
+                              g.payout != null
+                                ? g.payout >= g.inFor
+                                  ? 'text-emerald-signal'
+                                  : 'text-red-destructive'
+                                : 'text-white/60'
+                            }`}
+                          >
                             {g.payout != null ? fmt(g.payout) : '—'}
                           </td>
                           <td className="px-2 py-2.5">
@@ -1251,12 +1518,20 @@ export default function HuntTracker() {
                       ))}
                     </tbody>
                     <tfoot>
-                      <tr className="border-t border-white/10 bg-zinc-broadcast/50 text-[10px] uppercase tracking-eyebrow-md font-mono">
-                        <td className="px-3 py-2 font-bold text-white/65">Total</td>
-                        <td className="px-3 py-2 text-right font-bold text-white/70 tabular-nums">{fmt(totalBuyIns)}</td>
-                        <td className="px-3 py-2 text-right font-bold text-white/70 tabular-nums">100.00%</td>
+                      <tr className="border-t border-white/10 bg-zinc-broadcast/50 text-[10px] uppercase tracking-eyebrow-md font-mono sticky bottom-0 z-10">
+                        <td className="px-3 py-2 font-bold text-white/65">
+                          Total
+                        </td>
                         <td className="px-3 py-2 text-right font-bold text-white/70 tabular-nums">
-                          {finishBalance !== '' ? fmt(Number(finishBalance)) : '—'}
+                          {fmt(totalBuyIns)}
+                        </td>
+                        <td className="px-3 py-2 text-right font-bold text-white/70 tabular-nums">
+                          100.00%
+                        </td>
+                        <td className="px-3 py-2 text-right font-bold text-white/70 tabular-nums">
+                          {finishBalance !== ''
+                            ? fmt(Number(finishBalance))
+                            : '—'}
                         </td>
                         <td />
                       </tr>
@@ -1267,9 +1542,14 @@ export default function HuntTracker() {
             </div>
 
             <div className="space-y-2">
-              <PanelLabel code="04" icon={TrendingDown} label="Soft banned" accent="orange" />
+              <PanelLabel
+                icon={TrendingDown}
+                label="Soft banned"
+                accent="orange"
+                quiet
+              />
               <textarea
-                placeholder="Slots to avoid this hunt — comma or newline separated."
+                placeholder="Slots to avoid this hunt. Comma or newline separated."
                 value={bannedSlots}
                 onChange={(e) => updateHunt({ bannedSlots: e.target.value })}
                 rows={3}
@@ -1285,21 +1565,19 @@ export default function HuntTracker() {
               onLand={startLanding}
               onClear={clearSuggestions}
               isLoggedIn={isLoggedIn}
-              linkId={activeHunt.intakeLinkId || null}
-              linkOpen={activeHunt.intakeOpen !== false}
-              linkBusy={linkBusy}
-              linkError={linkError}
-              onCreateLink={createIntakeLink}
-              onToggleLink={toggleIntakeOpen}
-              onDeleteLink={deleteIntakeLink}
             />
 
             {/* Caller stats */}
             <div className="space-y-3">
-              <PanelLabel code="07" icon={Megaphone} label="Slot calls" accent="purple" />
+              <PanelLabel
+                icon={Megaphone}
+                label="Slot calls"
+                accent="purple"
+                quiet
+              />
               {callerStats.leaderboard.length === 0 ? (
-                <p className="text-center text-white/60 py-4 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                  No calls tagged.
+                <p className="text-center text-white/55 py-4 text-[12px] font-mono">
+                  No calls tagged yet.
                 </p>
               ) : (
                 <>
@@ -1336,8 +1614,9 @@ export default function HuntTracker() {
                       </p>
                     </div>
                     <div className="px-3 py-2 bg-zinc-broadcast/50 border border-red-destructive/30">
-                      <p className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-red-destructive mb-1 font-mono">
-                        🧱 Brick of the hunt
+                      <p className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-red-destructive mb-1 font-mono inline-flex items-center gap-1.5">
+                        <TrendingDown size={11} aria-hidden="true" /> Brick of the
+                        hunt
                       </p>
                       <p className="text-sm font-bold text-white-body tabular-nums">
                         {callerStats.worstCall
@@ -1346,8 +1625,8 @@ export default function HuntTracker() {
                       </p>
                     </div>
                     <div className="px-3 py-2 bg-zinc-broadcast/50 border border-purple-gamba/30">
-                      <p className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-purple-bright mb-1 font-mono">
-                        Most consistent
+                      <p className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-purple-bright mb-1 font-mono inline-flex items-center gap-1.5">
+                        <Target size={11} aria-hidden="true" /> Most consistent
                       </p>
                       <p className="text-sm font-bold text-white-body tabular-nums">
                         {callerStats.bestAvgCaller
@@ -1370,65 +1649,75 @@ export default function HuntTracker() {
           label="Hunt complete"
           panelClassName="w-full max-w-md border border-emerald-signal/40 bg-zinc-card p-5 space-y-4"
         >
-            <div>
-              <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono mb-1">
-                ▸ Hunt complete
-              </p>
-              <p className="text-sm text-white/65 leading-snug">
-                All slots opened. Fill in the finish balance, then export the results.
-              </p>
-            </div>
-            <label className="block">
-              <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
-                Finish balance ($)
+          <div>
+            <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono mb-1">
+              ▸ Hunt complete
+            </p>
+            <p className="text-sm text-white/65 leading-snug">
+              All slots opened. Fill in the finish balance, then export the
+              results.
+            </p>
+          </div>
+          <label className="block">
+            <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
+              Finish balance ($)
+            </span>
+            <input
+              type="number"
+              autoFocus
+              placeholder="0.00"
+              value={finishBalance}
+              onChange={(e) => updateHunt({ finishBalance: e.target.value })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleComplete();
+                if (e.key === 'Escape') setShowWrapUp(false);
+              }}
+              className={`w-full ${inputCls} tabular-nums`}
+            />
+          </label>
+          <div className="grid grid-cols-2 gap-2">
+            <StatCell
+              label="Profit"
+              value={
+                profit == null ? (
+                  '—'
+                ) : (
+                  <span
+                    className={
+                      profit >= 0
+                        ? 'text-emerald-signal'
+                        : 'text-red-destructive'
+                    }
+                  >
+                    {profit >= 0 ? '+' : ''}
+                    {fmt(profit)}
+                  </span>
+                )
+              }
+            />
+            <StatCell label="Total wins" value={fmt(totalWins)} />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={handleComplete}
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
+            >
+              <CheckCircle2 size={14} aria-hidden="true" />
+              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                Complete + Export
               </span>
-              <input
-                type="number"
-                autoFocus
-                placeholder="0.00"
-                value={finishBalance}
-                onChange={(e) => updateHunt({ finishBalance: e.target.value })}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleComplete();
-                  if (e.key === 'Escape') setShowWrapUp(false);
-                }}
-                className={`w-full ${inputCls} tabular-nums`}
-              />
-            </label>
-            <div className="grid grid-cols-2 gap-2">
-              <StatCell
-                label="Profit"
-                value={
-                  profit == null ? '—' : (
-                    <span className={profit >= 0 ? 'text-emerald-signal' : 'text-red-destructive'}>
-                      {profit >= 0 ? '+' : ''}{fmt(profit)}
-                    </span>
-                  )
-                }
-              />
-              <StatCell label="Total wins" value={fmt(totalWins)} />
-            </div>
-            <div className="flex gap-2 pt-1">
-              <button
-                type="button"
-                onClick={handleComplete}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
-              >
-                <CheckCircle2 size={14} aria-hidden="true" />
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                  Complete + Export
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowWrapUp(false)}
-                className="px-4 py-2 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
-              >
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                  Keep editing
-                </span>
-              </button>
-            </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowWrapUp(false)}
+              className="px-4 py-2 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
+            >
+              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                Keep editing
+              </span>
+            </button>
+          </div>
         </Modal>
       )}
 
@@ -1439,57 +1728,66 @@ export default function HuntTracker() {
           label="Bonus landed — add to hunt"
           panelClassName="w-full max-w-sm border border-emerald-signal/40 bg-zinc-card p-5 space-y-3"
         >
-            <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono">
-              ▸ Bonus landed
+          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono">
+            ▸ Bonus landed
+          </p>
+          <div>
+            <p className="font-black text-white-body text-xl leading-tight truncate">
+              {landingSuggestion.slot.name}
             </p>
-            <div>
-              <p className="font-black text-white-body text-xl leading-tight truncate">
-                {landingSuggestion.slot.name}
-              </p>
-              <p className="text-[11px] font-mono text-purple-bright mt-0.5 truncate">
-                📣 {landingSuggestion.person}
-              </p>
-            </div>
-            <label className="block">
-              <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
-                Stake ($)
+            <p className="text-[11px] font-mono text-purple-bright mt-0.5 truncate">
+              📣 {landingSuggestion.person}
+            </p>
+          </div>
+          <label className="block">
+            <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
+              Stake ($)
+            </span>
+            <input
+              type="number"
+              autoFocus
+              placeholder="0.00"
+              value={landStakeInput}
+              onChange={(e) => setLandStakeInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') confirmLanding();
+                if (e.key === 'Escape') setLandingSuggestion(null);
+              }}
+              className={`w-full ${inputCls} tabular-nums`}
+            />
+          </label>
+          <div className="flex gap-2 pt-1">
+            <button
+              type="button"
+              onClick={confirmLanding}
+              className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
+            >
+              <Plus size={14} aria-hidden="true" />
+              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                Add to hunt
               </span>
-              <input
-                type="number"
-                autoFocus
-                placeholder="0.00"
-                value={landStakeInput}
-                onChange={(e) => setLandStakeInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') confirmLanding();
-                  if (e.key === 'Escape') setLandingSuggestion(null);
-                }}
-                className={`w-full ${inputCls} tabular-nums`}
-              />
-            </label>
-            <div className="flex gap-2 pt-1">
-              <button
-                type="button"
-                onClick={confirmLanding}
-                className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
-              >
-                <Plus size={14} aria-hidden="true" />
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                  Add to hunt
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setLandingSuggestion(null)}
-                className="px-4 py-2 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
-              >
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                  Cancel
-                </span>
-              </button>
-            </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setLandingSuggestion(null)}
+              className="px-4 py-2 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
+            >
+              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                Cancel
+              </span>
+            </button>
+          </div>
         </Modal>
       )}
+
+      <HuntTour
+        open={tourOpen}
+        isLoggedIn={isLoggedIn}
+        onClose={() => {
+          setTourOpen(false);
+          markTourSeen();
+        }}
+      />
     </div>
   );
 }

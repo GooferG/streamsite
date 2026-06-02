@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   Plus,
   X,
@@ -312,6 +312,11 @@ export default function HuntTracker() {
   const [tierInput, setTierInput] = useState('regular');
   const [hiddenInput, setHiddenInput] = useState(false);
   const [callerInput, setCallerInput] = useState('');
+  // "Caller is hot": when on, the caller persists across adds (one person calling
+  // several slots in a row). Session-only, not persisted. Focus returns to the slot
+  // field after each add via slotRef.
+  const [callerHot, setCallerHot] = useState(false);
+  const slotRef = useRef(null);
   const [editingCallerId, setEditingCallerId] = useState(null);
   // Header overflow menu + coachmark tour.
   const [menuOpen, setMenuOpen] = useState(false);
@@ -444,7 +449,8 @@ export default function HuntTracker() {
     setStakeInput('');
     setTierInput('regular');
     setHiddenInput(false);
-    setCallerInput('');
+    if (!callerHot) setCallerInput('');
+    slotRef.current?.focus();
   }
   function removeBonus(id) {
     updateHunt({ bonuses: bonuses.filter((b) => b.id !== id) });
@@ -1206,6 +1212,7 @@ export default function HuntTracker() {
                 className="border border-white/8 bg-zinc-broadcast/40 p-4 space-y-3"
               >
                 <SlotAutocomplete
+                  ref={slotRef}
                   value={slotInput}
                   onChange={setSlotInput}
                   placeholder="Slot name"
@@ -1221,15 +1228,30 @@ export default function HuntTracker() {
                   onKeyDown={(e) => e.key === 'Enter' && addBonus()}
                   className={`w-full ${inputCls}`}
                 />
-                <input
-                  type="text"
-                  list="hunt-callers"
-                  placeholder="Slot caller (optional)"
-                  value={callerInput}
-                  onChange={(e) => setCallerInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && addBonus()}
-                  className={`w-full ${inputCls}`}
-                />
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    list="hunt-callers"
+                    placeholder="Slot caller (optional)"
+                    value={callerInput}
+                    onChange={(e) => setCallerInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && addBonus()}
+                    className={`flex-1 ${inputCls}`}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setCallerHot((h) => !h)}
+                    aria-pressed={callerHot}
+                    title={callerHot ? 'Caller is hot — kept after each bonus. Click to clear after add.' : 'Keep this caller after logging each bonus'}
+                    className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-2.5 border transition-colors duration-150 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono ${
+                      callerHot
+                        ? 'border-orange-admin bg-orange-admin/10 text-orange-admin'
+                        : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
+                    }`}
+                  >
+                    {callerHot ? '🔥 Hot' : 'Hot?'}
+                  </button>
+                </div>
                 <datalist id="hunt-callers">
                   {gamblers.map((g) => (
                     <option key={g.id} value={g.name} />

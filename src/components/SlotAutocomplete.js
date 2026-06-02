@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
+import { useState, useEffect, useRef, useId, forwardRef, useImperativeHandle } from 'react';
 import { Dice6 } from 'lucide-react';
 import rawSlots from '../data/slots';
 
@@ -16,8 +16,13 @@ const SlotAutocomplete = forwardRef(function SlotAutocomplete(
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
+  // -1 = nothing highlighted (typing freely); >=0 highlights a suggestion for
+  // arrow/Enter/Tab selection.
+  const [activeIndex, setActiveIndex] = useState(-1);
   const containerRef = useRef(null);
   const inputRef = useRef(null);
+  const listRef = useRef(null);
+  const listId = useId();
   useImperativeHandle(ref, () => ({
     focus: () => inputRef.current && inputRef.current.focus(),
   }));
@@ -26,6 +31,7 @@ const SlotAutocomplete = forwardRef(function SlotAutocomplete(
     if (!focused || !value.trim()) {
       setSuggestions([]);
       setOpen(false);
+      setActiveIndex(-1);
       return;
     }
     const q = value.toLowerCase();
@@ -34,7 +40,15 @@ const SlotAutocomplete = forwardRef(function SlotAutocomplete(
       .slice(0, 8);
     setSuggestions(matches);
     setOpen(matches.length > 0);
+    setActiveIndex(-1); // reset highlight whenever the query changes
   }, [value, focused]);
+
+  // Keep the highlighted row scrolled into view.
+  useEffect(() => {
+    if (activeIndex < 0 || !listRef.current) return;
+    const el = listRef.current.children[activeIndex];
+    if (el) el.scrollIntoView({ block: 'nearest' });
+  }, [activeIndex]);
 
   useEffect(() => {
     function handleClick(e) {
@@ -50,6 +64,37 @@ const SlotAutocomplete = forwardRef(function SlotAutocomplete(
     onChange(slot.name);
     if (onSelect) onSelect(slot);
     setOpen(false);
+    setActiveIndex(-1);
+  }
+
+  function handleKeyDown(e) {
+    // Let the dropdown own navigation keys when it's open; otherwise defer
+    // entirely to the parent's handler (preserves existing callers).
+    if (open && suggestions.length) {
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setActiveIndex((i) => (i + 1) % suggestions.length);
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setActiveIndex((i) => (i <= 0 ? suggestions.length - 1 : i - 1));
+        return;
+      }
+      if (e.key === 'Escape') {
+        setOpen(false);
+        setActiveIndex(-1);
+        return;
+      }
+      // Enter or Tab on a highlighted row commits it. Tab still moves focus
+      // afterward (we don't preventDefault on Tab) for natural form flow.
+      if ((e.key === 'Enter' || e.key === 'Tab') && activeIndex >= 0) {
+        if (e.key === 'Enter') e.preventDefault();
+        select(suggestions[activeIndex]);
+        return;
+      }
+    }
+    if (onKeyDown) onKeyDown(e);
   }
 
   return (
@@ -61,19 +106,33 @@ const SlotAutocomplete = forwardRef(function SlotAutocomplete(
         onChange={(e) => onChange(e.target.value)}
         onFocus={() => setFocused(true)}
         onBlur={() => setFocused(false)}
-        onKeyDown={onKeyDown}
+        onKeyDown={handleKeyDown}
         placeholder={placeholder}
         className={className}
         autoFocus={autoFocus}
         aria-label={ariaLabel}
+        role="combobox"
+        aria-expanded={open}
+        aria-controls={listId}
+        aria-autocomplete="list"
       />
       {open && (
-        <ul className="absolute z-50 left-0 right-0 mt-1 bg-zinc-900 border border-emerald-signal/30 rounded-lg overflow-hidden shadow-xl max-h-64 overflow-y-auto">
-          {suggestions.map((s) => (
+        <ul
+          ref={listRef}
+          id={listId}
+          role="listbox"
+          className="absolute z-50 left-0 right-0 mt-1 bg-zinc-900 border border-emerald-signal/30 rounded-lg overflow-hidden shadow-xl max-h-64 overflow-y-auto"
+        >
+          {suggestions.map((s, i) => (
             <li
               key={s.id}
+              role="option"
               onMouseDown={() => select(s)}
-              className="flex items-center gap-3 px-3 py-2 hover:bg-emerald-signal/10 cursor-pointer transition-colors"
+              onMouseEnter={() => setActiveIndex(i)}
+              aria-selected={i === activeIndex}
+              className={`flex items-center gap-3 px-3 py-2 cursor-pointer transition-colors ${
+                i === activeIndex ? 'bg-emerald-signal/15' : 'hover:bg-emerald-signal/10'
+              }`}
             >
               {s.thumbnail ? (
                 <img

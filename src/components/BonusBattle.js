@@ -26,6 +26,8 @@ export function BattleBoard({
   onSpinResult,
   onSetRake,
   onSetEntryFee,
+  onLockEntries,
+  onUnlockEntries,
 }) {
   const [name, setName] = useState('');
   const [slot, setSlot] = useState('');
@@ -35,6 +37,12 @@ export function BattleBoard({
   const unplayed = players.filter((p) => !p.ran);
   const rakePct = battle?.rakePct ?? 10;
   const sorted = [...players].sort((a, b) => (b.payout || 0) - (a.payout || 0));
+
+  // Phase: 'lobby' = signups open; 'running' = entries locked, bonuses playing.
+  const phase = battle?.phase || 'lobby';
+  const lobby = phase === 'lobby';
+  // Add-player UI shows only while interactive AND in the lobby.
+  const showAdd = interactive && lobby;
 
   const submitPlayer = () => {
     if (!name.trim()) return;
@@ -55,15 +63,26 @@ export function BattleBoard({
         <p className="text-xs font-bold tracking-eyebrow-lg uppercase text-white/60 mb-4 flex items-center gap-2">
           <Swords size={14} className="text-emerald-signal" /> Players &amp; Pot
         </p>
-        <div className="border border-purple-gamba/70 bg-purple-gamba/10 p-4 mb-4">
+        <div className="relative overflow-hidden border border-purple-gamba/70 bg-purple-gamba/10 p-4 mb-4">
           <div className="flex items-center justify-between">
             <div className="text-[11px] tracking-eyebrow-md uppercase text-purple-bright">Total Pot</div>
             <div className="text-[10px] tracking-eyebrow-sm uppercase text-white/55 tabular-nums">
               {currency(derived.entryFee)} entry
             </div>
           </div>
-          <div className="text-3xl font-black text-white-body mt-1 tabular-nums">{currency(derived.totalPot)}</div>
-          <div className="text-[10px] tracking-eyebrow-sm uppercase text-white/45 mt-0.5 tabular-nums">
+          {/* Hero number with a faded ghost layer behind it (leaderboard look). */}
+          <div className="relative mt-1 leading-none">
+            <span
+              className="absolute -top-1 -left-0.5 text-[3.5rem] sm:text-[4rem] font-extrabold tabular-nums font-mono text-purple-gamba/15 leading-none select-none pointer-events-none"
+              aria-hidden="true"
+            >
+              {currency(derived.totalPot)}
+            </span>
+            <span className="relative block text-[3.5rem] sm:text-[4rem] font-extrabold tabular-nums font-mono text-white-body leading-none">
+              {currency(derived.totalPot)}
+            </span>
+          </div>
+          <div className="text-[10px] tracking-eyebrow-sm uppercase text-white/45 mt-1.5 tabular-nums">
             {currency(derived.entryFee)} × {derived.total} {derived.total === 1 ? 'player' : 'players'}
           </div>
         </div>
@@ -73,7 +92,7 @@ export function BattleBoard({
           <Stat n={derived.left} k="Left" border="border-white/10" text="text-crt-amber" />
         </div>
 
-        {interactive && (
+        {showAdd && (
           <div className="space-y-2 mb-4">
             <input
               value={name}
@@ -97,18 +116,28 @@ export function BattleBoard({
           </div>
         )}
 
+        {/* Roster. In the running phase rows are larger (no add UI competing
+            for space) and show a play-order index. */}
         <div className="space-y-2">
-          {players.map((p) => (
+          {players.map((p, i) => (
             <div
               key={p.id}
-              className={`flex items-center gap-2 border border-white/7 px-3 py-2.5 ${p.ran ? '' : 'opacity-60'}`}
+              className={`flex items-center gap-2 border border-white/7 ${
+                lobby ? 'px-3 py-2.5' : 'px-3 py-3.5'
+              } ${p.ran ? '' : 'opacity-70'} ${current && current.id === p.id ? 'border-amber-rust/60 bg-amber-rust/5' : ''}`}
             >
-              <span className="text-sm font-bold text-white-body truncate">{p.name}</span>
+              {!lobby && (
+                <span className="text-[11px] font-black text-white/30 tabular-nums w-5">{i + 1}</span>
+              )}
+              <span className={`font-bold text-white-body truncate ${lobby ? 'text-sm' : 'text-base'}`}>{p.name}</span>
               {p.slot && <span className="text-[10px] uppercase text-white/50 tracking-eyebrow-sm truncate">· {p.slot}</span>}
-              <span className={`ml-auto text-sm font-black tabular-nums ${p.ran ? 'text-emerald-signal' : 'text-white/40'}`}>
+              {!lobby && !p.ran && current?.id !== p.id && (
+                <span className="text-[9px] tracking-eyebrow-sm uppercase text-white/35">waiting</span>
+              )}
+              <span className={`ml-auto font-black tabular-nums ${lobby ? 'text-sm' : 'text-base'} ${p.ran ? 'text-emerald-signal' : 'text-white/40'}`}>
                 {p.ran ? currency(p.payout) : '—'}
               </span>
-              {interactive && (
+              {showAdd && (
                 <button type="button" onClick={() => onRemovePlayer?.(p.id)} aria-label={`Remove ${p.name}`} className="text-white/30 hover:text-red-destructive">
                   <X size={14} />
                 </button>
@@ -120,7 +149,29 @@ export function BattleBoard({
           )}
         </div>
 
-        {interactive && current && (
+        {/* Lock / unlock the lineup. */}
+        {interactive && lobby && (
+          <button
+            type="button"
+            onClick={onLockEntries}
+            disabled={players.length === 0}
+            className="w-full mt-4 px-4 py-3.5 bg-purple-gamba hover:bg-purple-bright text-white text-xs font-black tracking-eyebrow-lg uppercase font-mono transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            🔒 Lock entries &amp; start battle
+          </button>
+        )}
+        {interactive && !lobby && (
+          <button
+            type="button"
+            onClick={onUnlockEntries}
+            className="w-full mt-4 px-4 py-2.5 border border-white/15 text-white/55 hover:text-white-body hover:border-white/30 text-[10px] font-bold tracking-eyebrow-md uppercase font-mono transition-colors"
+          >
+            Unlock entries
+          </button>
+        )}
+
+        {/* Payout entry — running phase only, for the current player. */}
+        {interactive && !lobby && current && (
           <div className="border border-dashed border-emerald-signal/40 p-4 mt-4">
             <div className="text-[11px] tracking-eyebrow-md uppercase text-emerald-signal mb-2">
               {current.name} — How much did it pay?
@@ -146,17 +197,36 @@ export function BattleBoard({
 
       {/* ----- CENTER (desktop) / order-1 (mobile): Action ----- */}
       <div className="order-1 lg:order-2 border border-white/8 bg-zinc-card/50 p-5">
-        <p className="text-center text-[13px] tracking-eyebrow-lg uppercase text-purple-bright mb-2">
-          Who plays next?
-        </p>
-        {interactive ? (
-          <BattleWheel players={unplayed} onResult={onSpinResult} disabled={unplayed.length === 0} />
-        ) : (
-          <div className="border border-white/10 bg-zinc-broadcast h-56 flex items-center justify-center text-white/50 font-mono text-sm">
-            {current ? `Now playing: ${current.name}` : 'Waiting for the host to spin…'}
+        {lobby ? (
+          // Lobby: signups open. No wheel, no payout — just the call to add
+          // players and lock in.
+          <div className="text-center py-6">
+            <p className="text-[13px] tracking-eyebrow-lg uppercase text-purple-bright mb-2">Signups open</p>
+            <div className="border border-white/10 bg-zinc-broadcast h-44 sm:h-52 flex flex-col items-center justify-center gap-2 font-mono px-4">
+              <span className="text-4xl font-black text-white-body tabular-nums">{derived.total}</span>
+              <span className="text-[10px] tracking-eyebrow-md uppercase text-white/55">
+                {derived.total === 1 ? 'player' : 'players'} entered · pot {currency(derived.totalPot)}
+              </span>
+              <span className="text-xs text-white/45 mt-1 text-center">
+                {interactive ? 'Add players, then lock entries to start.' : 'Waiting for the host to start the battle…'}
+              </span>
+            </div>
           </div>
+        ) : (
+          <>
+            <p className="text-center text-[13px] tracking-eyebrow-lg uppercase text-purple-bright mb-2">
+              Who plays next?
+            </p>
+            {interactive ? (
+              <BattleWheel players={unplayed} onResult={onSpinResult} disabled={unplayed.length === 0} />
+            ) : (
+              <div className="border border-white/10 bg-zinc-broadcast h-56 flex items-center justify-center text-white/50 font-mono text-sm">
+                {current ? `Now playing: ${current.name}` : 'Waiting for the host to spin…'}
+              </div>
+            )}
+          </>
         )}
-        {current && (
+        {!lobby && current && (
           <div className="border border-amber-rust/60 bg-amber-rust/10 p-4 mt-5 text-center">
             <div className="text-[11px] tracking-eyebrow-md uppercase text-amber-rust">Now Playing</div>
             <div className="text-2xl font-black text-white-body mt-1">{current.name}</div>
@@ -193,11 +263,22 @@ export function BattleBoard({
           {derived.ran === 0 && <p className="text-xs text-white/40 font-mono py-4 text-center">No payouts entered yet.</p>}
         </div>
 
-        <div className="border border-purple-gamba/70 bg-purple-gamba/10 p-4 mt-4 text-center">
+        <div className="relative overflow-hidden border border-purple-gamba/70 bg-purple-gamba/10 p-4 mt-4 text-center">
           <div className="text-[12px] tracking-eyebrow-md uppercase text-purple-bright flex items-center justify-center gap-1.5">
             <Trophy size={13} /> Winner Takes All
           </div>
-          <div className="text-3xl font-black text-white-body my-1.5 tabular-nums">{currency(derived.potAfterRake)}</div>
+          {/* Hero prize number with ghost layer behind. */}
+          <div className="relative my-2 leading-none">
+            <span
+              className="absolute inset-0 flex items-center justify-center text-[3.25rem] sm:text-[3.75rem] font-extrabold tabular-nums font-mono text-purple-gamba/15 leading-none select-none pointer-events-none"
+              aria-hidden="true"
+            >
+              {currency(derived.potAfterRake)}
+            </span>
+            <span className="relative block text-[3.25rem] sm:text-[3.75rem] font-extrabold tabular-nums font-mono text-white-body leading-none">
+              {currency(derived.potAfterRake)}
+            </span>
+          </div>
           <div className="text-[12px] text-white/55 tabular-nums">
             Pot {currency(derived.totalPot)} − {rakePct}% rake ({currency(derived.rakeAmount)})
           </div>
@@ -300,6 +381,8 @@ export default function BonusBattle() {
     setCurrentPlayer,
     setRake,
     setEntryFee,
+    lockEntries,
+    unlockEntries,
     reset,
   } = store;
 
@@ -344,6 +427,8 @@ export default function BonusBattle() {
         onSpinResult={(p) => setCurrentPlayer(p.id)}
         onSetRake={setRake}
         onSetEntryFee={setEntryFee}
+        onLockEntries={lockEntries}
+        onUnlockEntries={unlockEntries}
       />
     </div>
   );

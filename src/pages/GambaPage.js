@@ -12,6 +12,7 @@ import { GAMBA_TOOLS } from '../data/gambaTools';
 // its own chunk and only downloads when one of these tools is opened.
 const SlotPicker = lazy(() => import('../components/SlotPicker'));
 const HuntTracker = lazy(() => import('../components/HuntTracker'));
+const BonusBattle = lazy(() => import('../components/BonusBattle'));
 
 // Shared on-brand fallback while a tool chunk loads.
 const ToolLoading = ({ label }) => (
@@ -332,6 +333,11 @@ export default function GambaPage() {
               {activeTool === 'hunt-tracker' && (
                 <Suspense fallback={<ToolLoading label="Loading hunt tracker…" />}>
                   <HuntTracker />
+                </Suspense>
+              )}
+              {activeTool === 'bonus-battle' && (
+                <Suspense fallback={<ToolLoading label="Loading bonus battle…" />}>
+                  <BonusBattle />
                 </Suspense>
               )}
               {activeTool === 'wheel' && (

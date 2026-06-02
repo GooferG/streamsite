@@ -58,6 +58,7 @@ const SuggestPage = lazy(() => import('./pages/SuggestPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const SuggestOverlay = lazy(() => import('./pages/SuggestOverlay'));
 const LiveHuntPage = lazy(() => import('./pages/LiveHuntPage'));
+const BattlePage = lazy(() => import('./pages/BattlePage'));
 const HuntSuggestPage = lazy(() => import('./pages/HuntSuggestPage'));
 
 // Product/overlay routes render without the brand chrome (footer, brand body
@@ -258,6 +259,7 @@ function StreamingSiteContent() {
             <Route path="hunt" element={null} />
             <Route path="bonus-hunts" element={null} />
             <Route path="hunt-tracker" element={null} />
+            <Route path="bonus-battle" element={null} />
           </Route>
           <Route path="/gaming" element={<GamingPage />} />
           <Route path="/admin" element={<AdminLayout />}>
@@ -282,6 +284,7 @@ function StreamingSiteContent() {
           <Route path="/discord-callback" element={<DiscordCallbackPage />} />
           <Route path="/suggest-overlay" element={<SuggestOverlay />} />
           <Route path="/live/:shareId" element={<LiveHuntPage />} />
+          <Route path="/battle/:ownerId" element={<BattlePage />} />
           <Route path="/hunt-suggest/:linkId" element={<HuntSuggestPage />} />
         </Routes>
         </Suspense>

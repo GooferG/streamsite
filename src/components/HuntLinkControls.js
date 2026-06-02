@@ -12,12 +12,14 @@ export default function HuntLinkControls({
   linkOpen,
   linkBusy,
   linkError,
+  linkRequiresPassword,
   onCreateLink,
   onToggleLink,
   onDeleteLink,
 }) {
   const [opening, setOpening] = useState(false);
   const [pw, setPw] = useState('');
+  const [requirePw, setRequirePw] = useState(false); // OFF by default
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
   const url = linkId ? `${window.location.origin}/hunt-suggest/${linkId}` : null;
@@ -39,21 +41,34 @@ export default function HuntLinkControls({
         ) : (
           <>
             <p className="text-[11px] text-white/55 leading-snug">
-              Set a password and share the link. Anyone with both can submit picks
-              straight into this list.
+              Share the link and anyone with it can submit picks straight into
+              this list. Add a password if you want to gate it.
             </p>
-            <input
-              type="text"
-              value={pw}
-              onChange={(e) => setPw(e.target.value)}
-              placeholder="Set a password (min 8 chars)"
-              className={`w-full ${inputCls}`}
-            />
+            <label className="flex items-center gap-2 cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={requirePw}
+                onChange={(e) => setRequirePw(e.target.checked)}
+                className="accent-purple-gamba w-3.5 h-3.5"
+              />
+              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono text-white/70">
+                Require a password
+              </span>
+            </label>
+            {requirePw && (
+              <input
+                type="text"
+                value={pw}
+                onChange={(e) => setPw(e.target.value)}
+                placeholder="Set a password (min 8 chars)"
+                className={`w-full ${inputCls}`}
+              />
+            )}
             <div className="flex gap-2">
               <button
                 type="button"
-                onClick={() => onCreateLink(pw)}
-                disabled={linkBusy || pw.trim().length < 8}
+                onClick={() => onCreateLink(requirePw ? pw : '')}
+                disabled={linkBusy || (requirePw && pw.trim().length < 8)}
                 className="flex-1 px-3 py-2.5 bg-purple-gamba text-white-body hover:bg-purple-bright transition-colors duration-150 disabled:opacity-40"
               >
                 <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
@@ -65,6 +80,7 @@ export default function HuntLinkControls({
                 onClick={() => {
                   setOpening(false);
                   setPw('');
+                  setRequirePw(false);
                 }}
                 className="px-3 py-2.5 border border-white/10 text-white/60 hover:text-white-body transition-colors"
               >
@@ -114,7 +130,9 @@ export default function HuntLinkControls({
       </div>
       <div className="flex items-center justify-between gap-2">
         <p className="text-[10px] text-white/40 font-mono">
-          Password set when created. Recreate to change it.
+          {linkRequiresPassword
+            ? '🔒 Password protected · recreate to change'
+            : '🔓 Open · anyone with the link can submit'}
         </p>
         {confirmingDelete ? (
           <span className="flex items-center gap-1">

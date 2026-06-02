@@ -229,7 +229,7 @@ function SortableBonusRow({
           value={bonus.stake || ''}
           onChange={(e) => onStake(bonus.id, e.target.value)}
           placeholder="—"
-          aria-label="Stake"
+          aria-label="Bet"
           className="w-20 bg-zinc-broadcast/60 border border-white/10 px-2 py-1 text-sm text-right focus:border-emerald-signal/70 focus:outline-none placeholder:text-white/20 tabular-nums"
         />
       )}
@@ -1121,7 +1121,7 @@ export default function HuntTracker() {
                     </p>
                   </div>
                   <p className="text-[11px] font-mono text-white/50 mb-3 tabular-nums">
-                    stake {fmt(currentBonus.stake)}
+                    bet {fmt(currentBonus.stake)}
                     {currentBonus.caller ? ` · 📣 ${currentBonus.caller}` : ''}
                   </p>
                   <input
@@ -1222,7 +1222,7 @@ export default function HuntTracker() {
                 />
                 <input
                   type="number"
-                  placeholder="Stake ($)"
+                  placeholder="Bet ($)"
                   value={stakeInput}
                   onChange={(e) => setStakeInput(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && addBonus()}
@@ -1322,16 +1322,16 @@ export default function HuntTracker() {
                     <span className="w-6" aria-hidden="true" />
                     <span className="text-left">Slot</span>
                     {phase === 'opening' ? (
-                      <span className="text-right w-20 px-1">Stake</span>
+                      <span className="text-right w-20 px-1">Bet</span>
                     ) : (
                       <button
                         type="button"
                         onClick={cycleStakeSort}
                         title={
                           bonusSort == null
-                            ? 'Sort by stake (high to low)'
+                            ? 'Sort by bet (high to low)'
                             : bonusSort === 'stake-desc'
-                              ? 'Sort by stake (low to high)'
+                              ? 'Sort by bet (low to high)'
                               : 'Clear sort — back to manual order'
                         }
                         className={`text-right w-20 px-1 inline-flex items-center justify-end gap-1 uppercase tracking-eyebrow-md transition-colors ${
@@ -1340,7 +1340,7 @@ export default function HuntTracker() {
                             : 'hover:text-white-body'
                         }`}
                       >
-                        Stake
+                        Bet
                         {bonusSort === 'stake-desc' ? (
                           <ArrowDown size={11} aria-hidden="true" />
                         ) : bonusSort === 'stake-asc' ? (
@@ -1762,7 +1762,7 @@ export default function HuntTracker() {
           </div>
           <label className="block">
             <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
-              Stake ($)
+              Bet ($)
             </span>
             <input
               type="number"

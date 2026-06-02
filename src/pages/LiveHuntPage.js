@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { Radio, Star, RadioTower } from 'lucide-react';
+import { Radio, RadioTower } from 'lucide-react';
 import { db } from '../config/firebase';
 import { fmt, fmtX, computeStats, openingOrder } from '../utils/huntCalc';
 import StatCell from '../components/StatCell';
+import ScatterPill from '../components/ScatterPill';
 
 export default function LiveHuntPage() {
   const { shareId } = useParams();
@@ -185,18 +186,7 @@ export default function LiveHuntPage() {
                   />
                 </div>
                 <div className="flex items-center gap-2 mb-1">
-                  {currentBonus.super && (
-                    <span className="shrink-0 px-1 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">
-                      S
-                    </span>
-                  )}
-                  {currentBonus.fiveScat && (
-                    <Star
-                      size={18}
-                      aria-label="5 scatter"
-                      className="shrink-0 fill-gold-scatter text-gold-scatter"
-                    />
-                  )}
+                  <ScatterPill bonus={currentBonus} size="md" />
                   <p className="font-black text-white-body text-3xl sm:text-4xl leading-tight truncate">
                     {currentBonus.slot}
                   </p>
@@ -265,12 +255,7 @@ export default function LiveHuntPage() {
                             >
                               <td className="px-3 py-2 font-bold text-white-body max-w-[200px]">
                                 <span className="flex items-center gap-1.5 min-w-0">
-                                  {b.super && (
-                                    <span className="shrink-0 px-1 py-0.5 text-[8px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">S</span>
-                                  )}
-                                  {b.fiveScat && (
-                                    <Star size={11} aria-label="5 scatter" className="shrink-0 fill-gold-scatter text-gold-scatter" />
-                                  )}
+                                  <ScatterPill bonus={b} size="sm" />
                                   <span className="truncate" title={b.slot}>{b.slot}</span>
                                 </span>
                                 {b.caller && (

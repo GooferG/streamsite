@@ -6,7 +6,6 @@ import {
   Layers,
   ChevronDown,
   ChevronRight,
-  Star,
   Trash2,
   Download,
 } from 'lucide-react';
@@ -14,6 +13,7 @@ import { authedFetch } from '../utils/authedFetch';
 import { useAuth } from '../contexts/AuthContext';
 import { fmt, fmtX, computeStats, computeCallerStats } from '../utils/huntCalc';
 import { renderRecap } from '../utils/huntExport';
+import ScatterPill from '../components/ScatterPill';
 
 function formatDate(ms) {
   if (!ms) return '—';
@@ -64,12 +64,7 @@ function HuntDetail({ hunt }) {
                   <tr key={b.id} className="border-b border-white/5">
                     <td className="px-3 py-2 font-bold text-white-body max-w-[180px]">
                       <span className="flex items-center gap-1.5 min-w-0">
-                        {b.super && (
-                          <span className="shrink-0 px-1 py-0.5 text-[8px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">S</span>
-                        )}
-                        {b.fiveScat && (
-                          <Star size={11} aria-label="5 scatter" className="shrink-0 fill-yellow-400 text-yellow-400" />
-                        )}
+                        <ScatterPill bonus={b} size="sm" />
                         <span className="truncate">{b.slot}</span>
                       </span>
                       {b.caller && (

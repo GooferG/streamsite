@@ -302,10 +302,12 @@ layout only):
 - **Empty states** ("No bonuses logged.", "No squad added.", "No calls tagged.", "No
   suggestions imported.") are uniformly loud uppercase mono. Soften to sentence-case
   body ("Nothing logged yet", etc.); keep dense.
-- **5-scat star** uses raw `yellow-400`, the only off-palette token. Either add an
-  intentional `gold-scatter` token or shift toward `orange-admin` (the existing
-  "notable" accent). Never let it co-occur with a gold/red treatment (casino-chrome
-  anti-reference). Low priority, but decide rather than leave it undocumented.
+- **5-scat star** uses raw `yellow-400`, the only off-palette token. **Decision:**
+  keep the gold but make it intentional, a documented `gold-scatter` token in
+  `tailwind.config.js` (value ~`#fbbf24`), and use it everywhere the 5-scat star and
+  S/star markers render (tracker rows, opening card, live page). Never let it co-occur
+  with a gold/red slot-machine treatment (casino-chrome anti-reference); it is a
+  rare-hit flag only.
 - **Caller-stats highlight icons** mix a lucide `Trophy`, a 🧱 emoji, and no icon.
   Pick one register (all lucide, or accept emoji as intentional grit consistently).
 
@@ -314,11 +316,40 @@ layout only):
 Polish for a glanceable, live, second-monitor surface. No data-model, Firestore, or
 route changes; presentational + state-detection only.
 
-- **Profit as a hero number.** Today Profit is one of four equal `StatCell`s while
-  the hunt name is `text-3xl/4xl`. Pull Profit out into a dedicated large number
-  (`text-3xl`+) near the title, keeping its emerald/red sign color, with a small mono
-  eyebrow ("Profit") so it reads even on a muted monitor where color alone is
-  ambiguous. Demote Start / Finish / Best X to a supporting strip.
+- **Phase-aware lead.** The live page has two phases, and during **collecting** no
+  wins exist yet, so Profit / Best X / W-L are all `—` and there is no current slot.
+  Leading with a dead Profit `—` for the whole collecting phase is wrong. So the lead
+  is phase-aware:
+  - **Collecting → "Building the hunt".** Lead with a "Building the hunt" eyebrow, the
+    bonus count as the big number (e.g. "12 bonuses lined up") and total staked
+    beneath, plus a calm one-line note that opening has not started yet. No profit
+    hero, no now-opening card (there is no current slot in this phase).
+  - **Opening → Profit hero.** Once opening starts, the lead switches to the Profit
+    hero (below) and the now-opening card appears.
+  Both derive from data already in `computeStats` (`bonusCount`, `totalStakes`,
+  `profit`); the switch keys off `hunt.phase`.
+- **Profit as a hero number (opening phase).** Today Profit is one of four equal
+  `StatCell`s while the hunt name is `text-3xl/4xl`. In the opening phase, pull Profit
+  out into a dedicated large number (`text-3xl`+) near the title, keeping its
+  emerald/red sign color, with a small mono eyebrow ("Profit") so it reads even on a
+  muted monitor where color alone is ambiguous. Demote Start / Finish / Best X to a
+  supporting strip.
+- **Bonuses count cell.** Add a single "Bonuses" cell to the supporting stats strip
+  showing opened over total, e.g. "12 / 30" (opened = bonuses with a win entered,
+  matching `openedCount` on the owner side; total = all logged bonuses). This shows in
+  both phases, so spectators always see how deep the hunt is, not only during opening.
+  The now-opening card's own progress readout (below) is in addition to this and is
+  fine to keep; the two are consistent because both derive from the same counts.
+- **Two-column body to cut the scroll.** Today the page is one tall `max-w-3xl`
+  stack (lead → stats → now-opening → bonus table → squad split → footer), a long
+  scroll on a second monitor. Widen the page (to roughly `max-w-5xl`) and split the
+  body: bonus table in a left column, **squad split (equity) beside it on the right**,
+  both sitting directly under the shared header / phase / stats / now-opening band.
+  Equity is then visible without scrolling past the whole bonus list. This applies in
+  both phases (collecting and opening). Below the responsive breakpoint it stacks back
+  to one column (bonuses first, then squad split), so mobile is unchanged in order.
+  The shared top band (live eyebrow, name, phase, lead, stats strip, now-opening card)
+  stays full-width above the two columns.
 - **Make the "Now opening" card the focal point.** During the opening phase, reorder
   it directly under the title, above the supporting stats. Bump the slot name to
   `text-3xl sm:text-4xl`, add vertical padding. Re-introduce the `super` (S pill) and
@@ -387,6 +418,27 @@ API changes; form UX + copy only.
   `onMouseDown`-only with no arrow-key/Enter handling; full keyboard support there is
   a known gap, fix opportunistically if the component is touched.
 
+### 10. Height-capped lists with internal scroll (tracker + live page)
+
+Long hunts make both surfaces stretch into a tall page. Cap the **bonus list** and
+the **squad-split equity** on both the owner tracker and the live page so the page
+height stays bounded. (No collapse toggle: with the scroll cap, collapse is redundant
+and adds toggle state and collapsed-header edge cases for no real gain.)
+
+- **Height cap + internal scroll.** Each list body has a max height (roughly 60vh on
+  the tracker, a tighter cap on the live page so the two-column body stays balanced);
+  past it the body scrolls inside its own panel with a thin scrollbar rather than
+  growing the page. The existing tables already sit in `overflow-x-auto` wrappers, so
+  this adds a vertical `max-h-* overflow-y-auto`.
+- **Pinned header + totals on scroll.** While a capped list scrolls internally, the
+  column header row stays pinned to the top of the scroll area and the Totals row
+  stays pinned to the bottom (`position: sticky`), so the column meaning and the
+  running totals are always visible. Rows scroll between them. (The owner squad
+  table's footer total pins the same way; the live squad table has no totals row, so
+  just its header pins.)
+- A short hunt under the cap looks exactly as it does today (no scrollbar until the
+  content exceeds the cap).
+
 ## Components
 
 - `src/components/HuntTracker.js` — restructure JSX (bar, stats band, column
@@ -405,6 +457,11 @@ API changes; form UX + copy only.
 - `src/components/CopyLinkButton.js` — **new** (small): one Copy/Copied control
   reused by both share-bar tracks (and anywhere else a link is copied), so the two
   tracks stay pixel-consistent. Takes the URL + a label ("Copy watch link" etc.).
+- A small height-capped scroll wrapper (or just `max-h-* overflow-y-auto` utility
+  classes with `position: sticky` header/footer cells) for the bonus list and squad
+  split on both the tracker and the live page (§10). No new stateful component needed
+  since collapse was dropped; if a wrapper helps share the sticky-edge styling, keep
+  it tiny and presentational.
 - `src/components/StatCell.js` — add a borderless / `hero` variant (or `size` prop)
   for the stats band; existing call sites keep current behavior.
 - `src/pages/LiveHuntPage.js` — spectator polish (see §8). No data/route change.
@@ -466,8 +523,23 @@ No CI gate exists; tests are best-effort unit tests under `src/**/__tests__/`.
 
 ## Rollout
 
-Single PR (or two: tracker + share-bar + tour as one, share-page polish as a
-follow-up, if review prefers smaller diffs). Pure frontend, no env / serverless /
-Firestore-rule changes, no migration. The tracker lazy chunk already isolates
-`HuntTracker`; new tracker files ride in the same chunk. `LiveHuntPage` and
-`HuntSuggestPage` are separate route entries and their edits are self-contained.
+**Decision: two PRs.**
+
+- **PR 1 — owner tracker:** share bar (WATCH/COLLECT + `CopyLinkButton`,
+  `LinkControls` extraction), Option B layout + stats band, header regroup, add-form
+  reorder, opening-card refinements, the coachmark tour (`HuntTour` + `useFirstVisit`),
+  height-capped scroll on the tracker's bonus list + squad split, the `gold-scatter`
+  token, and the secondary polish (panel numbering, em-dash placeholder, empty-state
+  copy). Touches `HuntTracker.js`, `SuggestionsPanel.js`, `HuntStartScreen.js`,
+  `StatCell.js`, `tailwind.config.js`, and the new tracker files.
+- **PR 2 — share-page polish:** `LiveHuntPage.js` (§8: phase-aware lead, profit hero,
+  now-opening card, bonuses cell, stale-data signal, two-column body, capped scroll,
+  phone tables, state copy) and `HuntSuggestPage.js` (§9: lede, mobile stacking,
+  progressive slots, password helper + reveal, error-on-field, success/closed copy).
+
+Both are pure frontend: no env / serverless / Firestore-rule changes, no migration.
+The tracker lazy chunk already isolates `HuntTracker`; new tracker files ride in the
+same chunk. `LiveHuntPage` and `HuntSuggestPage` are separate route entries and their
+edits are self-contained, so PR 2 is independent of PR 1. The shared `gold-scatter`
+token lands in PR 1; PR 2 reuses it for the live page's star (sequence PR 1 first, or
+duplicate the literal in PR 2 and swap to the token on merge).

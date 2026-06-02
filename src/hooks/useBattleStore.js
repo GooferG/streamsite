@@ -130,6 +130,10 @@ export function useBattleStore() {
   // Lock entries (start) → 'running'; unlock → back to 'lobby'.
   const lockEntries = useCallback(() => writeBattle({ phase: 'running' }), [writeBattle]);
   const unlockEntries = useCallback(() => writeBattle({ phase: 'lobby' }), [writeBattle]);
+  // Finished ⇆ running. resumeBattle is the "back to battle" undo from the
+  // finished screen (e.g. to fix a payout).
+  const endBattle = useCallback(() => writeBattle({ phase: 'finished', currentPlayerId: null }), [writeBattle]);
+  const resumeBattle = useCallback(() => writeBattle({ phase: 'running' }), [writeBattle]);
   const setCurrentPlayer = useCallback(
     (playerId) => writeBattle({ currentPlayerId: playerId }),
     [writeBattle]
@@ -185,6 +189,11 @@ export function useBattleStore() {
   const setPayout = useCallback(
     (playerId, payout) => {
       const value = Number(payout) || 0;
+      // Will this payout make every player "ran"? If so, auto-finish the battle.
+      const allRanAfter =
+        players.length > 0 &&
+        players.every((p) => p.ran || p.id === playerId);
+
       if (!isLoggedIn) {
         setPlayers((prev) => {
           const next = prev.map((p) =>
@@ -199,8 +208,12 @@ export function useBattleStore() {
           ran: true,
         }).catch((e) => console.error('setPayout failed:', e));
       }
+
+      if (allRanAfter && (battle?.phase || 'lobby') !== 'finished') {
+        writeBattle({ phase: 'finished', currentPlayerId: null });
+      }
     },
-    [isLoggedIn, uid, battle, persistLocal]
+    [players, isLoggedIn, uid, battle, persistLocal, writeBattle]
   );
 
   const reset = useCallback(() => {
@@ -230,6 +243,8 @@ export function useBattleStore() {
     setTitle,
     lockEntries,
     unlockEntries,
+    endBattle,
+    resumeBattle,
     setCurrentPlayer,
     addPlayer,
     removePlayer,

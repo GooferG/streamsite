@@ -4,7 +4,7 @@ import { doc, collection, onSnapshot, query, orderBy } from 'firebase/firestore'
 import { RadioTower } from 'lucide-react';
 import { db } from '../config/firebase';
 import { computeBattle } from '../utils/battleCalc';
-import { BattleBoard } from '../components/BonusBattle';
+import { BattleBoard, FinishedScreen } from '../components/BonusBattle';
 
 export default function BattlePage() {
   const { ownerId } = useParams();
@@ -61,7 +61,10 @@ export default function BattlePage() {
         {!loading && missing && (
           <p className="text-white/60 font-mono text-sm">No live battle right now.</p>
         )}
-        {!loading && battle && (
+        {!loading && battle && battle.phase === 'finished' && (
+          <FinishedScreen battle={battle} players={players} derived={derived} interactive={false} />
+        )}
+        {!loading && battle && battle.phase !== 'finished' && (
           <BattleBoard battle={battle} players={players} derived={derived} interactive={false} />
         )}
       </div>

@@ -21,6 +21,7 @@ export default async function handler(req, res) {
     return res.status(200).json({
       huntName: data.huntName || 'Bonus hunt',
       open: data.open !== false,
+      requiresPassword: Boolean(data.passwordHash),
     });
   } catch (err) {
     console.error('hunt-suggest/info error', err);

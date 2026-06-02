@@ -574,7 +574,12 @@ export default function HuntTracker() {
         return;
       }
       // Persist on the hunt so the link survives reloads + is owner-visible.
-      updateHunt({ intakeLinkId: data.linkId, intakeOpen: true });
+      // password === '' means an open link (no password gate).
+      updateHunt({
+        intakeLinkId: data.linkId,
+        intakeOpen: true,
+        intakeRequiresPassword: Boolean(password),
+      });
     } catch {
       setLinkError('Could not create the link.');
     } finally {
@@ -979,6 +984,7 @@ export default function HuntTracker() {
               linkOpen={activeHunt.intakeOpen !== false}
               linkBusy={linkBusy}
               linkError={linkError}
+              linkRequiresPassword={Boolean(activeHunt.intakeRequiresPassword)}
               onCreateLink={createIntakeLink}
               onToggleLink={toggleIntakeOpen}
               onDeleteLink={deleteIntakeLink}

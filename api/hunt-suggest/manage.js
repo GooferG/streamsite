@@ -37,7 +37,10 @@ export default async function handler(req, res) {
   try {
     if (action === 'create') {
       const { password } = req.body || {};
-      if (!password || String(password).length < 8) {
+      // Password is OPTIONAL. If provided it must be >= 8 chars; if omitted/empty
+      // the link is open (no hash stored — absence is the "open" state).
+      const wantsPassword = Boolean(password);
+      if (wantsPassword && String(password).length < 8) {
         return res.status(400).json({ error: 'PASSWORD_TOO_SHORT' });
       }
       // Pull the active hunt name for display on the submit page.
@@ -47,31 +50,47 @@ export default async function handler(req, res) {
       if (!activeSnap.exists) return res.status(404).json({ error: 'NO_ACTIVE_HUNT' });
       const huntName = activeSnap.data()?.name || 'Bonus hunt';
 
-      const salt = crypto.randomBytes(16).toString('hex');
-      const passwordHash = hashPassword(password, salt);
+      const salt = wantsPassword ? crypto.randomBytes(16).toString('hex') : null;
+      const passwordHash = wantsPassword ? hashPassword(password, salt) : null;
 
       // Idempotency: if this owner already has an open intake link, reuse it
-      // (rotating its password) instead of minting a duplicate on retry. Query
-      // is by ownerUid only (single-field, auto-indexed); filter open in code.
+      // instead of minting a duplicate on retry. Query is by ownerUid only
+      // (single-field, auto-indexed); filter open in code.
       const existing = await adminDb
         .collection('suggestion_intakes')
         .where('ownerUid', '==', uid)
         .get();
       const reuse = existing.docs.find((d) => d.data().open !== false);
       if (reuse) {
-        await reuse.ref.update({ huntName, passwordHash, passwordSalt: salt, open: true });
-        return res.status(200).json({ ok: true, linkId: reuse.id, open: true, reused: true });
+        // When recreating with a password, set hash/salt. When recreating as
+        // open, DELETE any stale hash/salt so the old password stops working.
+        const patch = wantsPassword
+          ? { huntName, passwordHash, passwordSalt: salt, open: true }
+          : {
+              huntName,
+              passwordHash: FieldValue.delete(),
+              passwordSalt: FieldValue.delete(),
+              open: true,
+            };
+        await reuse.ref.update(patch);
+        return res
+          .status(200)
+          .json({ ok: true, linkId: reuse.id, open: true, reused: true });
       }
 
       const linkId = makeLinkId();
-      await adminDb.doc(`suggestion_intakes/${linkId}`).set({
+      const docData = {
         ownerUid: uid,
         huntName,
-        passwordHash,
-        passwordSalt: salt,
         open: true,
         createdAt: FieldValue.serverTimestamp(),
-      });
+      };
+      // Only write hash/salt for password-protected links.
+      if (wantsPassword) {
+        docData.passwordHash = passwordHash;
+        docData.passwordSalt = salt;
+      }
+      await adminDb.doc(`suggestion_intakes/${linkId}`).set(docData);
 
       return res.status(200).json({ ok: true, linkId, open: true });
     }

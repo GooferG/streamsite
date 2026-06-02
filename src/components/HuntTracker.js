@@ -350,13 +350,14 @@ export default function HuntTracker() {
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
-  // First-visit coachmark tour: auto-open once for a logged-in owner on the
-  // active view. Replay is via the header overflow ("How it works").
+  // First-visit coachmark tour: auto-open once on the first active view, for
+  // both owners and logged-out visitors (the tour rewords its owner-only steps
+  // for anon and nudges login). Replay is via the header overflow.
   useEffect(() => {
-    if (status === 'active' && isLoggedIn && !tourSeen) {
+    if (status === 'active' && !tourSeen) {
       setTourOpen(true);
     }
-  }, [status, isLoggedIn, tourSeen]);
+  }, [status, tourSeen]);
 
   // ---------- LOADING (auth rehydrating) ----------
   if (status === 'loading') {
@@ -1781,6 +1782,7 @@ export default function HuntTracker() {
 
       <HuntTour
         open={tourOpen}
+        isLoggedIn={isLoggedIn}
         onClose={() => {
           setTourOpen(false);
           markTourSeen();

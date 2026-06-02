@@ -235,13 +235,20 @@ keyboard-focusable; overlay traps focus while open.
 an explicit `tourOpen` state that opens the tour ignoring `seen` (replay). The auto
 path and replay path share one `tourOpen` boolean; `seen` only gates the auto-open.
 
-**Owner-only gating (critique risk).** The tour explains the share + collect links,
-which are gated behind `isLoggedIn`. An anon local user (the "LOCAL ONLY" status)
-must not get a walkthrough for features they cannot use. The auto-open already keys
-off `isLoggedIn`; additionally, any step whose target is auth-gated (steps 2 and 3,
-the share bar and suggestions panel) must use its fallback card when the element is
-absent, never spotlight a missing node. So the gating and the present/absent target
-logic together keep the tour coherent for whoever opens it.
+**Two audiences, one tour (updated after testing).** The tracker is usable logged
+out (local-only hunt), and an anon visitor reaching an active hunt should also be
+oriented. So the tour auto-opens once on the first active view for **both** owners
+and logged-out visitors (gated only by the `huntTourSeen` flag), and `HuntTour`
+takes an `isLoggedIn` prop that swaps copy on the owner-only beats:
+- Step 2 ("Your two links") becomes "Go live and collect picks" with a "log in with
+  Twitch to unlock" nudge, since the share bar is owner-only and absent for anon.
+- Step 3 and step 6 reword to future tense / add a save-needs-an-account nudge.
+- The steps that apply to everyone (welcome, accept/reject a pick, log + open
+  bonuses, stats) stay as-is.
+Auth-gated targets (share bar, suggestions panel) are absent for anon, so those
+steps render the centered fallback card automatically (never a spotlight on a
+missing node). The replay control (`⋯` "How it works") is in the header action
+cluster, which renders for anon too, so logged-out visitors can replay.
 
 **Motion.** Step 4's pill animation and the spotlight transition are gated behind
 `prefers-reduced-motion`. A short eased translate/resize of the spotlight

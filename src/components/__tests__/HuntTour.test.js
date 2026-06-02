@@ -29,4 +29,17 @@ describe('HuntTour', () => {
     const { container } = render(<HuntTour open={false} onClose={() => {}} />);
     expect(container.firstChild).toBeNull();
   });
+
+  it('shows a login nudge on the links step when logged out', () => {
+    render(<HuntTour open isLoggedIn={false} onClose={() => {}} />);
+    // step 1 -> step 2 (the links step)
+    fireEvent.click(screen.getByRole('button', { name: /next/i }));
+    expect(screen.getByText(/log in with twitch/i)).toBeTruthy();
+  });
+
+  it('shows owner copy on the links step when logged in', () => {
+    render(<HuntTour open isLoggedIn onClose={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /next/i }));
+    expect(screen.getByText(/spectators can watch the hunt/i)).toBeTruthy();
+  });
 });

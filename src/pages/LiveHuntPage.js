@@ -206,8 +206,8 @@ export default function LiveHuntPage() {
               </div>
             )}
 
-            {/* Supporting stats strip */}
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-6">
+            {/* Primary stats: count, buy-in, running winnings + profit/loss */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-2">
               <StatCell
                 label="Bonuses"
                 value={
@@ -217,27 +217,43 @@ export default function LiveHuntPage() {
                   </span>
                 }
               />
-              <StatCell label="Start" value={fmt(stats.start)} />
+              <StatCell label="Start cost" value={fmt(stats.start)} />
+              <StatCell label="Winnings" value={fmt(stats.totalWins)} />
               <StatCell
-                label="Req. X"
-                value={stats.reqX != null ? fmtX(stats.reqX) : '—'}
-              />
-              <StatCell
-                label="Profit"
+                label="Profit / loss"
                 value={
-                  stats.profit == null ? (
+                  stats.runningProfit == null ? (
                     '—'
                   ) : (
                     <span
                       className={
-                        stats.profit >= 0 ? 'text-emerald-signal' : 'text-red-destructive'
+                        stats.runningProfit >= 0
+                          ? 'text-emerald-signal'
+                          : 'text-red-destructive'
                       }
                     >
-                      {stats.profit >= 0 ? '+' : '−'}
-                      {fmt(Math.abs(stats.profit))}
+                      {stats.runningProfit >= 0 ? '+' : '−'}
+                      {fmt(Math.abs(stats.runningProfit))}
                     </span>
                   )
                 }
+              />
+            </div>
+
+            {/* Secondary stats: per-bonus averages + multipliers */}
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-6">
+              <StatCell
+                label="Avg req"
+                value={stats.avgReqRemaining != null ? fmt(stats.avgReqRemaining) : '—'}
+              />
+              <StatCell
+                label="Cur avg"
+                value={stats.curAvgWin != null ? fmt(stats.curAvgWin) : '—'}
+              />
+              <StatCell label="Total X" value={stats.totalX > 0 ? fmtX(stats.totalX) : '—'} />
+              <StatCell
+                label="Cur avg X"
+                value={stats.curAvgX != null ? fmtX(stats.curAvgX) : '—'}
               />
               <StatCell label="Best X" value={stats.bestX != null ? fmtX(stats.bestX) : '—'} />
             </div>

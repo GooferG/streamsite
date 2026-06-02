@@ -696,6 +696,7 @@ export default function HuntTracker() {
   const totalWins = stats.totalWins;
   const reqX = stats.reqX;
   const profit = stats.profit;
+  const runningProfit = stats.runningProfit;
   const wlMultiplier = stats.wlMultiplier;
   const totalBuyIns = stats.totalBuyIns;
 
@@ -1026,26 +1027,53 @@ export default function HuntTracker() {
           <StatCell
             variant="bare"
             hero
-            label="Profit"
+            label="Profit / loss"
             value={
-              profit == null ? (
-                '—'
-              ) : (
-                <span
-                  className={
-                    profit >= 0 ? 'text-emerald-signal' : 'text-red-destructive'
-                  }
-                >
-                  {profit >= 0 ? '+' : ''}
-                  {fmt(profit)}
-                </span>
-              )
+              (() => {
+                // Finish-based profit once a finish balance is entered;
+                // otherwise the running P/L (winnings − start) so the figure
+                // is live through the whole hunt.
+                const p = profit != null ? profit : runningProfit;
+                return p == null ? (
+                  '—'
+                ) : (
+                  <span
+                    className={
+                      p >= 0 ? 'text-emerald-signal' : 'text-red-destructive'
+                    }
+                  >
+                    {p >= 0 ? '+' : '−'}
+                    {fmt(Math.abs(p))}
+                  </span>
+                );
+              })()
             }
+          />
+          <StatCell variant="bare" label="Total wins" value={fmt(totalWins)} />
+          <StatCell
+            variant="bare"
+            label="Avg req"
+            value={stats.avgReqRemaining != null ? fmt(stats.avgReqRemaining) : '—'}
+          />
+          <StatCell
+            variant="bare"
+            label="Cur avg"
+            value={stats.curAvgWin != null ? fmt(stats.curAvgWin) : '—'}
           />
           <StatCell
             variant="bare"
             label="Req X"
             value={reqX != null ? `${reqX.toFixed(1)}x` : '—'}
+          />
+          <StatCell
+            variant="bare"
+            label="Cur avg X"
+            value={stats.curAvgX != null ? fmtX(stats.curAvgX) : '—'}
+          />
+          <StatCell
+            variant="bare"
+            label="Total X"
+            value={stats.totalX > 0 ? fmtX(stats.totalX) : '—'}
           />
           <StatCell
             variant="bare"
@@ -1056,7 +1084,6 @@ export default function HuntTracker() {
                 : '—'
             }
           />
-          <StatCell variant="bare" label="Total wins" value={fmt(totalWins)} />
           <label className="px-3 py-2.5 block">
             <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
               Start bal

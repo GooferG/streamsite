@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Swords, Trophy, Ticket, X } from 'lucide-react';
+import { Swords, Trophy, Ticket, X, Crown } from 'lucide-react';
 import SlotAutocomplete from './SlotAutocomplete';
 import BattleWheel from './BattleWheel';
 import CopyLinkButton from './CopyLinkButton';
@@ -11,6 +11,149 @@ import { computeBattle, currency } from '../utils/battleCalc';
 // white-on-white).
 const INPUT_CLS =
   'w-full bg-black/30 border border-white/10 text-white-body placeholder-white/40 text-sm px-3 py-2.5 font-mono focus:outline-none focus:border-emerald-signal/60';
+
+// ---- Finished state: celebrate the winner + show the final standings. ----
+// Shared so BattlePage renders the same screen read-only (interactive=false).
+export function FinishedScreen({ battle, players, derived, interactive = false, onResume }) {
+  const { winner, loser, ran } = derived;
+  const sorted = [...players].filter((p) => p.ran).sort((a, b) => (b.payout || 0) - (a.payout || 0));
+  // Deterministic confetti so it doesn't reshuffle every render (no Math.random
+  // dependence on render). 24 pieces with varied colors/positions/delays.
+  const confetti = Array.from({ length: 24 }, (_, i) => i);
+  const colors = ['#a855f7', '#10b981', '#ffb24d', '#c084fc', '#e0a458'];
+
+  return (
+    <div className="relative overflow-hidden border border-purple-gamba/40 bg-zinc-card/50 px-4 py-10 sm:py-14">
+      <style>{`
+        @keyframes bb-confetti-fall {
+          0%   { transform: translateY(-20px) rotate(0deg); opacity: 0; }
+          10%  { opacity: 1; }
+          100% { transform: translateY(420px) rotate(540deg); opacity: 0; }
+        }
+        @keyframes bb-win-glow {
+          0%, 100% { text-shadow: 0 0 18px rgba(168,85,247,.45), 0 0 44px rgba(168,85,247,.25); }
+          50%      { text-shadow: 0 0 30px rgba(192,132,252,.75), 0 0 70px rgba(168,85,247,.4); }
+        }
+        @keyframes bb-pop-in {
+          from { opacity: 0; transform: scale(.9) translateY(10px); }
+          to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .bb-win-name { animation: bb-win-glow 2.4s ease-in-out infinite; }
+        .bb-pop { animation: bb-pop-in .5s cubic-bezier(.2,.8,.2,1) forwards; }
+      `}</style>
+
+      {/* Confetti layer */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden motion-reduce:hidden" aria-hidden="true">
+        {confetti.map((i) => {
+          const left = (i * 37) % 100;
+          const delay = (i % 8) * 0.25;
+          const dur = 2.6 + (i % 5) * 0.4;
+          const color = colors[i % colors.length];
+          return (
+            <span
+              key={i}
+              style={{
+                position: 'absolute',
+                top: '-16px',
+                left: `${left}%`,
+                width: '7px',
+                height: '12px',
+                background: color,
+                opacity: 0,
+                animation: `bb-confetti-fall ${dur}s linear ${delay}s infinite`,
+              }}
+            />
+          );
+        })}
+      </div>
+
+      <div className="relative text-center font-mono">
+        <p className="text-[11px] tracking-eyebrow-lg uppercase text-purple-bright mb-1 inline-flex items-center gap-1.5 justify-center">
+          <Trophy size={13} /> {battle?.title || 'Bonus Battle'} · Finished
+        </p>
+
+        {winner ? (
+          <div className="bb-pop">
+            <div className="text-[11px] tracking-eyebrow-lg uppercase text-crt-amber mt-4 mb-2 inline-flex items-center gap-2">
+              <Crown size={16} className="text-crt-amber" /> Winner Takes All
+            </div>
+            <h2
+              className="bb-win-name font-black text-4xl sm:text-6xl text-white-body leading-[0.95] break-words uppercase tracking-tight"
+              style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}
+            >
+              {winner.name}
+            </h2>
+            {winner.slot && (
+              <p className="text-[12px] tracking-eyebrow-md uppercase text-purple-bright mt-2">{winner.slot}</p>
+            )}
+            <div className="mt-5 text-5xl sm:text-7xl font-extrabold tabular-nums text-emerald-signal leading-none">
+              {currency(derived.potAfterRake)}
+            </div>
+            <p className="text-[11px] tracking-eyebrow-sm uppercase text-white/45 mt-2 tabular-nums">
+              {currency(winner.payout)} pulled · pot {currency(derived.totalPot)} − {battle?.rakePct ?? 10}% rake
+            </p>
+          </div>
+        ) : (
+          <p className="text-white/60 text-sm my-8">No players ran in this battle.</p>
+        )}
+
+        {/* Final standings */}
+        {sorted.length > 0 && (
+          <div className="mt-8 max-w-md mx-auto text-left">
+            <p className="text-[10px] tracking-eyebrow-lg uppercase text-white/55 mb-3 text-center">Final Standings</p>
+            <div className="space-y-2">
+              {sorted.map((p, i) => {
+                const isWin = winner && p.id === winner.id;
+                const isLose = loser && p.id === loser.id && ran > 1;
+                return (
+                  <div
+                    key={p.id}
+                    className={`flex items-center gap-2.5 border px-3 py-2.5 ${
+                      isWin
+                        ? 'border-emerald-signal/60 bg-emerald-signal/5'
+                        : isLose
+                        ? 'border-red-destructive/60 bg-red-destructive/5'
+                        : 'border-white/7'
+                    }`}
+                  >
+                    <span className={`text-base font-black tabular-nums w-6 ${isWin ? 'text-crt-amber' : 'text-white/40'}`}>
+                      {i + 1}
+                    </span>
+                    {isWin && <Crown size={14} className="text-crt-amber flex-shrink-0" />}
+                    <span className="text-sm font-bold text-white-body truncate">{p.name}</span>
+                    {p.slot && <span className="text-[10px] uppercase text-white/45 truncate">· {p.slot}</span>}
+                    <span
+                      className={`ml-auto text-base font-black tabular-nums ${
+                        isWin ? 'text-emerald-signal' : isLose ? 'text-red-destructive' : 'text-white-body'
+                      }`}
+                    >
+                      {currency(p.payout)}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            {loser && ran > 1 && (
+              <div className="border border-red-destructive/50 bg-red-destructive/10 p-3 mt-3 text-center text-[11px] tracking-eyebrow-sm uppercase text-red-destructive/90 inline-flex w-full items-center justify-center gap-1.5">
+                <Ticket size={13} /> {loser.name} → free ticket next game
+              </div>
+            )}
+          </div>
+        )}
+
+        {interactive && (
+          <button
+            type="button"
+            onClick={onResume}
+            className="mt-8 px-5 py-2.5 border border-white/15 text-white/55 hover:text-white-body hover:border-white/30 text-[10px] font-bold tracking-eyebrow-md uppercase font-mono transition-colors"
+          >
+            ← Back to battle
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ---- Shared presentational board. `interactive` toggles admin controls. ----
 // Exported so BattlePage can render the identical board read-only.
@@ -384,6 +527,7 @@ export default function BonusBattle() {
     setEntryFee,
     lockEntries,
     unlockEntries,
+    resumeBattle,
     reset,
   } = store;
 
@@ -392,6 +536,8 @@ export default function BonusBattle() {
   if (!battle) {
     return <StartScreen onStart={startBattle} />;
   }
+
+  const finished = battle.phase === 'finished';
 
   const liveUrl = ownerId ? `${window.location.origin}/battle/${ownerId}` : null;
 
@@ -417,20 +563,30 @@ export default function BonusBattle() {
           Not signed in — running locally. Log in to share a live link with viewers.
         </p>
       )}
-      <BattleBoard
-        battle={battle}
-        players={players}
-        derived={derived}
-        interactive
-        onAddPlayer={addPlayer}
-        onRemovePlayer={removePlayer}
-        onSetPayout={setPayout}
-        onSpinResult={(p) => setCurrentPlayer(p.id)}
-        onSetRake={setRake}
-        onSetEntryFee={setEntryFee}
-        onLockEntries={lockEntries}
-        onUnlockEntries={unlockEntries}
-      />
+      {finished ? (
+        <FinishedScreen
+          battle={battle}
+          players={players}
+          derived={derived}
+          interactive
+          onResume={resumeBattle}
+        />
+      ) : (
+        <BattleBoard
+          battle={battle}
+          players={players}
+          derived={derived}
+          interactive
+          onAddPlayer={addPlayer}
+          onRemovePlayer={removePlayer}
+          onSetPayout={setPayout}
+          onSpinResult={(p) => setCurrentPlayer(p.id)}
+          onSetRake={setRake}
+          onSetEntryFee={setEntryFee}
+          onLockEntries={lockEntries}
+          onUnlockEntries={unlockEntries}
+        />
+      )}
     </div>
   );
 }

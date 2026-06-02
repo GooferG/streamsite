@@ -52,9 +52,13 @@ export default async function handler(req, res) {
     const intake = intakeSnap.data();
     if (intake.open === false) return res.status(403).json({ error: 'CLOSED' });
 
-    const given = hashPassword(password, intake.passwordSalt);
-    if (!hashesMatch(given, intake.passwordHash)) {
-      return res.status(401).json({ error: 'BAD_PASSWORD' });
+    // Open links have no stored hash — skip the password gate entirely.
+    // Password-protected links still require a timing-safe match.
+    if (intake.passwordHash) {
+      const given = hashPassword(password, intake.passwordSalt);
+      if (!hashesMatch(given, intake.passwordHash)) {
+        return res.status(401).json({ error: 'BAD_PASSWORD' });
+      }
     }
 
     const activeRef = adminDb.doc(`users/${intake.ownerUid}/active_hunt/current`);

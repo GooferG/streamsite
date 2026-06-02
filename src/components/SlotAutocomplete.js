@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react';
 import { Dice6 } from 'lucide-react';
 import rawSlots from '../data/slots';
 
@@ -9,11 +9,18 @@ const ALL_SLOTS = rawSlots.map((g) => ({
   thumbnail: g.image,
 }));
 
-export default function SlotAutocomplete({ value, onChange, onSelect, placeholder, className, onKeyDown, autoFocus, 'aria-label': ariaLabel }) {
+const SlotAutocomplete = forwardRef(function SlotAutocomplete(
+  { value, onChange, onSelect, placeholder, className, onKeyDown, autoFocus, 'aria-label': ariaLabel },
+  ref
+) {
   const [suggestions, setSuggestions] = useState([]);
   const [open, setOpen] = useState(false);
   const [focused, setFocused] = useState(false);
   const containerRef = useRef(null);
+  const inputRef = useRef(null);
+  useImperativeHandle(ref, () => ({
+    focus: () => inputRef.current && inputRef.current.focus(),
+  }));
 
   useEffect(() => {
     if (!focused || !value.trim()) {
@@ -48,6 +55,7 @@ export default function SlotAutocomplete({ value, onChange, onSelect, placeholde
   return (
     <div ref={containerRef} className="relative">
       <input
+        ref={inputRef}
         type="text"
         value={value}
         onChange={(e) => onChange(e.target.value)}
@@ -92,4 +100,6 @@ export default function SlotAutocomplete({ value, onChange, onSelect, placeholde
       )}
     </div>
   );
-}
+});
+
+export default SlotAutocomplete;

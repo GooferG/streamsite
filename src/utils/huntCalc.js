@@ -42,13 +42,40 @@ export function computeStats(hunt) {
   const wlMultiplier =
     start != null && start !== 0 && finish != null ? finish / start : null;
 
-  const bestX = bonuses.reduce((best, b) => {
-    const stake = Number(b.stake) || 0;
-    const win = Number(b.win) || 0;
-    if (stake <= 0 || win <= 0) return best;
-    const x = win / stake;
-    return x > best ? x : best;
-  }, 0);
+  // A bonus is "opened" once it has a win entered (win > 0), matching the
+  // live page's openedCount. Running figures below use this, so they update
+  // bonus-by-bonus during the opening phase instead of waiting for a manually
+  // entered finish balance.
+  const openedCount = bonuses.filter((b) => (Number(b.win) || 0) > 0).length;
+  const remainingCount = bonuses.length - openedCount;
+
+  // Live profit/loss: winnings so far minus the buy-in. Negative while down,
+  // climbs positive once winnings exceed start cost. (profit above stays the
+  // finish-balance-based figure for end-of-hunt accuracy.)
+  const runningProfit = start != null ? totalWins - start : null;
+
+  // Cur Avg ($): average win per opened bonus.
+  const curAvgWin = openedCount > 0 ? totalWins / openedCount : null;
+
+  // Avg Req ($): average win still needed per UNOPENED bonus to break even.
+  // Null once nothing remains to open (or start unset).
+  const avgReqRemaining =
+    start != null && remainingCount > 0
+      ? (start - totalWins) / remainingCount
+      : null;
+
+  // Per-bonus multipliers for played bonuses (stake > 0 && win > 0).
+  const playedX = bonuses
+    .map((b) => {
+      const stake = Number(b.stake) || 0;
+      const win = Number(b.win) || 0;
+      return stake > 0 && win > 0 ? win / stake : null;
+    })
+    .filter((x) => x != null);
+  const totalX = playedX.reduce((s, x) => s + x, 0);
+  const curAvgX = playedX.length > 0 ? totalX / playedX.length : null;
+
+  const bestX = playedX.reduce((best, x) => (x > best ? x : best), 0);
 
   return {
     start,
@@ -58,6 +85,13 @@ export function computeStats(hunt) {
     totalBuyIns,
     reqX,
     profit,
+    runningProfit,
+    curAvgWin,
+    avgReqRemaining,
+    totalX,
+    curAvgX,
+    openedCount,
+    remainingCount,
     wlMultiplier,
     bestX: bestX > 0 ? bestX : null,
     bonusCount: bonuses.length,

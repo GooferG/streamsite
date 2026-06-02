@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Lock, Send, Check, ClipboardList } from 'lucide-react';
+import { Lock, Send, Check, ClipboardList, Eye, EyeOff } from 'lucide-react';
 import SlotAutocomplete from '../components/SlotAutocomplete';
 
 const MAX_SLOTS = 6;
@@ -16,10 +16,14 @@ export default function HuntSuggestPage() {
 
   const [name, setName] = useState('');
   const [password, setPassword] = useState('');
+  const [showPw, setShowPw] = useState(false);
   const [slots, setSlots] = useState(Array(MAX_SLOTS).fill(''));
+  const [shownSlots, setShownSlots] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState(null);
+  const [errorCode, setErrorCode] = useState(null);
   const [done, setDone] = useState(false);
+  const [sentCount, setSentCount] = useState(0);
 
   useEffect(() => {
     if (!linkId) return;
@@ -52,6 +56,8 @@ export default function HuntSuggestPage() {
     if (!canSubmit) return;
     setSubmitting(true);
     setSubmitError(null);
+    setErrorCode(null);
+    const count = filledSlots.length;
     try {
       const r = await fetch('/api/hunt-suggest/submit', {
         method: 'POST',
@@ -66,7 +72,7 @@ export default function HuntSuggestPage() {
       const data = await r.json().catch(() => ({}));
       if (!r.ok) {
         const map = {
-          BAD_PASSWORD: 'Wrong password.',
+          BAD_PASSWORD: "That password didn't match. Check chat for the current one.",
           CLOSED: 'Submissions are closed for this hunt.',
           HUNT_ENDED: 'This hunt has ended.',
           LIST_FULL: 'The suggestion list is full.',
@@ -75,8 +81,13 @@ export default function HuntSuggestPage() {
           MISSING_NAME: 'Enter your name.',
           NOT_FOUND: 'This link is no longer valid.',
         };
+        setErrorCode(data.error || null);
         setSubmitError(map[data.error] || 'Could not submit. Try again.');
+        if (data.error === 'BAD_PASSWORD') {
+          document.querySelector('input[type=password]')?.focus();
+        }
       } else {
+        setSentCount(count);
         setDone(true);
       }
     } catch {
@@ -110,12 +121,14 @@ export default function HuntSuggestPage() {
             <p className="text-center text-white/60 py-10 text-sm">
               {loadError === 'NOT_FOUND'
                 ? 'This suggestion link is not valid.'
-                : 'Something went wrong loading this link.'}
+                : 'Something went wrong loading this link. Try refreshing.'}
             </p>
           ) : info && info.open === false ? (
             <div className="text-center py-10 space-y-2">
               <p className="font-black text-white-body text-xl">{info.huntName}</p>
-              <p className="text-white/55 text-sm">Suggestions are closed for this hunt.</p>
+              <p className="text-white/55 text-sm">
+                Suggestions are closed for this hunt. Catch the next one on stream.
+              </p>
             </div>
           ) : done ? (
             <div className="text-center py-8 space-y-4">
@@ -123,9 +136,10 @@ export default function HuntSuggestPage() {
                 <Check size={22} className="text-emerald-signal" aria-hidden="true" />
               </div>
               <div>
-                <p className="font-black text-white-body text-lg">Submitted!</p>
+                <p className="font-black text-white-body text-lg">Sent!</p>
                 <p className="text-white/55 text-sm mt-1">
-                  Your picks were sent to {info?.huntName}. Resubmit anytime to update them.
+                  Sent {sentCount} {sentCount === 1 ? 'pick' : 'picks'} to{' '}
+                  {info?.huntName}. Resubmit anytime to update them.
                 </p>
               </div>
               <button
@@ -134,7 +148,7 @@ export default function HuntSuggestPage() {
                 className="inline-flex items-center gap-2 px-4 py-2 border border-white/15 text-white/70 hover:text-white-body hover:border-white/30 transition-colors duration-150"
               >
                 <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                  Edit / add more
+                  Add more picks
                 </span>
               </button>
             </div>
@@ -147,12 +161,16 @@ export default function HuntSuggestPage() {
                 <p className="font-black text-white-body text-2xl leading-tight">
                   {info?.huntName}
                 </p>
-                <p className="text-white/50 text-sm mt-1">
+                <p className="text-white/55 text-sm mt-1">
+                  Pick the slots you want played on this stream. The streamer reviews
+                  the list live.
+                </p>
+                <p className="text-white/45 text-[12px] mt-1">
                   Drop up to {MAX_SLOTS} slots. Same name resubmits to update your picks.
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <label className="block">
                   <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
                     Your name <span className="text-emerald-signal">*</span>
@@ -161,41 +179,71 @@ export default function HuntSuggestPage() {
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="cirno"
+                    placeholder="your stream name"
                     className={inputCls}
                   />
                 </label>
                 <label className="block">
-                  <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono inline-flex items-center gap-1">
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
                     <Lock size={10} aria-hidden="true" /> Password <span className="text-emerald-signal">*</span>
                   </span>
-                  <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••"
-                    className={inputCls}
-                  />
+                  <div className="relative">
+                    <input
+                      type={showPw ? 'text' : 'password'}
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••"
+                      className={`${inputCls} pr-10 ${errorCode === 'BAD_PASSWORD' ? 'border-red-destructive' : ''}`}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPw((v) => !v)}
+                      title={showPw ? 'Hide password' : 'Show password'}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-white/40 hover:text-white-body"
+                    >
+                      {showPw ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}
+                    </button>
+                  </div>
+                  <p className="text-[11.5px] text-white/45 mt-1.5">
+                    It's in chat or on stream right now.
+                  </p>
                 </label>
               </div>
 
               <div className="space-y-2">
-                <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 font-mono">
-                  Your picks
-                </span>
-                {slots.map((s, i) => (
+                <div className="flex items-baseline justify-between">
+                  <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 font-mono">
+                    Your picks
+                  </span>
+                  <span className="text-[10px] font-mono text-white/40 tabular-nums">
+                    {filledSlots.length} / {MAX_SLOTS}
+                  </span>
+                </div>
+                {slots.slice(0, shownSlots).map((s, i) => (
                   <SlotAutocomplete
                     key={i}
                     value={s}
                     onChange={(v) => setSlot(i, v)}
-                    placeholder={`Slot ${i + 1}`}
+                    placeholder={i === 0 ? 'Slot 1 (one is enough)' : `Slot ${i + 1}`}
                     className={inputCls}
+                    aria-label={`Slot ${i + 1}`}
                   />
                 ))}
+                {shownSlots < MAX_SLOTS && (
+                  <button
+                    type="button"
+                    onClick={() => setShownSlots((n) => Math.min(MAX_SLOTS, n + 1))}
+                    className="w-full px-3 py-2.5 border border-dashed border-purple-gamba/40 text-purple-bright hover:bg-purple-gamba/10 transition-colors text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                  >
+                    + Add another slot
+                  </button>
+                )}
               </div>
 
               {submitError && (
-                <p className="text-red-destructive text-sm">{submitError}</p>
+                <p role="alert" className="text-red-destructive text-sm">
+                  {submitError}
+                </p>
               )}
 
               <button
@@ -209,6 +257,15 @@ export default function HuntSuggestPage() {
                   {submitting ? 'Sending…' : 'Send suggestions'}
                 </span>
               </button>
+              {!canSubmit && !submitting && (
+                <p className="text-[11px] text-white/40 text-center font-mono">
+                  {!name.trim()
+                    ? 'Add your name to send.'
+                    : !password
+                      ? 'Enter the password to send.'
+                      : 'Add at least one slot to send.'}
+                </p>
+              )}
             </div>
           )}
         </div>

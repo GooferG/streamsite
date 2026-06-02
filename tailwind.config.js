@@ -25,6 +25,7 @@ module.exports = {
         'zinc-elevated': '#27272a',
         'white-body': '#fafafa',
         'white-muted': '#a1a1aa',
+        'gold-scatter': '#fbbf24',
         // Broadcast hifi (phosphor CRT)
         phosphor: '#1ff39a',
         'phosphor-dim': '#0e7d54',

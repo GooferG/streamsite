@@ -50,7 +50,12 @@ export default function HuntSuggestPage() {
   }
 
   const filledSlots = slots.map((s) => s.trim()).filter(Boolean);
-  const canSubmit = name.trim() && password && filledSlots.length > 0 && !submitting;
+  const requiresPassword = info?.requiresPassword !== false; // default to true until info loads
+  const canSubmit =
+    name.trim() &&
+    (!requiresPassword || password) &&
+    filledSlots.length > 0 &&
+    !submitting;
 
   async function submit() {
     if (!canSubmit) return;
@@ -64,7 +69,7 @@ export default function HuntSuggestPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           linkId,
-          password,
+          ...(requiresPassword ? { password } : {}),
           name: name.trim(),
           slots: filledSlots,
         }),
@@ -170,7 +175,11 @@ export default function HuntSuggestPage() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div
+                className={`grid grid-cols-1 gap-3 ${
+                  requiresPassword ? 'sm:grid-cols-2' : ''
+                }`}
+              >
                 <label className="block">
                   <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
                     Your name <span className="text-emerald-signal">*</span>
@@ -183,6 +192,7 @@ export default function HuntSuggestPage() {
                     className={inputCls}
                   />
                 </label>
+                {requiresPassword && (
                 <label className="block">
                   <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
                     <Lock size={10} aria-hidden="true" /> Password <span className="text-emerald-signal">*</span>
@@ -208,6 +218,7 @@ export default function HuntSuggestPage() {
                     It's in chat or on stream right now.
                   </p>
                 </label>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -261,7 +272,7 @@ export default function HuntSuggestPage() {
                 <p className="text-[11px] text-white/40 text-center font-mono">
                   {!name.trim()
                     ? 'Add your name to send.'
-                    : !password
+                    : requiresPassword && !password
                       ? 'Enter the password to send.'
                       : 'Add at least one slot to send.'}
                 </p>

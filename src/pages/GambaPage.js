@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronDown, X, LayoutGrid } from 'lucide-react';
 import BonusHuntsPage from './BonusHunts';
-import SuggestAdminTab from '../components/SuggestAdminTab';
 import Leaderboard from '../components/Leaderboard';
 import GambaHub from '../components/GambaHub';
 import { GAMBA_TOOLS } from '../data/gambaTools';
@@ -329,7 +328,6 @@ export default function GambaPage() {
             {/* Tool surface */}
             <div className="mt-4">
               {activeTool === 'leaderboard' && <Leaderboard />}
-              {activeTool === 'suggest' && <SuggestAdminTab />}
               {activeTool === 'bonus-hunts' && <BonusHuntsPage />}
               {activeTool === 'hunt-tracker' && (
                 <Suspense fallback={<ToolLoading label="Loading hunt tracker…" />}>

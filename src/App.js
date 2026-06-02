@@ -256,7 +256,6 @@ function StreamingSiteContent() {
             <Route path="wheel" element={null} />
             <Route path="equity" element={null} />
             <Route path="hunt" element={null} />
-            <Route path="suggest" element={null} />
             <Route path="bonus-hunts" element={null} />
             <Route path="hunt-tracker" element={null} />
           </Route>

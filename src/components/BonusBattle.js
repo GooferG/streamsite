@@ -2,8 +2,15 @@ import { useState } from 'react';
 import { Swords, Trophy, Ticket, X } from 'lucide-react';
 import SlotAutocomplete from './SlotAutocomplete';
 import BattleWheel from './BattleWheel';
+import CopyLinkButton from './CopyLinkButton';
 import { useBattleStore } from '../hooks/useBattleStore';
 import { computeBattle, currency } from '../utils/battleCalc';
+
+// Shared input styling so the slot autocomplete reads the same as the name
+// input (it only applies the className it's given — without this it renders
+// white-on-white).
+const INPUT_CLS =
+  'w-full bg-black/30 border border-white/10 text-white-body placeholder-white/40 text-sm px-3 py-2.5 font-mono focus:outline-none focus:border-emerald-signal/60';
 
 // ---- Shared presentational board. `interactive` toggles admin controls. ----
 // Exported so BattlePage can render the identical board read-only.
@@ -18,6 +25,7 @@ export function BattleBoard({
   onSetPayout,
   onSpinResult,
   onSetRake,
+  onSetEntryFee,
 }) {
   const [name, setName] = useState('');
   const [slot, setSlot] = useState('');
@@ -48,8 +56,16 @@ export function BattleBoard({
           <Swords size={14} className="text-emerald-signal" /> Players &amp; Pot
         </p>
         <div className="border border-purple-gamba/70 bg-purple-gamba/10 p-4 mb-4">
-          <div className="text-[11px] tracking-eyebrow-md uppercase text-purple-bright">Total Pot</div>
+          <div className="flex items-center justify-between">
+            <div className="text-[11px] tracking-eyebrow-md uppercase text-purple-bright">Total Pot</div>
+            <div className="text-[10px] tracking-eyebrow-sm uppercase text-white/55 tabular-nums">
+              {currency(derived.entryFee)} entry
+            </div>
+          </div>
           <div className="text-3xl font-black text-white-body mt-1 tabular-nums">{currency(derived.totalPot)}</div>
+          <div className="text-[10px] tracking-eyebrow-sm uppercase text-white/45 mt-0.5 tabular-nums">
+            {currency(derived.entryFee)} × {derived.total} {derived.total === 1 ? 'player' : 'players'}
+          </div>
         </div>
         <div className="grid grid-cols-3 gap-2 mb-4">
           <Stat n={derived.total} k="Total" border="border-amber-rust/60" text="text-amber-rust" />
@@ -63,13 +79,13 @@ export function BattleBoard({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Player name"
-              className="w-full bg-black/30 border border-white/10 text-white-body text-sm px-3 py-2.5 font-mono focus:outline-none focus:border-emerald-signal/60"
+              className={INPUT_CLS}
             />
             <SlotAutocomplete
               value={slot}
               onChange={setSlot}
               placeholder="Slot pick…"
-              className="w-full"
+              className={INPUT_CLS}
             />
             <button
               type="button"
@@ -185,16 +201,30 @@ export function BattleBoard({
           <div className="text-[12px] text-white/55 tabular-nums">
             Pot {currency(derived.totalPot)} − {rakePct}% rake ({currency(derived.rakeAmount)})
           </div>
+          <div className="text-[10px] text-white/40 tabular-nums mt-0.5">
+            {currency(derived.totalPayouts)} paid out across {derived.ran} {derived.ran === 1 ? 'bonus' : 'bonuses'}
+          </div>
           {interactive && (
-            <label className="block mt-3 text-[10px] tracking-eyebrow-md uppercase text-white/50">
-              Rake %
-              <input
-                type="number"
-                value={rakePct}
-                onChange={(e) => onSetRake?.(e.target.value)}
-                className="ml-2 w-16 bg-black/30 border border-white/12 text-white-body text-sm px-2 py-1 font-mono tabular-nums"
-              />
-            </label>
+            <div className="flex items-center justify-center gap-4 mt-3">
+              <label className="text-[10px] tracking-eyebrow-md uppercase text-white/50">
+                Entry $
+                <input
+                  type="number"
+                  value={derived.entryFee}
+                  onChange={(e) => onSetEntryFee?.(e.target.value)}
+                  className="ml-2 w-16 bg-black/30 border border-white/12 text-white-body text-sm px-2 py-1 font-mono tabular-nums"
+                />
+              </label>
+              <label className="text-[10px] tracking-eyebrow-md uppercase text-white/50">
+                Rake %
+                <input
+                  type="number"
+                  value={rakePct}
+                  onChange={(e) => onSetRake?.(e.target.value)}
+                  className="ml-2 w-16 bg-black/30 border border-white/12 text-white-body text-sm px-2 py-1 font-mono tabular-nums"
+                />
+              </label>
+            </div>
           )}
         </div>
         <div className="border border-red-destructive/50 bg-red-destructive/10 p-3 mt-2.5 text-center text-[12px] tracking-eyebrow-sm uppercase text-red-destructive/90 flex items-center justify-center gap-1.5">
@@ -214,40 +244,95 @@ function Stat({ n, k, border, text }) {
   );
 }
 
+// ---- Start screen: name the battle + set the entry fee before it begins. ----
+function StartScreen({ onStart }) {
+  const [title, setTitle] = useState('');
+  const [entryFee, setEntryFee] = useState('');
+
+  const feeNum = Number(entryFee) || 0;
+  const previewTitle = title.trim() || (feeNum ? `${currency(feeNum)} Bonus Battle` : 'Bonus Battle');
+
+  return (
+    <div className="border border-white/8 bg-zinc-card/40 p-8 sm:p-10 max-w-md mx-auto font-mono">
+      <p className="text-sm font-bold tracking-eyebrow-lg uppercase text-emerald-signal mb-1">◉ New Bonus Battle</p>
+      <p className="text-xs text-white/50 mb-6">Name it and set the buy-in. Entry fees fund the pot.</p>
+
+      <label className="block text-[10px] tracking-eyebrow-md uppercase text-white/50 mb-1.5">Battle title</label>
+      <input
+        value={title}
+        onChange={(e) => setTitle(e.target.value)}
+        placeholder={feeNum ? `${currency(feeNum)} Bonus Battle` : 'Bonus Battle'}
+        className={`${INPUT_CLS} mb-4`}
+      />
+
+      <label className="block text-[10px] tracking-eyebrow-md uppercase text-white/50 mb-1.5">Entry fee ($ per player)</label>
+      <input
+        type="number"
+        inputMode="decimal"
+        value={entryFee}
+        onChange={(e) => setEntryFee(e.target.value)}
+        placeholder="20"
+        className={`${INPUT_CLS} mb-6 tabular-nums`}
+      />
+
+      <button
+        type="button"
+        onClick={() => onStart({ title: previewTitle, entryFee: feeNum })}
+        className="w-full px-6 py-3.5 bg-purple-gamba hover:bg-purple-bright text-white text-xs font-bold tracking-eyebrow-lg uppercase transition-colors"
+      >
+        Start {previewTitle}
+      </button>
+    </div>
+  );
+}
+
 // ---- Admin tool: owns state, renders the interactive board. ----
 export default function BonusBattle() {
   const store = useBattleStore();
-  const { battle, players, startBattle, addPlayer, removePlayer, setPayout, setCurrentPlayer, setRake, reset } = store;
+  const {
+    battle,
+    players,
+    ownerId,
+    startBattle,
+    addPlayer,
+    removePlayer,
+    setPayout,
+    setCurrentPlayer,
+    setRake,
+    setEntryFee,
+    reset,
+  } = store;
 
-  const derived = computeBattle(players, battle?.rakePct ?? 10);
+  const derived = computeBattle(players, { rakePct: battle?.rakePct ?? 10, entryFee: battle?.entryFee ?? 0 });
 
   if (!battle) {
-    return (
-      <div className="border border-white/8 bg-zinc-card/40 p-10 text-center font-mono">
-        <p className="text-sm text-white/70 mb-4">No active battle.</p>
-        <button
-          type="button"
-          onClick={startBattle}
-          className="px-6 py-3 bg-purple-gamba hover:bg-purple-bright text-white text-xs font-bold tracking-eyebrow-lg uppercase transition-colors"
-        >
-          Start a Bonus Battle
-        </button>
-      </div>
-    );
+    return <StartScreen onStart={startBattle} />;
   }
+
+  const liveUrl = ownerId ? `${window.location.origin}/battle/${ownerId}` : null;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-sm font-bold tracking-eyebrow-lg uppercase text-emerald-signal">◉ Bonus Battle</h2>
-        <button
-          type="button"
-          onClick={() => { if (window.confirm('Reset the battle? This clears all players.')) reset(); }}
-          className="text-[10px] tracking-eyebrow-md uppercase text-white/40 hover:text-red-destructive font-mono"
-        >
-          Reset
-        </button>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h2 className="text-sm font-bold tracking-eyebrow-lg uppercase text-emerald-signal truncate">
+          ◉ {battle.title || 'Bonus Battle'}
+        </h2>
+        <div className="flex items-center gap-2">
+          {liveUrl && <CopyLinkButton url={liveUrl} label="Copy live link" />}
+          <button
+            type="button"
+            onClick={() => { if (window.confirm('Reset the battle? This clears all players.')) reset(); }}
+            className="text-[10px] tracking-eyebrow-md uppercase text-white/40 hover:text-red-destructive font-mono"
+          >
+            Reset
+          </button>
+        </div>
       </div>
+      {!ownerId && (
+        <p className="text-[10px] tracking-eyebrow-sm uppercase text-amber-rust/80 font-mono">
+          Not signed in — running locally. Log in to share a live link with viewers.
+        </p>
+      )}
       <BattleBoard
         battle={battle}
         players={players}
@@ -258,6 +343,7 @@ export default function BonusBattle() {
         onSetPayout={setPayout}
         onSpinResult={(p) => setCurrentPlayer(p.id)}
         onSetRake={setRake}
+        onSetEntryFee={setEntryFee}
       />
     </div>
   );

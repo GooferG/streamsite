@@ -15,14 +15,16 @@ import { makeId } from '../utils/huntCalc';
 
 const LS_KEY = 'bonus_battle_active';
 
-const EMPTY_BATTLE = (ownerUid) => ({
+const EMPTY_BATTLE = (ownerUid, overrides = {}) => ({
   ownerTwitchId: ownerUid || null,
   title: 'Bonus Battle',
+  entryFee: 0,
   rakePct: 10,
   currentPlayerId: null,
   status: 'active',
   createdAt: Date.now(),
   updatedAt: Date.now(),
+  ...overrides,
 });
 
 function loadLocal() {
@@ -107,11 +109,20 @@ export function useBattleStore() {
     [isLoggedIn, uid, persistLocal]
   );
 
-  const startBattle = useCallback(() => {
-    writeBattle(EMPTY_BATTLE(uid));
-  }, [writeBattle, uid]);
+  const startBattle = useCallback(
+    ({ title, entryFee } = {}) => {
+      writeBattle(
+        EMPTY_BATTLE(uid, {
+          title: (title || '').trim() || 'Bonus Battle',
+          entryFee: Number(entryFee) || 0,
+        })
+      );
+    },
+    [writeBattle, uid]
+  );
 
   const setRake = useCallback((pct) => writeBattle({ rakePct: Number(pct) || 0 }), [writeBattle]);
+  const setEntryFee = useCallback((fee) => writeBattle({ entryFee: Number(fee) || 0 }), [writeBattle]);
   const setTitle = useCallback((title) => writeBattle({ title }), [writeBattle]);
   const setCurrentPlayer = useCallback(
     (playerId) => writeBattle({ currentPlayerId: playerId }),
@@ -209,6 +220,7 @@ export function useBattleStore() {
     ownerId: uid,
     startBattle,
     setRake,
+    setEntryFee,
     setTitle,
     setCurrentPlayer,
     addPlayer,

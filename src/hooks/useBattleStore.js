@@ -21,6 +21,9 @@ const EMPTY_BATTLE = (ownerUid, overrides = {}) => ({
   entryFee: 0,
   rakePct: 10,
   currentPlayerId: null,
+  // 'lobby' = signups open (add players); 'running' = entries locked, bonuses
+  // being played. status stays 'active' until the battle is reset/ended.
+  phase: 'lobby',
   status: 'active',
   createdAt: Date.now(),
   updatedAt: Date.now(),
@@ -124,6 +127,9 @@ export function useBattleStore() {
   const setRake = useCallback((pct) => writeBattle({ rakePct: Number(pct) || 0 }), [writeBattle]);
   const setEntryFee = useCallback((fee) => writeBattle({ entryFee: Number(fee) || 0 }), [writeBattle]);
   const setTitle = useCallback((title) => writeBattle({ title }), [writeBattle]);
+  // Lock entries (start) → 'running'; unlock → back to 'lobby'.
+  const lockEntries = useCallback(() => writeBattle({ phase: 'running' }), [writeBattle]);
+  const unlockEntries = useCallback(() => writeBattle({ phase: 'lobby' }), [writeBattle]);
   const setCurrentPlayer = useCallback(
     (playerId) => writeBattle({ currentPlayerId: playerId }),
     [writeBattle]
@@ -222,6 +228,8 @@ export function useBattleStore() {
     setRake,
     setEntryFee,
     setTitle,
+    lockEntries,
+    unlockEntries,
     setCurrentPlayer,
     addPlayer,
     removePlayer,

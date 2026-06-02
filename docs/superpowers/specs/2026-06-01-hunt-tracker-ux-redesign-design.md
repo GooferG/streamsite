@@ -1,9 +1,16 @@
 # Hunt Tracker UX Redesign — Design
 
 Date: 2026-06-01
-Status: Approved (brainstorm)
-Component: `src/components/HuntTracker.js` (+ `SuggestionsPanel.js`, `HuntStartScreen.js`, new files)
-Register: product (utility surface inside `/gamba` per PRODUCT.md)
+Status: Approved (brainstorm); refined with UI-designer critique of all three surfaces
+Component: `src/components/HuntTracker.js` (+ `SuggestionsPanel.js`, `HuntStartScreen.js`,
+`src/pages/LiveHuntPage.js`, `src/pages/HuntSuggestPage.js`, new files)
+Register: product (utility surfaces inside `/gamba` and the public share/intake links per PRODUCT.md)
+
+Scope note: the original brainstorm covered the owner tracker only. After approval, a
+UI-designer pass critiqued all three hunt surfaces (owner tracker, live spectator page,
+suggestion intake page). This spec now also folds in the high-impact polish for the two
+share pages. The critique's "optional bigger ideas" (OBS overlay/compact mode, chip-style
+slot input, remember-me) are explicitly deferred, not in scope.
 
 ## Problem
 
@@ -30,11 +37,16 @@ monitor. New users get no guidance.
    flow, replayable on demand.
 4. Targeted enlargement of the high-traffic inputs without bloating the dense tool
    into a marketing surface.
+5. Polish the **live spectator page** for glanceable, live, second-monitor viewing
+   (profit hero, dominant now-opening card, stale-data signal, phone tables).
+6. Polish the **suggestion intake page** for a fast mobile form-fill by a newcomer
+   (password guidance, mobile stacking, progressive slot fields, error feedback).
 
 Non-goals: changing link semantics (live stays one-click read-only; suggestion link
-keeps its password gate), changing data model / Firestore shape, touching the
-`/live` spectator page or `/hunt-suggest` public submission page, reworking the
-dense data tables.
+keeps its password gate), changing data model / Firestore shape, reworking the dense
+owner data tables. Deferred (explicitly out of scope this pass): OBS overlay/compact
+mode and transparent background for the live page, chip-style add-as-you-go slot
+input, and localStorage remember-me on the intake page.
 
 ## Decisions (from brainstorm)
 
@@ -52,6 +64,8 @@ dense data tables.
   active-hunt view (not on the start screen).
 - **Sizing:** Targeted — primary inputs, add-bonus form, start form, share bar.
   Tables/rows/pills stay dense.
+- **Share pages in scope:** both the live spectator page and the suggestion intake
+  page get their high-impact critique fixes folded into this same effort.
 
 ## Architecture
 
@@ -64,16 +78,35 @@ links are already owner-gated.
 Full-width strip, `grid grid-cols-1 sm:grid-cols-2 gap-2` (stacks on mobile),
 tagged `data-tour="share-bar"`. Two cells:
 
-- **Live cell.** Lifts the existing live-share UI out of the header button cluster.
-  Reuses the current `shareId` / `startSharing` / `stopSharing` / `copyShareLink`
-  logic verbatim — only the markup location moves. States:
-  - Not sharing: "Go live" button (`Radio` icon).
-  - Sharing: `● LIVE` pulse dot + read-only `/live/:id` URL field + Copy + Stop.
-- **Collect cell.** Reuses the existing `LinkControls` component, moved out of
-  `SuggestionsPanel`. No logic change: create-with-password → Collecting/Closed
-  status + URL + Copy + Close/Re-open + Kill. Props are the same intake-link props
-  `HuntTracker` already passes down (`linkId`, `linkOpen`, `linkBusy`, `linkError`,
-  `onCreateLink`, `onToggleLink`, `onDeleteLink`).
+Design the two cells as distinct **tracks**, not matching twin buttons (critique #1):
+they are different functions and should read that way at a glance.
+
+- **Live cell — WATCH track (broadcast / output).** Lifts the existing live-share UI
+  out of the header button cluster. Reuses the current `shareId` / `startSharing` /
+  `stopSharing` / `copyShareLink` logic verbatim — only the markup location moves.
+  - Accent: red (the live pulse) when sharing; `Radio` icon. One-word mono eyebrow
+    "Watch" above the control.
+  - Not sharing: "Go live" button.
+  - Sharing: `● LIVE` pulse dot + read-only `/live/:id` URL field (select-on-focus,
+    visible — do not hide it behind a tooltip) + Copy + Stop.
+- **Collect cell — COLLECT track (intake / input).** Reuses the existing
+  `LinkControls` component, moved out of `SuggestionsPanel`. No logic change:
+  create-with-password → Collecting/Closed status + URL + Copy + Close/Re-open +
+  Kill. Props are the same intake-link props `HuntTracker` already passes down
+  (`linkId`, `linkOpen`, `linkBusy`, `linkError`, `onCreateLink`, `onToggleLink`,
+  `onDeleteLink`).
+  - Accent: `purple-gamba` / `purple-bright`; `LinkIcon`. One-word mono eyebrow
+    "Collect" above the control.
+
+**Anti-mispaste (critique risk #1).** Both tracks have a pulsing dot and a copy
+button, so a host could paste the wrong link mid-hunt. The copy buttons name what
+they copy: "Copy watch link" / "Copy collect link" (sentence case). Distinct verbs
+at the point of action, not color alone.
+
+**Shared copy-link control.** The header and `SuggestionsPanel` currently have two
+near-duplicate Copy/Copied controls (`Check`/`LinkIcon` + label) with slightly
+different padding/borders. Factor one small `CopyLinkButton` so both tracks are
+pixel-consistent; reuse it for any other copy affordance.
 
 `LinkControls` is **exported** from `SuggestionsPanel.js` (or extracted to its own
 `src/components/HuntLinkControls.js` — preferred, see Components) so both the bar
@@ -81,9 +114,22 @@ and the now-trimmed suggestions panel can import it. After this change,
 `SuggestionsPanel` no longer renders `LinkControls`; it keeps RosterSearch, import
 flow, and the suggestion pill list.
 
-The header button cluster keeps: phase toggle (Start opening / Edit bonuses),
-new `?` tour button, Export split, Complete, Discard. The old `SHARE LIVE` /
-live-status block is removed from the header.
+**Header cluster, regrouped (critique #3).** Once the live-share block leaves the
+header (its logic moves to the WATCH cell) the cluster is still crowded. Regroup:
+
+- The phase toggle (Start opening / Edit bonuses) is a mode switch; group it with
+  the title/identity on the left, not with the action buttons.
+- Right cluster, primary: **Export split** and **Complete** only (the two the host
+  reaches for).
+- **Demote Discard** and **park the `?` tour button** in an overflow `⋯` menu (or, if
+  an overflow menu is more than this pass wants, push Discard far right at low
+  contrast and place `?` at the far-left of the cluster at `text-white/40`). Discard
+  must not sit inline next to Complete where a mis-click is costly.
+- The inline confirm-swap pattern stays. Gate it both ways: while `confirmingComplete`
+  hide the Discard trigger (already done) AND while `confirmingDiscard` hide the
+  Complete trigger, so the two confirms never produce a 4-button scramble.
+- The header's Complete + Export wrapper gets `data-tour="complete-actions"`.
+The old `SHARE LIVE` / live-status block is removed from the header.
 
 ### 2. Layout restructure (Option B)
 
@@ -104,10 +150,31 @@ body grid (lg:grid-cols-2):
 ```
 
 - The **overall-stats band** is a new full-width container under the status bar. It
-  hosts the four `StatCell`s (Profit, Req X, W/L Multiplier, Total wins) plus the
+  hosts the four headline stats (Profit, Req X, W/L Multiplier, Total wins) plus the
   Start/Finish balance inputs (moved out of the old right-column "Financials" §02).
   Visually it leads the body; styled as a band (subtle emerald tint, denser than a
   marketing hero, per register).
+- **Render as one instrument, not a gap grid (critique #2).** A single horizontal
+  row of cells separated by hairline `divide-x divide-white/10` (not gaps + bordered
+  cards), `py-2.5` per cell. `StatCell` today is a fixed bordered box at `text-base`
+  (`px-3 py-2.5 border`); add a borderless / divider-friendly variant (or a `size`
+  / `hero` / `bare` prop) so the band reads as a continuous readout rather than four
+  detached boxes. Keep `StatCell` for the existing right-column / modal / live-page
+  uses unchanged.
+  - **Profit is the hero:** ~1.5× the value font size of the other cells, carried by
+    its existing emerald/red sign color. The other three stay uniform so profit pops
+    without any JACKPOT treatment.
+  - Order left-to-right by what the host watches live: Profit · Req X · W/L mult ·
+    Total wins, then Start and Finish balance as the two rightmost cells of the same
+    band.
+  - **Editable vs computed signal (critique risk #2):** the two balance cells use the
+    `inputCls` border (the border *is* the "type here" cue); the four computed cells
+    render with no border so Profit never looks editable and the inputs never look
+    static. No extra labels needed for this distinction.
+  - On small screens the band collapses to a 2×2 (or a single horizontal-scroll strip
+    of cells) so three stacked full-width bands (share bar + stats + first list rows)
+    don't push the first bonus row off the initial viewport (critique risk: mobile
+    Option B). Goal: a bonus row is reachable within one thumb-scroll.
 - The right column drops "Financials" as a separate section (its stats moved to the
   band; its balance inputs moved to the band). It now reads as the quiet equity +
   context side: Squad split, Soft banned, Suggestions, Caller stats. Section labels
@@ -130,10 +197,18 @@ step, look up its target by `document.querySelector('[data-tour="<key>"]')`:
 - **Target present:** measure `getBoundingClientRect()`. Render a dimmed overlay
   with a transparent cut-out box (4-rectangle mask or a box-shadow `0 0 0 9999px`
   spotlight) over the element, plus a tooltip card anchored adjacent (auto-flips
-  above/below based on available space). Re-measure on resize/scroll.
+  above/below based on available space). Re-measure on resize/scroll. If the measured
+  rect is zero-size (target hidden mid-tour), fall back to the centered card for that
+  step rather than ring an empty hole.
 - **Target absent:** render a centered card with a short mini-mockup illustration
   (small inline JSX, e.g. a fake suggestion pill, a fake stat row) instead of a
   spotlight.
+
+**Overlay look (critique risk: cheap-tour tells).** The page is already dark, so a
+standard ~50% black scrim looks muddy and the spotlit element does not pop. Dim less
+(≈35-40%) and pull the eye with the highlight, not the contrast: a thin
+`emerald-signal` ring plus a slight outward glow on the spotlit element. Emerald is
+the brand primary, so this stays on-register instead of generic product-tour blue.
 
 **Steps:**
 
@@ -160,9 +235,19 @@ keyboard-focusable; overlay traps focus while open.
 an explicit `tourOpen` state that opens the tour ignoring `seen` (replay). The auto
 path and replay path share one `tourOpen` boolean; `seen` only gates the auto-open.
 
+**Owner-only gating (critique risk).** The tour explains the share + collect links,
+which are gated behind `isLoggedIn`. An anon local user (the "LOCAL ONLY" status)
+must not get a walkthrough for features they cannot use. The auto-open already keys
+off `isLoggedIn`; additionally, any step whose target is auth-gated (steps 2 and 3,
+the share bar and suggestions panel) must use its fallback card when the element is
+absent, never spotlight a missing node. So the gating and the present/absent target
+logic together keep the tour coherent for whoever opens it.
+
 **Motion.** Step 4's pill animation and the spotlight transition are gated behind
-`prefers-reduced-motion`; reduced motion shows static end states and no animated
-box movement.
+`prefers-reduced-motion`. A short eased translate/resize of the spotlight
+(~200-250ms) reads polished; under reduced motion the spotlight cross-fades between
+steps instead of animating geometry, and step 4 shows static end states. Honoring
+this is required by PRODUCT.md (best-effort, not a hard gate).
 
 ### 4. Targeted sizing
 
@@ -179,6 +264,129 @@ box movement.
 
 No color/font token changes. Padding/spacing only on high-traffic inputs.
 
+### 5. Add-bonus form ergonomics (critique #4)
+
+- **Tab order:** the Super / 5-scat toggles currently sit between the stake and
+  caller inputs, breaking the natural type-flow. Reorder the form to slot → stake →
+  caller → markers row → Log bonus, so the markers are a qualifier just above submit,
+  not a mid-form interruption.
+- **Autofocus** the slot autocomplete on entering the collecting phase so the host
+  types straight away.
+- The bonus list's add-form wrapper gets `data-tour="add-form"`.
+
+### 6. Opening current-slot card (critique #5)
+
+This card is the live-driving surface during opening. Refinements (logic unchanged,
+layout only):
+
+- Win input gets its own full-width row (it is typed every slot); the control row
+  beneath holds Prev · Later · Next as three evenly-weighted controls, Next staying
+  the purple primary. No more `flex-wrap` where Later wraps and detaches Prev/Next.
+- Add a 2px progress hairline tied to `openedCount / bonuses.length` under the card
+  header so progress reads at a glance from across the room.
+- Keep the markers (S pill, star, Later) on the same baseline row as the `text-2xl`
+  slot title rather than stacked above it, so the title stays the one big thing.
+
+### 7. Secondary polish (tracker)
+
+- **Panel numbering** is inconsistent (01, 02, 03, 04, then 06, 07; no 05) and will
+  not match reading order after the Option B reshuffle. Drop the numeric codes from
+  the secondary right-column panels; keep codes only on the two primary regions
+  (bonus list, stats band), or renumber sequentially once layout settles.
+- **Signal the quiet right column** without looking broken: one notch lower contrast
+  on its panel labels (`text-white/50` vs `/65`) and tighter `space-y`. Do not gray
+  out values (reads as disabled/empty).
+- **Voice-rule fix:** the soft-banned textarea placeholder uses an em dash ("Slots to
+  avoid this hunt — comma or newline separated"). Replace with a period: "Slots to
+  avoid this hunt. Comma or newline separated."
+- **Empty states** ("No bonuses logged.", "No squad added.", "No calls tagged.", "No
+  suggestions imported.") are uniformly loud uppercase mono. Soften to sentence-case
+  body ("Nothing logged yet", etc.); keep dense.
+- **5-scat star** uses raw `yellow-400`, the only off-palette token. Either add an
+  intentional `gold-scatter` token or shift toward `orange-admin` (the existing
+  "notable" accent). Never let it co-occur with a gold/red treatment (casino-chrome
+  anti-reference). Low priority, but decide rather than leave it undocumented.
+- **Caller-stats highlight icons** mix a lucide `Trophy`, a 🧱 emoji, and no icon.
+  Pick one register (all lucide, or accept emoji as intentional grit consistently).
+
+### 8. Live spectator page (`LiveHuntPage.js`)
+
+Polish for a glanceable, live, second-monitor surface. No data-model, Firestore, or
+route changes; presentational + state-detection only.
+
+- **Profit as a hero number.** Today Profit is one of four equal `StatCell`s while
+  the hunt name is `text-3xl/4xl`. Pull Profit out into a dedicated large number
+  (`text-3xl`+) near the title, keeping its emerald/red sign color, with a small mono
+  eyebrow ("Profit") so it reads even on a muted monitor where color alone is
+  ambiguous. Demote Start / Finish / Best X to a supporting strip.
+- **Make the "Now opening" card the focal point.** During the opening phase, reorder
+  it directly under the title, above the supporting stats. Bump the slot name to
+  `text-3xl sm:text-4xl`, add vertical padding. Re-introduce the `super` (S pill) and
+  `fiveScat` (star) markers (the live card currently drops them even though the data
+  and the table rows show them). Add `{openedCount} / {bonuses.length} opened`
+  progress (reuse the tracker's logic). Show the next-up stake (`· {fmt(stake)}`) for
+  parity with the owner card.
+- **Stale-data / connection signal.** The red pulse currently animates regardless of
+  whether Firestore is still pushing. Track last-snapshot time; if no update has
+  arrived in N seconds, downgrade the eyebrow (e.g. "Reconnecting…" / "Last update
+  Xs ago") and stop the pulse. Critically, give the `onSnapshot` **error** path its
+  own state ("Lost the signal, retrying…") distinct from genuine missing/ended, so a
+  transient network blip no longer reads as "This hunt isn't live".
+- **Phone tables.** Both tables are `min-w-[420px]` inside `overflow-x-auto` with no
+  scroll affordance, and the Slot cell is `max-w-[200px] truncate`. Add a right-edge
+  fade on the scroll container so it is obvious there is more, add `title={b.slot}` on
+  truncated names, and consider a stacked Slot + (win/X) card layout below `sm` for
+  the bonus table (the densest content most likely read on a phone).
+- **States feel thin and one copy line breaks voice rules.** Give loading / missing /
+  active a shared top live-eyebrow frame so transitions feel continuous. Rewrite the
+  missing-state body copy ("The stream may have ended sharing") to something plain and
+  warm, e.g. "Nothing live right now. Catch the next hunt on stream." Verify the curly
+  apostrophe in "isn't" renders at `text-[10px]` (no tofu box on an overlay).
+- **Secondary:** color the squad-split payout emerald/red vs `inFor` (parity with the
+  owner tool, which the live page omits); bump the current-row highlight from
+  `bg-purple-gamba/15` toward `/25` or add a left accent so it is visible on a dim
+  overlay; gate the pulse animation behind `prefers-reduced-motion`; reserve height
+  for the now-opening card so a phase flip does not jump the layout on an always-on
+  tab. The collecting-phase eyebrow "▸ Collecting bonuses" is owner jargon for a
+  spectator; "Building the hunt" or "Picking slots" reads clearer.
+
+### 9. Suggestion intake page (`HuntSuggestPage.js`)
+
+Polish for a fast mobile form-fill by a newcomer not in on the joke. No data-model or
+API changes; form UX + copy only.
+
+- **Explain where the password comes from** (the biggest drop-off). Add a one-line
+  helper under the password field, sentence case, e.g. "It's in chat or on stream
+  right now" (owner can adjust the literal source). Change the `BAD_PASSWORD` error
+  from "Wrong password." to point them back: "That password didn't match. Check chat
+  for the current one." This doubles as the strongest anti-phishing trust cue.
+- **Stack name + password on mobile.** The `grid grid-cols-2` has no responsive
+  prefix, cramming both at 320px. Single column by default, `sm:grid-cols-2` and up.
+- **Progressive slot fields.** Six always-visible empty boxes read as "fill all six"
+  homework and push submit below the fold. Show one field, reveal the next only once
+  the previous has a value, capping at `MAX_SLOTS` (6). Rendering change only; the
+  existing `SlotAutocomplete` already works field-by-field. (Chip-style add-as-you-go
+  is the cleaner long-term pattern but is deferred — progressive disclosure gets most
+  of the benefit at low risk.)
+- **Fix the dead disabled button + unassociated error.** Either keep the submit
+  enabled and surface what is missing on tap ("Add your name to send" / "Enter the
+  password to send"), or show a quiet line near the button. On `BAD_PASSWORD`, mark
+  the password field errored (red border) and move focus to it. Give `submitError`
+  `role="alert"` so it is announced.
+- **Cold-newcomer framing.** Add one plain sentence under the hunt name of what this
+  is and what happens to picks, e.g. "Pick the slots you want played on this stream.
+  The streamer reviews the list live." Keep `huntName` as the big anchor.
+- **Secondary:** password reveal (eye) toggle, keyboard-reachable; echo the count on
+  success ("Sent 3 picks to {huntName}."); the "Edit / add more" button uses slash
+  parallelism and `reset()` wipes the slots, so rename to "Add more picks" (or
+  genuinely preserve the submitted slots); give the closed and ERROR states a next
+  step ("Catch the next hunt on stream." / "Try refreshing."); add `aria-label={`Slot
+  ${i+1}`}` to each autocomplete input (currently a screen reader hears unlabeled
+  fields); square off the autocomplete dropdown (`rounded-lg`/`shadow-xl` drifts from
+  the square card) and reuse the card surface. Note: `SlotAutocomplete`'s dropdown is
+  `onMouseDown`-only with no arrow-key/Enter handling; full keyboard support there is
+  a known gap, fix opportunistically if the component is touched.
+
 ## Components
 
 - `src/components/HuntTracker.js` — restructure JSX (bar, stats band, column
@@ -194,6 +402,13 @@ No color/font token changes. Padding/spacing only on high-traffic inputs.
 - `src/components/HuntStartScreen.js` — minor sizing parity.
 - `src/components/HuntTour.js` — **new**: overlay, spotlight, step cards, controls.
 - `src/hooks/useFirstVisit.js` — **new**: localStorage-backed first-visit flag.
+- `src/components/CopyLinkButton.js` — **new** (small): one Copy/Copied control
+  reused by both share-bar tracks (and anywhere else a link is copied), so the two
+  tracks stay pixel-consistent. Takes the URL + a label ("Copy watch link" etc.).
+- `src/components/StatCell.js` — add a borderless / `hero` variant (or `size` prop)
+  for the stats band; existing call sites keep current behavior.
+- `src/pages/LiveHuntPage.js` — spectator polish (see §8). No data/route change.
+- `src/pages/HuntSuggestPage.js` — intake-form polish (see §9). No data/route change.
 
 ## Data flow
 
@@ -202,6 +417,13 @@ Live-share and intake-link state continue to flow through the existing
 `useHuntStore` hook and `authedFetch` calls; only the rendering location of those
 controls moves. The stats band consumes the same `computeStats` output already in
 the component.
+
+The live page keeps its existing `onSnapshot` subscription on `shared_hunts/:id`;
+the stale-data signal is derived client-side from the time of the last snapshot (a
+local timer / `lastUpdate` state), with the error callback routed to a new distinct
+state. No change to what is written or the Firestore rules. The intake page keeps its
+existing `/api/hunt-suggest/info` + `/api/hunt-suggest/submit` calls; all changes are
+client-side form UX and copy.
 
 ## Error handling
 
@@ -231,11 +453,21 @@ No CI gate exists; tests are best-effort unit tests under `src/**/__tests__/`.
   a throwing `localStorage` mock (returns "seen").
 - `HuntTour` smoke test: renders step 1, Next advances, Skip/Done calls `markSeen`,
   Escape closes. Target-present vs target-absent both render without throwing.
-- Manual: create a hunt as owner → tour auto-opens once → skip → reload → does not
-  reopen → `?` replays. Both links creatable from the bar. Layout matches Option B
-  on desktop and stacks on mobile.
+- Manual (tracker): create a hunt as owner → tour auto-opens once → skip → reload →
+  does not reopen → `?` replays. Both links creatable from the bar. Layout matches
+  Option B on desktop and stacks on mobile so a bonus row is reachable in one scroll.
+- Manual (live page): open `/live/:id` on a phone width → name + profit hero + now-
+  opening card read at a glance; flip phases and add a bonus on the owner side and
+  confirm the live page updates without a jarring jump; simulate dropped updates and
+  confirm the stale signal appears and the error state differs from "not live".
+- Manual (intake page): open `/hunt-suggest/:id` at 320px → name/password stack, one
+  slot field reveals progressively, password helper shows, a wrong password errors on
+  the field with focus, success echoes the count.
 
 ## Rollout
 
-Single PR. Pure frontend, no env or serverless changes. Lazy chunk already isolates
-`HuntTracker`; new files ride in the same chunk. No migration.
+Single PR (or two: tracker + share-bar + tour as one, share-page polish as a
+follow-up, if review prefers smaller diffs). Pure frontend, no env / serverless /
+Firestore-rule changes, no migration. The tracker lazy chunk already isolates
+`HuntTracker`; new tracker files ride in the same chunk. `LiveHuntPage` and
+`HuntSuggestPage` are separate route entries and their edits are self-contained.

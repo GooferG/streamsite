@@ -45,13 +45,17 @@ export default function BattlePage() {
     };
   }, [ownerId]);
 
-  const derived = computeBattle(players, battle?.rakePct ?? 10);
+  const derived = computeBattle(players, {
+    rakePct: battle?.rakePct ?? 10,
+    entryFee: battle?.entryFee ?? 0,
+  });
 
   return (
     <div className="min-h-screen bg-zinc-950 px-4 py-8 sm:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center gap-2 mb-6 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono text-emerald-signal">
-          <RadioTower size={14} className="motion-safe:animate-pulse" /> Bonus Battle · Live
+          <RadioTower size={14} className="motion-safe:animate-pulse" />
+          {battle?.title || 'Bonus Battle'} · Live
         </div>
         {loading && <p className="text-white/50 font-mono text-sm">Connecting…</p>}
         {!loading && missing && (

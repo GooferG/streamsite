@@ -202,12 +202,13 @@ export function BattleBoard({
           // players and lock in.
           <div className="text-center py-6">
             <p className="text-[13px] tracking-eyebrow-lg uppercase text-purple-bright mb-2">Signups open</p>
-            <div className="border border-white/10 bg-zinc-broadcast h-44 sm:h-52 flex flex-col items-center justify-center gap-2 font-mono px-4">
-              <span className="text-4xl font-black text-white-body tabular-nums">{derived.total}</span>
-              <span className="text-[10px] tracking-eyebrow-md uppercase text-white/55">
-                {derived.total === 1 ? 'player' : 'players'} entered · pot {currency(derived.totalPot)}
+            <div className="border border-white/10 bg-zinc-broadcast h-44 sm:h-52 flex flex-col items-center justify-center gap-2.5 font-mono px-4">
+              <span className="text-5xl font-black text-white-body tabular-nums leading-none">{derived.total}</span>
+              <span className="text-sm sm:text-base tracking-eyebrow-sm uppercase text-white/70">
+                {derived.total === 1 ? 'player' : 'players'} entered · pot{' '}
+                <span className="text-emerald-signal font-bold tabular-nums">{currency(derived.totalPot)}</span>
               </span>
-              <span className="text-xs text-white/45 mt-1 text-center">
+              <span className="text-base sm:text-lg font-bold text-white-body mt-1 text-center">
                 {interactive ? 'Add players, then lock entries to start.' : 'Waiting for the host to start the battle…'}
               </span>
             </div>

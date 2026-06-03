@@ -1,0 +1,13 @@
+{
+  "$schema": "https://docs.fallow.tools/schema/fallow.schema.json",
+  "entry": [
+    "api/**/*.{js,mjs}",
+    "src/index.js",
+    "src/setupProxy.js",
+    "scripts/**/*.{js,mjs}"
+  ],
+  "ignorePatterns": [
+    "build/**",
+    "public/**"
+  ]
+}

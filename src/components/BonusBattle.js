@@ -4,7 +4,7 @@ import SlotAutocomplete from './SlotAutocomplete';
 import BattleWheel from './BattleWheel';
 import CopyLinkButton from './CopyLinkButton';
 import { useBattleStore } from '../hooks/useBattleStore';
-import { computeBattle, currency } from '../utils/battleCalc';
+import { computeBattle, currency, CURRENCIES } from '../utils/battleCalc';
 
 // Shared input styling so the slot autocomplete reads the same as the name
 // input (it only applies the className it's given — without this it renders
@@ -16,6 +16,7 @@ const INPUT_CLS =
 // Shared so BattlePage renders the same screen read-only (interactive=false).
 export function FinishedScreen({ battle, players, derived, interactive = false, onResume }) {
   const { winner, loser, ran } = derived;
+  const fmt = (v) => currency(v, battle?.currency || 'USD');
   const sorted = [...players].filter((p) => p.ran).sort((a, b) => (b.payout || 0) - (a.payout || 0));
   // Deterministic confetti so it doesn't reshuffle every render (no Math.random
   // dependence on render). 24 pieces with varied colors/positions/delays.
@@ -87,10 +88,10 @@ export function FinishedScreen({ battle, players, derived, interactive = false, 
               <p className="text-[12px] tracking-eyebrow-md uppercase text-purple-bright mt-2">{winner.slot}</p>
             )}
             <div className="mt-5 text-5xl sm:text-7xl font-extrabold tabular-nums text-emerald-signal leading-none">
-              {currency(derived.potAfterRake)}
+              {fmt(derived.potAfterRake)}
             </div>
             <p className="text-[11px] tracking-eyebrow-sm uppercase text-white/45 mt-2 tabular-nums">
-              {currency(winner.payout)} pulled · pot {currency(derived.totalPot)} − {battle?.rakePct ?? 10}% rake
+              {fmt(winner.payout)} pulled · pot {fmt(derived.totalPot)} − {battle?.rakePct ?? 10}% rake
             </p>
           </div>
         ) : (
@@ -127,7 +128,7 @@ export function FinishedScreen({ battle, players, derived, interactive = false, 
                         isWin ? 'text-emerald-signal' : isLose ? 'text-red-destructive' : 'text-white-body'
                       }`}
                     >
-                      {currency(p.payout)}
+                      {fmt(p.payout)}
                     </span>
                   </div>
                 );
@@ -169,6 +170,7 @@ export function BattleBoard({
   onSpinResult,
   onSetRake,
   onSetEntryFee,
+  onSetCurrency,
   onLockEntries,
   onUnlockEntries,
 }) {
@@ -179,6 +181,8 @@ export function BattleBoard({
   const current = players.find((p) => p.id === battle?.currentPlayerId) || null;
   const unplayed = players.filter((p) => !p.ran);
   const rakePct = battle?.rakePct ?? 10;
+  const cur = battle?.currency || 'USD';
+  const fmt = (v) => currency(v, cur);
   const sorted = [...players].sort((a, b) => (b.payout || 0) - (a.payout || 0));
 
   // Phase: 'lobby' = signups open; 'running' = entries locked, bonuses playing.
@@ -210,7 +214,7 @@ export function BattleBoard({
           <div className="flex items-center justify-between">
             <div className="text-[11px] tracking-eyebrow-md uppercase text-purple-bright">Total Pot</div>
             <div className="text-[10px] tracking-eyebrow-sm uppercase text-white/55 tabular-nums">
-              {currency(derived.entryFee)} entry
+              {fmt(derived.entryFee)} entry
             </div>
           </div>
           {/* Hero number with a faded ghost layer behind it (leaderboard look). */}
@@ -219,14 +223,14 @@ export function BattleBoard({
               className="absolute -top-1 -left-0.5 text-[3.5rem] sm:text-[4rem] font-extrabold tabular-nums font-mono text-purple-gamba/15 leading-none select-none pointer-events-none"
               aria-hidden="true"
             >
-              {currency(derived.totalPot)}
+              {fmt(derived.totalPot)}
             </span>
             <span className="relative block text-[3.5rem] sm:text-[4rem] font-extrabold tabular-nums font-mono text-white-body leading-none">
-              {currency(derived.totalPot)}
+              {fmt(derived.totalPot)}
             </span>
           </div>
           <div className="text-[10px] tracking-eyebrow-sm uppercase text-white/45 mt-1.5 tabular-nums">
-            {currency(derived.entryFee)} × {derived.total} {derived.total === 1 ? 'player' : 'players'}
+            {fmt(derived.entryFee)} × {derived.total} {derived.total === 1 ? 'player' : 'players'}
           </div>
         </div>
         <div className="grid grid-cols-3 gap-2 mb-4">
@@ -278,7 +282,7 @@ export function BattleBoard({
                 <span className="text-[9px] tracking-eyebrow-sm uppercase text-white/35">waiting</span>
               )}
               <span className={`ml-auto font-black tabular-nums ${lobby ? 'text-sm' : 'text-base'} ${p.ran ? 'text-emerald-signal' : 'text-white/40'}`}>
-                {p.ran ? currency(p.payout) : '—'}
+                {p.ran ? fmt(p.payout) : '—'}
               </span>
               {showAdd && (
                 <button type="button" onClick={() => onRemovePlayer?.(p.id)} aria-label={`Remove ${p.name}`} className="text-white/30 hover:text-red-destructive">
@@ -349,7 +353,7 @@ export function BattleBoard({
               <span className="text-5xl font-black text-white-body tabular-nums leading-none">{derived.total}</span>
               <span className="text-sm sm:text-base tracking-eyebrow-sm uppercase text-white/70">
                 {derived.total === 1 ? 'player' : 'players'} entered · pot{' '}
-                <span className="text-emerald-signal font-bold tabular-nums">{currency(derived.totalPot)}</span>
+                <span className="text-emerald-signal font-bold tabular-nums">{fmt(derived.totalPot)}</span>
               </span>
               <span className="text-base sm:text-lg font-bold text-white-body mt-1 text-center">
                 {interactive ? 'Add players, then lock entries to start.' : 'Waiting for the host to start the battle…'}
@@ -399,7 +403,7 @@ export function BattleBoard({
                 <span className="text-sm font-bold text-white-body truncate">{p.name}</span>
                 {p.slot && <span className="text-[10px] uppercase text-white/45 truncate">· {p.slot}</span>}
                 <span className={`ml-auto text-base font-black tabular-nums ${isWin ? 'text-emerald-signal' : isLose ? 'text-red-destructive' : 'text-white-body'}`}>
-                  {currency(p.payout)}
+                  {fmt(p.payout)}
                 </span>
               </div>
             );
@@ -417,28 +421,42 @@ export function BattleBoard({
               className="absolute inset-0 flex items-center justify-center text-[3.25rem] sm:text-[3.75rem] font-extrabold tabular-nums font-mono text-purple-gamba/15 leading-none select-none pointer-events-none"
               aria-hidden="true"
             >
-              {currency(derived.potAfterRake)}
+              {fmt(derived.potAfterRake)}
             </span>
             <span className="relative block text-[3.25rem] sm:text-[3.75rem] font-extrabold tabular-nums font-mono text-white-body leading-none">
-              {currency(derived.potAfterRake)}
+              {fmt(derived.potAfterRake)}
             </span>
           </div>
           <div className="text-[12px] text-white/55 tabular-nums">
-            Pot {currency(derived.totalPot)} − {rakePct}% rake ({currency(derived.rakeAmount)})
+            Pot {fmt(derived.totalPot)} − {rakePct}% rake ({fmt(derived.rakeAmount)})
           </div>
           <div className="text-[10px] text-white/40 tabular-nums mt-0.5">
-            {currency(derived.totalPayouts)} paid out across {derived.ran} {derived.ran === 1 ? 'bonus' : 'bonuses'}
+            {fmt(derived.totalPayouts)} paid out across {derived.ran} {derived.ran === 1 ? 'bonus' : 'bonuses'}
           </div>
           {interactive && (
-            <div className="flex items-center justify-center gap-4 mt-3">
+            <div className="flex items-center justify-center gap-4 mt-3 flex-wrap">
               <label className="text-[10px] tracking-eyebrow-md uppercase text-white/50">
-                Entry $
+                Entry
                 <input
                   type="number"
                   value={derived.entryFee}
                   onChange={(e) => onSetEntryFee?.(e.target.value)}
                   className="ml-2 w-16 bg-black/30 border border-white/12 text-white-body text-sm px-2 py-1 font-mono tabular-nums"
                 />
+              </label>
+              <label className="text-[10px] tracking-eyebrow-md uppercase text-white/50">
+                Cur
+                <select
+                  value={cur}
+                  onChange={(e) => onSetCurrency?.(e.target.value)}
+                  className="ml-2 bg-black/30 border border-white/12 text-white-body text-sm px-2 py-1 font-mono"
+                >
+                  {CURRENCIES.map((c) => (
+                    <option key={c.code} value={c.code} className="bg-zinc-900">
+                      {c.code}
+                    </option>
+                  ))}
+                </select>
               </label>
               <label className="text-[10px] tracking-eyebrow-md uppercase text-white/50">
                 Rake %
@@ -473,9 +491,10 @@ function Stat({ n, k, border, text }) {
 function StartScreen({ onStart }) {
   const [title, setTitle] = useState('');
   const [entryFee, setEntryFee] = useState('');
+  const [cur, setCur] = useState('USD');
 
   const feeNum = Number(entryFee) || 0;
-  const previewTitle = title.trim() || (feeNum ? `${currency(feeNum)} Bonus Battle` : 'Bonus Battle');
+  const previewTitle = title.trim() || (feeNum ? `${currency(feeNum, cur)} Bonus Battle` : 'Bonus Battle');
 
   return (
     <div className="border border-white/8 bg-zinc-card/40 p-8 sm:p-10 max-w-md mx-auto font-mono">
@@ -486,23 +505,41 @@ function StartScreen({ onStart }) {
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
-        placeholder={feeNum ? `${currency(feeNum)} Bonus Battle` : 'Bonus Battle'}
+        placeholder={feeNum ? `${currency(feeNum, cur)} Bonus Battle` : 'Bonus Battle'}
         className={`${INPUT_CLS} mb-4`}
       />
 
-      <label className="block text-[10px] tracking-eyebrow-md uppercase text-white/50 mb-1.5">Entry fee ($ per player)</label>
-      <input
-        type="number"
-        inputMode="decimal"
-        value={entryFee}
-        onChange={(e) => setEntryFee(e.target.value)}
-        placeholder="20"
-        className={`${INPUT_CLS} mb-6 tabular-nums`}
-      />
+      <div className="flex gap-3 mb-6">
+        <div className="flex-1">
+          <label className="block text-[10px] tracking-eyebrow-md uppercase text-white/50 mb-1.5">Entry fee (per player)</label>
+          <input
+            type="number"
+            inputMode="decimal"
+            value={entryFee}
+            onChange={(e) => setEntryFee(e.target.value)}
+            placeholder="20"
+            className={`${INPUT_CLS} tabular-nums`}
+          />
+        </div>
+        <div className="w-32">
+          <label className="block text-[10px] tracking-eyebrow-md uppercase text-white/50 mb-1.5">Currency</label>
+          <select
+            value={cur}
+            onChange={(e) => setCur(e.target.value)}
+            className={INPUT_CLS}
+          >
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code} className="bg-zinc-900">
+                {c.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      </div>
 
       <button
         type="button"
-        onClick={() => onStart({ title: previewTitle, entryFee: feeNum })}
+        onClick={() => onStart({ title: previewTitle, entryFee: feeNum, currency: cur })}
         className="w-full px-6 py-3.5 bg-purple-gamba hover:bg-purple-bright text-white text-xs font-bold tracking-eyebrow-lg uppercase transition-colors"
       >
         Start {previewTitle}
@@ -525,6 +562,7 @@ export default function BonusBattle() {
     setCurrentPlayer,
     setRake,
     setEntryFee,
+    setCurrency,
     lockEntries,
     unlockEntries,
     resumeBattle,
@@ -583,6 +621,7 @@ export default function BonusBattle() {
           onSpinResult={(p) => setCurrentPlayer(p.id)}
           onSetRake={setRake}
           onSetEntryFee={setEntryFee}
+          onSetCurrency={setCurrency}
           onLockEntries={lockEntries}
           onUnlockEntries={unlockEntries}
         />

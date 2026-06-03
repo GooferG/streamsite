@@ -19,6 +19,7 @@ const EMPTY_BATTLE = (ownerUid, overrides = {}) => ({
   ownerTwitchId: ownerUid || null,
   title: 'Bonus Battle',
   entryFee: 0,
+  currency: 'USD',
   rakePct: 10,
   currentPlayerId: null,
   // 'lobby' = signups open (add players); 'running' = entries locked, bonuses
@@ -113,11 +114,12 @@ export function useBattleStore() {
   );
 
   const startBattle = useCallback(
-    ({ title, entryFee } = {}) => {
+    ({ title, entryFee, currency } = {}) => {
       writeBattle(
         EMPTY_BATTLE(uid, {
           title: (title || '').trim() || 'Bonus Battle',
           entryFee: Number(entryFee) || 0,
+          currency: currency || 'USD',
         })
       );
     },
@@ -126,6 +128,7 @@ export function useBattleStore() {
 
   const setRake = useCallback((pct) => writeBattle({ rakePct: Number(pct) || 0 }), [writeBattle]);
   const setEntryFee = useCallback((fee) => writeBattle({ entryFee: Number(fee) || 0 }), [writeBattle]);
+  const setCurrency = useCallback((code) => writeBattle({ currency: code || 'USD' }), [writeBattle]);
   const setTitle = useCallback((title) => writeBattle({ title }), [writeBattle]);
   // Lock entries (start) → 'running'; unlock → back to 'lobby'.
   const lockEntries = useCallback(() => writeBattle({ phase: 'running' }), [writeBattle]);
@@ -240,6 +243,7 @@ export function useBattleStore() {
     startBattle,
     setRake,
     setEntryFee,
+    setCurrency,
     setTitle,
     lockEntries,
     unlockEntries,

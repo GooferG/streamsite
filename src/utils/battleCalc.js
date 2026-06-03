@@ -1,11 +1,30 @@
 // Pure pot math for Bonus Battle. No React, no Firestore — unit-testable.
 
-// USD formatter. Two decimals, thousands separator, leading $.
-export function currency(val) {
+// Supported battle currencies. `locale` drives Intl grouping/decimal/symbol
+// conventions; `display` picks symbol vs code so each currency is unambiguous:
+//   USD → $1,080.00   CAD → CA$1,080.00   ARS → ARS 1.080,50
+// (en-US disambiguates CAD as "CA$"; es-AR gives Argentine grouping, and we use
+// the "code" display for ARS since its bare symbol is "$".)
+export const CURRENCIES = [
+  { code: 'USD', label: 'USD ($)', locale: 'en-US', display: 'symbol' },
+  { code: 'CAD', label: 'CAD (CA$)', locale: 'en-US', display: 'symbol' },
+  { code: 'ARS', label: 'ARS (AR$)', locale: 'es-AR', display: 'code' },
+];
+
+const CURRENCY_BY_CODE = CURRENCIES.reduce((m, c) => {
+  m[c.code] = c;
+  return m;
+}, {});
+
+// Currency formatter. `code` selects the currency + its locale conventions;
+// unknown/missing codes fall back to USD. Display label only — no conversion.
+export function currency(val, code = 'USD') {
   const n = Number(val) || 0;
-  return n.toLocaleString('en-US', {
+  const cfg = CURRENCY_BY_CODE[code] || CURRENCY_BY_CODE.USD;
+  return n.toLocaleString(cfg.locale, {
     style: 'currency',
-    currency: 'USD',
+    currency: cfg.code,
+    currencyDisplay: cfg.display,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });

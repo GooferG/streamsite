@@ -1,4 +1,4 @@
-import { computeBattle, currency } from '../battleCalc';
+import { computeBattle, currency, CURRENCIES } from '../battleCalc';
 
 // 3 ran players + 1 not-yet-run. Payouts 43.68, 41.76, 20.
 // Entry fee $20, rake 10%.
@@ -84,9 +84,40 @@ describe('computeBattle — pot from entry fees', () => {
 });
 
 describe('currency', () => {
-  test('formats USD with two decimals and thousands separator', () => {
+  test('defaults to USD with two decimals and thousands separator', () => {
     expect(currency(1080)).toBe('$1,080.00');
     expect(currency(167.7)).toBe('$167.70');
     expect(currency(0)).toBe('$0.00');
+  });
+
+  test('formats USD when passed explicitly', () => {
+    expect(currency(1080, 'USD')).toBe('$1,080.00');
+  });
+
+  test('formats CAD with the CA$ prefix', () => {
+    // en-CA renders CAD as "CA$1,080.00".
+    expect(currency(1080, 'CAD')).toBe('CA$1,080.00');
+  });
+
+  test('formats ARS with Argentine grouping/decimal and AR$ marker', () => {
+    // es-AR uses "." for thousands and "," for decimals; symbol is "$" with an
+    // AR marker. We assert the numeric grouping rather than the exact symbol to
+    // stay resilient to ICU symbol variations across Node versions.
+    const out = currency(1080.5, 'ARS');
+    expect(out).toContain('1.080,50');
+  });
+
+  test('unknown currency code falls back to USD formatting', () => {
+    expect(currency(50, 'XYZ')).toBe('$50.00');
+  });
+
+  test('CURRENCIES lists the supported codes', () => {
+    const codes = CURRENCIES.map((c) => c.code);
+    expect(codes).toEqual(expect.arrayContaining(['USD', 'CAD', 'ARS']));
+    // Each entry has a human label for the picker.
+    CURRENCIES.forEach((c) => {
+      expect(typeof c.code).toBe('string');
+      expect(typeof c.label).toBe('string');
+    });
   });
 });

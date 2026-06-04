@@ -1347,7 +1347,7 @@ export default function HuntTracker() {
 
             {bonuses.length === 0 ? (
               <p className="text-center text-white/55 py-6 text-[12px] font-mono">
-                Nothing logged yet.
+                Nothing logged yet. Call the first slot.
               </p>
             ) : (
               <div className="border border-white/8 overflow-x-auto [scrollbar-width:thin]">

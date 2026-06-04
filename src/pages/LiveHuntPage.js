@@ -106,16 +106,50 @@ export default function LiveHuntPage() {
         )}
 
         {!loading && missing && (
-          <div className="border border-white/8 bg-zinc-card/30 py-16 text-center">
-            <div className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-white/15 mb-3 text-white/35">
-              <RadioTower size={16} aria-hidden="true" />
+          <div className="relative overflow-hidden border border-white/8 bg-zinc-card/30 py-16 text-center">
+            {/* Dead-channel static — fades in behind the message, motion-gated */}
+            <div
+              className="pointer-events-none absolute inset-0 opacity-[0.04] mix-blend-screen motion-reduce:hidden off-air-static"
+              aria-hidden="true"
+            />
+            <div className="relative z-10">
+              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-white/15 mb-3 text-white/35">
+                <RadioTower size={16} aria-hidden="true" />
+              </div>
+              <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
+                Off air
+              </p>
+              <p className="text-sm text-white/55">
+                Nothing on this channel right now. Catch the next hunt on stream.
+              </p>
             </div>
-            <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
-              Off air
-            </p>
-            <p className="text-sm text-white/55">
-              Nothing on this channel right now. Catch the next hunt on stream.
-            </p>
+            <style jsx>{`
+              .off-air-static {
+                background-image: repeating-radial-gradient(
+                  circle at 50% 50%,
+                  rgba(255, 255, 255, 0.5) 0px,
+                  rgba(255, 255, 255, 0.5) 1px,
+                  transparent 1px,
+                  transparent 2px
+                );
+                background-size: 3px 3px;
+                animation: off-air-flicker 0.5s steps(3) infinite;
+              }
+              @keyframes off-air-flicker {
+                0% {
+                  background-position: 0 0;
+                }
+                33% {
+                  background-position: 1px -1px;
+                }
+                66% {
+                  background-position: -1px 1px;
+                }
+                100% {
+                  background-position: 1px 1px;
+                }
+              }
+            `}</style>
           </div>
         )}
 

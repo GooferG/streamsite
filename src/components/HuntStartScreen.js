@@ -33,6 +33,9 @@ export default function HuntStartScreen({
         </span>
         <span className="text-white/15">·</span>
         <span className="text-white/65">NEW HUNT</span>
+        <span className="ml-auto text-white/35 tracking-eyebrow-md">
+          CH 02 · standing by
+        </span>
       </div>
 
       <div className="px-4 py-6 max-w-lg mx-auto space-y-5">

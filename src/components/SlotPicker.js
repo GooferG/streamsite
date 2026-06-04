@@ -510,6 +510,9 @@ function SlotSearch() {
           <p className="text-sm text-white/75">
             No slots match the current filters.
           </p>
+          <p className="text-[11px] tracking-eyebrow-lg uppercase text-white/35 mt-2">
+            Try widening the dial.
+          </p>
         </div>
       )}
 

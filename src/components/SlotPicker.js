@@ -541,6 +541,9 @@ function SlotRandomizer() {
   const [isSpinning, setIsSpinning] = useState(false);
   const [selectedGame, setSelectedGame] = useState(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  // Easter egg: mash Tune too fast and the set scolds you, in character.
+  const [tubeWorn, setTubeWorn] = useState(false);
+  const tuneTimes = useRef([]);
   const wheelRef = useRef(null);
 
   const ITEM_HEIGHT = 120;
@@ -576,6 +579,12 @@ function SlotRandomizer() {
 
   const spinWheel = () => {
     if (isSpinning || candidates.length === 0) return;
+
+    // Rate-watch: 5+ tunes inside 4s trips the "wear the tube out" line.
+    const now = Date.now();
+    tuneTimes.current = [...tuneTimes.current, now].filter((t) => now - t < 4000);
+    setTubeWorn(tuneTimes.current.length >= 5);
+
     setIsSpinning(true);
     setSelectedGame(null);
 
@@ -677,15 +686,23 @@ function SlotRandomizer() {
               className={`inline-flex items-center gap-2 ${
                 isSpinning
                   ? 'text-orange-admin signal-pulse'
-                  : 'text-emerald-signal'
+                  : tubeWorn
+                    ? 'text-orange-admin'
+                    : 'text-emerald-signal'
               }`}
             >
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
-                  isSpinning ? 'bg-orange-admin' : 'bg-emerald-signal'
+                  isSpinning || tubeWorn ? 'bg-orange-admin' : 'bg-emerald-signal'
                 }`}
               />
-              <span>{isSpinning ? 'Tuning…' : 'Signal lock'}</span>
+              <span>
+                {isSpinning
+                  ? 'Tuning…'
+                  : tubeWorn
+                    ? "Slow down, you'll wear the tube out."
+                    : 'Signal lock'}
+              </span>
             </span>
             <span className="text-white/65">REEL · GG-04</span>
           </div>

@@ -50,6 +50,7 @@ import HuntLinkControls from './HuntLinkControls';
 import CappedScroll from './CappedScroll';
 import HuntTour from './HuntTour';
 import { useHuntStore } from '../hooks/useHuntStore';
+import useTuningPhrase from '../hooks/useTuningPhrase';
 import { useFirstVisit } from '../hooks/useFirstVisit';
 import {
   fmt,
@@ -284,6 +285,7 @@ function SortableBonusRow({
 
 export default function HuntTracker() {
   const store = useHuntStore();
+  const tuningPhrase = useTuningPhrase(store.status === 'loading');
   const {
     status,
     activeHunt,
@@ -362,7 +364,7 @@ export default function HuntTracker() {
     return (
       <div className="border border-white/8 bg-zinc-card/30 py-16 text-center">
         <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
-          Loading hunt…
+          {tuningPhrase}
         </p>
       </div>
     );
@@ -1231,7 +1233,7 @@ export default function HuntTracker() {
                     </p>
                   ) : (
                     <p className="text-white/40 text-sm mt-0.5">
-                      Last slot — complete the hunt when ready.
+                      That's the last reel. Roll credits when ready.
                     </p>
                   )}
                 </div>

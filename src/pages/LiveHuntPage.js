@@ -111,10 +111,10 @@ export default function LiveHuntPage() {
               <RadioTower size={16} aria-hidden="true" />
             </div>
             <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
-              This hunt is not live
+              Off air
             </p>
             <p className="text-sm text-white/55">
-              Nothing live right now. Catch the next hunt on stream.
+              Nothing on this channel right now. Catch the next hunt on stream.
             </p>
           </div>
         )}

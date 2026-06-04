@@ -5,6 +5,7 @@ import BonusHuntsPage from './BonusHunts';
 import Leaderboard from '../components/Leaderboard';
 import GambaHub from '../components/GambaHub';
 import { GAMBA_TOOLS } from '../data/gambaTools';
+import useTuningPhrase, { TUNING_PHRASES } from '../hooks/useTuningPhrase';
 
 // Code-split the two tools that pull in the slot DB (~874KB via ../data/slots).
 // SlotPicker imports it directly; HuntTracker reaches it through SlotAutocomplete.
@@ -14,14 +15,18 @@ const SlotPicker = lazy(() => import('../components/SlotPicker'));
 const HuntTracker = lazy(() => import('../components/HuntTracker'));
 const BonusBattle = lazy(() => import('../components/BonusBattle'));
 
-// Shared on-brand fallback while a tool chunk loads.
-const ToolLoading = ({ label }) => (
-  <div className="border border-white/8 bg-zinc-card/30 px-4 py-16 text-center font-mono">
-    <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal motion-safe:animate-pulse">
-      {label}
-    </p>
-  </div>
-);
+// Shared on-brand fallback while a tool chunk loads. Opens on the tool's own
+// label, then warms up through the broadcast tuning phrases like a CRT.
+const ToolLoading = ({ label }) => {
+  const phrase = useTuningPhrase(true, [label, ...TUNING_PHRASES]);
+  return (
+    <div className="border border-white/8 bg-zinc-card/30 px-4 py-16 text-center font-mono">
+      <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal motion-safe:animate-pulse">
+        {phrase}
+      </p>
+    </div>
+  );
+};
 
 function pad2(n) {
   return String(n).padStart(2, '0');

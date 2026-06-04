@@ -15,6 +15,7 @@ import {
   RefreshCcw,
 } from 'lucide-react';
 import { db } from '../config/firebase';
+import useTuningPhrase from '../hooks/useTuningPhrase';
 import PredictionSlip from '../components/PredictionSlip';
 import PredictionWall from '../components/PredictionWall';
 import PredictionNumberLine from '../components/PredictionNumberLine';
@@ -368,6 +369,7 @@ export default function BonusHuntsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const round = usePredictionRound();
+  const tuningPhrase = useTuningPhrase(loading);
 
   const load = async () => {
     setLoading(true);
@@ -500,7 +502,7 @@ export default function BonusHuntsPage() {
             <p
               className="text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
-              Loading reels…
+              {tuningPhrase}
             </p>
           </div>
         ) : error ? (
@@ -525,11 +527,14 @@ export default function BonusHuntsPage() {
             </button>
           </div>
         ) : hunts.length === 0 ? (
-          <p
-            className="text-center text-[11px] font-bold tracking-eyebrow-lg uppercase text-white/65 py-16 font-mono"
-      >
-            No hunts on file.
-          </p>
+          <div className="text-center py-16 font-mono space-y-1">
+            <p className="text-[11px] font-bold tracking-eyebrow-lg uppercase text-white/65">
+              No hunts on file.
+            </p>
+            <p className="text-[11px] tracking-eyebrow-lg uppercase text-white/35">
+              The reels are quiet.
+            </p>
+          </div>
         ) : (
           <div className="p-3 space-y-2">
             {hunts.map((hunt, i) => (

@@ -123,7 +123,13 @@ export default function BroadcastHeader({
               LEADERBOARD OVER
             </span>
           </div>
-        ) : (
+        ) : null}
+        {remaining.isOver && (
+          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono mt-1.5 sm:text-right">
+            That's a wrap on this board. New race tips off soon.
+          </p>
+        )}
+        {!remaining.isOver && (
           <div className="flex items-start gap-1 sm:justify-end">
             {[
               ['DAY', remaining.days],

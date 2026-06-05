@@ -20,6 +20,7 @@ import {
 import { arrayMove } from '@dnd-kit/sortable';
 import SlotAutocomplete from './SlotAutocomplete';
 import SuggestionsPanel from './SuggestionsPanel';
+import ViewerCalls from './hunt/ViewerCalls';
 import HuntStartScreen from './HuntStartScreen';
 import Modal from './Modal';
 import StatCell from './StatCell';
@@ -281,6 +282,27 @@ export default function HuntTracker() {
   }
   function clearSuggestions() {
     updateSuggestions([]);
+  }
+  // Skip a viewer call: record it against the caller (accept-rate), then mark
+  // the suggestion 'passed' so it leaves the open list.
+  function skipCall(person, slot) {
+    updateHunt({ skippedCalls: [...skippedCalls, { caller: person, slot: slot.name, ts: Date.now() }] });
+    updateSuggestions(
+      suggestions.map((p) => ({
+        ...p,
+        slots: p.slots.map((s) => (s.id === slot.id ? { ...s, status: 'passed' } : s)),
+      }))
+    );
+  }
+  function skipAllCalls(person, slots) {
+    updateHunt({ skippedCalls: [...skippedCalls, ...slots.map((s) => ({ caller: person, slot: s.name, ts: Date.now() }))] });
+    const ids = new Set(slots.map((s) => s.id));
+    updateSuggestions(
+      suggestions.map((p) => ({
+        ...p,
+        slots: p.slots.map((s) => (ids.has(s.id) ? { ...s, status: 'passed' } : s)),
+      }))
+    );
   }
   // "Got in" — open the stake prompt for this suggested slot.
   function startLanding(person, slot) {
@@ -1194,6 +1216,16 @@ export default function HuntTracker() {
                 className={`w-full ${inputCls} resize-none`}
               />
             </div>
+
+            {/* Grouped triage of open viewer calls (Add → hunt, Skip → passed) */}
+            <ViewerCalls
+              suggestions={suggestions}
+              onAdd={(person, slot) => startLanding(person, slot)}
+              onSkip={skipCall}
+              onSkipAll={skipAllCalls}
+              onOpenLog={() => {}}
+              intakeControls={null}
+            />
 
             {/* Slot suggestions imported from the sheet */}
             <SuggestionsPanel

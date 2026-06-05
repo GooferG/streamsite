@@ -176,4 +176,91 @@ describe('computeCallerStats — reputation layer', () => {
     expect(s.bestCall).toBeNull();
     expect(s.hotCaller).toBeNull();
   });
+
+  test('status: cold via low accept rate + enough calls; coldCaller highlight', () => {
+    // Cy: 1 played call (10x) + 3 skips -> gotIn 1, missed 3, calls 4,
+    // acceptRate 0.25 (< 0.35) with calls >= 3 -> cold. avgX 10 so not hot.
+    const current = [{ slot: 'Sugar', stake: 10, win: 100, caller: 'Cy' }]; // 10x
+    const skips = [
+      { caller: 'Cy', slot: 'Skip A' },
+      { caller: 'Cy', slot: 'Skip B' },
+      { caller: 'Cy', slot: 'Skip C' },
+    ];
+    const s = computeCallerStats(current, [], skips);
+    const cy = s.leaderboard.find((r) => r.name === 'Cy');
+    expect(cy.calls).toBe(4);
+    expect(cy.gotIn).toBe(1);
+    expect(cy.missed).toBe(3);
+    expect(cy.acceptRate).toBeCloseTo(0.25, 2);
+    expect(cy.status).toBe('cold');
+    expect(s.coldCaller.name).toBe('Cy');
+  });
+
+  test('status: cold via cold streak (last 2+ played X < 1)', () => {
+    // De: history plays at 0.5x then 0.3x -> trailing coldStreak 2 -> cold.
+    // acceptRate 1.0 so the low-accept branch does not apply here.
+    const history = [
+      {
+        bonuses: [
+          { slot: 'Brick One', stake: 10, win: 5, caller: 'De' }, // 0.5x
+          { slot: 'Brick Two', stake: 10, win: 3, caller: 'De' }, // 0.3x
+        ],
+      },
+    ];
+    const s = computeCallerStats([], history, []);
+    const de = s.leaderboard.find((r) => r.name === 'De');
+    expect(de.coldStreak).toBeGreaterThanOrEqual(2);
+    expect(de.acceptRate).toBeCloseTo(1, 2);
+    expect(de.status).toBe('cold');
+  });
+
+  test('status: hot via hot streak (last 2+ played X >= 20); hotCaller highlight', () => {
+    // Ed: history plays at 50x then 30x -> trailing hotStreak 2 -> hot.
+    const history = [
+      {
+        bonuses: [
+          { slot: 'Boom One', stake: 10, win: 500, caller: 'Ed' }, // 50x
+          { slot: 'Boom Two', stake: 10, win: 300, caller: 'Ed' }, // 30x
+        ],
+      },
+    ];
+    const s = computeCallerStats([], history, []);
+    const ed = s.leaderboard.find((r) => r.name === 'Ed');
+    expect(ed.hotStreak).toBeGreaterThanOrEqual(2);
+    expect(ed.status).toBe('hot');
+    expect(s.hotCaller.name).toBe('Ed');
+  });
+
+  test('status: steady when neither hot nor cold', () => {
+    // Fi: single played call at 10x, acceptRate 1.0, plays 1.
+    // avgX 10 < 25 -> not hot; accept 1.0 -> not cold; no streaks -> steady.
+    const current = [{ slot: 'Mid', stake: 10, win: 100, caller: 'Fi' }]; // 10x
+    const s = computeCallerStats(current, [], []);
+    const fi = s.leaderboard.find((r) => r.name === 'Fi');
+    expect(fi.status).toBe('steady');
+  });
+
+  test('form pips map played X to win / ok / brick in order', () => {
+    // Gu: plays at 50x (win), 10x (ok), 0.5x (brick) in chronological order.
+    const history = [
+      {
+        bonuses: [
+          { slot: 'P1', stake: 10, win: 500, caller: 'Gu' }, // 50x -> win
+          { slot: 'P2', stake: 10, win: 100, caller: 'Gu' }, // 10x -> ok
+          { slot: 'P3', stake: 10, win: 5, caller: 'Gu' },   // 0.5x -> brick
+        ],
+      },
+    ];
+    const s = computeCallerStats([], history, []);
+    const gu = s.leaderboard.find((r) => r.name === 'Gu');
+    expect(gu.form).toEqual(['win', 'ok', 'brick']);
+  });
+
+  test('mostConsistent (and bestAvgCaller alias) require >= 2 plays', () => {
+    // Hi: a single played call -> plays 1 -> excluded from consistency picks.
+    const current = [{ slot: 'Solo', stake: 10, win: 100, caller: 'Hi' }]; // 10x
+    const s = computeCallerStats(current, [], []);
+    expect(s.mostConsistent).toBeNull();
+    expect(s.bestAvgCaller).toBeNull();
+  });
 });

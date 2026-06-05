@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { Lock, Send, Check, ClipboardList, Eye, EyeOff } from 'lucide-react';
 import SlotAutocomplete from '../components/SlotAutocomplete';
+import SuggestionBoard from '../components/SuggestionBoard';
 
 // Keep in sync with MAX_SLOTS in api/hunt-suggest/submit.js (server enforces the
 // real cap; this just bounds the form inputs).
@@ -26,6 +27,10 @@ export default function HuntSuggestPage() {
   const [errorCode, setErrorCode] = useState(null);
   const [done, setDone] = useState(false);
   const [sentCount, setSentCount] = useState(0);
+  const [board, setBoard] = useState(null);
+  const [boardLoading, setBoardLoading] = useState(true);
+  const [dropped, setDropped] = useState([]); // games dropped as already-called on last submit
+  const REFRESH_SECONDS = 12;
 
   useEffect(() => {
     if (!linkId) return;
@@ -46,6 +51,37 @@ export default function HuntSuggestPage() {
       alive = false;
     };
   }, [linkId]);
+
+  // Public board polling. Fetch on mount + every REFRESH_SECONDS; pause when the
+  // tab is hidden; refetch once on return. Keep the last good board on a
+  // transient error so the panel never blanks mid-hunt.
+  const refetchBoard = useCallback(async () => {
+    if (!linkId) return;
+    try {
+      const r = await fetch(`/api/hunt-suggest/board?linkId=${encodeURIComponent(linkId)}`);
+      const data = await r.json().catch(() => ({}));
+      if (!r.ok) return;
+      setBoard(Array.isArray(data.board) ? data.board : []);
+    } catch {
+      /* keep last good board */
+    } finally {
+      setBoardLoading(false);
+    }
+  }, [linkId]);
+
+  useEffect(() => {
+    if (!linkId) return;
+    refetchBoard();
+    const id = setInterval(() => {
+      if (!document.hidden) refetchBoard();
+    }, REFRESH_SECONDS * 1000);
+    const onVis = () => { if (!document.hidden) refetchBoard(); };
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener('visibilitychange', onVis);
+    };
+  }, [linkId, refetchBoard]);
 
   function setSlot(i, val) {
     setSlots((arr) => arr.map((s, idx) => (idx === i ? val : s)));
@@ -94,8 +130,10 @@ export default function HuntSuggestPage() {
           document.querySelector('input[type=password]')?.focus();
         }
       } else {
-        setSentCount(count);
+        setSentCount(typeof data.added === 'number' ? data.added : count);
+        setDropped(Array.isArray(data.dropped) ? data.dropped : []);
         setDone(true);
+        refetchBoard();
       }
     } catch {
       setSubmitError('Could not submit. Try again.');
@@ -111,9 +149,11 @@ export default function HuntSuggestPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-broadcast text-white-body flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-lg border border-white/8 bg-zinc-card/40">
-        {/* Header */}
+    <div className="min-h-screen bg-zinc-broadcast text-white-body flex items-start justify-center px-4 py-12">
+      <div className="w-full max-w-4xl grid lg:grid-cols-2 gap-4 items-start">
+        {/* LEFT — submission form card */}
+        <div className="w-full border border-white/8 bg-zinc-card/40">
+          {/* Header */}
         <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
           <ClipboardList size={13} className="text-purple-bright" aria-hidden="true" />
           <span className="text-purple-bright">Slot suggestions</span>
@@ -143,11 +183,20 @@ export default function HuntSuggestPage() {
                 <Check size={22} className="text-emerald-signal" aria-hidden="true" />
               </div>
               <div>
-                <p className="font-black text-white-body text-lg">Sent!</p>
+                <p className="font-black text-white-body text-lg">
+                  {sentCount === 0 ? 'Nothing new added' : 'Sent!'}
+                </p>
                 <p className="text-white/55 text-sm mt-1">
                   Sent {sentCount} {sentCount === 1 ? 'pick' : 'picks'} to{' '}
                   {info?.huntName}. Resubmit anytime to update them.
                 </p>
+                {dropped.length > 0 && (
+                  <p className="text-white/45 text-[12px] mt-1.5">
+                    {sentCount === 0
+                      ? 'All your picks were already called — try different games.'
+                      : `Already called (skipped): ${dropped.join(', ')}.`}
+                  </p>
+                )}
               </div>
               <button
                 type="button"
@@ -281,7 +330,15 @@ export default function HuntSuggestPage() {
               )}
             </div>
           )}
+          </div>
         </div>
+        {/* RIGHT — public board */}
+        <SuggestionBoard
+          board={board}
+          loading={boardLoading}
+          myName={name}
+          refreshSeconds={REFRESH_SECONDS}
+        />
       </div>
     </div>
   );

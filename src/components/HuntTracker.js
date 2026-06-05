@@ -393,6 +393,7 @@ export default function HuntTracker() {
   const startBalance = activeHunt.startBalance ?? '';
   const finishBalance = activeHunt.finishBalance ?? '';
   const bannedSlots = activeHunt.bannedSlots ?? '';
+  const skippedCalls = activeHunt.skippedCalls ?? [];
   const suggestions = activeHunt.suggestions ?? [];
   const phase = activeHunt.phase === 'opening' ? 'opening' : 'collecting';
 

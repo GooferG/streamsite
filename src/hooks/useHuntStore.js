@@ -40,6 +40,7 @@ const EMPTY_HUNT = (name, startBalance) => ({
   bonuses: [],
   gamblers: [],
   bannedSlots: '',
+  skippedCalls: [],
   status: 'active',
   startedAt: Date.now(),
   completedAt: null,

@@ -1,7 +1,8 @@
 // src/components/hunt/HuntStatGrid.js
 import { fmt, fmtX } from '../../utils/huntCalc';
 
-// 4-up secondary stat grid. Values come from computeStats + counts.
+// Secondary stat grid — 8 cells in a 2-up (mobile) / 4-up (sm+) layout.
+// Values come from computeStats + counts.
 function Cell({ label, value, tint }) {
   return (
     <div className="rounded-lg border border-white/8 bg-zinc-card/30 px-3 py-2.5">

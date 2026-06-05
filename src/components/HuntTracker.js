@@ -59,6 +59,7 @@ export default function HuntTracker() {
     error,
     startHunt,
     updateHunt,
+    appendSkippedCalls,
     updateSuggestions,
     completeHunt,
     discardActiveHunt,
@@ -151,7 +152,6 @@ export default function HuntTracker() {
   const startBalance = activeHunt.startBalance ?? '';
   const finishBalance = activeHunt.finishBalance ?? '';
   const bannedSlots = activeHunt.bannedSlots ?? '';
-  const skippedCalls = activeHunt.skippedCalls ?? [];
   const suggestions = activeHunt.suggestions ?? [];
   const phase = activeHunt.phase === 'opening' ? 'opening' : 'collecting';
 
@@ -286,7 +286,7 @@ export default function HuntTracker() {
   // Skip a viewer call: record it against the caller (accept-rate), then mark
   // the suggestion 'passed' so it leaves the open list.
   function skipCall(person, slot) {
-    updateHunt({ skippedCalls: [...skippedCalls, { caller: person, slot: slot.name, ts: Date.now() }] });
+    appendSkippedCalls([{ caller: person, slot: slot.name, ts: Date.now() }]);
     updateSuggestions(
       suggestions.map((p) => ({
         ...p,
@@ -295,7 +295,7 @@ export default function HuntTracker() {
     );
   }
   function skipAllCalls(person, slots) {
-    updateHunt({ skippedCalls: [...skippedCalls, ...slots.map((s) => ({ caller: person, slot: s.name, ts: Date.now() }))] });
+    appendSkippedCalls(slots.map((s) => ({ caller: person, slot: s.name, ts: Date.now() })));
     const ids = new Set(slots.map((s) => s.id));
     updateSuggestions(
       suggestions.map((p) => ({

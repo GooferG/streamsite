@@ -36,3 +36,27 @@ test('caller name click fires onOpenLog', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Ana' }));
   expect(onOpenLog).toHaveBeenCalledWith('Ana');
 });
+
+test('Skip all fires onSkipAll with all open items for that caller', () => {
+  const onSkipAll = jest.fn();
+  render(<ViewerCalls suggestions={SUGGESTIONS} onAdd={() => {}} onSkip={() => {}} onSkipAll={onSkipAll} onOpenLog={() => {}} intakeControls={null} />);
+  // Ana has 2 open slots → a "Skip all" button; Bo has 1 → none.
+  const skipAllBtn = screen.getByRole('button', { name: /skip all/i });
+  fireEvent.click(skipAllBtn);
+  expect(onSkipAll).toHaveBeenCalledWith('Ana', expect.arrayContaining([
+    expect.objectContaining({ id: 's1' }),
+    expect.objectContaining({ id: 's2' }),
+  ]));
+});
+
+test('shows the pending count of open calls', () => {
+  render(<ViewerCalls suggestions={SUGGESTIONS} onAdd={() => {}} onSkip={() => {}} onSkipAll={() => {}} onOpenLog={() => {}} intakeControls={null} />);
+  // 3 open slots total (Ana 2 + Bo 1; Cy's 'done' excluded)
+  expect(screen.getByText(/3 pending/i)).toBeTruthy();
+});
+
+test('single-item caller group has no Skip all button', () => {
+  const single = [{ id: 'p2', person: 'Bo', slots: [{ id: 's3', name: 'Doom', status: 'open' }] }];
+  render(<ViewerCalls suggestions={single} onAdd={() => {}} onSkip={() => {}} onSkipAll={() => {}} onOpenLog={() => {}} intakeControls={null} />);
+  expect(screen.queryByRole('button', { name: /skip all/i })).toBeNull();
+});

@@ -11,6 +11,7 @@
     "@fontsource/rajdhani": "^5.2.7",
     "@fontsource/space-grotesk": "^5.2.10",
     "@testing-library/dom": "^10.4.1",
+    "@vercel/og": "^0.11.1",
     "bad-words": "^4.0.0",
     "firebase": "^12.6.0",
     "firebase-admin": "^13.8.0",

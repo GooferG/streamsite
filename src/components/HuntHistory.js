@@ -224,8 +224,8 @@ function HistoryRow({ hunt, onReexport, onReopen, onDelete }) {
               </p>
               <div className="flex flex-wrap gap-x-3 gap-y-1">
                 {callerStats.leaderboard.map((row) => (
-                  <span key={row.caller} className="text-[11px] font-mono text-white/70">
-                    <span className="font-bold text-white-body">{row.caller}</span>
+                  <span key={row.name} className="text-[11px] font-mono text-white/70">
+                    <span className="font-bold text-white-body">{row.name}</span>
                     <span className="text-purple-bright tabular-nums"> {row.calls}</span>
                   </span>
                 ))}

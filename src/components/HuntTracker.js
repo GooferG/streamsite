@@ -1641,14 +1641,14 @@ export default function HuntTracker() {
                   <div className="border border-white/8 bg-zinc-broadcast/40">
                     {callerStats.leaderboard.map((row, i) => (
                       <div
-                        key={row.caller}
+                        key={row.name}
                         className="flex items-center gap-3 px-3 py-1.5 border-b border-white/5 last:border-b-0"
                       >
                         <span className="text-[10px] font-bold tabular-nums text-white/30 font-mono w-5">
                           {String(i + 1).padStart(2, '0')}
                         </span>
                         <span className="flex-1 min-w-0 truncate font-bold text-white-body text-sm">
-                          {row.caller}
+                          {row.name}
                         </span>
                         <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-purple-bright font-mono tabular-nums">
                           {row.calls} {row.calls === 1 ? 'call' : 'calls'}
@@ -1686,7 +1686,7 @@ export default function HuntTracker() {
                       </p>
                       <p className="text-sm font-bold text-white-body tabular-nums">
                         {callerStats.bestAvgCaller
-                          ? `${callerStats.bestAvgCaller.caller} · avg ${fmtX(callerStats.bestAvgCaller.avgX)} · ${callerStats.bestAvgCaller.calls} calls`
+                          ? `${callerStats.bestAvgCaller.name} · avg ${fmtX(callerStats.bestAvgCaller.avgX)} · ${callerStats.bestAvgCaller.calls} calls`
                           : '—'}
                       </p>
                     </div>

@@ -7,15 +7,12 @@ import {
   Download,
   CheckCircle2,
   Pencil,
-  Megaphone,
-  Trophy,
   ArrowLeft,
   Play,
   Radio,
   Trash2,
   MoreHorizontal,
   HelpCircle,
-  Target,
 } from 'lucide-react';
 import { arrayMove } from '@dnd-kit/sortable';
 import SlotAutocomplete from './SlotAutocomplete';
@@ -30,15 +27,17 @@ import HuntTour from './HuntTour';
 import PanelLabel from './hunt/PanelLabel';
 import BonusTable from './hunt/BonusTable';
 import OpeningFocus from './hunt/OpeningFocus';
+import HuntHero from './hunt/HuntHero';
+import HuntStatGrid from './hunt/HuntStatGrid';
+import CallerStatsPanel from './hunt/CallerStatsPanel';
+import CallerLogDrawer from './hunt/CallerLogDrawer';
 import { useHuntStore } from '../hooks/useHuntStore';
 import useTuningPhrase from '../hooks/useTuningPhrase';
 import { useFirstVisit } from '../hooks/useFirstVisit';
 import {
   fmt,
-  fmtX,
   makeId,
   computeStats,
-  computeCallerStats,
   openingOrder,
 } from '../utils/huntCalc';
 import { renderSplit, renderRecap } from '../utils/huntExport';
@@ -108,6 +107,8 @@ export default function HuntTracker() {
   // Suggestion-intake link controls.
   const [linkBusy, setLinkBusy] = useState(false);
   const [linkError, setLinkError] = useState(null);
+  // Caller call-log drawer — holds the caller name while open, else null.
+  const [callerLogName, setCallerLogName] = useState(null);
 
   // First-visit coachmark tour: auto-open once on the first active view, for
   // both owners and logged-out visitors (the tour rewords its owner-only steps
@@ -153,6 +154,7 @@ export default function HuntTracker() {
   const finishBalance = activeHunt.finishBalance ?? '';
   const bannedSlots = activeHunt.bannedSlots ?? '';
   const suggestions = activeHunt.suggestions ?? [];
+  const skippedCalls = activeHunt.skippedCalls ?? [];
   const phase = activeHunt.phase === 'opening' ? 'opening' : 'collecting';
 
   // Opening-phase order + clamped current index.
@@ -495,8 +497,6 @@ export default function HuntTracker() {
     return { ...g, pct, payout };
   });
 
-  const callerStats = computeCallerStats(bonuses);
-
   // Sort is a display lens — it never rewrites the saved order. Manual
   // (drag) order is preserved and restored when the sort is cleared.
   const displayBonuses =
@@ -590,6 +590,15 @@ export default function HuntTracker() {
         <div className="ml-auto flex gap-2 items-center" data-html2canvas-ignore="true">
           {/* Primary actions — spotlit by the tour */}
           <div data-tour="complete-actions" className="flex gap-2 items-center">
+            <button
+              type="button"
+              disabled
+              title="Collab — coming soon"
+              className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/10 text-white/30 cursor-not-allowed"
+            >
+              <Users size={12} aria-hidden="true" />
+              <span className="text-[10px] font-bold tracking-eyebrow-lg">COLLAB</span>
+            </button>
             <button
               type="button"
               onClick={() => renderSplit(activeHunt)}
@@ -807,70 +816,24 @@ export default function HuntTracker() {
         )}
       </div>
 
-      {/* Overall stats band */}
-      <div data-tour="stats" className="border-b border-white/8 bg-emerald-signal/[0.03]">
-        <div className="flex flex-wrap divide-x divide-white/10">
-          <StatCell
-            variant="bare"
-            hero
-            label="Profit / loss"
-            value={
-              (() => {
-                // Finish-based profit once a finish balance is entered;
-                // otherwise the running P/L (winnings − start) so the figure
-                // is live through the whole hunt.
-                const p = profit != null ? profit : runningProfit;
-                return p == null ? (
-                  '—'
-                ) : (
-                  <span
-                    className={
-                      p >= 0 ? 'text-emerald-signal' : 'text-red-destructive'
-                    }
-                  >
-                    {p >= 0 ? '+' : '−'}
-                    {fmt(Math.abs(p))}
-                  </span>
-                );
-              })()
-            }
+      {/* Stat grid — hero P/L + 4-up secondary */}
+      <div data-tour="stats" className="border-b border-white/8 bg-emerald-signal/[0.03] px-4 py-4">
+        <div className="grid lg:grid-cols-[360px_1fr] gap-4 items-start">
+          <HuntHero
+            profit={profit != null ? profit : runningProfit}
+            avgReqRemaining={stats.avgReqRemaining}
+            totalWins={totalWins}
+            start={stats.start}
+            wlMultiplier={wlMultiplier}
           />
-          <StatCell variant="bare" label="Total wins" value={fmt(totalWins)} />
-          <StatCell
-            variant="bare"
-            label="Avg req"
-            value={stats.avgReqRemaining != null ? fmt(stats.avgReqRemaining) : '—'}
+          <HuntStatGrid
+            stats={stats}
+            bonusCount={bonuses.length}
+            pendingCount={bonuses.length - openedCount}
           />
-          <StatCell
-            variant="bare"
-            label="Cur avg"
-            value={stats.curAvgWin != null ? fmt(stats.curAvgWin) : '—'}
-          />
-          <StatCell
-            variant="bare"
-            label="Req X"
-            value={reqX != null ? `${reqX.toFixed(1)}x` : '—'}
-          />
-          <StatCell
-            variant="bare"
-            label="Cur avg X"
-            value={stats.curAvgX != null ? fmtX(stats.curAvgX) : '—'}
-          />
-          <StatCell
-            variant="bare"
-            label="Total X"
-            value={stats.totalX > 0 ? fmtX(stats.totalX) : '—'}
-          />
-          <StatCell
-            variant="bare"
-            label="W/L mult"
-            value={
-              wlMultiplier != null
-                ? fmtX(Math.round(wlMultiplier * 100) / 100)
-                : '—'
-            }
-          />
-          <label className="px-3 py-2.5 block">
+        </div>
+        <div className="flex flex-wrap gap-3 mt-3">
+          <label className="block">
             <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
               Start bal
             </span>
@@ -882,7 +845,7 @@ export default function HuntTracker() {
               className={`w-28 ${inputCls} tabular-nums`}
             />
           </label>
-          <label className="px-3 py-2.5 block">
+          <label className="block">
             <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
               Finish bal
             </span>
@@ -899,7 +862,7 @@ export default function HuntTracker() {
 
       {/* Body */}
       <div className="px-4 py-5">
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-[1.35fr_1fr] gap-6">
           {/* LEFT — Bonus list */}
           <div className="space-y-4">
             <PanelLabel
@@ -1201,6 +1164,16 @@ export default function HuntTracker() {
               )}
             </div>
 
+            {/* Grouped triage of open viewer calls (Add → hunt, Skip → passed) */}
+            <ViewerCalls
+              suggestions={suggestions}
+              onAdd={(person, slot) => startLanding(person, slot)}
+              onSkip={skipCall}
+              onSkipAll={skipAllCalls}
+              onOpenLog={setCallerLogName}
+              intakeControls={null}
+            />
+
             <div className="space-y-2">
               <PanelLabel
                 icon={TrendingDown}
@@ -1217,17 +1190,9 @@ export default function HuntTracker() {
               />
             </div>
 
-            {/* Grouped triage of open viewer calls (Add → hunt, Skip → passed) */}
-            <ViewerCalls
-              suggestions={suggestions}
-              onAdd={(person, slot) => startLanding(person, slot)}
-              onSkip={skipCall}
-              onSkipAll={skipAllCalls}
-              onOpenLog={() => {}}
-              intakeControls={null}
-            />
-
-            {/* Slot suggestions imported from the sheet */}
+            {/* SuggestionsPanel owns sheet-import + roster search; ViewerCalls
+                above owns quick open-call triage. Overlap on open slots is an
+                accepted v1 tradeoff. */}
             <SuggestionsPanel
               suggestions={suggestions}
               onImport={importSuggestions}
@@ -1237,77 +1202,13 @@ export default function HuntTracker() {
               isLoggedIn={isLoggedIn}
             />
 
-            {/* Caller stats */}
-            <div className="space-y-3">
-              <PanelLabel
-                icon={Megaphone}
-                label="Slot calls"
-                accent="purple"
-                quiet
-              />
-              {callerStats.leaderboard.length === 0 ? (
-                <p className="text-center text-white/55 py-4 text-[12px] font-mono">
-                  No calls tagged yet.
-                </p>
-              ) : (
-                <>
-                  {/* Leaderboard */}
-                  <div className="border border-white/8 bg-zinc-broadcast/40">
-                    {callerStats.leaderboard.map((row, i) => (
-                      <div
-                        key={row.name}
-                        className="flex items-center gap-3 px-3 py-1.5 border-b border-white/5 last:border-b-0"
-                      >
-                        <span className="text-[10px] font-bold tabular-nums text-white/30 font-mono w-5">
-                          {String(i + 1).padStart(2, '0')}
-                        </span>
-                        <span className="flex-1 min-w-0 truncate font-bold text-white-body text-sm">
-                          {row.name}
-                        </span>
-                        <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-purple-bright font-mono tabular-nums">
-                          {row.calls} {row.calls === 1 ? 'call' : 'calls'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Highlights */}
-                  <div className="grid grid-cols-1 gap-2">
-                    <div className="px-3 py-2 bg-zinc-broadcast/50 border border-emerald-signal/30">
-                      <p className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-emerald-signal mb-1 font-mono inline-flex items-center gap-1.5">
-                        <Trophy size={11} aria-hidden="true" /> Best call
-                      </p>
-                      <p className="text-sm font-bold text-white-body tabular-nums">
-                        {callerStats.bestCall
-                          ? `${callerStats.bestCall.slot} · ${fmtX(callerStats.bestCall.x)} · ${callerStats.bestCall.caller}`
-                          : '—'}
-                      </p>
-                    </div>
-                    <div className="px-3 py-2 bg-zinc-broadcast/50 border border-red-destructive/30">
-                      <p className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-red-destructive mb-1 font-mono inline-flex items-center gap-1.5">
-                        <TrendingDown size={11} aria-hidden="true" /> Brick of the
-                        hunt
-                      </p>
-                      <p className="text-sm font-bold text-white-body tabular-nums">
-                        {callerStats.worstCall
-                          ? `${callerStats.worstCall.slot} · ${fmtX(callerStats.worstCall.x)} · ${callerStats.worstCall.caller}`
-                          : '—'}
-                      </p>
-                    </div>
-                    <div className="px-3 py-2 bg-zinc-broadcast/50 border border-purple-gamba/30">
-                      <p className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-purple-bright mb-1 font-mono inline-flex items-center gap-1.5">
-                        <Target size={11} aria-hidden="true" /> Most consistent
-                      </p>
-                      <p className="text-sm font-bold text-white-body tabular-nums">
-                        {callerStats.bestAvgCaller
-                          ? `${callerStats.bestAvgCaller.name} · avg ${fmtX(callerStats.bestAvgCaller.avgX)} · ${callerStats.bestAvgCaller.calls} calls`
-                          : '—'}
-                      </p>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+            {/* Caller stats (05) */}
+            <CallerStatsPanel
+              bonuses={bonuses}
+              history={history}
+              skippedCalls={skippedCalls}
+              onOpenLog={setCallerLogName}
+            />
           </div>
         </div>
       </div>
@@ -1448,6 +1349,16 @@ export default function HuntTracker() {
             </button>
           </div>
         </Modal>
+      )}
+
+      {callerLogName && (
+        <CallerLogDrawer
+          name={callerLogName}
+          bonuses={bonuses}
+          history={history}
+          skippedCalls={skippedCalls}
+          onClose={() => setCallerLogName(null)}
+        />
       )}
 
       <HuntTour

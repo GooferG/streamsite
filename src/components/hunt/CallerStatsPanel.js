@@ -1,6 +1,6 @@
 // src/components/hunt/CallerStatsPanel.js
 import { Flame, Trophy, Ban } from 'lucide-react';
-import { fmtX, computeCallerStats } from '../../utils/huntCalc';
+import { fmtX, computeCallerStats, CALLER_WIN_X, CALLER_BRICK_X } from '../../utils/huntCalc';
 import PanelLabel from './PanelLabel';
 import FormStrip from './FormStrip';
 import StatusBadge from './StatusBadge';
@@ -55,7 +55,7 @@ export default function CallerStatsPanel({ bonuses, history, skippedCalls, onOpe
             </span>
             <span className="w-16 flex justify-end"><FormStrip form={r.form} /></span>
             <span className={`text-[11px] font-bold tabular-nums w-14 text-right ${
-              r.avgX == null ? 'text-white/40' : r.avgX >= 20 ? 'text-emerald-signal' : r.avgX < 1 ? 'text-red-destructive' : 'text-white/70'
+              r.avgX == null ? 'text-white/40' : r.avgX >= CALLER_WIN_X ? 'text-emerald-signal' : r.avgX < CALLER_BRICK_X ? 'text-red-destructive' : 'text-white/70'
             }`}>
               {r.avgX == null ? '—' : fmtX(r.avgX)}
             </span>

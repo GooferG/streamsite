@@ -133,6 +133,10 @@ const REP = {
   minColdCalls: 3,
 };
 
+// Public thresholds the UI reuses so row tints match form-pip colors.
+export const CALLER_WIN_X = REP.winX;
+export const CALLER_BRICK_X = REP.brickX;
+
 function playedX(b) {
   const stake = Number(b.stake) || 0;
   const win = Number(b.win) || 0;

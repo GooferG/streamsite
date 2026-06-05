@@ -41,3 +41,63 @@ test('last bonus shows Finish opening and calls onFinish', () => {
   fireEvent.click(finishBtn);
   expect(onFinish).toHaveBeenCalled();
 });
+
+test('Enter on a non-last bonus fires onNext (not onFinish)', () => {
+  const onNext = jest.fn();
+  const onFinish = jest.fn();
+  render(
+    <OpeningFocus order={ORDER} idx={0} openedCount={0}
+      onWin={() => {}} onNote={() => {}} onPrev={() => {}} onNext={onNext}
+      onDefer={() => {}} onExit={() => {}} onFinish={onFinish} />
+  );
+  fireEvent.keyDown(window, { key: 'Enter' });
+  expect(onNext).toHaveBeenCalled();
+  expect(onFinish).not.toHaveBeenCalled();
+});
+
+test('Enter on the last bonus fires onFinish (not onNext)', () => {
+  const onNext = jest.fn();
+  const onFinish = jest.fn();
+  render(
+    <OpeningFocus order={ORDER} idx={1} openedCount={1}
+      onWin={() => {}} onNote={() => {}} onPrev={() => {}} onNext={onNext}
+      onDefer={() => {}} onExit={() => {}} onFinish={onFinish} />
+  );
+  fireEvent.keyDown(window, { key: 'Enter' });
+  expect(onFinish).toHaveBeenCalled();
+  expect(onNext).not.toHaveBeenCalled();
+});
+
+test('Escape fires onExit', () => {
+  const onExit = jest.fn();
+  render(
+    <OpeningFocus order={ORDER} idx={0} openedCount={0}
+      onWin={() => {}} onNote={() => {}} onPrev={() => {}} onNext={() => {}}
+      onDefer={() => {}} onExit={onExit} onFinish={() => {}} />
+  );
+  fireEvent.keyDown(window, { key: 'Escape' });
+  expect(onExit).toHaveBeenCalled();
+});
+
+test('ArrowLeft on first bonus does NOT fire onPrev (edge guard)', () => {
+  const onPrev = jest.fn();
+  render(
+    <OpeningFocus order={ORDER} idx={0} openedCount={0}
+      onWin={() => {}} onNote={() => {}} onPrev={onPrev} onNext={() => {}}
+      onDefer={() => {}} onExit={() => {}} onFinish={() => {}} />
+  );
+  fireEvent.keyDown(window, { key: 'ArrowLeft' });
+  expect(onPrev).not.toHaveBeenCalled();
+});
+
+test('keydown originating in the notes textarea is ignored', () => {
+  const onExit = jest.fn();
+  render(
+    <OpeningFocus order={ORDER} idx={0} openedCount={0}
+      onWin={() => {}} onNote={() => {}} onPrev={() => {}} onNext={() => {}}
+      onDefer={() => {}} onExit={onExit} onFinish={() => {}} />
+  );
+  const textarea = screen.getByPlaceholderText(/bonus story/i);
+  fireEvent.keyDown(textarea, { key: 'Escape' });
+  expect(onExit).not.toHaveBeenCalled();
+});

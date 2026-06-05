@@ -46,9 +46,10 @@ export default function OpeningFocus({
   const win = Number(bonus.win) || 0;
   const mult = stake > 0 && win > 0 ? win / stake : null;
   const multTone = mult == null ? 'text-white/40'
-    : mult >= 100 ? 'text-emerald-signal'
+    : mult >= 100 ? 'text-emerald-bright'
     : mult >= 20 ? 'text-emerald-signal'
-    : mult === 0 ? 'text-red-destructive' : 'text-white/70';
+    : mult < 1 ? 'text-red-destructive'
+    : 'text-white/70';
 
   return (
     <div className="space-y-3">

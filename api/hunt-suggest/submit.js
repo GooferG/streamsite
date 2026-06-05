@@ -8,10 +8,15 @@ import { applyCors } from '../_lib/verifyAuth.js';
 //
 // POST { linkId, password, name, slots: string[] }
 
-const MAX_SLOTS = 6;
+// Doc-size budget: the whole hunt (bonuses + suggestions + squad) lives in one
+// Firestore doc capped at 1MB. Worst case per submitter ≈ MAX_SLOTS × (MAX_SLOT_LEN
+// + UUID/status overhead) ≈ 20 × ~130B ≈ 2.6KB. MAX_PEOPLE × that ≈ 150 × 2.6KB
+// ≈ 390KB, leaving comfortable headroom for bonuses/squad. Keep MAX_SLOTS in sync
+// with src/pages/HuntSuggestPage.js.
+const MAX_SLOTS = 20;
 const MAX_NAME_LEN = 40;
 const MAX_SLOT_LEN = 80;
-const MAX_PEOPLE = 300; // cap link-sourced submitters to keep the hunt doc well under Firestore's 1MB limit
+const MAX_PEOPLE = 150; // cap link-sourced submitters to keep the hunt doc under Firestore's 1MB limit
 const SUBMIT_COOLDOWN_MS = 5 * 1000;
 
 function hashPassword(password, salt) {

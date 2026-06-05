@@ -3,7 +3,9 @@ import { useParams } from 'react-router-dom';
 import { Lock, Send, Check, ClipboardList, Eye, EyeOff } from 'lucide-react';
 import SlotAutocomplete from '../components/SlotAutocomplete';
 
-const MAX_SLOTS = 6;
+// Keep in sync with MAX_SLOTS in api/hunt-suggest/submit.js (server enforces the
+// real cap; this just bounds the form inputs).
+const MAX_SLOTS = 20;
 
 const inputCls =
   'w-full bg-zinc-broadcast/60 border border-white/10 px-3 py-2.5 text-sm text-white-body placeholder:text-white/40 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';

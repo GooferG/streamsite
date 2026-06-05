@@ -3,6 +3,7 @@
 import {
   buildDescription,
   injectOgTags,
+  buildImageUrl,
 } from '../../api/_lib/livePreviewFormat.js';
 
 describe('buildDescription', () => {
@@ -68,5 +69,50 @@ describe('injectOgTags', () => {
     });
     expect(out).toContain('A &amp; B &quot;quote&quot;');
     expect(out).not.toContain('A & B "quote"');
+  });
+});
+
+describe('buildImageUrl', () => {
+  test('builds a versioned og image url for a kind + id', () => {
+    expect(buildImageUrl('live', 'abc', 1717000000000)).toBe(
+      'https://goofer.tv/api/og/live/abc?v=1717000000000'
+    );
+  });
+  test('omits the version param when no version given', () => {
+    expect(buildImageUrl('suggest', 'xyz')).toBe(
+      'https://goofer.tv/api/og/suggest/xyz'
+    );
+  });
+});
+
+describe('injectOgTags — image', () => {
+  const htmlWithImg =
+    '<title>Goofer Live</title>' +
+    '<meta property="og:title" content="GooferG" />' +
+    '<meta property="og:description" content="x" />' +
+    '<meta property="og:url" content="https://goofer.tv" />' +
+    '<meta property="og:image" content="https://goofer.tv/homepage-share.jpg" />' +
+    '<meta property="og:image:width" content="1537" />' +
+    '<meta property="og:image:height" content="1074" />' +
+    '<meta name="twitter:image" content="https://goofer.tv/homepage-share.jpg" />' +
+    '<meta name="twitter:title" content="GooferG" />' +
+    '<meta name="twitter:description" content="x" />';
+
+  test('replaces og:image + twitter:image and sets 1200x630 when image given', () => {
+    const out = injectOgTags(htmlWithImg, {
+      title: 'T', description: 'D', url: 'https://goofer.tv/live/abc',
+      image: 'https://goofer.tv/api/og/live/abc?v=1',
+    });
+    expect(out).toContain('<meta property="og:image" content="https://goofer.tv/api/og/live/abc?v=1" />');
+    expect(out).toContain('<meta name="twitter:image" content="https://goofer.tv/api/og/live/abc?v=1" />');
+    expect(out).toContain('<meta property="og:image:width" content="1200" />');
+    expect(out).toContain('<meta property="og:image:height" content="630" />');
+  });
+
+  test('leaves image tags untouched when no image given (back-compat)', () => {
+    const out = injectOgTags(htmlWithImg, {
+      title: 'T', description: 'D', url: 'https://goofer.tv/live/abc',
+    });
+    expect(out).toContain('<meta property="og:image" content="https://goofer.tv/homepage-share.jpg" />');
   });
 });

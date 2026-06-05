@@ -1,5 +1,5 @@
 import { adminDb } from './_lib/firebaseAdmin.js';
-import { buildDescription, injectOgTags } from './_lib/livePreviewFormat.js';
+import { buildDescription, injectOgTags, buildImageUrl } from './_lib/livePreviewFormat.js';
 
 const SITE = 'https://goofer.tv';
 
@@ -46,7 +46,8 @@ export default async function handler(req, res) {
     const title = `${mirror?.name || 'Bonus hunt'} — LIVE on GooferG`;
     const description = buildDescription(mirror);
     const url = `${SITE}/live/${encodeURIComponent(shareId)}`;
-    html = injectOgTags(html, { title, description, url });
+    const image = buildImageUrl('live', shareId, mirror?.updatedAt);
+    html = injectOgTags(html, { title, description, url, image });
   } catch {
     // fall through with the unmodified shell
   }

@@ -1,6 +1,14 @@
 // Pure formatting helpers for the live-share OG preview. Kept free of any
 // firebase-admin / network imports so they can be unit-tested without booting
-// the admin SDK. Consumed by api/live-preview.js.
+// the admin SDK. Consumed by api/live-preview.js + api/hunt-suggest/preview.js.
+
+const SITE = 'https://goofer.tv';
+
+// Versioned OG image URL for a card endpoint. kind = 'live' | 'suggest'.
+export function buildImageUrl(kind, id, version) {
+  const base = `${SITE}/api/og/${kind}/${encodeURIComponent(id)}`;
+  return version != null && version !== '' ? `${base}?v=${version}` : base;
+}
 
 function escapeHtml(s) {
   return String(s)
@@ -31,11 +39,11 @@ export function buildDescription(mirror) {
 // Replace the title + OG/Twitter text tags in the built index.html. Values are
 // HTML-escaped. Image tags are intentionally left untouched (static homepage
 // image).
-export function injectOgTags(html, { title, description, url }) {
+export function injectOgTags(html, { title, description, url, image }) {
   const t = escapeHtml(title);
   const d = escapeHtml(description);
   const u = escapeHtml(url);
-  return html
+  let out = html
     .replace(/<title>[^<]*<\/title>/, `<title>${t}</title>`)
     .replace(
       /<meta property="og:title" content="[^"]*" \/>/,
@@ -57,4 +65,35 @@ export function injectOgTags(html, { title, description, url }) {
       /<meta name="twitter:description" content="[^"]*" \/>/,
       `<meta name="twitter:description" content="${d}" />`
     );
+  // Only swap the image tags when a per-hunt image is supplied; otherwise the
+  // static homepage image is left in place (back-compat).
+  if (image) {
+    const img = escapeHtml(image);
+    out = out
+      .replace(
+        /<meta property="og:image" content="[^"]*" \/>/,
+        `<meta property="og:image" content="${img}" />`
+      )
+      .replace(
+        /<meta property="og:image:secure_url" content="[^"]*" \/>/,
+        `<meta property="og:image:secure_url" content="${img}" />`
+      )
+      .replace(
+        /<meta name="twitter:image" content="[^"]*" \/>/,
+        `<meta name="twitter:image" content="${img}" />`
+      )
+      .replace(
+        /<meta property="og:image:width" content="[^"]*" \/>/,
+        `<meta property="og:image:width" content="1200" />`
+      )
+      .replace(
+        /<meta property="og:image:height" content="[^"]*" \/>/,
+        `<meta property="og:image:height" content="630" />`
+      )
+      .replace(
+        /<meta property="og:image:type" content="[^"]*" \/>/,
+        `<meta property="og:image:type" content="image/png" />`
+      );
+  }
+  return out;
 }

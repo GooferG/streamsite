@@ -58,7 +58,39 @@ Mirrors the existing `api/hunt-suggest/info.js` pattern (public, capability = un
 - Empty state (`board.length === 0`): "No picks yet — be the first." Loading (first load only): a simple skeleton or the tuning-phrase pattern used elsewhere; subsequent polls update silently (no flash).
 - Board column is height-capped with internal scroll (e.g. `max-h-[70vh] overflow-y-auto`) so long lists don't balloon the page.
 
+## Duplicate-game blocking (first caller wins)
+
+A game can appear on a hunt's suggestion board **at most once**, across all callers, for the life of the hunt. Whichever intake path adds it first holds it; later attempts to add the same game (by anyone, via any path) drop that one game.
+
+### The rule (symmetric — no privileged path)
+- **Matching:** case-insensitive, trimmed. `"Big Bass"`, `"big bass "`, `"BIG BASS"` collide.
+- **`taken` set:** every slot name (lowercased, trimmed) already present in `hunt.suggestions[].slots[]`, across ALL people and ALL statuses (open / in_bonus / passed / done — any prior suggestion blocks; a skipped game stays locked for the hunt).
+- **Scope:** per-hunt. A game blocked this hunt is free again in the next hunt (taken is rebuilt from the current hunt's suggestions).
+- **Partial-accept:** only the clashing game(s) drop; every other slot in the submission still goes in. A submission is never rejected wholesale for one clash.
+- **Both intake paths enforce it identically:** the public link submit (`api/hunt-suggest/submit.js`) AND the host roster pull (`api/roster/add.js`) check the same global `taken` set. Example sequence: Bo submits "Big Bass" via link first → it's held. Host then roster-pulls Ana (profile: Big Bass + Gates) → Ana's Big Bass is skipped (Bo holds it), Ana's Gates is added. Ana's other slots are unaffected by the one clash. The reverse order yields the reverse result — strictly first-come-first-served.
+
+### `api/hunt-suggest/submit.js` changes
+Inside the transaction, after building `cleanSlots`:
+1. Build `taken` = Set of lowercased-trimmed slot names from `suggestions[].slots[]`. **Exclude** the slots of the entry being replaced when this is a same-name re-submit (so a returning submitter doesn't self-collide against their own prior picks).
+2. Dedup **within the incoming batch** too (a viewer listing the same game twice keeps one).
+3. Partition `cleanSlots` → `acceptedSlots` (name not in `taken`) and `droppedSlots` (in `taken`).
+4. Build the person's `slots` from `acceptedSlots` only.
+5. If `acceptedSlots` is empty (every game already taken): do NOT create/replace an empty person entry; return a soft success `{ ok: true, added: 0, dropped: [...names] }` (the form shows "All your picks were already called" — not an error).
+6. Otherwise proceed with the existing add/replace, and return `{ ok: true, added: acceptedSlots.length, dropped: droppedSlots, replaced }`.
+
+### `api/roster/add.js` changes
+Currently dedups per-person (a Set of the target entry's own slot names). Extend to the **global** `taken` set: build `taken` from ALL `suggestions[].slots[]` (excluding, for a merge into an existing same-name entry, that entry's own slots), then append only the viewer's default slots whose name is not in `taken`. Keeps the two paths consistent so the owner can't create a duplicate the public form forbids. Return value keeps `{ added, merged }`; `added` now reflects post-dedup count.
+
+### Client message (`HuntSuggestPage.js`)
+On submit success, surface `dropped`: e.g. "Added 2 · Big Bass was already called." When `added === 0`, "All your picks were already called — try different games." This is additive to the existing success handling.
+
+### Board display
+No special dup UI is needed (there are no dups by construction). The board naturally shows each game once under its single (first) caller, reinforcing first-caller-wins.
+
 ## Edge cases
+- **Duplicate game, different casing/spacing**: blocked via normalized (lowercased, trimmed) match.
+- **Returning submitter re-submits their own game**: not blocked against themselves — `taken` excludes the replaced entry's slots.
+- **Submission entirely duplicates**: soft "all taken" response, no error, no empty person entry created.
 - **Link closed** (`open: false`): board still renders (read-only view of the history); the form keeps its existing closed/disabled state. Board does not error.
 - **Hunt ended / no active hunt**: board endpoint returns `board: []`; UI shows the empty state.
 - **Transient poll failure**: keep the last good board; do not blank or error-out the panel (the page must stay usable for submitting).
@@ -67,22 +99,31 @@ Mirrors the existing `api/hunt-suggest/info.js` pattern (public, capability = un
 - **Large boards**: internal scroll; the projection is already bounded by `MAX_PEOPLE` (150) × `MAX_SLOTS` (20) server-side.
 
 ## What is NOT changing
-- The submit form, its validation, cooldown, and caps.
-- `info.js`, `submit.js`, `manage.js` endpoints.
+- The submit form's layout-independent validation, cooldown, and the per-person slot/people caps.
+- `info.js`, `manage.js` endpoints.
 - No new Firestore collections or security-rules changes — the board endpoint reads via admin creds, exactly like `info.js`.
+- (`submit.js` and `roster/add.js` DO change — they gain the global duplicate-game block; see above.)
 
 ## Target files
 - **Create** `api/hunt-suggest/board.js` — the public projection endpoint.
 - **Create** `src/components/SuggestionBoard.js` — the board panel (presentational).
-- **Modify** `src/pages/HuntSuggestPage.js` — two-column layout, board state + 12s polling + post-submit refetch + "you" highlight.
+- **Create** `src/utils/suggestionBoard.js` — pure helpers: `toPublicStatus(status)`, `projectBoard(suggestions)` (board projection + field-stripping), and `takenSlotSet(suggestions, { excludePersonId })` + `dedupeAgainstTaken(names, taken)` (the shared dup-block logic, so submit + roster + tests use one implementation).
+- **Modify** `api/hunt-suggest/submit.js` — global dup-block on link submissions (partial-accept, `dropped` in response).
+- **Modify** `api/roster/add.js` — same global dup-block on roster pulls (replaces its per-person-only dedup).
+- **Modify** `src/pages/HuntSuggestPage.js` — two-column layout, board state + 12s polling + post-submit refetch + "you" highlight + the `dropped`/"already called" message.
 
 ## Testing
-- Unit test the status-projection mapping (pure function): extract `projectBoard(suggestions)` (or the status map) into a testable helper — e.g. `src/utils/suggestionBoard.js` with `toPublicStatus(status)` and `projectBoard(suggestions)` — and assert: done→in, passed→skipped, open/in_bonus→pending, internal fields stripped, empty/missing input → []. (Server handlers aren't unit-tested in this repo, but the pure projection helper can be, and the endpoint imports it.)
-- `SuggestionBoard` render test (repo convention: `@testing-library/react`, `toBeTruthy`, no jest-dom): renders groups, status chips, empty state, and the "you" highlight when `myName` matches.
-- Manual: open a link, submit from one name, mark slots got-in/skipped on the owner side, confirm the board reflects within ~12s; confirm names/slots/status show and no internal fields leak (check the network response).
+- Unit test `src/utils/suggestionBoard.js` (pure):
+  - `toPublicStatus`: done→in, passed→skipped, open/in_bonus/other→pending.
+  - `projectBoard`: strips internal fields (id, source, submittedAt), maps status, empty/missing input → [].
+  - `takenSlotSet`: lowercased+trimmed names across all people/statuses; honors `excludePersonId` (returning submitter doesn't self-collide).
+  - `dedupeAgainstTaken`: case/space-insensitive match; partitions accepted vs dropped; dedups within the incoming batch.
+- `SuggestionBoard` render test (repo convention: `@testing-library/react`, `toBeTruthy`, no jest-dom): renders groups, status chips, empty state, "you" highlight when `myName` matches.
+- Manual: (board) open a link, submit from one name, mark slots got-in/skipped on the owner side, confirm the board reflects within ~12s and no internal fields leak (check the network response). (dup-block) submit "Big Bass" as Bo, then submit "Big Bass" + "Gates" as Cy → only Gates lands, message names Big Bass; roster-pull a viewer whose profile includes an already-taken game → that game is skipped, the rest add.
 
 ## Build order
-1. `src/utils/suggestionBoard.js` (`toPublicStatus`, `projectBoard`) + unit tests — pure, derisks the mapping.
-2. `api/hunt-suggest/board.js` — endpoint using the helper.
-3. `src/components/SuggestionBoard.js` + render test.
-4. `HuntSuggestPage.js` — layout + polling + wiring.
+1. `src/utils/suggestionBoard.js` (`toPublicStatus`, `projectBoard`, `takenSlotSet`, `dedupeAgainstTaken`) + unit tests — pure, derisks both the projection and the dup-block.
+2. `api/hunt-suggest/board.js` — projection endpoint using the helper.
+3. `api/hunt-suggest/submit.js` + `api/roster/add.js` — dup-block using the shared helper.
+4. `src/components/SuggestionBoard.js` + render test.
+5. `HuntSuggestPage.js` — layout + polling + wiring + dup message.

@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { adminDb } from '../_lib/firebaseAdmin.js';
 import { applyCors } from '../_lib/verifyAuth.js';
+import { takenSlotSet, dedupeAgainstTaken } from '../../src/utils/suggestionBoard.js';
 
 // Public, password-gated suggestion submission. No login required — the link's
 // password is the gate. Validates server-side, then appends/overwrites the
@@ -89,7 +90,19 @@ export default async function handler(req, res) {
         throw new Error('LIST_FULL');
       }
 
-      const slotObjs = cleanSlots.map((nm) => ({
+      // Global first-caller-wins dedup. taken = every slot name already on the
+      // board EXCEPT this submitter's own prior entry (a re-submit replaces it,
+      // so their old picks must not block their new ones).
+      const replacedId = existingIdx !== -1 ? suggestions[existingIdx].id : null;
+      const taken = takenSlotSet(suggestions, { excludePersonId: replacedId });
+      const { accepted, dropped } = dedupeAgainstTaken(cleanSlots, taken);
+
+      // Everything was already called — don't create/replace with an empty entry.
+      if (accepted.length === 0) {
+        return { added: 0, dropped, replaced: existingIdx !== -1, empty: true };
+      }
+
+      const slotObjs = accepted.map((nm) => ({
         id: crypto.randomUUID(),
         name: nm,
         status: 'open',
@@ -108,7 +121,7 @@ export default async function handler(req, res) {
           : [...suggestions, person];
 
       tx.update(activeRef, { suggestions: next });
-      return { replaced: existingIdx !== -1 };
+      return { added: accepted.length, dropped, replaced: existingIdx !== -1 };
     });
 
     return res.status(200).json({ ok: true, ...result });

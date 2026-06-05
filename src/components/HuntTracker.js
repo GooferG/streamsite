@@ -11,8 +11,6 @@ import {
   Trophy,
   ArrowLeft,
   Play,
-  SkipForward,
-  Clock,
   Radio,
   Trash2,
   MoreHorizontal,
@@ -22,7 +20,6 @@ import {
 import { arrayMove } from '@dnd-kit/sortable';
 import SlotAutocomplete from './SlotAutocomplete';
 import SuggestionsPanel from './SuggestionsPanel';
-import ScatterPill from './ScatterPill';
 import HuntStartScreen from './HuntStartScreen';
 import Modal from './Modal';
 import StatCell from './StatCell';
@@ -31,6 +28,7 @@ import HuntLinkControls from './HuntLinkControls';
 import HuntTour from './HuntTour';
 import PanelLabel from './hunt/PanelLabel';
 import BonusTable from './hunt/BonusTable';
+import OpeningFocus from './hunt/OpeningFocus';
 import { useHuntStore } from '../hooks/useHuntStore';
 import useTuningPhrase from '../hooks/useTuningPhrase';
 import { useFirstVisit } from '../hooks/useFirstVisit';
@@ -163,7 +161,6 @@ export default function HuntTracker() {
     Math.max(0, order.length - 1)
   );
   const currentBonus = order[openingIdx] || null;
-  const nextBonus = order[openingIdx + 1] || null;
   const openedCount = bonuses.filter((b) => (Number(b.win) || 0) > 0).length;
 
   function startOpening() {
@@ -255,6 +252,11 @@ export default function HuntTracker() {
       bonuses: bonuses.map((b) =>
         b.id === id ? { ...b, caller: value.trim() } : b
       ),
+    });
+  }
+  function updateBonusNote(id, value) {
+    updateHunt({
+      bonuses: bonuses.map((b) => (b.id === id ? { ...b, note: value } : b)),
     });
   }
   function saveName() {
@@ -884,120 +886,20 @@ export default function HuntTracker() {
               accent={phase === 'opening' ? 'purple' : 'emerald'}
             />
 
-            {/* OPENING — current / next slot */}
+            {/* OPENING — centered focus card */}
             {phase === 'opening' && currentBonus && (
-              <div className="space-y-3">
-                <div className="border border-purple-gamba/40 bg-purple-gamba/5 p-4">
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-purple-bright font-mono">
-                      Current slot
-                    </span>
-                    <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono tabular-nums">
-                      {openedCount} / {bonuses.length} opened
-                    </span>
-                  </div>
-                  <div className="h-0.5 bg-white/10 mb-2">
-                    <div
-                      className="h-full bg-purple-bright transition-all"
-                      style={{
-                        width: `${bonuses.length ? (openedCount / bonuses.length) * 100 : 0}%`,
-                      }}
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <ScatterPill bonus={currentBonus} size="md" />
-                    {currentBonus.deferred && (
-                      <span className="shrink-0 px-1 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">
-                        Later
-                      </span>
-                    )}
-                    <p className="font-black text-white-body text-2xl leading-tight truncate">
-                      {currentBonus.slot}
-                    </p>
-                  </div>
-                  <p className="text-[11px] font-mono text-white/50 mb-3 tabular-nums">
-                    bet {fmt(currentBonus.stake)}
-                    {currentBonus.caller ? ` · 📣 ${currentBonus.caller}` : ''}
-                  </p>
-                  <input
-                    type="number"
-                    autoFocus
-                    value={currentBonus.win || ''}
-                    onChange={(e) =>
-                      updateBonusWin(currentBonus.id, e.target.value)
-                    }
-                    onKeyDown={(e) => {
-                      if (e.key !== 'Enter') return;
-                      // Last slot: Enter opens the wrap-up prompt (finish balance
-                      // + export) instead of dead-ending on a clamped Next. It does
-                      // NOT auto-complete — the user confirms in the modal.
-                      if (openingIdx >= order.length - 1) setShowWrapUp(true);
-                      else advanceOpening();
-                    }}
-                    placeholder="Win ($)"
-                    aria-label="Win for current slot"
-                    className="w-full bg-zinc-broadcast/70 border border-purple-gamba/50 px-3 py-2 text-base text-right text-white-body focus:border-purple-bright focus:outline-none tabular-nums"
-                  />
-                  <div className="grid grid-cols-3 gap-2 mt-2">
-                    <button
-                      type="button"
-                      onClick={prevOpening}
-                      disabled={openingIdx === 0}
-                      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border border-white/15 text-white/60 hover:text-white-body hover:border-white/30 transition-colors duration-150 disabled:opacity-30"
-                    >
-                      <ArrowLeft size={12} aria-hidden="true" />
-                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                        Prev
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => toggleDeferred(currentBonus.id)}
-                      title="Come back to this slot later"
-                      className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border transition-colors duration-150 ${
-                        currentBonus.deferred
-                          ? 'border-orange-admin bg-orange-admin/10 text-orange-admin'
-                          : 'border-white/15 text-white/60 hover:text-white-body hover:border-white/30'
-                      }`}
-                    >
-                      <Clock size={13} aria-hidden="true" />
-                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                        Later
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={advanceOpening}
-                      disabled={openingIdx >= order.length - 1}
-                      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-purple-gamba text-white-body hover:bg-purple-bright transition-colors duration-150 disabled:opacity-30"
-                    >
-                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                        Next
-                      </span>
-                      <SkipForward size={12} aria-hidden="true" />
-                    </button>
-                  </div>
-                </div>
-                {/* Next up */}
-                <div className="border border-white/10 bg-zinc-broadcast/40 px-4 py-2.5">
-                  <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
-                    Next up
-                  </span>
-                  {nextBonus ? (
-                    <p className="font-bold text-white-body text-sm truncate mt-0.5 tabular-nums">
-                      {nextBonus.slot}
-                      <span className="text-white/40 font-normal">
-                        {' '}
-                        · {fmt(nextBonus.stake)}
-                      </span>
-                    </p>
-                  ) : (
-                    <p className="text-white/40 text-sm mt-0.5">
-                      That's the last reel. Roll credits when ready.
-                    </p>
-                  )}
-                </div>
-              </div>
+              <OpeningFocus
+                order={order}
+                idx={openingIdx}
+                openedCount={openedCount}
+                onWin={updateBonusWin}
+                onNote={updateBonusNote}
+                onPrev={prevOpening}
+                onNext={advanceOpening}
+                onDefer={toggleDeferred}
+                onExit={backToCollecting}
+                onFinish={() => setShowWrapUp(true)}
+              />
             )}
 
             {/* COLLECTING — add bonus form */}

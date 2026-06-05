@@ -5,6 +5,7 @@
   },
   "rewrites": [
     { "source": "/live/:shareId", "destination": "/api/live-preview" },
+    { "source": "/hunt-suggest/:linkId", "destination": "/api/hunt-suggest/preview" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "crons": [

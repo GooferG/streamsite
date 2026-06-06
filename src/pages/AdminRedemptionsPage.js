@@ -64,7 +64,7 @@ export default function AdminRedemptionsPage() {
   return (
     <div className="p-6 sm:p-8 max-w-4xl mx-auto">
       <header className="mb-8">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
             <span>FULFILLMENT QUEUE</span>
@@ -96,7 +96,7 @@ export default function AdminRedemptionsPage() {
             key={s}
             type="button"
             onClick={() => setStatusFilter(s)}
-            className={`px-3 py-1.5 border text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors duration-150 ${
+            className={`px-3 py-1.5 border text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors duration-150 ${
               statusFilter === s
                 ? 'bg-orange-admin text-zinc-broadcast border-orange-admin'
                 : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
@@ -109,7 +109,7 @@ export default function AdminRedemptionsPage() {
 
       {redemptions.length === 0 ? (
         <div className="border border-white/8 bg-zinc-card/30 py-16 text-center">
-          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono">
             No {statusFilter}
           </p>
           <p className="text-sm text-white/55">Nothing to handle right now.</p>
@@ -135,7 +135,7 @@ export default function AdminRedemptionsPage() {
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-bold text-white-body text-sm">{r.itemName}</p>
                     <span
-                      className={`px-1.5 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase border font-mono ${
+                      className={`px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow-md uppercase border font-mono ${
                         r.kind === 'stream'
                           ? 'text-orange-admin border-orange-admin/40'
                           : 'text-emerald-signal border-emerald-signal/40'
@@ -144,7 +144,7 @@ export default function AdminRedemptionsPage() {
                       {r.kind}
                     </span>
                   </div>
-                  <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5">
+                  <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5">
                     {r.displayName || r.twitchName || r.userId} · {formatTs(r.createdAt)} ·{' '}
                     <span className="text-emerald-signal/70">{r.cost}t</span>
                   </p>
@@ -153,7 +153,7 @@ export default function AdminRedemptionsPage() {
                   )}
                 </div>
                 <span
-                  className={`text-[10px] font-bold tracking-eyebrow-lg uppercase px-2 py-1 border font-mono ${
+                  className={`text-[0.625rem] font-bold tracking-eyebrow-lg uppercase px-2 py-1 border font-mono ${
                     r.status === 'fulfilled'
                       ? 'text-emerald-signal border-emerald-signal/40'
                       : r.status === 'cancelled'
@@ -184,7 +184,7 @@ export default function AdminRedemptionsPage() {
                       className="inline-flex items-center gap-2 px-3 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-50"
                     >
                       <CheckCircle2 size={13} aria-hidden="true" />
-                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                      <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                         Fulfill
                       </span>
                     </button>
@@ -195,7 +195,7 @@ export default function AdminRedemptionsPage() {
                       className="inline-flex items-center gap-2 px-3 py-2 border border-red-destructive/40 text-red-destructive hover:bg-red-destructive/10 transition-colors duration-150 disabled:opacity-50"
                     >
                       <XCircle size={13} aria-hidden="true" />
-                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                      <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                         Cancel · refund
                       </span>
                     </button>

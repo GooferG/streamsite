@@ -87,7 +87,7 @@ function TestPattern() {
 function ChannelBug() {
   return (
     <div
-      className="inline-flex items-center justify-center px-2 py-1 border border-white/40 text-white-body text-[11px] font-bold tracking-eyebrow"
+      className="inline-flex items-center justify-center px-2 py-1 border border-white/40 text-white-body text-[0.6875rem] font-bold tracking-eyebrow"
       style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}
     >
       GG
@@ -100,7 +100,7 @@ function StatePill({ isLive, viewers, loading }) {
     return (
       <div className="inline-flex items-center gap-2.5 px-3 py-1.5 bg-white/5 border border-white/10 backdrop-blur-sm opacity-0">
         <span className="w-1.5 h-1.5 bg-transparent" />
-        <span className="text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono">
+        <span className="text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase font-mono">
           Tuning
         </span>
       </div>
@@ -120,12 +120,12 @@ function StatePill({ isLive, viewers, loading }) {
             <span className="absolute inset-0 rounded-full bg-emerald-bright motion-safe:animate-ping opacity-60" />
             <span className="relative w-1.5 h-1.5 rounded-full bg-emerald-bright" />
           </span>
-          <span className="text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono text-emerald-bright">
+          <span className="text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase font-mono text-emerald-bright">
             On air
           </span>
         </span>
         {viewers != null && (
-          <span className="flex items-center gap-1.5 px-3 py-1.5 border-l border-emerald-signal/30 text-[11px] font-bold tracking-eyebrow-md tabular-nums font-mono text-emerald-bright">
+          <span className="flex items-center gap-1.5 px-3 py-1.5 border-l border-emerald-signal/30 text-[0.6875rem] font-bold tracking-eyebrow-md tabular-nums font-mono text-emerald-bright">
             <Eye size={11} aria-hidden="true" />
             {formatViewerCount(viewers)}
           </span>
@@ -143,11 +143,11 @@ function StatePill({ isLive, viewers, loading }) {
           className="w-1.5 h-1.5 bg-white/35"
           aria-hidden="true"
         />
-        <span className="text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono text-white/70">
+        <span className="text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase font-mono text-white/70">
           Off air
         </span>
       </span>
-      <span className="flex items-center px-3 py-1.5 text-[10px] font-bold tracking-eyebrow-md uppercase font-mono text-white/40">
+      <span className="flex items-center px-3 py-1.5 text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono text-white/40">
         Signal dark
       </span>
     </div>
@@ -179,7 +179,7 @@ function LiveCenter({ streamData }) {
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-broadcast via-zinc-broadcast/40 to-transparent" />
         <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
           {game && (
-            <div className="text-[11px] font-bold tracking-eyebrow-sm text-emerald-bright uppercase mb-1.5">
+            <div className="text-[0.6875rem] font-bold tracking-eyebrow-sm text-emerald-bright uppercase mb-1.5">
               Now playing &middot; {game}
             </div>
           )}
@@ -217,7 +217,7 @@ function NextCenter({ nextStream, gameCover, onBrowseVods }) {
             )}
           </div>
           <div className="flex flex-col justify-center min-w-0">
-            <div className="text-[11px] font-bold tracking-eyebrow text-emerald-bright uppercase mb-2">
+            <div className="text-[0.6875rem] font-bold tracking-eyebrow text-emerald-bright uppercase mb-2">
               Next on this channel
             </div>
             <div className="flex items-baseline gap-3 flex-wrap mb-2">
@@ -233,7 +233,7 @@ function NextCenter({ nextStream, gameCover, onBrowseVods }) {
               {nextStream.gameName || nextStream.content}
             </p>
             {nextStream.status === 'special' && (
-              <div className="mt-3 inline-block self-start px-2.5 py-1 border border-purple-gamba/40 text-[11px] font-bold tracking-eyebrow-sm text-purple-bright uppercase">
+              <div className="mt-3 inline-block self-start px-2.5 py-1 border border-purple-gamba/40 text-[0.6875rem] font-bold tracking-eyebrow-sm text-purple-bright uppercase">
                 Special
               </div>
             )}
@@ -319,7 +319,7 @@ function OffAirCenter({ onBrowseVods, clips }) {
         </div>
         <div className="px-5 sm:px-7 py-4 bg-zinc-card border-t border-white/5 flex items-center justify-between gap-4">
           <div>
-            <div className="text-[11px] font-bold tracking-eyebrow text-white/50 uppercase">
+            <div className="text-[0.6875rem] font-bold tracking-eyebrow text-white/50 uppercase">
               Signal
             </div>
             <div className="text-sm sm:text-base font-bold tracking-wide text-white-body">
@@ -353,7 +353,7 @@ function ErrorCenter({ onBrowseVods }) {
     <div className="w-full max-w-3xl">
       <div className="rounded-xl border border-red-destructive/20 bg-zinc-card px-5 sm:px-7 py-6 flex items-center justify-between gap-4">
         <div>
-          <div className="text-[11px] font-bold tracking-eyebrow text-red-destructive uppercase mb-1">
+          <div className="text-[0.6875rem] font-bold tracking-eyebrow text-red-destructive uppercase mb-1">
             Signal lost
           </div>
           <div className="text-sm sm:text-base text-white/70">

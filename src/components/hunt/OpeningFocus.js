@@ -55,13 +55,13 @@ export default function OpeningFocus({
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <button type="button" onClick={onExit}
-          className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-eyebrow-lg font-mono text-white/60 hover:text-white-body">
+          className="inline-flex items-center gap-1.5 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg font-mono text-white/60 hover:text-white-body">
           <ArrowLeft size={12} aria-hidden="true" /> Back to hunt
         </button>
-        <span className="text-[10px] font-bold uppercase tracking-eyebrow-lg font-mono text-purple-bright tabular-nums">
+        <span className="text-[0.625rem] font-bold uppercase tracking-eyebrow-lg font-mono text-purple-bright tabular-nums">
           Opening · {openedCount}/{order.length} done
         </span>
-        <span className="text-[10px] font-mono text-white/35 hidden sm:inline">↵ next · ←/→ nav · esc exit</span>
+        <span className="text-[0.625rem] font-mono text-white/35 hidden sm:inline">↵ next · ←/→ nav · esc exit</span>
       </div>
 
       <div className="mx-auto max-w-[1040px] border border-purple-gamba/40 bg-purple-gamba/5 p-5">
@@ -72,7 +72,7 @@ export default function OpeningFocus({
               <ScatterPill bonus={bonus} size="md" />
               <p className="font-black text-white-body text-2xl leading-tight truncate">{bonus.slot}</p>
             </div>
-            <p className="text-[11px] font-mono text-white/50 mt-0.5 tabular-nums">
+            <p className="text-[0.6875rem] font-mono text-white/50 mt-0.5 tabular-nums">
               called by {bonus.caller || '—'} · bonus {idx + 1} of {order.length}
             </p>
           </div>
@@ -90,18 +90,18 @@ export default function OpeningFocus({
 
         <div className="grid grid-cols-3 gap-3">
           <label className="block">
-            <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/55 mb-1.5 font-mono">Bet size</span>
+            <span className="block text-[0.625rem] font-bold uppercase tracking-eyebrow-md text-white/55 mb-1.5 font-mono">Bet size</span>
             <div className="bg-zinc-broadcast/40 border border-white/10 px-3 py-2 text-white/70 tabular-nums">{fmt(stake)}</div>
           </label>
           <label className="block">
-            <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/55 mb-1.5 font-mono">Payout</span>
+            <span className="block text-[0.625rem] font-bold uppercase tracking-eyebrow-md text-white/55 mb-1.5 font-mono">Payout</span>
             <input ref={payoutRef} type="number" inputMode="decimal" aria-label="Payout"
               value={bonus.win || ''} onChange={(e) => onWin(bonus.id, e.target.value)}
               placeholder="0.00"
               className="w-full bg-zinc-broadcast/70 border border-purple-gamba/50 px-3 py-2 text-right text-white-body focus:border-purple-bright focus:outline-none tabular-nums" />
           </label>
           <label className="block">
-            <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/55 mb-1.5 font-mono">Multiplier</span>
+            <span className="block text-[0.625rem] font-bold uppercase tracking-eyebrow-md text-white/55 mb-1.5 font-mono">Multiplier</span>
             <div className={`px-3 py-2 text-right font-bold tabular-nums border border-white/10 bg-zinc-broadcast/40 ${multTone}`}>
               {mult == null ? '—' : fmtX(mult)}
             </div>
@@ -109,7 +109,7 @@ export default function OpeningFocus({
         </div>
 
         <label className="block mt-3">
-          <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/55 mb-1.5 font-mono">Notes</span>
+          <span className="block text-[0.625rem] font-bold uppercase tracking-eyebrow-md text-white/55 mb-1.5 font-mono">Notes</span>
           <textarea value={bonus.note || ''} onChange={(e) => onNote(bonus.id, e.target.value)}
             placeholder="Bonus story, retrigger, big tile…" rows={2}
             className="w-full bg-zinc-broadcast/60 border border-white/10 px-3 py-2 text-sm text-white-body focus:border-emerald-signal/70 focus:outline-none resize-none" />
@@ -117,17 +117,17 @@ export default function OpeningFocus({
 
         <div className="flex items-center justify-between gap-2 mt-4">
           <button type="button" onClick={() => onDefer(bonus.id)}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 border text-[10px] font-bold uppercase tracking-eyebrow-lg font-mono ${
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 border text-[0.625rem] font-bold uppercase tracking-eyebrow-lg font-mono ${
               bonus.deferred ? 'border-orange-admin bg-orange-admin/10 text-orange-admin' : 'border-white/15 text-white/60 hover:text-white-body'
             }`}>
             <Clock size={12} aria-hidden="true" /> Later
           </button>
           {next && (
-            <span className="text-[10px] font-mono text-white/40 truncate">Next · {next.slot}</span>
+            <span className="text-[0.625rem] font-mono text-white/40 truncate">Next · {next.slot}</span>
           )}
           <button type="button" onClick={last ? onFinish : onNext}
             className="inline-flex items-center gap-1.5 px-4 py-2 bg-purple-gamba text-white-body hover:bg-purple-bright transition-colors">
-            <span className="text-[10px] font-bold uppercase tracking-eyebrow-lg font-mono">
+            <span className="text-[0.625rem] font-bold uppercase tracking-eyebrow-lg font-mono">
               {last ? 'Finish opening' : 'Save & continue'}
             </span>
             {last ? <Check size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}

@@ -57,7 +57,7 @@ function ItemForm({ initial, onSave, onClose, saving }) {
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-lg border border-white/10 bg-zinc-card"
       >
-        <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
             {initial?.id ? 'Edit item' : 'New item'}
@@ -73,13 +73,13 @@ function ItemForm({ initial, onSave, onClose, saving }) {
 
         <div className="px-5 py-5 space-y-4">
           <label className="block">
-            <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+            <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
               <span className="text-orange-admin tabular-nums">01</span> Name <span className="text-emerald-signal">*</span>
             </span>
             <input value={form.name} onChange={(e) => set('name', e.target.value)} className={inputCls} />
           </label>
           <label className="block">
-            <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+            <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
               <span className="text-orange-admin tabular-nums">02</span> Description
             </span>
             <textarea
@@ -91,7 +91,7 @@ function ItemForm({ initial, onSave, onClose, saving }) {
           </label>
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+              <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
                 <span className="text-orange-admin tabular-nums">03</span> Cost <span className="text-emerald-signal">*</span>
               </span>
               <input
@@ -103,7 +103,7 @@ function ItemForm({ initial, onSave, onClose, saving }) {
               />
             </label>
             <label className="block">
-              <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+              <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
                 <span className="text-orange-admin tabular-nums">04</span> Kind <span className="text-emerald-signal">*</span>
               </span>
               <select value={form.kind} onChange={(e) => set('kind', e.target.value)} className={inputCls}>
@@ -114,7 +114,7 @@ function ItemForm({ initial, onSave, onClose, saving }) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <label className="block">
-              <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+              <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
                 <span className="text-orange-admin tabular-nums">05</span> Stock <span className="text-white/30">· blank = unlimited</span>
               </span>
               <input
@@ -127,7 +127,7 @@ function ItemForm({ initial, onSave, onClose, saving }) {
               />
             </label>
             <label className="block">
-              <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+              <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
                 <span className="text-orange-admin tabular-nums">06</span> Sort order
               </span>
               <input
@@ -139,7 +139,7 @@ function ItemForm({ initial, onSave, onClose, saving }) {
             </label>
           </div>
           <label className="block">
-            <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+            <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
               <span className="text-orange-admin tabular-nums">07</span> Image URL <span className="text-white/30">· optional</span>
             </span>
             <input
@@ -155,12 +155,12 @@ function ItemForm({ initial, onSave, onClose, saving }) {
               checked={form.active}
               onChange={(e) => set('active', e.target.checked)}
             />
-            <span className="text-[11px] font-bold tracking-eyebrow uppercase text-white/70 font-mono">
+            <span className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-white/70 font-mono">
               Active · visible in store
             </span>
           </label>
           {error && (
-            <p className="text-[11px] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
+            <p className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
               {error}
             </p>
           )}
@@ -172,7 +172,7 @@ function ItemForm({ initial, onSave, onClose, saving }) {
             onClick={onClose}
             className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
           >
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
               Cancel
             </span>
           </button>
@@ -182,7 +182,7 @@ function ItemForm({ initial, onSave, onClose, saving }) {
             className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50"
           >
             <Check size={13} aria-hidden="true" />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
               {saving ? 'Saving…' : 'Save'}
             </span>
           </button>
@@ -241,7 +241,7 @@ export default function AdminStorePage() {
   return (
     <div className="p-6 sm:p-8 max-w-4xl mx-auto">
       <header className="mb-8">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
             <span>STORE CATALOG</span>
@@ -277,7 +277,7 @@ export default function AdminStorePage() {
           className="inline-flex items-center gap-2 px-3.5 py-2 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150"
         >
           <Plus size={13} aria-hidden="true" />
-          <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+          <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
             New item
           </span>
         </button>
@@ -285,7 +285,7 @@ export default function AdminStorePage() {
 
       {items.length === 0 ? (
         <div className="border border-white/8 bg-zinc-card/30 py-16 text-center">
-          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono">
             Empty catalog
           </p>
           <p className="text-sm text-white/55">Create the first item to populate the store.</p>
@@ -308,7 +308,7 @@ export default function AdminStorePage() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <p className="font-bold text-white-body text-sm">{item.name}</p>
                   <span
-                    className={`px-1.5 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono border ${
+                    className={`px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow-md uppercase font-mono border ${
                       item.kind === 'stream'
                         ? 'text-orange-admin border-orange-admin/40'
                         : 'text-emerald-signal border-emerald-signal/40'
@@ -317,12 +317,12 @@ export default function AdminStorePage() {
                     {item.kind}
                   </span>
                   {!item.active && (
-                    <span className="px-1.5 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase text-white/40 border border-white/15 font-mono">
+                    <span className="px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow-md uppercase text-white/40 border border-white/15 font-mono">
                       hidden
                     </span>
                   )}
                 </div>
-                <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5">
+                <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5">
                   Cost <span className="text-emerald-signal/80">{item.cost}</span> · Stock{' '}
                   <span className="text-white/60">
                     {item.stock === null || item.stock === undefined ? '∞' : item.stock}
@@ -347,7 +347,7 @@ export default function AdminStorePage() {
                     <button
                       type="button"
                       onClick={() => handleDelete(item.id)}
-                      className="px-2 py-2 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                      className="px-2 py-2 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
                     >
                       Confirm
                     </button>

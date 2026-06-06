@@ -23,7 +23,7 @@ const ERROR_LABELS = {
 
 function StatusBar({ tickets }) {
   return (
-    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
       <span className="inline-flex items-center gap-2 text-emerald-signal">
         <span className="relative flex w-1.5 h-1.5">
           <span className="absolute inset-0 rounded-full bg-emerald-signal motion-safe:animate-ping opacity-50" />
@@ -48,7 +48,7 @@ function ItemCard({ item, balance, onRedeem, redeeming, disabled }) {
 
   return (
     <div className="border border-white/8 bg-zinc-card/30 flex flex-col">
-      <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/8 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+      <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-white/8 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
         <span className="inline-flex items-center gap-2 text-emerald-signal">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
           <span>{item.kind === 'stream' ? 'On stream' : 'Auto-grant'}</span>
@@ -83,7 +83,7 @@ function ItemCard({ item, balance, onRedeem, redeeming, disabled }) {
           <span className="text-2xl font-black text-white-body tabular-nums">
             {item.cost}
           </span>
-          <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
+          <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
             tickets
           </span>
         </div>
@@ -96,7 +96,7 @@ function ItemCard({ item, balance, onRedeem, redeeming, disabled }) {
         className="flex items-center justify-center gap-2 px-4 py-3 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/40"
       >
         <ShoppingBag size={13} aria-hidden="true" />
-        <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+        <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
           {redeeming
             ? 'Redeeming…'
             : outOfStock
@@ -180,7 +180,7 @@ export default function StorePage() {
       <div className="relative z-10 max-w-5xl mx-auto space-y-5">
         {/* Slate header */}
         <header className="mb-2">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
             <span className="inline-flex items-center gap-2 text-emerald-signal">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
               <span>STREAM STORE</span>
@@ -222,7 +222,7 @@ export default function StorePage() {
                 <svg viewBox="0 0 24 24" className="w-4 h-4 fill-current" aria-hidden="true">
                   <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z" />
                 </svg>
-                <span className="text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                <span className="text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                   Sign in with Twitch
                 </span>
               </button>
@@ -244,13 +244,13 @@ export default function StorePage() {
                   <p className="text-sm font-bold text-white-body truncate">
                     {twitchUser.displayName}
                   </p>
-                  <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-emerald-signal/80 font-mono">
+                  <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-emerald-signal/80 font-mono">
                     Twitch · Authenticated
                   </p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
+                <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
                   Balance
                 </p>
                 <p className="text-2xl font-black text-emerald-signal tabular-nums leading-none">
@@ -286,7 +286,7 @@ export default function StorePage() {
             <button
               type="button"
               onClick={() => setFeedback(null)}
-              className="ml-auto text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 hover:text-white-body font-mono"
+              className="ml-auto text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 hover:text-white-body font-mono"
             >
               Dismiss
             </button>
@@ -295,12 +295,12 @@ export default function StorePage() {
 
         {/* Items grid */}
         {loadingItems ? (
-          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
             Loading store…
           </p>
         ) : items.length === 0 ? (
           <div className="border border-white/8 bg-zinc-card/30 py-16 text-center">
-            <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono">
+            <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono">
               Store empty
             </p>
             <p className="text-sm text-white/55">

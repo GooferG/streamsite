@@ -6,7 +6,7 @@ import { fmt, fmtX } from '../../utils/huntCalc';
 function Cell({ label, value, tint }) {
   return (
     <div className="rounded-lg border border-white/8 bg-zinc-card/30 px-3 py-2.5">
-      <div className="text-[10px] font-bold uppercase tracking-eyebrow-md text-white/55 font-mono mb-1">{label}</div>
+      <div className="text-[0.625rem] font-bold uppercase tracking-eyebrow-md text-white/55 font-mono mb-1">{label}</div>
       <div className={`text-2xl font-bold tabular-nums ${tint || 'text-white-body'}`}>{value}</div>
     </div>
   );

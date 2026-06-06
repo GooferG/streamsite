@@ -108,7 +108,7 @@ function SortableBonusRow({
             className="shrink-0 leading-none"
           >
             {scatterTierKey(bonus) === 'regular' ? (
-              <span className="px-1 py-0.5 text-[8px] font-bold tracking-eyebrow-md uppercase font-mono border border-white/15 text-white/30 hover:text-white/60 hover:border-white/30 leading-none">
+              <span className="px-1 py-0.5 text-[0.5rem] font-bold tracking-eyebrow-md uppercase font-mono border border-white/15 text-white/30 hover:text-white/60 hover:border-white/30 leading-none">
                 tier
               </span>
             ) : (
@@ -117,7 +117,7 @@ function SortableBonusRow({
           </button>
           <span className="truncate">{bonus.slot}</span>
           {bonus.deferred && (
-            <span className="shrink-0 px-1 py-0.5 text-[8px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">
+            <span className="shrink-0 px-1 py-0.5 text-[0.5rem] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">
               Later
             </span>
           )}
@@ -141,14 +141,14 @@ function SortableBonusRow({
               if (e.key === 'Escape') setEditingCaller(null);
             }}
             placeholder="Caller"
-            className="mt-0.5 w-32 bg-zinc-broadcast/80 border border-purple-gamba/50 px-1.5 py-0.5 text-[11px] text-white-body focus:outline-none"
+            className="mt-0.5 w-32 bg-zinc-broadcast/80 border border-purple-gamba/50 px-1.5 py-0.5 text-[0.6875rem] text-white-body focus:outline-none"
           />
         ) : (
           <button
             type="button"
             onClick={() => setEditingCaller(bonus.id)}
             title="Set slot caller"
-            className="mt-0.5 block text-[10px] font-mono tracking-eyebrow-md uppercase truncate max-w-full text-left transition-colors"
+            className="mt-0.5 block text-[0.625rem] font-mono tracking-eyebrow-md uppercase truncate max-w-full text-left transition-colors"
           >
             {bonus.caller ? (
               <span className="text-purple-bright">📣 {bonus.caller}</span>
@@ -253,7 +253,7 @@ export default function BonusTable({
 
   if (bonuses.length === 0) {
     return (
-      <p className="text-center text-white/55 py-6 text-[12px] font-mono">
+      <p className="text-center text-white/55 py-6 text-[0.75rem] font-mono">
         Nothing logged yet. Call the first slot.
       </p>
     );
@@ -263,7 +263,7 @@ export default function BonusTable({
     <div className="border border-white/8 overflow-x-auto [scrollbar-width:thin]">
       <div className="min-w-[480px] text-sm">
         {/* Column headers */}
-        <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-2 border-b border-white/10 bg-zinc-broadcast/50 sticky top-0 z-10 text-white/65 text-[10px] uppercase tracking-eyebrow-md font-mono font-bold">
+        <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-2 border-b border-white/10 bg-zinc-broadcast/50 sticky top-0 z-10 text-white/65 text-[0.625rem] uppercase tracking-eyebrow-md font-mono font-bold">
           <span className="w-6" aria-hidden="true" />
           <span className="text-left">Slot</span>
           {phase === 'opening' ? (
@@ -342,7 +342,7 @@ export default function BonusTable({
           </DndContext>
         </CappedScroll>
         {/* Totals */}
-        <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-2 border-t border-white/10 bg-zinc-broadcast/50 sticky bottom-0 z-10 text-[10px] uppercase tracking-eyebrow-md font-mono font-bold text-white/70">
+        <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-2 border-t border-white/10 bg-zinc-broadcast/50 sticky bottom-0 z-10 text-[0.625rem] uppercase tracking-eyebrow-md font-mono font-bold text-white/70">
           <span className="w-6" aria-hidden="true" />
           <span className="text-left text-white/65">Totals</span>
           <span className="text-right w-20 px-1 tabular-nums">

@@ -79,7 +79,7 @@ function ScheduleRow({ item, coverUrl, isToday, isOff, isSpecial }) {
       {/* Day cell */}
       <div className="flex flex-col gap-1">
         <span
-          className={`text-[10px] font-bold tracking-eyebrow-lg ${
+          className={`text-[0.625rem] font-bold tracking-eyebrow-lg ${
             isToday ? 'text-emerald-signal' : 'text-white/35'
           } font-mono`}
         >
@@ -109,7 +109,7 @@ function ScheduleRow({ item, coverUrl, isToday, isOff, isSpecial }) {
             className={`w-full h-full object-cover ${isOff ? 'grayscale opacity-40' : ''}`}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center text-[9px] font-bold tracking-eyebrow-md text-white/30 font-mono">
+          <div className="w-full h-full flex items-center justify-center text-[0.5625rem] font-bold tracking-eyebrow-md text-white/30 font-mono">
             NO ART
           </div>
         )}
@@ -117,7 +117,7 @@ function ScheduleRow({ item, coverUrl, isToday, isOff, isSpecial }) {
 
       {/* Programming info */}
       <div className="min-w-0">
-        <div className="flex items-center gap-2 text-[10px] font-bold tracking-eyebrow-md mb-1.5 font-mono">
+        <div className="flex items-center gap-2 text-[0.625rem] font-bold tracking-eyebrow-md mb-1.5 font-mono">
           <span className={isOff ? 'text-white/30' : 'text-white/45'}>
             {isOff ? 'DARK' : item.time}
           </span>
@@ -150,7 +150,7 @@ function ScheduleRow({ item, coverUrl, isToday, isOff, isSpecial }) {
           {item.content}
         </p>
         {item.gameName && !isOff && item.gameName !== item.content && (
-          <p className="mt-1 text-[11px] tracking-eyebrow-sm uppercase text-white/40 truncate font-mono">
+          <p className="mt-1 text-[0.6875rem] tracking-eyebrow-sm uppercase text-white/40 truncate font-mono">
             {item.gameName}
           </p>
         )}
@@ -159,7 +159,7 @@ function ScheduleRow({ item, coverUrl, isToday, isOff, isSpecial }) {
       {/* Special tag */}
       {isSpecial && (
         <div className="hidden sm:block">
-          <span className="inline-block px-2.5 py-1 border border-purple-gamba/50 text-[10px] font-bold tracking-eyebrow-md text-purple-bright font-mono">
+          <span className="inline-block px-2.5 py-1 border border-purple-gamba/50 text-[0.625rem] font-bold tracking-eyebrow-md text-purple-bright font-mono">
             SPECIAL
           </span>
         </div>
@@ -175,7 +175,7 @@ function DarkWeekNotice() {
         <div className="w-24 h-32 sm:w-28 sm:h-36 overflow-hidden bg-zinc-card border border-white/8">
           <StaticPattern />
         </div>
-        <div className="flex items-center gap-2 text-[10px] font-bold tracking-eyebrow-lg text-white/40 font-mono">
+        <div className="flex items-center gap-2 text-[0.625rem] font-bold tracking-eyebrow-lg text-white/40 font-mono">
           <span className="w-1.5 h-1.5 rounded-full bg-white/30" />
           <span>OFF AIR</span>
           <span className="text-white/15">·</span>
@@ -267,7 +267,7 @@ export default function SchedulePage() {
       <div className="relative max-w-5xl mx-auto">
         {/* Slate header — programming guide */}
         <header className="mb-16 sm:mb-20">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-6 font-mono">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] sm:text-[0.6875rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-6 font-mono">
             <span className="inline-flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
               <span className="text-emerald-signal">ON AIR</span>
@@ -291,7 +291,7 @@ export default function SchedulePage() {
             <span className="block text-emerald-signal">on the air.</span>
           </h1>
 
-          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] uppercase tracking-eyebrow text-white/45 font-mono">
+          <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[0.6875rem] uppercase tracking-eyebrow text-white/45 font-mono">
             <span>
               Zone · <span className="text-white/70">AZ / MST</span>
             </span>
@@ -337,7 +337,7 @@ export default function SchedulePage() {
         </section>
 
         {/* Footer note — minimal, no card */}
-        <footer className="mt-16 flex flex-wrap items-baseline gap-x-3 gap-y-2 text-[10px] uppercase tracking-eyebrow-lg text-white/30 font-mono">
+        <footer className="mt-16 flex flex-wrap items-baseline gap-x-3 gap-y-2 text-[0.625rem] uppercase tracking-eyebrow-lg text-white/30 font-mono">
           <span>END OF GUIDE</span>
           <span className="text-white/15">·</span>
           <span className="text-white/50">

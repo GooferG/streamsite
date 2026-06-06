@@ -89,7 +89,7 @@ function ClauseSection({ index, label, title, clauses }) {
   return (
     <section className="mb-16 sm:mb-20">
       <header className="mb-6">
-        <div className="flex items-center gap-3 text-[10px] sm:text-[11px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-4 font-mono">
+        <div className="flex items-center gap-3 text-[0.625rem] sm:text-[0.6875rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-4 font-mono">
           <span className="text-white/30">CLAUSE</span>
           <span className="text-white-body tabular-nums">{index}</span>
           <span className="text-white/20">·</span>
@@ -111,7 +111,7 @@ function ClauseSection({ index, label, title, clauses }) {
             <span className="text-emerald-signal text-xs font-bold tracking-eyebrow-lg pt-1 font-mono tabular-nums">
               {String(i + 1).padStart(2, '0')}
             </span>
-            <p className="text-[15px] sm:text-base text-white/75 leading-relaxed">
+            <p className="text-[0.9375rem] sm:text-base text-white/75 leading-relaxed">
               {clause}
             </p>
           </li>
@@ -131,7 +131,7 @@ export default function TermsPage() {
       <div className="relative max-w-3xl mx-auto">
         {/* Slate header */}
         <div className="mb-16 sm:mb-20">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-6 font-mono">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] sm:text-[0.6875rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-6 font-mono">
             <span>THE FINE PRINT</span>
             <span className="text-white/20">·</span>
             <span className="text-white/30 tabular-nums">
@@ -162,7 +162,7 @@ export default function TermsPage() {
         ))}
 
         {/* Gambling disclaimer — same line shown on the leaderboard pages */}
-        <p className="mt-4 px-1 text-center text-[10px] font-bold tracking-eyebrow-sm uppercase font-mono text-white/35">
+        <p className="mt-4 px-1 text-center text-[0.625rem] font-bold tracking-eyebrow-sm uppercase font-mono text-white/35">
           We do not take responsibility for any losses from gambling. Play
           responsibly. Must be 18+.
         </p>

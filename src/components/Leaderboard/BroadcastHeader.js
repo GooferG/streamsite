@@ -55,15 +55,15 @@ export default function BroadcastHeader({
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-3 gap-x-6 px-4 sm:px-6 py-5 border-b border-white/8">
       <div className="space-y-1">
-        <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/65 font-mono">
+        <div className="text-[0.625rem] font-bold tracking-eyebrow-lg text-white/65 font-mono">
           STANDINGS · {weekLabel}
         </div>
-        <div className="text-[10px] font-bold tracking-eyebrow-md text-white/45 font-mono tabular-nums">
+        <div className="text-[0.625rem] font-bold tracking-eyebrow-md text-white/45 font-mono tabular-nums">
           LAST UPDATED · {formatRelativeAge(age)}
         </div>
         {btcPriceText && (
           <div className="pt-2 mt-2 border-t border-white/8 space-y-0.5">
-            <div className="text-[10px] font-bold tracking-eyebrow-md font-mono tabular-nums">
+            <div className="text-[0.625rem] font-bold tracking-eyebrow-md font-mono tabular-nums">
               <span className="text-white/55">BTC</span>{' '}
               <span className="text-white-body">{btcPriceText}</span>{' '}
               {btcChangeText && (
@@ -73,7 +73,7 @@ export default function BroadcastHeader({
               )}
             </div>
             {btcCommentary && (
-              <div className="text-[9px] font-bold tracking-eyebrow-sm text-white/40 font-mono italic">
+              <div className="text-[0.5625rem] font-bold tracking-eyebrow-sm text-white/40 font-mono italic">
                 {btcCommentary}
               </div>
             )}
@@ -82,7 +82,7 @@ export default function BroadcastHeader({
       </div>
 
       <div className="text-center">
-        <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/50 font-mono">
+        <div className="text-[0.625rem] font-bold tracking-eyebrow-lg text-white/50 font-mono">
           {periodLabel}
         </div>
         <h1 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-none mt-1 uppercase">
@@ -106,7 +106,7 @@ export default function BroadcastHeader({
       </div>
 
       <div className="sm:text-right space-y-1">
-        <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/65 font-mono">
+        <div className="text-[0.625rem] font-bold tracking-eyebrow-lg text-white/65 font-mono">
           {remaining.isOver ? 'STATUS' : 'T-MINUS'}
         </div>
         {remaining.isOver ? (
@@ -125,7 +125,7 @@ export default function BroadcastHeader({
           </div>
         ) : null}
         {remaining.isOver && (
-          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono mt-1.5 sm:text-right">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono mt-1.5 sm:text-right">
             That's a wrap on this board. New race tips off soon.
           </p>
         )}
@@ -158,7 +158,7 @@ export default function BroadcastHeader({
                   >
                     {pad2(value)}
                   </span>
-                  <span className="mt-1 text-[8px] tracking-eyebrow-sm text-white/40 font-mono">
+                  <span className="mt-1 text-[0.5rem] tracking-eyebrow-sm text-white/40 font-mono">
                     {label}
                   </span>
                 </div>

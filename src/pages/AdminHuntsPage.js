@@ -174,7 +174,7 @@ function NewRoundModal({ onClose, onCreated }) {
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-xl border border-white/10 bg-zinc-card my-auto"
       >
-        <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
             New prediction round
@@ -190,13 +190,13 @@ function NewRoundModal({ onClose, onCreated }) {
 
         <div className="px-5 py-5 space-y-4">
           <label className="block">
-            <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+            <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
               <span className="text-orange-admin tabular-nums">01</span> Title <span className="text-emerald-signal">*</span>
             </span>
             <input value={form.title} onChange={(e) => set('title', e.target.value)} className={inputCls} placeholder="Friday night bonus hunt" />
           </label>
           <label className="block">
-            <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+            <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
               <span className="text-orange-admin tabular-nums">02</span> Context note
             </span>
             <input value={form.contextNote} onChange={(e) => set('contextNote', e.target.value)} className={inputCls} placeholder='e.g. "Bonus battle vs Bonanza"' />
@@ -204,7 +204,7 @@ function NewRoundModal({ onClose, onCreated }) {
 
           {/* Source */}
           <div>
-            <p className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+            <p className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
               <span className="text-orange-admin tabular-nums">03</span> Source
             </p>
             <div className="flex gap-2">
@@ -213,7 +213,7 @@ function NewRoundModal({ onClose, onCreated }) {
                   key={s}
                   type="button"
                   onClick={() => set('source', s)}
-                  className={`flex-1 px-3 py-2 border text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors duration-150 ${
+                  className={`flex-1 px-3 py-2 border text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors duration-150 ${
                     form.source === s
                       ? 'bg-orange-admin text-zinc-broadcast border-orange-admin'
                       : 'border-white/15 text-white/55 hover:text-white-body hover:border-white/30'
@@ -226,15 +226,15 @@ function NewRoundModal({ onClose, onCreated }) {
             {form.source === 'bonushunt' && (
               <div className="mt-2 border border-white/10 bg-zinc-broadcast/40 px-3 py-2.5">
                 {previewing ? (
-                  <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
+                  <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
                     Loading current hunt…
                   </p>
                 ) : previewError ? (
-                  <p className="text-[11px] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
+                  <p className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
                     {previewError}
                   </p>
                 ) : preview ? (
-                  <div className="flex items-center justify-between gap-3 flex-wrap text-[11px] font-mono">
+                  <div className="flex items-center justify-between gap-3 flex-wrap text-[0.6875rem] font-mono">
                     <div className="min-w-0 flex-1">
                       <p className="font-bold text-white-body truncate">{preview.huntName || 'Untitled hunt'}</p>
                       <p className="text-white/45 tracking-eyebrow-md uppercase mt-0.5">
@@ -247,7 +247,7 @@ function NewRoundModal({ onClose, onCreated }) {
                       className="inline-flex items-center gap-1.5 px-2 py-1 border border-white/15 text-white/65 hover:text-white-body hover:border-white/30"
                     >
                       <RefreshCcw size={11} aria-hidden="true" />
-                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase">Refresh</span>
+                      <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase">Refresh</span>
                     </button>
                   </div>
                 ) : null}
@@ -256,14 +256,14 @@ function NewRoundModal({ onClose, onCreated }) {
             {form.source === 'manual' && (
               <div className="mt-2 space-y-2">
                 <label className="block">
-                  <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+                  <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
                     Total cost <span className="text-white/30 normal-case font-normal">· number</span>
                   </span>
                   <input value={form.manualTotalCost} onChange={(e) => set('manualTotalCost', e.target.value)} className={inputCls} type="number" min="0" step="0.01" placeholder="0.00" />
                 </label>
                 {form.kinds.topSlot && (
                   <label className="block">
-                    <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+                    <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
                       Slot list <span className="text-white/30 normal-case font-normal">· one per line</span>
                     </span>
                     <textarea value={form.manualSlots} onChange={(e) => set('manualSlots', e.target.value)} className={inputCls} rows={5} placeholder={'Gates of Olympus\nSugar Rush\nBonanza Billion'} />
@@ -275,7 +275,7 @@ function NewRoundModal({ onClose, onCreated }) {
 
           {/* Features */}
           <div>
-            <p className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+            <p className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
               <span className="text-orange-admin tabular-nums">04</span> Features
             </p>
             <div className="space-y-2">
@@ -288,11 +288,11 @@ function NewRoundModal({ onClose, onCreated }) {
                     : 'border-white/10 bg-zinc-broadcast/40 text-white/50 hover:text-white-body'
                 }`}
               >
-                <span className="flex items-center gap-2 text-[11px] font-bold tracking-eyebrow uppercase font-mono">
+                <span className="flex items-center gap-2 text-[0.6875rem] font-bold tracking-eyebrow uppercase font-mono">
                   <span className={`w-1.5 h-1.5 rounded-full ${form.acceptPredictions ? 'bg-emerald-signal' : 'bg-white/25'}`} />
-                  Predictions <span className="text-white/30 normal-case font-normal text-[10px]">viewers guess outcome</span>
+                  Predictions <span className="text-white/30 normal-case font-normal text-[0.625rem]">viewers guess outcome</span>
                 </span>
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                   {form.acceptPredictions ? 'ON' : 'OFF'}
                 </span>
               </button>
@@ -305,17 +305,17 @@ function NewRoundModal({ onClose, onCreated }) {
                     : 'border-white/10 bg-zinc-broadcast/40 text-white/50 hover:text-white-body'
                 }`}
               >
-                <span className="flex items-center gap-2 text-[11px] font-bold tracking-eyebrow uppercase font-mono">
+                <span className="flex items-center gap-2 text-[0.6875rem] font-bold tracking-eyebrow uppercase font-mono">
                   <span className={`w-1.5 h-1.5 rounded-full ${form.acceptSuggestions ? 'bg-emerald-signal' : 'bg-white/25'}`} />
-                  Slot suggestions <span className="text-white/30 normal-case font-normal text-[10px]">viewers nominate slots</span>
+                  Slot suggestions <span className="text-white/30 normal-case font-normal text-[0.625rem]">viewers nominate slots</span>
                 </span>
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                   {form.acceptSuggestions ? 'ON' : 'OFF'}
                 </span>
               </button>
               {form.acceptSuggestions && (
                 <label className="block mt-2 pl-3 border-l-2 border-emerald-signal/30">
-                  <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1 font-mono">
+                  <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1 font-mono">
                     Per-viewer cap <span className="text-white/30 normal-case font-normal">· max suggestions each viewer can submit</span>
                   </span>
                   <input
@@ -334,14 +334,14 @@ function NewRoundModal({ onClose, onCreated }) {
           {/* Kinds (only if predictions enabled) */}
           {form.acceptPredictions && (
             <div>
-              <p className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+              <p className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
                 <span className="text-orange-admin tabular-nums">05</span> Prediction kinds
               </p>
               <div className="flex gap-2 flex-wrap">
                 <button
                   type="button"
                   onClick={() => set('kinds.payout', !form.kinds.payout)}
-                  className={`px-3 py-2 border text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors duration-150 ${
+                  className={`px-3 py-2 border text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors duration-150 ${
                     form.kinds.payout
                       ? 'border-emerald-signal/50 bg-emerald-signal/10 text-emerald-signal'
                       : 'border-white/15 text-white/55 hover:text-white-body'
@@ -352,7 +352,7 @@ function NewRoundModal({ onClose, onCreated }) {
                 <button
                   type="button"
                   onClick={() => set('kinds.topSlot', !form.kinds.topSlot)}
-                  className={`px-3 py-2 border text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors duration-150 ${
+                  className={`px-3 py-2 border text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors duration-150 ${
                     form.kinds.topSlot
                       ? 'border-emerald-signal/50 bg-emerald-signal/10 text-emerald-signal'
                       : 'border-white/15 text-white/55 hover:text-white-body'
@@ -367,7 +367,7 @@ function NewRoundModal({ onClose, onCreated }) {
           {/* Rewards (only if predictions enabled) */}
           {form.acceptPredictions && (
           <div>
-            <p className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+            <p className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
               <span className="text-orange-admin tabular-nums">06</span> Rewards
             </p>
             <div className="flex gap-2 mb-3">
@@ -376,7 +376,7 @@ function NewRoundModal({ onClose, onCreated }) {
                   key={t}
                   type="button"
                   onClick={() => set('rewards.type', t)}
-                  className={`flex-1 px-3 py-2 border text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors duration-150 ${
+                  className={`flex-1 px-3 py-2 border text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors duration-150 ${
                     form.rewards.type === t
                       ? 'bg-orange-admin text-zinc-broadcast border-orange-admin'
                       : 'border-white/15 text-white/55 hover:text-white-body'
@@ -392,12 +392,12 @@ function NewRoundModal({ onClose, onCreated }) {
               { key: 'tier2', place: '2nd' },
             ].map((t) => (
               <div key={t.key} className="grid grid-cols-[auto_1fr_1fr] gap-2 items-end mb-2">
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 font-mono pb-2.5 w-10">
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 font-mono pb-2.5 w-10">
                   {t.place}
                 </span>
                 {(form.rewards.type === 'tickets' || form.rewards.type === 'both') && (
                   <label className="block">
-                    <span className="block text-[9px] font-bold tracking-eyebrow uppercase text-white/40 mb-1 font-mono">tickets</span>
+                    <span className="block text-[0.5625rem] font-bold tracking-eyebrow uppercase text-white/40 mb-1 font-mono">tickets</span>
                     <input
                       type="number"
                       min="0"
@@ -409,7 +409,7 @@ function NewRoundModal({ onClose, onCreated }) {
                 )}
                 {(form.rewards.type === 'cash' || form.rewards.type === 'both') && (
                   <label className="block">
-                    <span className="block text-[9px] font-bold tracking-eyebrow uppercase text-white/40 mb-1 font-mono">cash label</span>
+                    <span className="block text-[0.5625rem] font-bold tracking-eyebrow uppercase text-white/40 mb-1 font-mono">cash label</span>
                     <input
                       type="text"
                       value={form.rewards[t.key].cashLabel}
@@ -433,22 +433,22 @@ function NewRoundModal({ onClose, onCreated }) {
                 checked={form.rewards.tier3Enabled}
                 onChange={(e) => set('rewards.tier3Enabled', e.target.checked)}
               />
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 font-mono">
                 Enable 3rd place
               </span>
             </label>
             {form.rewards.tier3Enabled && (
               <div className="grid grid-cols-[auto_1fr_1fr] gap-2 items-end">
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 font-mono pb-2.5 w-10">3rd</span>
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 font-mono pb-2.5 w-10">3rd</span>
                 {(form.rewards.type === 'tickets' || form.rewards.type === 'both') && (
                   <label className="block">
-                    <span className="block text-[9px] font-bold tracking-eyebrow uppercase text-white/40 mb-1 font-mono">tickets</span>
+                    <span className="block text-[0.5625rem] font-bold tracking-eyebrow uppercase text-white/40 mb-1 font-mono">tickets</span>
                     <input type="number" min="0" value={form.rewards.tier3.tickets} onChange={(e) => set('rewards.tier3.tickets', e.target.value)} className={inputCls} />
                   </label>
                 )}
                 {(form.rewards.type === 'cash' || form.rewards.type === 'both') && (
                   <label className="block">
-                    <span className="block text-[9px] font-bold tracking-eyebrow uppercase text-white/40 mb-1 font-mono">cash label</span>
+                    <span className="block text-[0.5625rem] font-bold tracking-eyebrow uppercase text-white/40 mb-1 font-mono">cash label</span>
                     <input type="text" value={form.rewards.tier3.cashLabel} onChange={(e) => set('rewards.tier3.cashLabel', e.target.value)} className={inputCls} />
                   </label>
                 )}
@@ -458,17 +458,17 @@ function NewRoundModal({ onClose, onCreated }) {
           )}
 
           {error && (
-            <p className="text-[11px] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">{error}</p>
+            <p className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">{error}</p>
           )}
         </div>
 
         <div className="flex gap-2 px-5 pb-5">
           <button type="button" onClick={onClose} className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150">
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Cancel</span>
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Cancel</span>
           </button>
           <button type="submit" disabled={submitting} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50">
             <Check size={13} aria-hidden="true" />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">{submitting ? 'Starting…' : 'Start round'}</span>
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">{submitting ? 'Starting…' : 'Start round'}</span>
           </button>
         </div>
       </form>
@@ -520,7 +520,7 @@ function SettleModal({ round, onClose, onSettled }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-broadcast/70 backdrop-blur-sm" onClick={onClose}>
       <form onSubmit={submit} onClick={(e) => e.stopPropagation()} className="w-full max-w-md border border-orange-admin/40 bg-zinc-card">
-        <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <Trophy size={11} aria-hidden="true" />
             Settle round
@@ -532,7 +532,7 @@ function SettleModal({ round, onClose, onSettled }) {
         <div className="px-5 py-5 space-y-4">
           {round.kinds.payout && (
             <label className="block">
-              <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+              <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
                 Actual final payout <span className="text-emerald-signal">*</span>
               </span>
               <input type="number" min="0" step="0.01" value={actualPayout} onChange={(e) => setActualPayout(e.target.value)} className={inputCls} placeholder="0.00" />
@@ -540,7 +540,7 @@ function SettleModal({ round, onClose, onSettled }) {
           )}
           {round.kinds.topSlot && (
             <label className="block">
-              <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+              <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
                 Actual top slot <span className="text-emerald-signal">*</span>
               </span>
               <select value={actualTopSlot} onChange={(e) => setActualTopSlot(e.target.value)} className={inputCls}>
@@ -551,15 +551,15 @@ function SettleModal({ round, onClose, onSettled }) {
               </select>
             </label>
           )}
-          {error && <p className="text-[11px] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">{error}</p>}
+          {error && <p className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">{error}</p>}
         </div>
         <div className="flex gap-2 px-5 pb-5">
           <button type="button" onClick={onClose} className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150">
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Cancel</span>
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Cancel</span>
           </button>
           <button type="submit" disabled={submitting} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-50">
             <Trophy size={13} aria-hidden="true" />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">{submitting ? 'Settling…' : 'Reveal winners'}</span>
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">{submitting ? 'Settling…' : 'Reveal winners'}</span>
           </button>
         </div>
       </form>
@@ -570,7 +570,7 @@ function SettleModal({ round, onClose, onSettled }) {
 function RoundRow({ round, onOpen }) {
   return (
     <button type="button" onClick={() => onOpen(round)} className="w-full grid grid-cols-[auto_1fr_auto_auto] gap-3 items-center px-4 py-3 border-t border-white/8 first:border-t-0 hover:bg-zinc-broadcast/40 text-left">
-      <span className={`px-1.5 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase border font-mono ${
+      <span className={`px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow-md uppercase border font-mono ${
         round.status === 'open'
           ? 'text-emerald-signal border-emerald-signal/40'
           : round.status === 'locked'
@@ -581,7 +581,7 @@ function RoundRow({ round, onOpen }) {
       </span>
       <div className="min-w-0">
         <p className="font-bold text-white-body text-sm truncate">{round.title}</p>
-        <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5">
+        <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5">
           {[
             round.acceptPredictions && (round.kinds?.payout || round.kinds?.topSlot)
               ? `PREDICT (${[round.kinds?.payout && 'payout', round.kinds?.topSlot && 'top-slot'].filter(Boolean).join('+')})`
@@ -590,7 +590,7 @@ function RoundRow({ round, onOpen }) {
           ].filter(Boolean).join(' + ')} · {round.source} · {formatTs(round.createdAt)}
         </p>
       </div>
-      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono tabular-nums">
+      <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono tabular-nums">
         {round.entryCount ?? 0} entries
       </span>
       <ChevronRight size={14} className="text-white/30" aria-hidden="true" />
@@ -620,7 +620,7 @@ function RoundDetail({ round, onBack }) {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+      <div className="flex items-center justify-between gap-3 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
         <button type="button" onClick={onBack} className="text-white/55 hover:text-white-body tracking-eyebrow-lg">
           ← Back to list
         </button>
@@ -633,7 +633,7 @@ function RoundDetail({ round, onBack }) {
       <div className="relative overflow-hidden border border-orange-admin/30 bg-zinc-card/40">
         <div className="pointer-events-none absolute -top-32 -right-24 w-96 h-96 rounded-full bg-orange-admin/15 blur-3xl motion-reduce:hidden" aria-hidden="true" />
         <div className="relative px-6 sm:px-8 py-7">
-          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-orange-admin mb-2 font-mono">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-orange-admin mb-2 font-mono">
             ▸ Prediction round
           </p>
           <p
@@ -646,7 +646,7 @@ function RoundDetail({ round, onBack }) {
             {round.title}
           </p>
           {round.contextNote && <p className="mt-2 text-sm text-white/55">{round.contextNote}</p>}
-          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[10px] font-bold tracking-eyebrow-md uppercase font-mono">
+          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono">
             <span className="text-white/55">
               Features{' '}
               <span className="text-emerald-signal">
@@ -680,23 +680,23 @@ function RoundDetail({ round, onBack }) {
         {round.acceptPredictions && round.status === 'open' && (
           <button type="button" onClick={() => act('lock')} disabled={!!busy} className="inline-flex items-center gap-2 px-3.5 py-2 border border-white/15 text-white/70 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-50">
             <Lock size={13} aria-hidden="true" />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">{busy === 'lock' ? 'Locking…' : 'Lock entries'}</span>
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">{busy === 'lock' ? 'Locking…' : 'Lock entries'}</span>
           </button>
         )}
         {round.acceptPredictions && round.status === 'locked' && (
           <button type="button" onClick={() => act('reopen')} disabled={!!busy} className="inline-flex items-center gap-2 px-3.5 py-2 border border-white/15 text-white/70 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-50">
             <Unlock size={13} aria-hidden="true" />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">{busy === 'reopen' ? 'Reopening…' : 'Reopen'}</span>
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">{busy === 'reopen' ? 'Reopening…' : 'Reopen'}</span>
           </button>
         )}
         {round.acceptPredictions && ['open', 'locked'].includes(round.status) && (
           <button type="button" onClick={() => setSettling(true)} disabled={!!busy} className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-30">
             <Trophy size={13} aria-hidden="true" />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Settle & reveal</span>
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Settle & reveal</span>
           </button>
         )}
         {round.acceptPredictions && round.status === 'settled' && round.winners?.[0] && (
-          <div className="inline-flex items-center gap-2 px-3 py-2 border border-emerald-signal/40 bg-emerald-signal/5 text-emerald-signal text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+          <div className="inline-flex items-center gap-2 px-3 py-2 border border-emerald-signal/40 bg-emerald-signal/5 text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
             <Trophy size={12} aria-hidden="true" />
             1st: {round.winners[0].displayName}
           </div>
@@ -704,12 +704,12 @@ function RoundDetail({ round, onBack }) {
         {!confirmingDelete ? (
           <button type="button" onClick={() => setConfirmingDelete(true)} className="ml-auto inline-flex items-center gap-2 px-3 py-2 border border-red-destructive/30 text-red-destructive/70 hover:bg-red-destructive/10 hover:border-red-destructive/60 transition-colors duration-150">
             <Trash2 size={12} aria-hidden="true" />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Delete</span>
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Delete</span>
           </button>
         ) : (
           <div className="ml-auto flex gap-2">
-            <button type="button" onClick={() => act('delete')} className="inline-flex items-center gap-2 px-3 py-2 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Confirm</button>
-            <button type="button" onClick={() => setConfirmingDelete(false)} className="px-3 py-2 border border-white/10 text-white/60 hover:text-white-body text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Cancel</button>
+            <button type="button" onClick={() => act('delete')} className="inline-flex items-center gap-2 px-3 py-2 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Confirm</button>
+            <button type="button" onClick={() => setConfirmingDelete(false)} className="px-3 py-2 border border-white/10 text-white/60 hover:text-white-body text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Cancel</button>
           </div>
         )}
       </div>
@@ -752,7 +752,7 @@ export default function AdminHuntsPage() {
   return (
     <div className="p-6 sm:p-8 max-w-4xl mx-auto">
       <header className="mb-8">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
             <span>PREDICTIONS</span>
@@ -774,7 +774,7 @@ export default function AdminHuntsPage() {
         <div className="flex items-center justify-end mb-6">
           <button type="button" onClick={() => setCreating(true)} className="inline-flex items-center gap-2 px-3.5 py-2 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150">
             <Plus size={13} aria-hidden="true" />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">New round</span>
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">New round</span>
           </button>
         </div>
       )}
@@ -785,7 +785,7 @@ export default function AdminHuntsPage() {
         <div className="space-y-6">
           {grouped.live.length > 0 && (
             <section>
-              <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal mb-2 font-mono">
+              <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal mb-2 font-mono">
                 Live · {grouped.live.length}
               </p>
               <div className="border border-white/8 bg-zinc-card/30">
@@ -797,7 +797,7 @@ export default function AdminHuntsPage() {
           )}
           {grouped.past.length > 0 && (
             <section>
-              <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 mb-2 font-mono">
+              <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 mb-2 font-mono">
                 Past · {grouped.past.length}
               </p>
               <div className="border border-white/8 bg-zinc-card/30">
@@ -812,7 +812,7 @@ export default function AdminHuntsPage() {
               <div className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-white/15 mb-3 text-white/35">
                 <Layers size={16} aria-hidden="true" />
               </div>
-              <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">No rounds yet</p>
+              <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">No rounds yet</p>
               <p className="text-sm text-white/55">Start one to begin.</p>
             </div>
           )}

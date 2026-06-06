@@ -59,7 +59,7 @@ export default function VideoModal({ video, onClose }) {
         onClick={(e) => e.stopPropagation()}
       >
         {/* Status bar */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
           <span className="inline-flex items-center gap-2 text-emerald-signal">
             <span className="relative flex w-1.5 h-1.5">
               <span className="absolute inset-0 rounded-full bg-emerald-signal motion-safe:animate-ping opacity-50" />
@@ -88,7 +88,7 @@ export default function VideoModal({ video, onClose }) {
             aria-label="Close player"
           >
             <X size={12} aria-hidden="true" />
-            <span className="text-[10px] tracking-eyebrow-lg">ESC</span>
+            <span className="text-[0.625rem] tracking-eyebrow-lg">ESC</span>
           </button>
         </div>
 
@@ -111,7 +111,7 @@ export default function VideoModal({ video, onClose }) {
                 {video.title}
               </h3>
             )}
-            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono text-white/45">
+            <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono text-white/45">
               {video.game && (
                 <>
                   <span>Game</span>
@@ -149,7 +149,7 @@ export default function VideoModal({ video, onClose }) {
               className="inline-flex items-center gap-2 px-3.5 py-2 border border-white/10 text-white/70 hover:text-emerald-signal hover:border-emerald-signal/40 transition-colors duration-150"
             >
               <ExternalLink size={12} aria-hidden="true" />
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                 Watch on Twitch
               </span>
             </a>

@@ -27,12 +27,12 @@ function formatDate(ms) {
 function StatTile({ icon: Icon, label, value, hint }) {
   return (
     <div className="border border-white/10 bg-zinc-card/40 p-3">
-      <div className="flex items-center gap-1.5 text-[9px] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
+      <div className="flex items-center gap-1.5 text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
         {Icon && <Icon size={11} aria-hidden="true" />}
         <span>{label}</span>
       </div>
       <div className="mt-1 text-lg font-bold text-white-body tabular-nums">{value}</div>
-      {hint && <div className="text-[10px] text-white/40 font-mono truncate">{hint}</div>}
+      {hint && <div className="text-[0.625rem] text-white/40 font-mono truncate">{hint}</div>}
     </div>
   );
 }
@@ -50,7 +50,7 @@ function HuntDetail({ hunt }) {
         <div className="border border-white/8 overflow-x-auto [scrollbar-width:thin]">
           <table className="w-full text-sm min-w-[360px]">
             <thead>
-              <tr className="border-b border-white/10 text-white/65 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono">
+              <tr className="border-b border-white/10 text-white/65 text-[0.625rem] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono">
                 <th className="text-left px-3 py-2 font-bold">Slot</th>
                 <th className="text-right px-3 py-2 font-bold">Bet</th>
                 <th className="text-right px-3 py-2 font-bold">Win</th>
@@ -68,7 +68,7 @@ function HuntDetail({ hunt }) {
                         <span className="truncate">{b.slot}</span>
                       </span>
                       {b.caller && (
-                        <span className="block text-[10px] font-mono tracking-eyebrow-md uppercase text-purple-bright truncate mt-0.5">
+                        <span className="block text-[0.625rem] font-mono tracking-eyebrow-md uppercase text-purple-bright truncate mt-0.5">
                           📣 {b.caller}
                         </span>
                       )}
@@ -85,7 +85,7 @@ function HuntDetail({ hunt }) {
           </table>
         </div>
       ) : (
-        <p className="text-center text-white/40 py-3 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono">
+        <p className="text-center text-white/40 py-3 text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase font-mono">
           No bonuses logged.
         </p>
       )}
@@ -95,7 +95,7 @@ function HuntDetail({ hunt }) {
         <div className="border border-white/8 overflow-x-auto [scrollbar-width:thin]">
           <table className="w-full text-sm min-w-[360px]">
             <thead>
-              <tr className="border-b border-white/10 text-white/65 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono">
+              <tr className="border-b border-white/10 text-white/65 text-[0.625rem] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono">
                 <th className="text-left px-3 py-2 font-bold">Name</th>
                 <th className="text-right px-3 py-2 font-bold">In for</th>
                 <th className="text-right px-3 py-2 font-bold">%</th>
@@ -125,12 +125,12 @@ function HuntDetail({ hunt }) {
       {/* Slot calls */}
       {callerStats.leaderboard.length > 0 && (
         <div className="border border-white/8 bg-zinc-broadcast/30 px-3 py-2.5 space-y-2">
-          <p className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-purple-bright font-mono">
+          <p className="text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-purple-bright font-mono">
             Slot calls
           </p>
           <div className="flex flex-wrap gap-x-3 gap-y-1">
             {callerStats.leaderboard.map((row) => (
-              <span key={row.name} className="text-[11px] font-mono text-white/70">
+              <span key={row.name} className="text-[0.6875rem] font-mono text-white/70">
                 <span className="font-bold text-white-body">{row.name}</span>
                 <span className="text-purple-bright tabular-nums"> {row.calls}</span>
               </span>
@@ -160,7 +160,7 @@ function HuntRow({ hunt, canDelete, onDelete, deleting }) {
         </span>
         <div className="min-w-0">
           <p className="font-bold text-white-body text-sm truncate">{hunt.name}</p>
-          <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5 tabular-nums">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5 tabular-nums">
             {ownerName} · {formatDate(hunt.completedAt)} · {s.bonusCount} bonuses
           </p>
         </div>
@@ -175,7 +175,7 @@ function HuntRow({ hunt, canDelete, onDelete, deleting }) {
         >
           {s.profit == null ? '—' : (s.profit >= 0 ? '+' : '') + fmt(s.profit)}
         </span>
-        <span className="text-[10px] font-mono text-white/35 tabular-nums">
+        <span className="text-[0.625rem] font-mono text-white/35 tabular-nums">
           best {s.bestX != null ? fmtX(s.bestX) : '—'}
         </span>
       </button>
@@ -187,7 +187,7 @@ function HuntRow({ hunt, canDelete, onDelete, deleting }) {
               type="button"
               onClick={() => renderRecap(hunt)}
               title="Re-export the recap image for this hunt"
-              className="inline-flex items-center gap-1.5 px-2 py-1 border border-emerald-signal/40 text-emerald-signal hover:bg-emerald-signal/10 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors"
+              className="inline-flex items-center gap-1.5 px-2 py-1 border border-emerald-signal/40 text-emerald-signal hover:bg-emerald-signal/10 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors"
             >
               <Download size={11} aria-hidden="true" />
               Reprint results
@@ -195,19 +195,19 @@ function HuntRow({ hunt, canDelete, onDelete, deleting }) {
             {canDelete &&
               (confirming ? (
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono uppercase tracking-eyebrow-md text-white/50">Delete this hunt?</span>
+                  <span className="text-[0.625rem] font-mono uppercase tracking-eyebrow-md text-white/50">Delete this hunt?</span>
                   <button
                     type="button"
                     disabled={!!deleting}
                     onClick={() => onDelete({ kind: 'completed', ownerTwitchId: hunt.ownerTwitchId, huntId: hunt.id })}
-                    className="px-2 py-1 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono disabled:opacity-50"
+                    className="px-2 py-1 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono disabled:opacity-50"
                   >
                     {deleting ? 'Deleting…' : 'Confirm'}
                   </button>
                   <button
                     type="button"
                     onClick={() => setConfirming(false)}
-                    className="px-2 py-1 border border-white/10 text-white/55 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                    className="px-2 py-1 border border-white/10 text-white/55 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
                   >
                     Cancel
                   </button>
@@ -216,7 +216,7 @@ function HuntRow({ hunt, canDelete, onDelete, deleting }) {
                 <button
                   type="button"
                   onClick={() => setConfirming(true)}
-                  className="inline-flex items-center gap-1.5 px-2 py-1 border border-red-destructive/30 text-red-destructive/70 hover:bg-red-destructive/10 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                  className="inline-flex items-center gap-1.5 px-2 py-1 border border-red-destructive/30 text-red-destructive/70 hover:bg-red-destructive/10 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
                 >
                   <Trash2 size={11} aria-hidden="true" />
                   Delete
@@ -240,14 +240,14 @@ function LiveRow({ hunt, canDelete, onDelete, deleting }) {
         <p className="font-bold text-white-body text-sm truncate">
           {hunt.name}
           {hunt.shared && (
-            <span className="ml-2 text-[9px] font-bold tracking-eyebrow-md uppercase text-red-destructive font-mono">● live link</span>
+            <span className="ml-2 text-[0.5625rem] font-bold tracking-eyebrow-md uppercase text-red-destructive font-mono">● live link</span>
           )}
         </p>
-        <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5 tabular-nums">
+        <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5 tabular-nums">
           {ownerName} · {hunt.phase} · {s.bonusCount} bonuses
         </p>
       </div>
-      <span className="text-[10px] font-mono text-white/35 tabular-nums">
+      <span className="text-[0.625rem] font-mono text-white/35 tabular-nums">
         best {s.bestX != null ? fmtX(s.bestX) : '—'}
       </span>
       <span className="text-sm font-bold tabular-nums text-white/60">{fmt(s.totalStakes)}</span>
@@ -258,14 +258,14 @@ function LiveRow({ hunt, canDelete, onDelete, deleting }) {
               type="button"
               disabled={!!deleting}
               onClick={() => onDelete({ kind: 'live', ownerTwitchId: hunt.ownerTwitchId })}
-              className="px-2 py-1 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono disabled:opacity-50"
+              className="px-2 py-1 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono disabled:opacity-50"
             >
               {deleting ? '…' : 'Stop'}
             </button>
             <button
               type="button"
               onClick={() => setConfirming(false)}
-              className="px-2 py-1 border border-white/10 text-white/55 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+              className="px-2 py-1 border border-white/10 text-white/55 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
             >
               ✕
             </button>
@@ -345,7 +345,7 @@ export default function AdminCommunityHuntsPage() {
   return (
     <div className="p-6 sm:p-8 max-w-4xl mx-auto">
       <header className="mb-8">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
             <span>COMMUNITY HUNTS</span>
@@ -365,7 +365,7 @@ export default function AdminCommunityHuntsPage() {
 
       {loading && (
         <div className="border border-white/8 bg-zinc-card/30 py-16 text-center">
-          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
             Loading…
           </p>
         </div>
@@ -373,7 +373,7 @@ export default function AdminCommunityHuntsPage() {
 
       {error && !loading && (
         <div className="border border-red-destructive/30 bg-red-destructive/5 py-6 px-4 text-center">
-          <p className="text-[11px] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
+          <p className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
             {error}
           </p>
         </div>
@@ -408,10 +408,10 @@ export default function AdminCommunityHuntsPage() {
             <div className="border border-emerald-signal/30 bg-emerald-signal/5 mb-6">
               <header className="px-4 py-2.5 border-b border-white/10 flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal animate-pulse" />
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono">
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono">
                   Live now
                 </span>
-                <span className="ml-auto text-[10px] font-mono text-white/45 tabular-nums">{live.length}</span>
+                <span className="ml-auto text-[0.625rem] font-mono text-white/45 tabular-nums">{live.length}</span>
               </header>
               <div>
                 {live.map((h) => (
@@ -432,7 +432,7 @@ export default function AdminCommunityHuntsPage() {
             <div className="border border-white/10 bg-zinc-card/30 mb-6">
               <header className="px-4 py-2.5 border-b border-white/10 flex items-center gap-2">
                 <Trophy size={13} className="text-emerald-signal" aria-hidden="true" />
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white-body font-mono">
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white-body font-mono">
                   Top hunts by profit
                 </span>
               </header>
@@ -442,13 +442,13 @@ export default function AdminCommunityHuntsPage() {
                     key={`${h.huntName}-${i}`}
                     className="flex items-center gap-3 px-4 py-2 border-t border-white/5 first:border-t-0"
                   >
-                    <span className="text-[10px] font-bold tabular-nums text-white/30 font-mono w-5">
+                    <span className="text-[0.625rem] font-bold tabular-nums text-white/30 font-mono w-5">
                       {String(i + 1).padStart(2, '0')}
                     </span>
                     <span className="flex-1 min-w-0 truncate text-sm font-bold text-white-body">
                       {h.huntName}
                     </span>
-                    <span className="text-[11px] font-mono text-white/45 truncate max-w-[120px]">{h.owner}</span>
+                    <span className="text-[0.6875rem] font-mono text-white/45 truncate max-w-[120px]">{h.owner}</span>
                     <span
                       className={`text-sm font-bold tabular-nums ${
                         h.profit >= 0 ? 'text-emerald-signal' : 'text-red-destructive'
@@ -466,17 +466,17 @@ export default function AdminCommunityHuntsPage() {
           <div className="border border-white/10 bg-zinc-card/30">
             <header className="px-4 py-2.5 border-b border-white/10 flex items-center gap-2">
               <Layers size={13} className="text-orange-admin" aria-hidden="true" />
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white-body font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white-body font-mono">
                 Recent hunts
               </span>
-              <span className="ml-auto text-[10px] font-mono text-white/45 tabular-nums">
+              <span className="ml-auto text-[0.625rem] font-mono text-white/45 tabular-nums">
                 {hunts.length}
                 {data.capped ? ' (latest 200)' : ''}
               </span>
             </header>
             {hunts.length === 0 ? (
               <div className="py-12 text-center">
-                <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
+                <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
                   No completed hunts yet
                 </p>
               </div>

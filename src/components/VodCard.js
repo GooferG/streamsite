@@ -40,11 +40,11 @@ export default function VodCard({ vod, index = 0, onPlay }) {
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-broadcast/85 via-zinc-broadcast/10 to-transparent" />
 
         <div className="absolute top-2 left-2 flex items-center gap-1.5 font-mono">
-          <span className="px-1.5 py-0.5 bg-zinc-broadcast/80 text-emerald-bright text-[10px] font-bold tracking-eyebrow-sm">
+          <span className="px-1.5 py-0.5 bg-zinc-broadcast/80 text-emerald-bright text-[0.625rem] font-bold tracking-eyebrow-sm">
             #{tapeNumber}
           </span>
           <span
-            className={`px-1.5 py-0.5 text-[10px] font-bold tracking-eyebrow ${
+            className={`px-1.5 py-0.5 text-[0.625rem] font-bold tracking-eyebrow ${
               vod.type === 'clip'
                 ? 'bg-zinc-broadcast/80 text-purple-bright border border-purple-gamba/50'
                 : 'bg-zinc-broadcast/80 text-white-body border border-white/30'
@@ -54,7 +54,7 @@ export default function VodCard({ vod, index = 0, onPlay }) {
           </span>
         </div>
 
-        <div className="absolute top-2 right-2 px-2 py-0.5 border border-white/30 text-white/80 text-[10px] font-bold tracking-eyebrow-xs bg-zinc-broadcast/60 font-mono">
+        <div className="absolute top-2 right-2 px-2 py-0.5 border border-white/30 text-white/80 text-[0.625rem] font-bold tracking-eyebrow-xs bg-zinc-broadcast/60 font-mono">
           {vod.duration}
         </div>
 
@@ -67,7 +67,7 @@ export default function VodCard({ vod, index = 0, onPlay }) {
         <h3 className="text-sm font-bold text-white-body line-clamp-2 leading-snug mb-1.5">
           {vod.title}
         </h3>
-        <div className="flex items-center justify-between gap-3 text-[10px] font-bold tracking-eyebrow-xs uppercase">
+        <div className="flex items-center justify-between gap-3 text-[0.625rem] font-bold tracking-eyebrow-xs uppercase">
           <span className="truncate text-white/55">{vod.game}</span>
           <span className="shrink-0 text-emerald-bright tabular-nums font-mono">
             {vod.views}

@@ -30,12 +30,12 @@ function FilterTab({ label, count, active, onClick }) {
       }`}
     >
       <span
-        className="text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono"
+        className="text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
         {label}
       </span>
       <span
-        className={`text-[10px] tabular-nums tracking-eyebrow-sm ${
+        className={`text-[0.625rem] tabular-nums tracking-eyebrow-sm ${
           active ? 'text-emerald-signal' : 'text-white/30'
         } font-mono`}
       >
@@ -120,7 +120,7 @@ export default function VodsPage({ videos, clips, loading }) {
         {/* Slate header */}
         <header className="mb-12 sm:mb-16">
           <div
-            className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-6 font-mono"
+            className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] sm:text-[0.6875rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-6 font-mono"
       >
             <span className="inline-flex items-center gap-2">
               <Film size={11} className="text-emerald-signal" aria-hidden="true" />
@@ -146,7 +146,7 @@ export default function VodsPage({ videos, clips, loading }) {
           </h1>
 
           <div
-            className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] uppercase tracking-eyebrow text-white/45 font-mono"
+            className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[0.6875rem] uppercase tracking-eyebrow text-white/45 font-mono"
       >
             <span>
               Sort · <span className="text-white/70">Newest first</span>
@@ -206,7 +206,7 @@ export default function VodsPage({ videos, clips, loading }) {
           <div className="border border-white/10 bg-zinc-card/60 px-6 py-12 flex items-center justify-between gap-6">
             <div>
               <div
-                className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono"
+                className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono"
       >
                 Empty reel
               </div>
@@ -223,7 +223,7 @@ export default function VodsPage({ videos, clips, loading }) {
 
         {/* Footer */}
         <footer
-          className="mt-16 flex flex-wrap items-baseline gap-x-3 gap-y-2 text-[10px] uppercase tracking-eyebrow-lg text-white/30 font-mono"
+          className="mt-16 flex flex-wrap items-baseline gap-x-3 gap-y-2 text-[0.625rem] uppercase tracking-eyebrow-lg text-white/30 font-mono"
       >
           <span>END OF INDEX</span>
           <span className="text-white/15">·</span>

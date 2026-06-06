@@ -60,7 +60,7 @@ function DiscordLinkPanel({ discordId, discordUsername }) {
             ) : null}
           </span>
         </div>
-        <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal/70 font-mono">
+        <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal/70 font-mono">
           Bonus claimed
         </span>
       </div>
@@ -69,7 +69,7 @@ function DiscordLinkPanel({ discordId, discordUsername }) {
 
   if (!url) {
     return (
-      <div className="px-5 py-4 border-t border-white/8 text-[11px] tracking-eyebrow uppercase text-white/40 font-mono">
+      <div className="px-5 py-4 border-t border-white/8 text-[0.6875rem] tracking-eyebrow uppercase text-white/40 font-mono">
         Discord linking not configured.
       </div>
     );
@@ -82,7 +82,7 @@ function DiscordLinkPanel({ discordId, discordUsername }) {
         className="inline-flex items-center gap-2 px-3.5 py-2 bg-[#5865F2] hover:bg-[#4752C4] text-white-body transition-colors duration-150"
       >
         <Link2 size={13} aria-hidden="true" />
-        <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+        <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
           Link Discord
         </span>
       </a>
@@ -115,7 +115,7 @@ function SuggestionRecord({ user }) {
 
   return (
     <div className="border border-white/8 bg-zinc-card/30">
-      <div className="px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+      <div className="px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
         <span className="inline-flex items-center gap-2 text-emerald-signal">
           <ListChecks size={11} aria-hidden="true" />
           <span>Suggestion record</span>
@@ -127,7 +127,7 @@ function SuggestionRecord({ user }) {
             key={c.label}
             className={`px-3 py-1 ${i > 0 ? 'border-l border-white/8' : ''}`}
           >
-            <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono mb-1">
+            <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono mb-1">
               {c.label}
             </p>
             <p className={`text-2xl font-black tabular-nums leading-none ${c.tone}`}>
@@ -188,7 +188,7 @@ function SlotProfileCard({ user }) {
 
   return (
     <div className="border border-white/8 bg-zinc-card/30">
-      <div className="px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+      <div className="px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
         <span className="inline-flex items-center gap-2 text-emerald-signal">
           <ListPlus size={11} aria-hidden="true" />
           <span>Default slots</span>
@@ -235,12 +235,12 @@ function SlotProfileCard({ user }) {
             disabled={saving}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-40"
           >
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
               {saving ? 'Saving…' : 'Save defaults'}
             </span>
           </button>
           {savedAt > 0 && !saving && !error && (
-            <span className="inline-flex items-center gap-1.5 text-emerald-signal text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+            <span className="inline-flex items-center gap-1.5 text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
               <CheckCircle2 size={12} aria-hidden="true" /> Saved
             </span>
           )}
@@ -283,7 +283,7 @@ function PayoutProfileCard({ user }) {
 
   return (
     <div className="border border-white/8 bg-zinc-card/30">
-      <div className="px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+      <div className="px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
         <span className="inline-flex items-center gap-2 text-emerald-signal">
           <Wallet size={11} aria-hidden="true" />
           <span>Rainbet payout</span>
@@ -316,12 +316,12 @@ function PayoutProfileCard({ user }) {
             disabled={saving}
             className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-40"
           >
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
               {saving ? 'Saving…' : 'Save Rainbet'}
             </span>
           </button>
           {savedAt > 0 && !saving && !error && (
-            <span className="inline-flex items-center gap-1.5 text-emerald-signal text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+            <span className="inline-flex items-center gap-1.5 text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
               <CheckCircle2 size={12} aria-hidden="true" /> Saved
             </span>
           )}
@@ -442,7 +442,7 @@ export default function MyAccountPage() {
       <div className="relative min-h-screen pt-20 pb-20 px-4 sm:px-6 bg-zinc-broadcast text-white-body">
         <div className="max-w-md mx-auto">
           <div className="border border-white/8 bg-zinc-card/30">
-            <div className="px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md text-orange-admin font-mono">
+            <div className="px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md text-orange-admin font-mono">
               <span className="inline-flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
                 Access required
@@ -457,7 +457,7 @@ export default function MyAccountPage() {
                 onClick={loginWithTwitch}
                 className="w-full inline-flex items-center justify-center gap-3 px-4 py-3 bg-purple-gamba hover:bg-purple-bright text-white-body transition-colors duration-150"
               >
-                <span className="text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                <span className="text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                   Sign in with Twitch
                 </span>
               </button>
@@ -473,7 +473,7 @@ export default function MyAccountPage() {
       <div className="relative z-10 max-w-3xl mx-auto space-y-5">
         {/* Header */}
         <header className="mb-2">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
             <span className="inline-flex items-center gap-2 text-emerald-signal">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
               <span>VIEWER ACCOUNT</span>
@@ -498,7 +498,7 @@ export default function MyAccountPage() {
 
         {/* Balance card */}
         <div className="border border-white/8 bg-zinc-card/30">
-          <div className="px-4 py-2.5 border-b border-white/8 flex items-center gap-2 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+          <div className="px-4 py-2.5 border-b border-white/8 flex items-center gap-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
             <span className="inline-flex items-center gap-2 text-emerald-signal">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
               <span>Balance</span>
@@ -506,7 +506,7 @@ export default function MyAccountPage() {
           </div>
           <div className="px-5 py-6 flex items-end justify-between gap-4 flex-wrap">
             <div>
-              <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
+              <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
                 Current tickets
               </p>
               <p className="inline-flex items-baseline gap-2">
@@ -515,7 +515,7 @@ export default function MyAccountPage() {
                   {user?.tickets ?? '—'}
                 </span>
               </p>
-              <div className="flex gap-4 mt-3 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
+              <div className="flex gap-4 mt-3 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
                 <span>
                   Earned <span className="text-emerald-signal/80 tabular-nums">{user?.totalEarned ?? 0}</span>
                 </span>
@@ -531,7 +531,7 @@ export default function MyAccountPage() {
               className="inline-flex items-center gap-2 px-4 py-3 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/40"
             >
               <Gift size={14} aria-hidden="true" />
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                 {claiming
                   ? 'Claiming…'
                   : cooldownUntil
@@ -541,7 +541,7 @@ export default function MyAccountPage() {
             </button>
           </div>
           {claimError && (
-            <div className="flex items-center gap-2 px-5 pb-4 -mt-2 text-[11px] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
+            <div className="flex items-center gap-2 px-5 pb-4 -mt-2 text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
               <AlertCircle size={12} aria-hidden="true" />
               {claimError}
             </div>
@@ -559,7 +559,7 @@ export default function MyAccountPage() {
 
         {/* Earn methods info */}
         <div className="border border-white/8 bg-zinc-card/30">
-          <div className="px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+          <div className="px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
             <span className="inline-flex items-center gap-2 text-emerald-signal">
               <Sparkles size={11} aria-hidden="true" />
               <span>How to earn</span>
@@ -567,19 +567,19 @@ export default function MyAccountPage() {
           </div>
           <ul className="px-5 py-4 space-y-2 text-sm text-white/65">
             <li className="flex items-baseline gap-2">
-              <span className="text-emerald-signal text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono w-24 flex-shrink-0">
+              <span className="text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono w-24 flex-shrink-0">
                 Watch
               </span>
               <span>Hang out in chat while the stream is live — tickets drop every 5 minutes.</span>
             </li>
             <li className="flex items-baseline gap-2">
-              <span className="text-emerald-signal text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono w-24 flex-shrink-0">
+              <span className="text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono w-24 flex-shrink-0">
                 Daily
               </span>
               <span>Claim once every 22 hours from this page.</span>
             </li>
             <li className="flex items-baseline gap-2">
-              <span className="text-emerald-signal text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono w-24 flex-shrink-0">
+              <span className="text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono w-24 flex-shrink-0">
                 Discord
               </span>
               <span>One-time bonus for linking your Discord (must be in the server).</span>
@@ -593,7 +593,7 @@ export default function MyAccountPage() {
 
         {/* Ledger */}
         <div className="border border-white/8 bg-zinc-card/30">
-          <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+          <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
             <span className="inline-flex items-center gap-2 text-white/55">
               <Clock size={11} aria-hidden="true" />
               <span>Ledger</span>
@@ -633,7 +633,7 @@ export default function MyAccountPage() {
                           <span className="text-white/45"> · {entry.itemName}</span>
                         ) : null}
                       </p>
-                      <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono">
+                      <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono">
                         {formatTs(entry.createdAt)}
                       </p>
                     </div>
@@ -655,7 +655,7 @@ export default function MyAccountPage() {
         {/* Redemption history */}
         {redemptions.length > 0 && (
           <div className="border border-white/8 bg-zinc-card/30">
-            <div className="px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md text-white/55 font-mono">
+            <div className="px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md text-white/55 font-mono">
               Redemptions
             </div>
             <ul>
@@ -668,12 +668,12 @@ export default function MyAccountPage() {
                     <p className="text-sm font-bold text-white-body truncate">
                       {r.itemName}
                     </p>
-                    <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono">
+                    <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono">
                       {formatTs(r.createdAt)} · {r.kind}
                     </p>
                   </div>
                   <span
-                    className={`text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono px-2 py-1 border ${
+                    className={`text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono px-2 py-1 border ${
                       r.status === 'fulfilled'
                         ? 'text-emerald-signal border-emerald-signal/40'
                         : r.status === 'cancelled'

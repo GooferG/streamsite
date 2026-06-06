@@ -78,7 +78,7 @@ export default function LiveHuntPage() {
     <div className="min-h-screen bg-zinc-broadcast text-white-body px-4 py-8">
       <div className="max-w-3xl mx-auto">
         <div
-          className={`flex items-center gap-2 text-[10px] font-bold uppercase tracking-eyebrow-lg font-mono mb-4 ${
+          className={`flex items-center gap-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg font-mono mb-4 ${
             stale || connError ? 'text-orange-admin' : 'text-red-destructive'
           }`}
         >
@@ -100,7 +100,7 @@ export default function LiveHuntPage() {
         </div>
 
         {loading && (
-          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono py-16 text-center">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono py-16 text-center">
             Connecting…
           </p>
         )}
@@ -116,7 +116,7 @@ export default function LiveHuntPage() {
               <div className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-white/15 mb-3 text-white/35">
                 <RadioTower size={16} aria-hidden="true" />
               </div>
-              <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
+              <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
                 Off air
               </p>
               <p className="text-sm text-white/55">
@@ -158,14 +158,14 @@ export default function LiveHuntPage() {
             <h1 className="font-black text-white-body leading-tight tracking-[-0.02em] text-3xl sm:text-4xl mb-1">
               {hunt.name}
             </h1>
-            <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono mb-5">
+            <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono mb-5">
               {opening ? '▸ Opening slots' : '▸ Building the hunt'}
             </p>
 
             {/* Lead — phase-aware: profit hero while opening, "building" while collecting */}
             {opening ? (
               <div className="flex items-baseline gap-3 mb-2">
-                <span className="text-[11px] font-bold tracking-eyebrow-lg uppercase text-white/55 font-mono">
+                <span className="text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase text-white/55 font-mono">
                   Profit
                 </span>
                 <span
@@ -184,14 +184,14 @@ export default function LiveHuntPage() {
               </div>
             ) : (
               <div className="border border-purple-gamba/40 bg-purple-gamba/5 p-5 mb-2">
-                <p className="text-[11px] font-bold tracking-eyebrow-lg uppercase text-purple-bright font-mono mb-2">
+                <p className="text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase text-purple-bright font-mono mb-2">
                   Building the hunt
                 </p>
                 <p className="text-3xl sm:text-4xl font-black leading-none mb-1 tabular-nums">
                   <span className="text-purple-bright">{bonusCount}</span>{' '}
                   {bonusCount === 1 ? 'bonus' : 'bonuses'} lined up
                 </p>
-                <p className="text-[12px] font-mono text-white/50 mb-3 tabular-nums">
+                <p className="text-[0.75rem] font-mono text-white/50 mb-3 tabular-nums">
                   {bonusCount > 0
                     ? `avg bet ${fmt(stats.totalStakes / bonusCount)}`
                     : 'no bonuses yet'}
@@ -206,10 +206,10 @@ export default function LiveHuntPage() {
             {opening && currentBonus && (
               <div className="border border-purple-gamba/40 bg-purple-gamba/5 p-5 mb-4">
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-purple-bright font-mono">
+                  <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-purple-bright font-mono">
                     Now opening
                   </span>
-                  <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono tabular-nums">
+                  <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono tabular-nums">
                     {openedCount} / {bonusCount} opened
                   </span>
                 </div>
@@ -227,12 +227,12 @@ export default function LiveHuntPage() {
                     {currentBonus.slot}
                   </p>
                 </div>
-                <p className="text-[12px] font-mono text-white/50 tabular-nums">
+                <p className="text-[0.75rem] font-mono text-white/50 tabular-nums">
                   bet {fmt(currentBonus.stake)}
                   {currentBonus.caller ? ` · 📣 ${currentBonus.caller}` : ''}
                 </p>
                 {nextBonus && (
-                  <p className="text-[11px] font-mono text-white/40 mt-3">
+                  <p className="text-[0.6875rem] font-mono text-white/40 mt-3">
                     Next: <span className="text-white/70">{nextBonus.slot}</span>
                     <span className="text-white/40"> · {fmt(nextBonus.stake)}</span>
                   </p>
@@ -295,14 +295,14 @@ export default function LiveHuntPage() {
             {/* Two-column body: bonuses left, squad right; stacks on mobile */}
             <div className="grid lg:grid-cols-2 gap-5 items-start">
               <div>
-                <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono mb-2">
+                <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono mb-2">
                   Bonuses <span className="text-white/30">· {bonusCount}</span>
                 </p>
                 {bonuses.length > 0 && (
                   <div className="border border-white/8 overflow-x-auto overflow-y-auto max-h-[48vh] [scrollbar-width:thin]">
                     <table className="w-full text-sm min-w-[360px]">
                       <thead>
-                        <tr className="border-b border-white/10 text-white/65 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono sticky top-0 z-10">
+                        <tr className="border-b border-white/10 text-white/65 text-[0.625rem] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono sticky top-0 z-10">
                           <th className="text-left px-3 py-2 font-bold">Slot</th>
                           <th className="text-right px-3 py-2 font-bold">Bet</th>
                           <th className="text-right px-3 py-2 font-bold">Win</th>
@@ -328,7 +328,7 @@ export default function LiveHuntPage() {
                                   <span className="truncate" title={b.slot}>{b.slot}</span>
                                 </span>
                                 {b.caller && (
-                                  <span className="block text-[10px] font-mono tracking-eyebrow-md uppercase text-purple-bright truncate mt-0.5">
+                                  <span className="block text-[0.625rem] font-mono tracking-eyebrow-md uppercase text-purple-bright truncate mt-0.5">
                                     📣 {b.caller}
                                   </span>
                                 )}
@@ -348,14 +348,14 @@ export default function LiveHuntPage() {
               </div>
 
               <div>
-                <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono mb-2">
+                <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono mb-2">
                   Squad split <span className="text-white/30">· {gamblers.length}</span>
                 </p>
                 {gamblers.length > 0 && (
                   <div className="border border-white/8 overflow-x-auto overflow-y-auto max-h-[48vh] [scrollbar-width:thin]">
                     <table className="w-full text-sm min-w-[360px]">
                       <thead>
-                        <tr className="border-b border-white/10 text-white/65 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono sticky top-0 z-10">
+                        <tr className="border-b border-white/10 text-white/65 text-[0.625rem] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono sticky top-0 z-10">
                           <th className="text-left px-3 py-2 font-bold">Name</th>
                           <th className="text-right px-3 py-2 font-bold">In for</th>
                           <th className="text-right px-3 py-2 font-bold">%</th>
@@ -395,7 +395,7 @@ export default function LiveHuntPage() {
               </div>
             </div>
 
-            <p className="text-center text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/25 font-mono mt-8">
+            <p className="text-center text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/25 font-mono mt-8">
               goofer.tv · live hunt
             </p>
           </>

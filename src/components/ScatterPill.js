@@ -9,7 +9,7 @@ export default function ScatterPill({ bonus, size = 'sm' }) {
   const text = size === 'md' ? tier.full : tier.short;
   const base =
     'shrink-0 inline-flex items-center font-bold tracking-eyebrow-md uppercase font-mono border leading-none';
-  const pad = size === 'md' ? 'px-1.5 py-0.5 text-[9px]' : 'px-1 py-0.5 text-[8px]';
+  const pad = size === 'md' ? 'px-1.5 py-0.5 text-[0.5625rem]' : 'px-1 py-0.5 text-[0.5rem]';
 
   if (tier.tone === 'orange') {
     return (

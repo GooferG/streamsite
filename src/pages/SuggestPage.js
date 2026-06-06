@@ -28,7 +28,7 @@ function StatusBar({ label, value, tone = 'emerald' }) {
       : 'text-emerald-signal bg-emerald-signal';
   return (
     <div
-      className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
+      className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono"
       >
       <span className={`inline-flex items-center gap-2 ${color.split(' ')[0]}`}>
         <span className={`w-1.5 h-1.5 rounded-full ${color.split(' ')[1]}`} />
@@ -61,7 +61,7 @@ function SuggestionRow({ suggestion, index, isMine }) {
     >
       <div className="flex items-center gap-2.5">
         <span
-          className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums ${
+          className={`text-[0.625rem] font-bold tracking-eyebrow-md tabular-nums ${
             highlighted ? 'text-emerald-signal' : 'text-white/30'
           } font-mono`}
       >
@@ -83,14 +83,14 @@ function SuggestionRow({ suggestion, index, isMine }) {
           </p>
           {isMine && (
             <span
-              className="px-1.5 py-0.5 text-[9px] font-bold tracking-eyebrow-md text-white/55 border border-white/20 font-mono"
+              className="px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow-md text-white/55 border border-white/20 font-mono"
       >
               YOU
             </span>
           )}
         </div>
         <p
-          className="mt-0.5 text-[10px] tracking-eyebrow-sm uppercase text-white/40 truncate font-mono"
+          className="mt-0.5 text-[0.625rem] tracking-eyebrow-sm uppercase text-white/40 truncate font-mono"
       >
           {suggestion.twitchName}
           {suggestion.rainbetName ? (
@@ -101,7 +101,7 @@ function SuggestionRow({ suggestion, index, isMine }) {
 
       {highlighted && (
         <span
-          className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-bold tracking-eyebrow-md text-emerald-signal border border-emerald-signal/40 flex-shrink-0 font-mono"
+          className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow-md text-emerald-signal border border-emerald-signal/40 flex-shrink-0 font-mono"
       >
           <Check size={9} aria-hidden="true" />
           PICKED
@@ -198,7 +198,7 @@ export default function SuggestPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-broadcast">
         <span
-          className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
+          className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
       >
           Tuning…
         </span>
@@ -226,7 +226,7 @@ export default function SuggestPage() {
         {/* Slate header */}
         <header>
           <div
-            className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono"
+            className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono"
       >
             <span className="inline-flex items-center gap-2">
               <span className="relative flex w-1.5 h-1.5">
@@ -280,7 +280,7 @@ export default function SuggestPage() {
                   <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z" />
                 </svg>
                 <span
-                  className="text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                  className="text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
                   Sign in with Twitch
                 </span>
@@ -309,7 +309,7 @@ export default function SuggestPage() {
                     {twitchUser.displayName}
                   </p>
                   <p
-                    className="text-[10px] font-bold tracking-eyebrow-md uppercase text-emerald-signal/80 font-mono"
+                    className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-emerald-signal/80 font-mono"
       >
                     Twitch · Authenticated
                   </p>
@@ -330,7 +330,7 @@ export default function SuggestPage() {
               <div className="px-4 py-5 space-y-4">
                 <div>
                   <p
-                    className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal mb-2 font-mono"
+                    className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal mb-2 font-mono"
       >
                     Your entry
                   </p>
@@ -339,7 +339,7 @@ export default function SuggestPage() {
                   </p>
                   {existing?.rainbetName && (
                     <p
-                      className="mt-1 text-[11px] tracking-eyebrow uppercase text-white/45 font-mono"
+                      className="mt-1 text-[0.6875rem] tracking-eyebrow uppercase text-white/45 font-mono"
       >
                       Rainbet ·{' '}
                       <span className="text-emerald-signal/80">{existing.rainbetName}</span>
@@ -355,7 +355,7 @@ export default function SuggestPage() {
                   >
                     <Edit2 size={13} aria-hidden="true" />
                     <span
-                      className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                      className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
                       Update
                     </span>
@@ -367,7 +367,7 @@ export default function SuggestPage() {
                   >
                     <X size={13} aria-hidden="true" />
                     <span
-                      className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                      className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
                       Remove
                     </span>
@@ -378,7 +378,7 @@ export default function SuggestPage() {
               <form onSubmit={handleSubmit} className="px-4 py-5 space-y-4">
                 <label className="block">
                   <span
-                    className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono"
+                    className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono"
       >
                     Game / slot name{' '}
                     <span className="text-emerald-signal">*</span>
@@ -394,7 +394,7 @@ export default function SuggestPage() {
                 </label>
                 <label className="block">
                   <span
-                    className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono"
+                    className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono"
       >
                     Rainbet username{' '}
                     <span className="text-white/30">· optional</span>
@@ -410,7 +410,7 @@ export default function SuggestPage() {
 
                 {error && (
                   <p
-                    className="text-[11px] font-bold tracking-eyebrow uppercase text-red-destructive font-mono"
+                    className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono"
       >
                     {error}
                   </p>
@@ -429,7 +429,7 @@ export default function SuggestPage() {
                       className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
                     >
                       <span
-                        className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                        className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
                         Cancel
                       </span>
@@ -442,7 +442,7 @@ export default function SuggestPage() {
                   >
                     <Send size={13} aria-hidden="true" />
                     <span
-                      className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                      className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
                       {submitting ? 'Sending…' : editing ? 'Update' : 'Submit'}
                     </span>
@@ -457,7 +457,7 @@ export default function SuggestPage() {
         {allSuggestions.length > 0 && (
           <div className="border border-white/8 bg-zinc-card/30">
             <div
-              className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
+              className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono"
       >
               <span className="text-white/55">Queue</span>
               <span className="text-white/15">·</span>
@@ -487,7 +487,7 @@ export default function SuggestPage() {
 
         {/* Footer */}
         <footer
-          className="pt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[10px] uppercase tracking-eyebrow-lg text-white/30 font-mono"
+          className="pt-2 flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[0.625rem] uppercase tracking-eyebrow-lg text-white/30 font-mono"
       >
           <span>END OF FEED</span>
           <span className="text-white/15">·</span>

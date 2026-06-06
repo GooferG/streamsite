@@ -2,7 +2,7 @@
 // Recent-calls pip strip (newest right). f ∈ 'win' | 'ok' | 'brick'.
 export default function FormStrip({ form }) {
   if (!form || form.length === 0) {
-    return <span className="text-[10px] font-mono text-white/30">no plays</span>;
+    return <span className="text-[0.625rem] font-mono text-white/30">no plays</span>;
   }
   const cls = { win: 'bg-emerald-signal', ok: 'bg-white/35', brick: 'bg-red-destructive' };
   return (

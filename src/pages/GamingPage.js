@@ -44,7 +44,7 @@ function ToolTab({ tool, active, onClick }) {
       }`}
     >
       <span
-        className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums ${
+        className={`text-[0.625rem] font-bold tracking-eyebrow-md tabular-nums ${
           active ? 'text-emerald-signal' : 'text-white/30'
         } font-mono`}
       >
@@ -75,7 +75,7 @@ function GameCard({ game, index }) {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-broadcast/85 via-zinc-broadcast/10 to-transparent" />
         <div
-          className="absolute top-2 left-2 px-1.5 py-0.5 bg-zinc-broadcast/80 text-emerald-signal text-[10px] font-bold tracking-eyebrow font-mono"
+          className="absolute top-2 left-2 px-1.5 py-0.5 bg-zinc-broadcast/80 text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow font-mono"
       >
           #{tape}
         </div>
@@ -86,7 +86,7 @@ function GameCard({ game, index }) {
         </p>
         {game.playtime_forever > 0 && (
           <div
-            className="mt-1.5 flex items-center justify-between gap-2 text-[10px] font-bold tracking-eyebrow uppercase font-mono"
+            className="mt-1.5 flex items-center justify-between gap-2 text-[0.625rem] font-bold tracking-eyebrow uppercase font-mono"
       >
             <span className="text-white/45 inline-flex items-center gap-1">
               <Clock size={10} aria-hidden="true" />
@@ -148,7 +148,7 @@ export default function GamingPage() {
         {/* Slate header */}
         <header className="mb-10 sm:mb-12">
           <div
-            className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-6 font-mono"
+            className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] sm:text-[0.6875rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-6 font-mono"
       >
             <span className="inline-flex items-center gap-2 text-emerald-signal">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
@@ -174,7 +174,7 @@ export default function GamingPage() {
           </h1>
 
           <div
-            className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[11px] uppercase tracking-eyebrow text-white/45 font-mono"
+            className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-[0.6875rem] uppercase tracking-eyebrow text-white/45 font-mono"
       >
             <span>
               Source · <span className="text-white/70">Steam</span>
@@ -205,7 +205,7 @@ export default function GamingPage() {
               aria-hidden="true"
             />
             <p
-              className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
+              className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
       >
               Loading library…
             </p>
@@ -216,7 +216,7 @@ export default function GamingPage() {
         {error && !loading && (
           <div className="border border-white/8 bg-zinc-card/30 py-16 px-6 flex flex-col items-center gap-3 text-center">
             <p
-              className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-red-destructive/80 font-mono"
+              className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-red-destructive/80 font-mono"
       >
               Signal lost
             </p>
@@ -228,7 +228,7 @@ export default function GamingPage() {
             >
               <RefreshCcw size={12} aria-hidden="true" />
               <span
-                className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
                 Retry
               </span>
@@ -279,7 +279,7 @@ export default function GamingPage() {
               >
                 <ArrowUpDown size={13} aria-hidden="true" />
                 <span
-                  className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                  className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
                   {sortBy === 'playtime' ? 'Most played' : 'A–Z'}
                 </span>
@@ -288,7 +288,7 @@ export default function GamingPage() {
 
             {/* Result strip */}
             <div
-              className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
+              className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
       >
               <span>
                 Showing{' '}
@@ -319,7 +319,7 @@ export default function GamingPage() {
                 {visibleGames.length === 0 ? (
                   <div className="border border-white/8 bg-zinc-card/30 py-16 text-center">
                     <p
-                      className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono"
+                      className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono"
       >
                       No matches
                     </p>
@@ -341,7 +341,7 @@ export default function GamingPage() {
             {activeTool === 'wheel' && (
               <div className="max-w-lg mx-auto border border-white/8 bg-zinc-card/30">
                 <div
-                  className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
+                  className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono"
       >
                   <span className="inline-flex items-center gap-2 text-emerald-signal">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
@@ -355,7 +355,7 @@ export default function GamingPage() {
                 </div>
                 <div className="px-5 py-6">
                   <p
-                    className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono"
+                    className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono"
       >
                     Game wheel
                   </p>

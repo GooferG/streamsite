@@ -64,14 +64,14 @@ function SlotTile({ slot, selected, onSelect, disabled }) {
         </div>
       )}
       <span
-        className="text-[10px] font-bold tracking-eyebrow-md uppercase font-mono text-white/75 max-w-[5.5rem] text-center truncate"
+        className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono text-white/75 max-w-[5.5rem] text-center truncate"
         title={slot.name}
       >
         {slot.name}
       </span>
       {selected && (
         <span
-          className="absolute top-0.5 right-0.5 text-[8px] font-bold tracking-eyebrow-lg uppercase text-red-destructive border border-red-destructive bg-zinc-broadcast/80 px-1 py-0.5 font-mono rotate-[-8deg]"
+          className="absolute top-0.5 right-0.5 text-[0.5rem] font-bold tracking-eyebrow-lg uppercase text-red-destructive border border-red-destructive bg-zinc-broadcast/80 px-1 py-0.5 font-mono rotate-[-8deg]"
           aria-hidden="true"
         >
           MY PICK
@@ -187,7 +187,7 @@ export default function PredictionSlip({ round }) {
     return (
       <div className="relative overflow-hidden border border-white/15 bg-zinc-card/30">
         <div className="px-5 py-7 text-center space-y-4">
-          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
             Sign in to predict
           </p>
           <button
@@ -195,7 +195,7 @@ export default function PredictionSlip({ round }) {
             onClick={loginWithTwitch}
             className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-gamba hover:bg-purple-bright text-white-body transition-colors duration-150"
           >
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
               Sign in with Twitch
             </span>
           </button>
@@ -232,7 +232,7 @@ export default function PredictionSlip({ round }) {
         }}
       >
         {/* Header line */}
-        <div className="flex items-center justify-between gap-3 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono mb-4">
+        <div className="flex items-center justify-between gap-3 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono mb-4">
           <span className="text-white/55">
             Slip <span className="text-emerald-signal">№ {serial}</span>
           </span>
@@ -252,7 +252,7 @@ export default function PredictionSlip({ round }) {
         {/* Top slot tiles */}
         {round?.kinds?.topSlot && (
           <div className="mt-5">
-            <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-2 font-mono">
+            <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-2 font-mono">
               <span className="text-emerald-signal tabular-nums">01</span> Top slot pick
             </p>
             <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
@@ -276,7 +276,7 @@ export default function PredictionSlip({ round }) {
         {/* Payout input */}
         {round?.kinds?.payout && (
           <div className="mt-5">
-            <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-2 font-mono">
+            <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-2 font-mono">
               <span className="text-emerald-signal tabular-nums">
                 {round.kinds.topSlot ? '02' : '01'}
               </span>{' '}
@@ -305,12 +305,12 @@ export default function PredictionSlip({ round }) {
                     type="button"
                     onClick={() => editable && setPayoutInput(String(c.value))}
                     disabled={!editable}
-                    className="px-2.5 py-1 border border-white/15 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/65 hover:text-white-body hover:border-emerald-signal/40 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed font-mono"
+                    className="px-2.5 py-1 border border-white/15 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/65 hover:text-white-body hover:border-emerald-signal/40 transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed font-mono"
                   >
                     {c.label}
                   </button>
                 ))}
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/35 font-mono self-center ml-1">
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/35 font-mono self-center ml-1">
                   Cost {formatCurrency(totalCost)}
                 </span>
               </div>
@@ -328,17 +328,17 @@ export default function PredictionSlip({ round }) {
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed"
             >
               <CheckCircle2 size={13} aria-hidden="true" />
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                 {submitting ? 'Submitting…' : entry ? 'Update slip' : 'Submit slip'}
               </span>
             </button>
             {cooldown > 0 && (
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-orange-admin font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-orange-admin font-mono">
                 Edit again in {cooldown}s
               </span>
             )}
             {entry && (
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
                 Submitted · edits {entry.editCount ?? 1}
               </span>
             )}
@@ -347,7 +347,7 @@ export default function PredictionSlip({ round }) {
 
         {feedback && (
           <div
-            className={`mt-3 flex items-center gap-2 text-[11px] font-bold tracking-eyebrow uppercase font-mono ${
+            className={`mt-3 flex items-center gap-2 text-[0.6875rem] font-bold tracking-eyebrow uppercase font-mono ${
               feedback.kind === 'success' ? 'text-emerald-signal' : 'text-red-destructive'
             }`}
           >
@@ -378,7 +378,7 @@ export default function PredictionSlip({ round }) {
         {/* Settled result line */}
         {settled && entry && (
           <div className="mt-5 pt-4 border-t border-dashed border-white/15">
-            <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 mb-1 font-mono">
+            <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 mb-1 font-mono">
               Result
             </p>
             <div className="flex items-baseline gap-3 flex-wrap text-sm">
@@ -408,7 +408,7 @@ export default function PredictionSlip({ round }) {
               )}
             </div>
             {yourWinnerEntry && (
-              <p className="mt-3 inline-flex items-center gap-2 px-2 py-1 border border-emerald-signal/50 bg-emerald-signal/10 text-emerald-signal text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              <p className="mt-3 inline-flex items-center gap-2 px-2 py-1 border border-emerald-signal/50 bg-emerald-signal/10 text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                 <Ticket size={11} aria-hidden="true" />
                 {yourWinnerEntry.place === 1 ? '1st place' : yourWinnerEntry.place === 2 ? '2nd place' : '3rd place'}
                 {yourWinnerEntry.prize?.tickets ? ` · +${yourWinnerEntry.prize.tickets} tickets` : ''}

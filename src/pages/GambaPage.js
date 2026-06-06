@@ -21,7 +21,7 @@ const ToolLoading = ({ label }) => {
   const phrase = useTuningPhrase(true, [label, ...TUNING_PHRASES]);
   return (
     <div className="border border-white/8 bg-zinc-card/30 px-4 py-16 text-center font-mono">
-      <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal motion-safe:animate-pulse">
+      <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal motion-safe:animate-pulse">
         {phrase}
       </p>
     </div>
@@ -48,7 +48,7 @@ function ChannelTab({ tool, channelNumber, active, onClick }) {
       }`}
     >
       <span
-        className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums font-mono ${
+        className={`text-[0.625rem] font-bold tracking-eyebrow-md tabular-nums font-mono ${
           active ? 'text-emerald-signal' : 'text-white/55'
         }`}
       >
@@ -78,7 +78,7 @@ function MobileChannelTrigger({ activeIndex, onOpen }) {
       className="flex w-full items-center gap-3 px-3 py-2.5 border border-white/8 bg-zinc-card/30 hover:bg-zinc-card/50 transition-colors duration-150 text-left"
       aria-haspopup="dialog"
     >
-      <span className="text-[10px] font-bold tracking-eyebrow-md tabular-nums text-emerald-signal font-mono flex-shrink-0">
+      <span className="text-[0.625rem] font-bold tracking-eyebrow-md tabular-nums text-emerald-signal font-mono flex-shrink-0">
         CH {pad2(activeIndex + 1)}
       </span>
       <Icon
@@ -89,7 +89,7 @@ function MobileChannelTrigger({ activeIndex, onOpen }) {
       <span className="text-xs font-bold tracking-eyebrow-sm uppercase font-mono text-white-body truncate flex-1">
         {tool.label}
       </span>
-      <span className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/55 font-mono whitespace-nowrap">
+      <span className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/55 font-mono whitespace-nowrap">
         Tune
       </span>
       <ChevronDown
@@ -166,7 +166,7 @@ function MobileChannelSheet({ open, activeId, onSelect, onClose, onHub }) {
 
         {/* Header */}
         <div className="relative flex items-center justify-between px-4 py-3 border-b border-white/8">
-          <div className="flex items-center gap-2 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+          <div className="flex items-center gap-2 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
             <span className="relative flex w-1.5 h-1.5">
               <span className="absolute inset-0 rounded-full bg-emerald-signal motion-safe:animate-ping opacity-50" />
               <span className="relative w-1.5 h-1.5 rounded-full bg-emerald-signal" />
@@ -215,7 +215,7 @@ function MobileChannelSheet({ open, activeId, onSelect, onClose, onHub }) {
                   }`}
                 >
                   <span
-                    className={`text-[11px] font-bold tracking-eyebrow-md tabular-nums font-mono w-10 flex-shrink-0 ${
+                    className={`text-[0.6875rem] font-bold tracking-eyebrow-md tabular-nums font-mono w-10 flex-shrink-0 ${
                       isActive ? 'text-emerald-signal' : 'text-white/55'
                     }`}
                   >
@@ -235,14 +235,14 @@ function MobileChannelSheet({ open, activeId, onSelect, onClose, onHub }) {
                       {tool.label}
                     </span>
                     {isActive && (
-                      <span className="block text-[10px] tracking-eyebrow-md uppercase text-emerald-signal/80 font-mono mt-0.5">
+                      <span className="block text-[0.625rem] tracking-eyebrow-md uppercase text-emerald-signal/80 font-mono mt-0.5">
                         Now tuned
                       </span>
                     )}
                   </span>
                   {isActive && (
                     <span
-                      className="text-[10px] font-bold tracking-eyebrow-md uppercase text-emerald-signal font-mono whitespace-nowrap"
+                      className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-emerald-signal font-mono whitespace-nowrap"
                       aria-hidden="true"
                     >
                       ●

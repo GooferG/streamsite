@@ -81,7 +81,7 @@ export default function WelcomeSignOn({ introDone }) {
           }}
         />
         <div className="relative">
-          <div className="flex items-center gap-2 text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono mb-3">
+          <div className="flex items-center gap-2 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono mb-3">
             <span
               className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-signal"
               aria-hidden="true"
@@ -101,7 +101,7 @@ export default function WelcomeSignOn({ introDone }) {
               onClick={dismiss}
               className="inline-flex items-center px-4 py-2.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
             >
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                 Got it
               </span>
             </button>
@@ -110,7 +110,7 @@ export default function WelcomeSignOn({ introDone }) {
               onClick={goToTools}
               className="inline-flex items-center gap-1.5 px-2 py-2.5 text-white/55 hover:text-white-body transition-colors duration-150"
             >
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                 Show me the gamba tools
               </span>
               <span aria-hidden="true">→</span>

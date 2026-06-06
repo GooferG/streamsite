@@ -91,7 +91,7 @@ function SuggestionRow({ suggestion, huntId, isMine, adminMode, onError }) {
             loading="lazy"
           />
         ) : (
-          <div className="w-8 h-8 rounded-full border border-white/15 bg-zinc-broadcast/40 flex items-center justify-center text-[11px] font-bold font-mono text-white/55 flex-shrink-0">
+          <div className="w-8 h-8 rounded-full border border-white/15 bg-zinc-broadcast/40 flex items-center justify-center text-[0.6875rem] font-bold font-mono text-white/55 flex-shrink-0">
             {(suggestion.displayName || suggestion.twitchName || '?').charAt(0).toUpperCase()}
           </div>
         )}
@@ -103,17 +103,17 @@ function SuggestionRow({ suggestion, huntId, isMine, adminMode, onError }) {
             {suggestion.slotName}
           </p>
           <span
-            className={`px-1.5 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase border font-mono ${meta.cls}`}
+            className={`px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow-md uppercase border font-mono ${meta.cls}`}
           >
             {meta.label}
           </span>
           {isMine && (
-            <span className="px-1.5 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase text-white/55 border border-white/20 font-mono">
+            <span className="px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow-md uppercase text-white/55 border border-white/20 font-mono">
               YOU
             </span>
           )}
         </div>
-        <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5 truncate">
+        <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5 truncate">
           {suggestion.displayName || suggestion.twitchName}
           {suggestion.note && (
             <>
@@ -163,7 +163,7 @@ function SuggestionRow({ suggestion, huntId, isMine, adminMode, onError }) {
               title="Played - bonus hit!"
             >
               <TrendingUp size={11} aria-hidden="true" />
-              <span className="text-[9px] font-bold tracking-eyebrow-md uppercase font-mono">HIT</span>
+              <span className="text-[0.5625rem] font-bold tracking-eyebrow-md uppercase font-mono">HIT</span>
             </button>
             <button
               type="button"
@@ -173,7 +173,7 @@ function SuggestionRow({ suggestion, huntId, isMine, adminMode, onError }) {
               title="Played - no bonus"
             >
               <TrendingDown size={11} aria-hidden="true" />
-              <span className="text-[9px] font-bold tracking-eyebrow-md uppercase font-mono">MISS</span>
+              <span className="text-[0.5625rem] font-bold tracking-eyebrow-md uppercase font-mono">MISS</span>
             </button>
             <button
               type="button"
@@ -245,7 +245,7 @@ export default function SuggestionList({ huntId, adminMode = false }) {
 
   return (
     <div className="border border-white/10 bg-zinc-card/30">
-      <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold tracking-eyebrow-md uppercase font-mono">
+      <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono">
         <span className="inline-flex items-center gap-2 text-white/55">
           <ListChecks size={11} aria-hidden="true" />
           Slot suggestions
@@ -269,7 +269,7 @@ export default function SuggestionList({ huntId, adminMode = false }) {
         </div>
       )}
       {error && (
-        <div className="px-4 py-2 border-t border-red-destructive/30 text-[10px] font-bold tracking-eyebrow-lg uppercase text-red-destructive font-mono">
+        <div className="px-4 py-2 border-t border-red-destructive/30 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-red-destructive font-mono">
           {error}
         </div>
       )}

@@ -27,7 +27,7 @@ function WeightBadge({ entry }) {
   if (bonus <= 0) return null;
   return (
     <span
-      className="absolute -bottom-1 -right-1 inline-flex items-center justify-center min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-emerald-signal text-zinc-broadcast border border-zinc-broadcast text-[9px] font-bold font-mono tabular-nums"
+      className="absolute -bottom-1 -right-1 inline-flex items-center justify-center min-w-[1.1rem] h-[1.1rem] px-1 rounded-full bg-emerald-signal text-zinc-broadcast border border-zinc-broadcast text-[0.5625rem] font-bold font-mono tabular-nums"
       title={buildWeightTooltip(entry)}
     >
       +{bonus}
@@ -106,7 +106,7 @@ function EntryTile({ entry, state }) {
         )}
       </div>
       <span
-        className={`text-[10px] font-bold tracking-eyebrow-md uppercase font-mono text-center max-w-[6.5rem] truncate ${
+        className={`text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono text-center max-w-[6.5rem] truncate ${
           state === 'winner' ? 'text-orange-admin' : 'text-white/70'
         }`}
       >
@@ -158,7 +158,7 @@ export default function GiveawayEntriesGrid({
         <div className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-white/10 mb-3 text-white/35">
           <Users size={16} aria-hidden="true" />
         </div>
-        <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
+        <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
           No entries yet
         </p>
         <p className="text-sm text-white/55">
@@ -188,7 +188,7 @@ export default function GiveawayEntriesGrid({
 
       {overflowApprox > 0 && (
         <div className="mt-5 text-center">
-          <span className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/15 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 font-mono">
+          <span className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/15 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 font-mono">
             +{overflowApprox} more waiting
           </span>
         </div>

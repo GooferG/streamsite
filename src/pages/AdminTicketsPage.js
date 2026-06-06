@@ -160,7 +160,7 @@ export default function AdminTicketsPage() {
   return (
     <div className="p-6 sm:p-8 max-w-4xl mx-auto">
       <header className="mb-8">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
             <span>TICKET LEDGER</span>
@@ -196,7 +196,7 @@ export default function AdminTicketsPage() {
           className="inline-flex items-center gap-2 px-3.5 py-2 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50"
         >
           <Search size={13} aria-hidden="true" />
-          <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+          <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
             {searching ? 'Searching…' : 'Search'}
           </span>
         </button>
@@ -205,7 +205,7 @@ export default function AdminTicketsPage() {
       {/* Default: all ticket holders, sorted desc */}
       {!selected && results.length === 0 && (
         <div className="border border-white/8 bg-zinc-card/30 mb-6">
-          <div className="px-4 py-2.5 border-b border-white/8 text-[10px] font-bold tracking-eyebrow-md uppercase text-white/55 font-mono">
+          <div className="px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/55 font-mono">
             {loadingHolders
               ? 'Loading…'
               : `${holders.length} ticket holder${holders.length === 1 ? '' : 's'} · top first`}
@@ -227,7 +227,7 @@ export default function AdminTicketsPage() {
               )}
               <div className="min-w-0">
                 <p className="font-bold text-white-body text-sm">{u.displayName}</p>
-                <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono">
+                <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono">
                   {u.twitchName}
                 </p>
               </div>
@@ -243,7 +243,7 @@ export default function AdminTicketsPage() {
       {/* Results */}
       {results.length > 0 && !selected && (
         <div className="border border-white/8 bg-zinc-card/30 mb-6">
-          <div className="px-4 py-2.5 border-b border-white/8 text-[10px] font-bold tracking-eyebrow-md uppercase text-white/55 font-mono">
+          <div className="px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/55 font-mono">
             {results.length} match{results.length === 1 ? '' : 'es'}
           </div>
           {results.map((u) => (
@@ -260,7 +260,7 @@ export default function AdminTicketsPage() {
               )}
               <div className="min-w-0">
                 <p className="font-bold text-white-body text-sm">{u.displayName}</p>
-                <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono">
+                <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono">
                   {u.twitchName}
                 </p>
               </div>
@@ -287,12 +287,12 @@ export default function AdminTicketsPage() {
             className="inline-flex items-center gap-2 px-3 py-2 border border-white/10 text-white/60 hover:text-white-body hover:border-white/25 transition-colors duration-150"
           >
             <ArrowLeft size={13} aria-hidden="true" />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
               Back to list
             </span>
           </button>
           <div className="border border-white/8 bg-zinc-card/30">
-            <div className="px-4 py-2.5 border-b border-white/8 flex items-center justify-between text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+            <div className="px-4 py-2.5 border-b border-white/8 flex items-center justify-between text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
               <span className="inline-flex items-center gap-2 text-orange-admin">
                 <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
                 <span>Selected viewer</span>
@@ -320,13 +320,13 @@ export default function AdminTicketsPage() {
                 )}
                 <div className="min-w-0">
                   <p className="font-bold text-white-body text-sm">{selected.displayName}</p>
-                  <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono">
+                  <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono">
                     {selected.twitchName} · ID {selected.id}
                   </p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
+                <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
                   Balance
                 </p>
                 <p className="text-2xl font-black text-emerald-signal tabular-nums">
@@ -338,7 +338,7 @@ export default function AdminTicketsPage() {
             <div className="px-5 py-5 space-y-3">
               <div className="grid grid-cols-[1fr_1fr] gap-2">
                 <label className="block">
-                  <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+                  <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
                     Amount
                   </span>
                   <input
@@ -350,7 +350,7 @@ export default function AdminTicketsPage() {
                   />
                 </label>
                 <label className="block">
-                  <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+                  <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
                     Note · optional
                   </span>
                   <input
@@ -369,7 +369,7 @@ export default function AdminTicketsPage() {
                   className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-50"
                 >
                   <Plus size={13} aria-hidden="true" />
-                  <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                     Add tickets
                   </span>
                 </button>
@@ -380,14 +380,14 @@ export default function AdminTicketsPage() {
                   className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 border border-red-destructive/40 text-red-destructive hover:bg-red-destructive/10 transition-colors duration-150 disabled:opacity-50"
                 >
                   <Minus size={13} aria-hidden="true" />
-                  <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                     Subtract
                   </span>
                 </button>
               </div>
               {feedback && (
                 <p
-                  className={`text-[11px] font-bold tracking-eyebrow uppercase font-mono ${
+                  className={`text-[0.6875rem] font-bold tracking-eyebrow uppercase font-mono ${
                     feedback.kind === 'success' ? 'text-emerald-signal' : 'text-red-destructive'
                   }`}
                 >
@@ -399,7 +399,7 @@ export default function AdminTicketsPage() {
 
           {/* Ledger */}
           <div className="border border-white/8 bg-zinc-card/30">
-            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md text-white/55 font-mono">
+            <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md text-white/55 font-mono">
               <Clock size={11} aria-hidden="true" />
               <span>Ledger · last {ledger.length}</span>
             </div>
@@ -420,7 +420,7 @@ export default function AdminTicketsPage() {
                           {e.itemName ? <span className="text-white/45"> · {e.itemName}</span> : null}
                           {e.note ? <span className="text-white/45"> · {e.note}</span> : null}
                         </p>
-                        <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono">
+                        <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono">
                           {formatTs(e.createdAt)}
                         </p>
                       </div>

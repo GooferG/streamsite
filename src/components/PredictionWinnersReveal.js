@@ -17,7 +17,7 @@ function WinnerCard({ winner, round }) {
   const label = PLACE_LABEL[winner.place] || `${winner.place}TH`;
   return (
     <div className={`relative border-2 px-5 py-5 ${tone}`}>
-      <span className="absolute -top-3 left-3 px-2 py-0.5 bg-zinc-broadcast border-2 border-current text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+      <span className="absolute -top-3 left-3 px-2 py-0.5 bg-zinc-broadcast border-2 border-current text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
         {label}
       </span>
       <div className="flex items-center gap-3">
@@ -39,7 +39,7 @@ function WinnerCard({ winner, round }) {
           >
             {winner.displayName || winner.twitchName}
           </p>
-          <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/55 font-mono mt-0.5 truncate">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/55 font-mono mt-0.5 truncate">
             {round.kinds.payout && typeof winner.payoutGuess === 'number'
               ? <>guess {formatCurrency(winner.payoutGuess)}{typeof winner.diff === 'number' ? ` · off by ${formatCurrency(winner.diff)}` : ''}</>
               : winner.topSlotGuess
@@ -50,13 +50,13 @@ function WinnerCard({ winner, round }) {
       </div>
       <div className="mt-3 flex flex-wrap gap-2">
         {winner.prize?.tickets > 0 && (
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 border border-current text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 border border-current text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
             <Ticket size={11} aria-hidden="true" />
             +{winner.prize.tickets} tickets
           </span>
         )}
         {winner.prize?.cashLabel && (
-          <span className="inline-flex items-center gap-1.5 px-2 py-1 border border-current text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+          <span className="inline-flex items-center gap-1.5 px-2 py-1 border border-current text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
             <Trophy size={11} aria-hidden="true" />
             {winner.prize.cashLabel}
           </span>
@@ -72,7 +72,7 @@ export default function PredictionWinnersReveal({ round }) {
   if (winners.length === 0) {
     return (
       <div className="border border-white/15 bg-zinc-card/30 px-5 py-6 text-center">
-        <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
+        <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
           No winners — no eligible entries.
         </p>
       </div>
@@ -80,7 +80,7 @@ export default function PredictionWinnersReveal({ round }) {
   }
   return (
     <div className="border border-white/10 bg-zinc-card/30 px-4 sm:px-6 py-5">
-      <div className="flex items-center justify-between mb-4 text-[10px] font-bold tracking-eyebrow-md uppercase font-mono">
+      <div className="flex items-center justify-between mb-4 text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono">
         <span className="inline-flex items-center gap-2 text-orange-admin">
           <Trophy size={11} aria-hidden="true" />
           <span>Winners</span>

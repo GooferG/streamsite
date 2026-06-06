@@ -68,12 +68,12 @@ function ToggleRow({ label, value, onChange, hint }) {
           : 'border-white/10 bg-zinc-broadcast/40 text-white/50 hover:text-white-body'
       }`}
     >
-      <span className="flex items-center gap-2 text-[11px] font-bold tracking-eyebrow uppercase font-mono">
+      <span className="flex items-center gap-2 text-[0.6875rem] font-bold tracking-eyebrow uppercase font-mono">
         <span className={`w-1.5 h-1.5 rounded-full ${on ? 'bg-emerald-signal' : 'bg-white/25'}`} />
         {label}
-        {hint && <span className="text-white/30 normal-case font-normal text-[10px]">{hint}</span>}
+        {hint && <span className="text-white/30 normal-case font-normal text-[0.625rem]">{hint}</span>}
       </span>
-      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+      <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
         {on ? 'ON' : 'OFF'}
       </span>
     </button>
@@ -129,7 +129,7 @@ function NewGiveawayForm({ onClose, onCreated }) {
         onClick={(e) => e.stopPropagation()}
         className="w-full max-w-lg border border-white/10 bg-zinc-card"
       >
-        <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
             New giveaway
@@ -145,7 +145,7 @@ function NewGiveawayForm({ onClose, onCreated }) {
 
         <div className="px-5 py-5 space-y-4">
           <label className="block">
-            <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+            <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
               <span className="text-orange-admin tabular-nums">01</span> Title <span className="text-emerald-signal">*</span>
             </span>
             <input
@@ -156,7 +156,7 @@ function NewGiveawayForm({ onClose, onCreated }) {
             />
           </label>
           <label className="block">
-            <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+            <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
               <span className="text-orange-admin tabular-nums">02</span> Prize <span className="text-emerald-signal">*</span>
             </span>
             <input
@@ -167,7 +167,7 @@ function NewGiveawayForm({ onClose, onCreated }) {
             />
           </label>
           <label className="block">
-            <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+            <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
               <span className="text-orange-admin tabular-nums">03</span> Chat keyword <span className="text-emerald-signal">*</span>
               <span className="text-white/30 normal-case font-normal"> · case-insensitive "contains"</span>
             </span>
@@ -180,7 +180,7 @@ function NewGiveawayForm({ onClose, onCreated }) {
           </label>
 
           <div>
-            <p className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-2 font-mono">
+            <p className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-2 font-mono">
               <span className="text-orange-admin tabular-nums">04</span> Weight rules
             </p>
             <div className="space-y-1.5">
@@ -209,14 +209,14 @@ function NewGiveawayForm({ onClose, onCreated }) {
                 hint="(+1 entry weight)"
               />
             </div>
-            <p className="mt-2 text-[10px] tracking-eyebrow uppercase text-white/35 font-mono">
+            <p className="mt-2 text-[0.625rem] tracking-eyebrow uppercase text-white/35 font-mono">
               Base entry weight is always 1. Toggles add +1 each.
             </p>
           </div>
 
           {/* Eligibility */}
           <div>
-            <p className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-2 font-mono">
+            <p className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-2 font-mono">
               <span className="text-orange-admin tabular-nums">04b</span> Eligibility
             </p>
             <div className="border border-white/10 bg-zinc-broadcast/40 p-3">
@@ -226,11 +226,11 @@ function NewGiveawayForm({ onClose, onCreated }) {
                   checked={form.requireFollow}
                   onChange={(e) => setForm((f) => ({ ...f, requireFollow: e.target.checked }))}
                 />
-                <span className="text-[11px] font-bold tracking-eyebrow uppercase text-white/70 font-mono">
+                <span className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-white/70 font-mono">
                   Require channel follow to enter
                 </span>
               </label>
-              <p className="mt-1 ml-6 text-[10px] tracking-eyebrow text-white/35 font-mono">
+              <p className="mt-1 ml-6 text-[0.625rem] tracking-eyebrow text-white/35 font-mono">
                 Mods and VIPs are exempt. Non-followers' keyword messages are ignored.
               </p>
             </div>
@@ -238,7 +238,7 @@ function NewGiveawayForm({ onClose, onCreated }) {
 
           {/* Chat announcements */}
           <div>
-            <p className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-2 font-mono">
+            <p className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-2 font-mono">
               <span className="text-orange-admin tabular-nums">05</span> Chat announcements
               <span className="text-white/30 normal-case font-normal"> · vars: {'{keyword} {prize} {title} {winner}'}</span>
             </p>
@@ -251,7 +251,7 @@ function NewGiveawayForm({ onClose, onCreated }) {
                     checked={form.announceStart}
                     onChange={(e) => setForm((f) => ({ ...f, announceStart: e.target.checked }))}
                   />
-                  <span className="text-[11px] font-bold tracking-eyebrow uppercase text-white/70 font-mono">
+                  <span className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-white/70 font-mono">
                     Announce in chat when starting
                   </span>
                 </label>
@@ -271,7 +271,7 @@ function NewGiveawayForm({ onClose, onCreated }) {
                     checked={form.announceWinner}
                     onChange={(e) => setForm((f) => ({ ...f, announceWinner: e.target.checked }))}
                   />
-                  <span className="text-[11px] font-bold tracking-eyebrow uppercase text-white/70 font-mono">
+                  <span className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-white/70 font-mono">
                     Announce winner in chat on pick
                   </span>
                 </label>
@@ -287,7 +287,7 @@ function NewGiveawayForm({ onClose, onCreated }) {
           </div>
 
           {error && (
-            <p className="text-[11px] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
+            <p className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
               {error}
             </p>
           )}
@@ -299,7 +299,7 @@ function NewGiveawayForm({ onClose, onCreated }) {
             onClick={onClose}
             className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
           >
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Cancel</span>
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Cancel</span>
           </button>
           <button
             type="submit"
@@ -307,7 +307,7 @@ function NewGiveawayForm({ onClose, onCreated }) {
             className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50"
           >
             <Check size={13} aria-hidden="true" />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
               {saving ? 'Starting…' : 'Start giveaway'}
             </span>
           </button>
@@ -386,7 +386,7 @@ function WinnerTimer({ rolledAt, firstMessageAt }) {
     >
       <Timer size={13} className={tone.icon} aria-hidden="true" />
       <div className="leading-none">
-        <p className="text-[9px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-0.5 font-mono">
+        <p className="text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-0.5 font-mono">
           {tone.label}
         </p>
         <p className={`text-2xl font-black tabular-nums font-mono leading-none ${tone.text}`}>
@@ -471,7 +471,7 @@ function WinnerModal({ giveaway, onClose, onAnnounceError }) {
           aria-hidden="true"
         />
 
-        <div className="relative flex items-center justify-between gap-3 px-5 py-3 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+        <div className="relative flex items-center justify-between gap-3 px-5 py-3 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="relative flex w-1.5 h-1.5">
               <span className="absolute inset-0 rounded-full bg-orange-admin motion-safe:animate-ping opacity-60" />
@@ -485,7 +485,7 @@ function WinnerModal({ giveaway, onClose, onAnnounceError }) {
         </div>
 
         <div className="relative px-6 sm:px-10 py-8">
-          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 mb-2 font-mono inline-flex items-center gap-2">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 mb-2 font-mono inline-flex items-center gap-2">
             <Trophy size={11} className="text-orange-admin" aria-hidden="true" />
             Winner picked
           </p>
@@ -511,14 +511,14 @@ function WinnerModal({ giveaway, onClose, onAnnounceError }) {
                 </p>
                 {!w.registered && (
                   <span
-                    className="inline-flex items-center gap-1 px-2 py-1 border border-orange-admin/50 bg-orange-admin/5 text-orange-admin text-[9px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                    className="inline-flex items-center gap-1 px-2 py-1 border border-orange-admin/50 bg-orange-admin/5 text-orange-admin text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
                     title="Winner has not signed in on goofer.tv — prize redemption won't show on /me. DM them on Twitch to deliver."
                   >
                     Not on site · DM to deliver
                   </span>
                 )}
               </div>
-              <p className="mt-2 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
+              <p className="mt-2 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
                 {w.twitchName} · weight {w.weight} · via {w.source}
               </p>
             </div>
@@ -530,7 +530,7 @@ function WinnerModal({ giveaway, onClose, onAnnounceError }) {
 
           {/* Chat stream */}
           <div className="border border-white/10 bg-zinc-broadcast/40 mb-5">
-            <div className="px-3 py-2 border-b border-white/8 text-[10px] font-bold tracking-eyebrow-md uppercase text-white/55 font-mono inline-flex items-center gap-2">
+            <div className="px-3 py-2 border-b border-white/8 text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/55 font-mono inline-flex items-center gap-2">
               <Radio size={11} aria-hidden="true" />
               Winner&apos;s live chat
               <span className="ml-auto text-white/30 tabular-nums">{messages.length}</span>
@@ -551,7 +551,7 @@ function WinnerModal({ giveaway, onClose, onAnnounceError }) {
 
           {/* Prize note (optional, attached on confirm) */}
           <label className="block mb-4">
-            <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+            <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
               Prize note · attached to redemption
             </span>
             <input
@@ -571,7 +571,7 @@ function WinnerModal({ giveaway, onClose, onAnnounceError }) {
               className="inline-flex items-center gap-2 px-3.5 py-2.5 border border-white/15 text-white/75 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-40"
             >
               <RefreshCcw size={13} aria-hidden="true" />
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                 {busy === 'reroll' ? 'Rolling…' : 'Reroll'}
               </span>
             </button>
@@ -582,7 +582,7 @@ function WinnerModal({ giveaway, onClose, onAnnounceError }) {
               className="inline-flex items-center gap-2 px-3.5 py-2.5 border border-red-destructive/40 text-red-destructive hover:bg-red-destructive/10 transition-colors duration-150 disabled:opacity-40"
             >
               <SkipForward size={13} aria-hidden="true" />
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                 {busy === 'skip' ? 'Skipping…' : 'Skip'}
               </span>
             </button>
@@ -593,7 +593,7 @@ function WinnerModal({ giveaway, onClose, onAnnounceError }) {
               className="ml-auto inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-50"
             >
               <Check size={13} aria-hidden="true" />
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                 {busy === 'confirm' ? 'Confirming…' : 'Confirm winner'}
               </span>
             </button>
@@ -676,7 +676,7 @@ function EventSubStatus() {
       <div className="flex items-center justify-between gap-3 px-4 py-3 flex-wrap">
         <div className="inline-flex items-center gap-3 min-w-0">
           <Webhook size={14} aria-hidden="true" />
-          <span className="text-[11px] font-bold tracking-eyebrow uppercase font-mono">{label}</span>
+          <span className="text-[0.6875rem] font-bold tracking-eyebrow uppercase font-mono">{label}</span>
         </div>
         <div className="flex gap-2 flex-wrap">
           {status !== 'enabled' && (
@@ -686,7 +686,7 @@ function EventSubStatus() {
               disabled={busy}
               className="inline-flex items-center gap-2 px-3 py-1.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50"
             >
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                 {busy ? 'Subscribing…' : 'Subscribe to chat'}
               </span>
             </button>
@@ -700,7 +700,7 @@ function EventSubStatus() {
               title="Delete subscription"
             >
               <Trash2 size={12} aria-hidden="true" />
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Reset</span>
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Reset</span>
             </button>
           )}
         </div>
@@ -717,7 +717,7 @@ function GiveawayRow({ giveaway, onOpen }) {
       className="w-full grid grid-cols-[auto_1fr_auto_auto] gap-3 items-center px-4 py-3 border-t border-white/8 first:border-t-0 hover:bg-zinc-broadcast/40 text-left"
     >
       <span
-        className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase border font-mono ${
+        className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow-md uppercase border font-mono ${
           giveaway.status === 'open'
             ? 'text-emerald-signal border-emerald-signal/40'
             : giveaway.status === 'rolling'
@@ -733,11 +733,11 @@ function GiveawayRow({ giveaway, onOpen }) {
         <p className="font-bold text-white-body text-sm truncate">
           {giveaway.title} <span className="text-white/45 font-normal">· {giveaway.prize}</span>
         </p>
-        <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5">
+        <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5">
           keyword <span className="text-orange-admin/80">{giveaway.keyword}</span> · created {formatTs(giveaway.createdAt)}
         </p>
       </div>
-      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono tabular-nums">
+      <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono tabular-nums">
         {giveaway.entryCount ?? 0} entries
       </span>
       <ChevronRight size={14} className="text-white/30" aria-hidden="true" />
@@ -815,7 +815,7 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
   return (
     <div className="space-y-5">
       {/* Top utility strip */}
-      <div className="flex items-center justify-between gap-3 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+      <div className="flex items-center justify-between gap-3 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
         <button
           type="button"
           onClick={onBack}
@@ -842,7 +842,7 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
         />
         <div className="relative px-6 sm:px-8 py-7 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-6 items-end">
           <div className="min-w-0">
-            <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-orange-admin mb-2 font-mono">
+            <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-orange-admin mb-2 font-mono">
               ▸ Prize on the line
             </p>
             <p
@@ -859,7 +859,7 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
             {/* Keyword pill */}
             {isLive && (
               <div className="mt-5 inline-flex items-baseline gap-3 px-4 py-3 border-2 border-emerald-signal/50 bg-emerald-signal/5">
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal/80 font-mono">
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal/80 font-mono">
                   Type in chat
                 </span>
                 <span
@@ -873,7 +873,7 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
 
           {/* Count */}
           <div className="text-right">
-            <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
+            <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
               Entries
             </p>
             <p
@@ -882,7 +882,7 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
             >
               <AnimatedCount value={giveaway.entryCount ?? 0} />
             </p>
-            <p className="mt-1 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/35 font-mono">
+            <p className="mt-1 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/35 font-mono">
               total weight {giveaway.totalWeight ?? 0}
             </p>
           </div>
@@ -898,7 +898,7 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
             disabled={!!busy}
             className="inline-flex items-center gap-2 px-3.5 py-2 border border-white/15 text-white/70 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-50"
           >
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
               {busy === 'close' ? 'Closing…' : 'Close entries'}
             </span>
           </button>
@@ -911,19 +911,19 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
             className="inline-flex items-center gap-2 px-4 py-2 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-30"
           >
             <Gift size={13} aria-hidden="true" />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
               {busy === 'roll' ? 'Rolling…' : 'Roll winner'}
             </span>
           </button>
         )}
         {giveaway.status === 'rolled' && giveaway.winner && (
-          <div className="inline-flex items-center gap-2 px-3 py-2 border border-emerald-signal/40 bg-emerald-signal/5 text-emerald-signal text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+          <div className="inline-flex items-center gap-2 px-3 py-2 border border-emerald-signal/40 bg-emerald-signal/5 text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
             <Trophy size={12} aria-hidden="true" />
             Winner: {giveaway.winner.displayName}
           </div>
         )}
 
-        <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/30 font-mono ml-1">
+        <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/30 font-mono ml-1">
           · created {formatTs(giveaway.createdAt)}
         </span>
 
@@ -934,21 +934,21 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
             className="ml-auto inline-flex items-center gap-2 px-3 py-2 border border-red-destructive/30 text-red-destructive/70 hover:bg-red-destructive/10 hover:border-red-destructive/60 transition-colors duration-150"
           >
             <Trash2 size={12} aria-hidden="true" />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Delete</span>
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Delete</span>
           </button>
         ) : (
           <div className="ml-auto flex gap-2">
             <button
               type="button"
               onClick={() => act('delete').then(onBack)}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 transition-colors text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+              className="inline-flex items-center gap-2 px-3 py-2 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 transition-colors text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
             >
               Confirm delete
             </button>
             <button
               type="button"
               onClick={() => setConfirmingDelete(false)}
-              className="px-3 py-2 border border-white/10 text-white/60 hover:text-white-body text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+              className="px-3 py-2 border border-white/10 text-white/60 hover:text-white-body text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
             >
               Cancel
             </button>
@@ -958,7 +958,7 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
 
       {/* Entries grid */}
       <div className="border border-white/8 bg-zinc-card/30 p-5 sm:p-6">
-        <div className="flex items-center justify-between mb-5 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+        <div className="flex items-center justify-between mb-5 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
           <span className="inline-flex items-center gap-2 text-white/55">
             <Users size={11} aria-hidden="true" />
             Viewers entering
@@ -1021,7 +1021,7 @@ export default function AdminGiveawaysPage() {
   return (
     <div className="p-6 sm:p-8 max-w-4xl mx-auto">
       <header className="mb-8">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
             <span>GIVEAWAYS</span>
@@ -1051,7 +1051,7 @@ export default function AdminGiveawaysPage() {
           className="inline-flex items-center gap-2 px-3.5 py-2 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150"
         >
           <Plus size={13} aria-hidden="true" />
-          <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+          <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
             New giveaway
           </span>
         </button>
@@ -1069,7 +1069,7 @@ export default function AdminGiveawaysPage() {
         <div className="space-y-6">
           {grouped.open.length > 0 && (
             <section>
-              <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal mb-2 font-mono">
+              <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal mb-2 font-mono">
                 Live · {grouped.open.length}
               </p>
               <div className="border border-white/8 bg-zinc-card/30">
@@ -1081,7 +1081,7 @@ export default function AdminGiveawaysPage() {
           )}
           {grouped.closed.length > 0 && (
             <section>
-              <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-2 font-mono">
+              <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-2 font-mono">
                 Closed · awaiting roll
               </p>
               <div className="border border-white/8 bg-zinc-card/30">
@@ -1093,7 +1093,7 @@ export default function AdminGiveawaysPage() {
           )}
           {grouped.past.length > 0 && (
             <section>
-              <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 mb-2 font-mono">
+              <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 mb-2 font-mono">
                 Past
               </p>
               <div className="border border-white/8 bg-zinc-card/30">
@@ -1105,7 +1105,7 @@ export default function AdminGiveawaysPage() {
           )}
           {list.length === 0 && (
             <div className="border border-white/8 bg-zinc-card/30 py-16 text-center">
-              <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono">
+              <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono">
                 No giveaways yet
               </p>
               <p className="text-sm text-white/55">Start a new one to begin.</p>
@@ -1137,7 +1137,7 @@ export default function AdminGiveawaysPage() {
       )}
       {warning && (
         <div className="fixed bottom-6 right-6 z-50 max-w-sm border border-orange-admin/60 bg-zinc-card/95 backdrop-blur px-4 py-3 shadow-lg">
-          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-orange-admin mb-1 font-mono">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-orange-admin mb-1 font-mono">
             Warning
           </p>
           <p className="text-sm text-white/80">{warning}</p>

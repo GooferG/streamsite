@@ -14,25 +14,25 @@ export default function HuntHero({ profit, avgReqRemaining, totalWins, start, wl
         aria-hidden="true"
       />
       <div className="relative flex items-center justify-between gap-2 mb-2">
-        <span className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/55 font-mono">
+        <span className="text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/55 font-mono">
           Profit / Loss
         </span>
         {behind ? (
-          <span className="text-[9px] font-bold uppercase tracking-eyebrow-md font-mono text-red-destructive">
+          <span className="text-[0.5625rem] font-bold uppercase tracking-eyebrow-md font-mono text-red-destructive">
             Behind · need {fmt(avgReqRemaining)} avg
           </span>
         ) : positive && profit > 0 ? (
-          <span className="text-[9px] font-bold uppercase tracking-eyebrow-md font-mono text-emerald-signal">
+          <span className="text-[0.5625rem] font-bold uppercase tracking-eyebrow-md font-mono text-emerald-signal">
             Ahead
           </span>
         ) : null}
       </div>
-      <div className={`relative text-[52px] leading-none font-black tabular-nums ${
+      <div className={`relative text-[3.25rem] leading-none font-black tabular-nums ${
         profit == null ? 'text-white/40' : positive ? 'text-emerald-signal' : 'text-red-destructive'
       }`}>
         {profit == null ? '—' : `${positive ? '+' : '−'}${fmt(Math.abs(profit))}`}
       </div>
-      <div className="relative text-[11px] font-mono text-white/45 mt-2 tabular-nums">
+      <div className="relative text-[0.6875rem] font-mono text-white/45 mt-2 tabular-nums">
         {fmt(totalWins)} won{start != null ? ` · ${fmt(start)} start` : ''}{wlMultiplier != null ? ` · ${fmtX(wlMultiplier)} recovered` : ''}
       </div>
     </div>

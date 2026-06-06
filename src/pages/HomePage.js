@@ -193,12 +193,12 @@ export default function HomePage({
                   <div className="absolute inset-0 bg-gradient-to-t from-zinc-broadcast/70 via-transparent to-transparent" />
 
                   <div
-                    className="absolute top-3 left-3 px-1.5 py-0.5 bg-zinc-broadcast/80 text-emerald-bright text-[10px] font-bold tracking-eyebrow-sm font-mono"
+                    className="absolute top-3 left-3 px-1.5 py-0.5 bg-zinc-broadcast/80 text-emerald-bright text-[0.625rem] font-bold tracking-eyebrow-sm font-mono"
       >
                     #001
                   </div>
                   <div
-                    className="absolute top-3 right-3 px-2 py-0.5 border border-white/30 text-white/80 text-[10px] font-bold tracking-eyebrow-xs bg-zinc-broadcast/60 font-mono"
+                    className="absolute top-3 right-3 px-2 py-0.5 border border-white/30 text-white/80 text-[0.625rem] font-bold tracking-eyebrow-xs bg-zinc-broadcast/60 font-mono"
       >
                     {formatDuration(latestVod.duration)}
                   </div>
@@ -212,7 +212,7 @@ export default function HomePage({
                   <h3 className="text-xl sm:text-2xl font-bold text-white-body leading-snug line-clamp-3 mb-4">
                     {latestVod.title}
                   </h3>
-                  <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[11px] font-bold tracking-eyebrow uppercase">
+                  <div className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[0.6875rem] font-bold tracking-eyebrow uppercase">
                     <span className="text-white/40">Game</span>
                     <span className="text-white/85 truncate normal-case tracking-normal font-bold">
                       {latestVod.game_name || 'Various'}
@@ -281,7 +281,7 @@ export default function HomePage({
             <div className="border border-white/5 bg-zinc-card rounded-md px-6 py-10 flex items-center justify-between gap-6">
               <div>
                 <div
-                  className="text-[10px] font-bold tracking-eyebrow uppercase text-white/40 mb-1 font-mono"
+                  className="text-[0.625rem] font-bold tracking-eyebrow uppercase text-white/40 mb-1 font-mono"
       >
                   Tape index
                 </div>

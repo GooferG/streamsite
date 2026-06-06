@@ -29,7 +29,7 @@ export default function RosterTable({ players, leaderWagered }) {
               className="group relative grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 px-4 sm:px-6 py-3 hover:bg-white/3 transition-colors motion-reduce:transition-none"
             >
               <div className="flex items-center gap-2 w-16 sm:w-20">
-                <span className="text-[11px] font-bold tracking-eyebrow-lg text-white/65 tabular-nums font-mono">
+                <span className="text-[0.6875rem] font-bold tracking-eyebrow-lg text-white/65 tabular-nums font-mono">
                   {formatPosition(p.position)}
                 </span>
                 <TrendArrow current={p.position} previous={p.previousPosition} />
@@ -54,7 +54,7 @@ export default function RosterTable({ players, leaderWagered }) {
                     so it sits under the bar; only shown at sm+ where that column
                     width applies. */}
                 {gap > 0 && (
-                  <div className="pointer-events-none absolute left-[118px] -bottom-0.5 hidden sm:block text-[10px] tracking-eyebrow-xs text-crt-amber opacity-0 transition-opacity duration-150 group-hover:opacity-100 font-mono">
+                  <div className="pointer-events-none absolute left-[118px] -bottom-0.5 hidden sm:block text-[0.625rem] tracking-eyebrow-xs text-crt-amber opacity-0 transition-opacity duration-150 group-hover:opacity-100 font-mono">
                     +{formatUSD(gap)} TO {formatPosition(p.position - 1)}
                   </div>
                 )}
@@ -65,7 +65,7 @@ export default function RosterTable({ players, leaderWagered }) {
               </div>
 
               <div className="text-right w-20 sm:w-24">
-                <div className="text-[9px] font-bold tracking-eyebrow-md text-phosphor/60 font-mono">
+                <div className="text-[0.5625rem] font-bold tracking-eyebrow-md text-phosphor/60 font-mono">
                   PRIZE
                 </div>
                 <div className="text-sm font-bold tabular-nums font-mono text-phosphor">

@@ -42,7 +42,7 @@ export default function Leaderboard() {
       <div className="relative">
         <ActiveTheme data={data} now={now} />
       </div>
-      <p className="mt-2 px-1 text-center text-[10px] font-bold tracking-eyebrow-sm uppercase font-mono text-white/35">
+      <p className="mt-2 px-1 text-center text-[0.625rem] font-bold tracking-eyebrow-sm uppercase font-mono text-white/35">
         Demo only — sample data for layout preview. Not a real leaderboard or
         live standings.
       </p>

@@ -43,7 +43,7 @@ export default function PodiumCard({ player, tier }) {
         />
 
         <div className="relative p-4 sm:p-5 flex flex-col gap-3 sm:min-h-[11rem]">
-          <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono">
+          <div className="text-[0.625rem] font-bold tracking-eyebrow-lg text-white/55 font-mono">
             {palette.eyebrow}
           </div>
 
@@ -69,7 +69,7 @@ export default function PodiumCard({ player, tier }) {
           </div>
 
           <div>
-            <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono mb-0.5">
+            <div className="text-[0.625rem] font-bold tracking-eyebrow-lg text-white/55 font-mono mb-0.5">
               WAGERED
             </div>
             <div
@@ -82,7 +82,7 @@ export default function PodiumCard({ player, tier }) {
           <div className="mt-auto pt-2.5 border-t border-white/8 flex items-end justify-between gap-3">
             <div>
               <div
-                className={`text-[10px] font-bold tracking-eyebrow-lg font-mono ${palette.accent}`}
+                className={`text-[0.625rem] font-bold tracking-eyebrow-lg font-mono ${palette.accent}`}
                 style={{ opacity: 0.8 }}
               >
                 PRIZE
@@ -93,7 +93,7 @@ export default function PodiumCard({ player, tier }) {
                 {formatUSD(player.prize)}
               </div>
             </div>
-            <div className="flex items-center gap-2 text-[10px] font-bold tracking-eyebrow-lg font-mono text-white/65 pb-0.5">
+            <div className="flex items-center gap-2 text-[0.625rem] font-bold tracking-eyebrow-lg font-mono text-white/65 pb-0.5">
               <TrendArrow
                 current={player.position}
                 previous={player.previousPosition}

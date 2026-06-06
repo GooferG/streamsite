@@ -43,7 +43,7 @@ function Cell({ label, value, href, fadingPlaceholder }) {
   );
 
   const labelNode = (
-    <span className="block text-[10px] sm:text-xs font-bold tracking-eyebrow uppercase text-emerald-bright mb-1.5">
+    <span className="block text-[0.625rem] sm:text-xs font-bold tracking-eyebrow uppercase text-emerald-bright mb-1.5">
       {label}
     </span>
   );
@@ -109,9 +109,9 @@ export default function StatsTicker({ channelData, streamData, isLive, clips, vi
     >
       <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-6 sm:px-10 pt-10 sm:pt-12 pb-6 sm:pb-8">
         <div
-          className="text-[10px] sm:text-xs font-bold tracking-eyebrow-lg uppercase text-white/45 mb-4 font-mono"
+          className="text-[0.625rem] sm:text-xs font-bold tracking-eyebrow-lg uppercase text-white/45 mb-4 font-mono"
       >
-          <span className="inline-block px-1.5 py-0.5 border border-white/30 text-white/70 mr-3 align-middle text-[9px] tracking-eyebrow">
+          <span className="inline-block px-1.5 py-0.5 border border-white/30 text-white/70 mr-3 align-middle text-[0.5625rem] tracking-eyebrow">
             GG
           </span>
           CH GG <span className="text-white/30 mx-1">·</span> All-night broadcast
@@ -155,7 +155,7 @@ export default function StatsTicker({ channelData, streamData, isLive, clips, vi
 
         {allFailed && (
           <div
-            className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-6 sm:px-10 pb-3 text-[10px] sm:text-xs font-bold tracking-eyebrow-lg uppercase text-red-destructive font-mono"
+            className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-6 sm:px-10 pb-3 text-[0.625rem] sm:text-xs font-bold tracking-eyebrow-lg uppercase text-red-destructive font-mono"
       >
             Signal lost
           </div>

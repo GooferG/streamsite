@@ -53,7 +53,7 @@ export default function BattlePage() {
   return (
     <div className="min-h-screen bg-zinc-950 px-4 py-8 sm:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center gap-2 mb-6 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono text-emerald-signal">
+        <div className="flex items-center gap-2 mb-6 text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase font-mono text-emerald-signal">
           <RadioTower size={14} className="motion-safe:animate-pulse" />
           {battle?.title || 'Bonus Battle'} · Live
         </div>

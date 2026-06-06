@@ -52,7 +52,7 @@ function Seal({ position, first }) {
           style={{ inset: '5px', borderColor: 'rgba(110,80,25,0.6)' }}
         />
         <span
-          className={`font-serif-luxe font-bold ${first ? 'text-[34px]' : 'text-[26px]'}`}
+          className={`font-serif-luxe font-bold ${first ? 'text-[2.125rem]' : 'text-[1.625rem]'}`}
           style={{
             color: '#3a2a08',
             textShadow: '0 1px 0 rgba(255,255,255,0.4)',
@@ -91,13 +91,13 @@ function PodiumCard({ player, first, animatedWagered }) {
       }
     >
       <Seal position={player.position} first={first} />
-      <div className="text-[11px] tracking-eyebrow text-cream/45 uppercase font-mono">
+      <div className="text-[0.6875rem] tracking-eyebrow text-cream/45 uppercase font-mono">
         {formatOrdinalPlace(player.position)}
       </div>
       <div className="mt-1.5 font-serif-luxe font-bold text-2xl sm:text-3xl text-cream tracking-wide break-all">
         {player.maskedUsername}
       </div>
-      <div className="mt-2 font-serif-luxe font-bold text-2xl sm:text-[34px] tabular-nums text-gold-lite">
+      <div className="mt-2 font-serif-luxe font-bold text-2xl sm:text-[2.125rem] tabular-nums text-gold-lite">
         {formatUSD(wag)}
       </div>
       <div className="mt-2 text-xs tracking-eyebrow text-gold uppercase">
@@ -153,7 +153,7 @@ export default function CasinoTheme({ data, now }) {
         <div className="m-2.5 border border-gold/10">
           {/* Header */}
           <div className="px-4 sm:px-6 py-6 border-b border-gold/20 text-center">
-            <div className="text-[11px] tracking-eyebrow-lg text-gold uppercase font-mono">
+            <div className="text-[0.6875rem] tracking-eyebrow-lg text-gold uppercase font-mono">
               {data.periodLabel}
             </div>
             <h2 className="mt-1 font-serif-luxe font-bold text-4xl sm:text-6xl leading-none tracking-wide">
@@ -193,7 +193,7 @@ export default function CasinoTheme({ data, now }) {
               />
             </div>
 
-            <div className="mt-3 text-[11px] tracking-eyebrow-sm uppercase font-mono text-cream/60">
+            <div className="mt-3 text-[0.6875rem] tracking-eyebrow-sm uppercase font-mono text-cream/60">
               Join code <span className="text-gold">{data.referralCode}</span>{' '}
               on <span className="text-gold">{data.brand}</span>
             </div>
@@ -225,7 +225,7 @@ export default function CasinoTheme({ data, now }) {
                       textClass="font-serif-luxe font-bold text-3xl sm:text-5xl tabular-nums text-gold-lite"
                       seamColor="rgba(0,0,0,0.6)"
                     />
-                    <div className="mt-2 text-[10px] tracking-eyebrow-md text-cream/45 uppercase font-mono">
+                    <div className="mt-2 text-[0.625rem] tracking-eyebrow-md text-cream/45 uppercase font-mono">
                       {label}
                     </div>
                   </div>
@@ -252,7 +252,7 @@ export default function CasinoTheme({ data, now }) {
           </div>
 
           {/* Table header */}
-          <div className="grid grid-cols-[80px_minmax(0,1fr)_auto_auto] gap-3 px-5 sm:px-6 pb-3 text-[11px] tracking-eyebrow uppercase text-cream/45 font-mono">
+          <div className="grid grid-cols-[80px_minmax(0,1fr)_auto_auto] gap-3 px-5 sm:px-6 pb-3 text-[0.6875rem] tracking-eyebrow uppercase text-cream/45 font-mono">
             <span>Rank</span>
             <span>Player</span>
             <span className="text-right">Wagered</span>
@@ -275,14 +275,14 @@ export default function CasinoTheme({ data, now }) {
                 >
                   <span className="flex items-center gap-2 font-serif-luxe font-bold text-xl text-gold">
                     {p.position}
-                    <span className={`text-[9px] ${d.cls}`} aria-hidden="true">
+                    <span className={`text-[0.5625rem] ${d.cls}`} aria-hidden="true">
                       {d.glyph}
                     </span>
                   </span>
                   <span className="min-w-0 truncate text-base text-cream">
                     {p.maskedUsername}
                     {climb > 0 && (
-                      <span className="ml-2.5 text-[11px] text-gold opacity-0 transition-opacity duration-200 group-hover:opacity-100">
+                      <span className="ml-2.5 text-[0.6875rem] text-gold opacity-0 transition-opacity duration-200 group-hover:opacity-100">
                         +{formatUSD(climb)} to climb
                       </span>
                     )}
@@ -299,7 +299,7 @@ export default function CasinoTheme({ data, now }) {
           </div>
 
           {/* Last-updated */}
-          <div className="px-4 sm:px-6 py-4 border-t border-gold/15 text-center text-[10px] tracking-eyebrow-md uppercase font-mono text-cream/40 tabular-nums">
+          <div className="px-4 sm:px-6 py-4 border-t border-gold/15 text-center text-[0.625rem] tracking-eyebrow-md uppercase font-mono text-cream/40 tabular-nums">
             Standings updated {freshness(now, data.lastUpdatedAt)}
           </div>
         </div>

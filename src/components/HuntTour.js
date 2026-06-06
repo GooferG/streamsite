@@ -190,33 +190,33 @@ export default function HuntTour({ open, onClose, isLoggedIn = true }) {
         <button
           type="button"
           onClick={close}
-          className="absolute top-2.5 right-3 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono text-white/45 hover:text-white-body"
+          className="absolute top-2.5 right-3 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono text-white/45 hover:text-white-body"
         >
           Skip ✕
         </button>
-        <p className="inline-flex items-center gap-1.5 text-[9px] font-bold tracking-eyebrow-lg uppercase font-mono text-emerald-signal mb-1">
+        <p className="inline-flex items-center gap-1.5 text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase font-mono text-emerald-signal mb-1">
           <HelpCircle size={11} aria-hidden="true" /> Tour
         </p>
         <h4 className="font-black text-white-body text-base leading-tight mb-1.5">
           {step.title}
         </h4>
-        <p className="text-[12px] text-white/65 leading-snug mb-3">{step.body}</p>
+        <p className="text-[0.75rem] text-white/65 leading-snug mb-3">{step.body}</p>
         <div className="flex items-center gap-2">
-          <span className="text-[10px] font-mono text-white/40 mr-auto tabular-nums">
+          <span className="text-[0.625rem] font-mono text-white/40 mr-auto tabular-nums">
             {i + 1} / {steps.length}
           </span>
           <button
             type="button"
             onClick={back}
             disabled={i === 0}
-            className="px-2.5 py-1.5 border border-white/10 text-white/60 hover:text-white-body transition-colors disabled:opacity-30 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+            className="px-2.5 py-1.5 border border-white/10 text-white/60 hover:text-white-body transition-colors disabled:opacity-30 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
           >
             Back
           </button>
           <button
             type="button"
             onClick={next}
-            className="px-3 py-1.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+            className="px-3 py-1.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
           >
             {i >= steps.length - 1 ? 'Done' : 'Next'}
           </button>

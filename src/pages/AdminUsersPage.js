@@ -71,12 +71,12 @@ function Avatar({ url, name, size = 32 }) {
 function StatTile({ icon: Icon, label, value, hint }) {
   return (
     <div className="border border-white/10 bg-zinc-card/40 p-3">
-      <div className="flex items-center gap-1.5 text-[9px] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
+      <div className="flex items-center gap-1.5 text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
         {Icon && <Icon size={11} aria-hidden="true" />}
         <span>{label}</span>
       </div>
       <div className="mt-1 text-lg font-bold text-white-body tabular-nums">{value}</div>
-      {hint && <div className="text-[10px] text-white/40 font-mono">{hint}</div>}
+      {hint && <div className="text-[0.625rem] text-white/40 font-mono">{hint}</div>}
     </div>
   );
 }
@@ -86,11 +86,11 @@ function Section({ icon: Icon, title, count, children }) {
     <section className="border border-white/10 bg-zinc-card/30">
       <header className="px-4 py-2.5 border-b border-white/10 flex items-center gap-2">
         {Icon && <Icon size={13} className="text-orange-admin" aria-hidden="true" />}
-        <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white-body font-mono">
+        <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white-body font-mono">
           {title}
         </span>
         {typeof count === 'number' && (
-          <span className="ml-auto text-[10px] font-mono text-white/45 tabular-nums">
+          <span className="ml-auto text-[0.625rem] font-mono text-white/45 tabular-nums">
             {count}
           </span>
         )}
@@ -116,13 +116,13 @@ function UserRow({ user, selected, onClick }) {
         <div className="text-sm font-bold text-white-body truncate">
           {user.displayName || user.twitchName}
         </div>
-        <div className="text-[10px] text-white/40 font-mono truncate">
+        <div className="text-[0.625rem] text-white/40 font-mono truncate">
           {user.twitchName ? `@${user.twitchName}` : user.twitchId}
         </div>
       </div>
       <div className="text-right">
         <div className="text-sm font-bold text-orange-admin tabular-nums">{user.tickets}</div>
-        <div className="text-[9px] text-white/35 font-mono">tickets</div>
+        <div className="text-[0.5625rem] text-white/35 font-mono">tickets</div>
       </div>
     </button>
   );
@@ -164,14 +164,14 @@ function UserDetail({ twitchId }) {
 
   if (loading) {
     return (
-      <div className="p-8 text-center text-[11px] font-mono uppercase tracking-eyebrow text-white/45">
+      <div className="p-8 text-center text-[0.6875rem] font-mono uppercase tracking-eyebrow text-white/45">
         Loading…
       </div>
     );
   }
   if (error) {
     return (
-      <div className="p-8 text-center text-[11px] font-mono uppercase tracking-eyebrow text-red-destructive">
+      <div className="p-8 text-center text-[0.6875rem] font-mono uppercase tracking-eyebrow text-red-destructive">
         {error}
       </div>
     );
@@ -193,7 +193,7 @@ function UserDetail({ twitchId }) {
             {user.twitchName ? `@${user.twitchName}` : ''}{' '}
             <span className="text-white/30">· id {user.twitchId}</span>
           </p>
-          <div className="mt-2 flex flex-wrap gap-2 text-[10px] font-mono uppercase tracking-eyebrow">
+          <div className="mt-2 flex flex-wrap gap-2 text-[0.625rem] font-mono uppercase tracking-eyebrow">
             <span className="px-2 py-0.5 bg-purple-gamba/30 text-purple-bright/80 border border-purple-bright/30">
               Twitch
             </span>
@@ -227,7 +227,7 @@ function UserDetail({ twitchId }) {
             {redemptions.map((r) => (
               <li key={r.id} className="py-2 flex items-center gap-3 text-sm">
                 <span
-                  className={`px-2 py-0.5 text-[9px] font-bold tracking-eyebrow uppercase font-mono border ${
+                  className={`px-2 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow uppercase font-mono border ${
                     r.status === 'fulfilled'
                       ? 'border-emerald-signal/40 text-emerald-signal/85 bg-emerald-signal/10'
                       : r.status === 'pending'
@@ -240,15 +240,15 @@ function UserDetail({ twitchId }) {
                 <span className="flex-1 min-w-0 truncate text-white/75">
                   {r.itemName || '(item)'}{' '}
                   {r.kind === 'giveaway' && (
-                    <span className="text-[10px] text-purple-bright/70 font-mono uppercase">
+                    <span className="text-[0.625rem] text-purple-bright/70 font-mono uppercase">
                       · giveaway
                     </span>
                   )}
                 </span>
-                <span className="text-[10px] font-mono text-white/40 tabular-nums">
+                <span className="text-[0.625rem] font-mono text-white/40 tabular-nums">
                   {r.cost > 0 ? `-${r.cost}` : 'free'}
                 </span>
-                <span className="text-[10px] font-mono text-white/40 hidden sm:inline">
+                <span className="text-[0.625rem] font-mono text-white/40 hidden sm:inline">
                   {formatTs(r.createdAt)}
                 </span>
               </li>
@@ -271,14 +271,14 @@ function UserDetail({ twitchId }) {
                   )}
                 </span>
                 {e.isWinner && (
-                  <span className="px-2 py-0.5 text-[9px] font-bold tracking-eyebrow uppercase font-mono border border-orange-admin/40 text-orange-admin bg-orange-admin/10">
+                  <span className="px-2 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow uppercase font-mono border border-orange-admin/40 text-orange-admin bg-orange-admin/10">
                     Winner
                   </span>
                 )}
-                <span className="text-[10px] font-mono text-white/45 tabular-nums">
+                <span className="text-[0.625rem] font-mono text-white/45 tabular-nums">
                   weight {e.weight}
                 </span>
-                <span className="text-[10px] font-mono text-white/40 hidden sm:inline">
+                <span className="text-[0.625rem] font-mono text-white/40 hidden sm:inline">
                   {formatTs(e.enteredAt)}
                 </span>
               </li>
@@ -297,13 +297,13 @@ function UserDetail({ twitchId }) {
                 <span className="flex-1 min-w-0 truncate text-white/75">
                   {p.hunt?.title || '(unknown hunt)'}
                 </span>
-                <span className="text-[10px] font-mono text-white/55 tabular-nums">
+                <span className="text-[0.625rem] font-mono text-white/55 tabular-nums">
                   {p.payoutGuess !== null && `$${p.payoutGuess}`}
                   {p.topSlotGuess && (
                     <span className="ml-2 text-white/40">{p.topSlotGuess}</span>
                   )}
                 </span>
-                <span className="text-[10px] font-mono text-white/40 hidden sm:inline">
+                <span className="text-[0.625rem] font-mono text-white/40 hidden sm:inline">
                   {formatTs(p.lastEditAt || p.submittedAt)}
                 </span>
               </li>
@@ -320,7 +320,7 @@ function UserDetail({ twitchId }) {
             {huntSuggestions.map((s) => (
               <li key={s.id} className="py-2 flex items-center gap-3 text-sm">
                 <span
-                  className={`px-2 py-0.5 text-[9px] font-bold tracking-eyebrow uppercase font-mono border ${
+                  className={`px-2 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow uppercase font-mono border ${
                     s.status === 'accepted'
                       ? 'border-emerald-signal/40 text-emerald-signal/85 bg-emerald-signal/10'
                       : s.status === 'rejected'
@@ -336,7 +336,7 @@ function UserDetail({ twitchId }) {
                     <span className="text-white/40"> · {s.hunt.title}</span>
                   )}
                 </span>
-                <span className="text-[10px] font-mono text-white/40 hidden sm:inline">
+                <span className="text-[0.625rem] font-mono text-white/40 hidden sm:inline">
                   {formatTs(s.createdAt)}
                 </span>
               </li>
@@ -349,7 +349,7 @@ function UserDetail({ twitchId }) {
         {ledger.length === 0 ? (
           <p className="text-sm text-white/40 italic">No ledger entries.</p>
         ) : (
-          <ul className="divide-y divide-white/5 font-mono text-[11px]">
+          <ul className="divide-y divide-white/5 font-mono text-[0.6875rem]">
             {ledger.map((l) => (
               <li key={l.id} className="py-1.5 flex items-center gap-3">
                 <span className="w-16 text-white/45">{l.reason || 'unknown'}</span>
@@ -427,12 +427,12 @@ export default function AdminUsersPage() {
           <button
             type="button"
             onClick={() => navigate('/admin')}
-            className="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/50 hover:text-white-body font-mono mb-3"
+            className="inline-flex items-center gap-1.5 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/50 hover:text-white-body font-mono mb-3"
           >
             <ArrowLeft size={11} aria-hidden="true" />
             Back to hub
           </button>
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-orange-admin font-mono mb-2">
+          <div className="flex items-center gap-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-orange-admin font-mono mb-2">
             <UsersIcon size={11} aria-hidden="true" />
             <span>Module USR</span>
           </div>
@@ -444,7 +444,7 @@ export default function AdminUsersPage() {
       </header>
 
       {error && (
-        <div className="mb-4 px-3 py-2 border border-red-destructive/40 bg-red-destructive/10 text-[11px] font-mono uppercase tracking-eyebrow text-red-destructive">
+        <div className="mb-4 px-3 py-2 border border-red-destructive/40 bg-red-destructive/10 text-[0.6875rem] font-mono uppercase tracking-eyebrow text-red-destructive">
           {error}
         </div>
       )}
@@ -473,7 +473,7 @@ export default function AdminUsersPage() {
                   key={opt.key}
                   type="button"
                   onClick={() => setSort(opt.key)}
-                  className={`flex-1 px-2 py-1 text-[10px] font-bold tracking-eyebrow uppercase font-mono border transition-colors ${
+                  className={`flex-1 px-2 py-1 text-[0.625rem] font-bold tracking-eyebrow uppercase font-mono border transition-colors ${
                     sort === opt.key
                       ? 'border-orange-admin/60 bg-orange-admin/10 text-orange-admin'
                       : 'border-white/10 text-white/45 hover:text-white-body'
@@ -483,7 +483,7 @@ export default function AdminUsersPage() {
                 </button>
               ))}
             </div>
-            <div className="text-[10px] font-mono text-white/40 px-1">
+            <div className="text-[0.625rem] font-mono text-white/40 px-1">
               {loading
                 ? 'Loading…'
                 : `${filtered.length} ${filtered.length === 1 ? 'user' : 'users'}`}
@@ -499,7 +499,7 @@ export default function AdminUsersPage() {
               />
             ))}
             {!loading && filtered.length === 0 && (
-              <div className="p-6 text-center text-[11px] font-mono uppercase tracking-eyebrow text-white/40">
+              <div className="p-6 text-center text-[0.6875rem] font-mono uppercase tracking-eyebrow text-white/40">
                 No users.
               </div>
             )}
@@ -517,7 +517,7 @@ export default function AdminUsersPage() {
                 className="mx-auto mb-3 text-white/30"
                 aria-hidden="true"
               />
-              <p className="text-[11px] font-mono uppercase tracking-eyebrow text-white/45">
+              <p className="text-[0.6875rem] font-mono uppercase tracking-eyebrow text-white/45">
                 Pick a user on the left.
               </p>
             </div>

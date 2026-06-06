@@ -81,7 +81,7 @@ export default function DiscordCallbackPage() {
         {status === 'success' && (
           <>
             <p className="text-emerald-signal font-bold text-lg">{message}</p>
-            <p className="text-[11px] tracking-eyebrow uppercase text-white/40 font-mono">
+            <p className="text-[0.6875rem] tracking-eyebrow uppercase text-white/40 font-mono">
               Redirecting to your account…
             </p>
           </>
@@ -94,7 +94,7 @@ export default function DiscordCallbackPage() {
               onClick={() => navigate('/me')}
               className="px-4 py-2 border border-white/15 text-white/70 hover:text-white-body hover:border-white/30 transition-colors duration-150"
             >
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                 Back to account
               </span>
             </button>

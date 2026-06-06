@@ -24,7 +24,7 @@ export default function WagerDropChip({ delta }) {
 
   return (
     <span
-      className={`ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold font-mono tabular-nums tracking-eyebrow-sm
+      className={`ml-2 inline-flex items-center gap-1 px-1.5 py-0.5 text-[0.625rem] font-bold font-mono tabular-nums tracking-eyebrow-sm
         bg-emerald-signal/15 text-emerald-signal border border-emerald-signal/30
         transition-all duration-300 motion-reduce:transition-none
         ${visible ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-2'}`}

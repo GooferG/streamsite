@@ -16,7 +16,7 @@ import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 function SectionLabel({ code, label }) {
   return (
     <div
-      className="flex items-baseline gap-3 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/65 font-mono"
+      className="flex items-baseline gap-3 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/65 font-mono"
       >
       <span className="text-emerald-signal tabular-nums">{code}</span>
       <span>{label}</span>
@@ -38,7 +38,7 @@ function SuggestionRow({ suggestion, onToggle, onRemove, index }) {
     >
       <div className="flex items-center gap-3">
         <span
-          className={`font-mono text-[10px] font-bold tracking-eyebrow-md tabular-nums ${
+          className={`font-mono text-[0.625rem] font-bold tracking-eyebrow-md tabular-nums ${
             highlighted ? 'text-emerald-signal' : 'text-white/60'
           }`}
         >
@@ -60,14 +60,14 @@ function SuggestionRow({ suggestion, onToggle, onRemove, index }) {
           </p>
           {highlighted && (
             <span
-              className="px-1.5 py-0.5 text-[9px] font-bold tracking-eyebrow-md text-emerald-signal border border-emerald-signal/40 font-mono"
+              className="px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow-md text-emerald-signal border border-emerald-signal/40 font-mono"
       >
               PICKED
             </span>
           )}
         </div>
         <p
-          className="mt-0.5 text-[11px] tracking-eyebrow-sm uppercase text-white/65 truncate font-mono"
+          className="mt-0.5 text-[0.6875rem] tracking-eyebrow-sm uppercase text-white/65 truncate font-mono"
       >
           {suggestion.twitchName}
           {suggestion.rainbetName ? (
@@ -140,7 +140,7 @@ export default function SuggestAdminTab() {
     <div className="border border-white/8 bg-zinc-card/30">
       {/* Status bar */}
       <div
-        className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
+        className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono"
       >
         <span className="inline-flex items-center gap-2 text-emerald-signal">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
@@ -182,7 +182,7 @@ export default function SuggestAdminTab() {
           >
             <RefreshCcw size={13} aria-hidden="true" />
             <span
-              className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+              className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
               Clear all
             </span>
@@ -195,7 +195,7 @@ export default function SuggestAdminTab() {
               className="px-3 py-2 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 transition-colors duration-150"
             >
               <span
-                className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
                 Confirm
               </span>
@@ -206,7 +206,7 @@ export default function SuggestAdminTab() {
               className="px-3 py-2 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
             >
               <span
-                className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
                 Cancel
               </span>
@@ -232,7 +232,7 @@ export default function SuggestAdminTab() {
                   {twitchUser.displayName}
                 </p>
                 <p
-                  className="text-[10px] font-bold tracking-eyebrow-md uppercase text-emerald-signal/80 font-mono"
+                  className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-emerald-signal/80 font-mono"
       >
                   Twitch · Authenticated
                 </p>
@@ -247,7 +247,7 @@ export default function SuggestAdminTab() {
               >
                 <ExternalLink size={13} aria-hidden="true" />
                 <span
-                  className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                  className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
                   Suggest a game
                 </span>
@@ -258,7 +258,7 @@ export default function SuggestAdminTab() {
                 className="px-3 py-2 border border-white/10 text-white/75 hover:text-white-body transition-colors duration-150"
               >
                 <span
-                  className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                  className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
                   Sign out
                 </span>
@@ -285,7 +285,7 @@ export default function SuggestAdminTab() {
                   <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z" />
                 </svg>
                 <span
-                  className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                  className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
                   Sign in with Twitch
                 </span>
@@ -298,7 +298,7 @@ export default function SuggestAdminTab() {
               >
                 <ExternalLink size={13} aria-hidden="true" />
                 <span
-                  className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                  className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
                   goofer.tv/suggest
                 </span>
@@ -313,7 +313,7 @@ export default function SuggestAdminTab() {
         <div
           className="px-4 py-10 text-center font-mono"
       >
-          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/60 mb-2">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/60 mb-2">
             Empty queue
           </p>
           <p className="text-sm text-white/75">

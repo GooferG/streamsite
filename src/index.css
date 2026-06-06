@@ -6,6 +6,12 @@ html, body {
   overflow-x: clip;
 }
 
+/* Legibility scale for large/dense displays. The UI sizes type and spacing in
+   rem, so raising the root font-size scales everything proportionally. No effect
+   below 1536px — laptops and base desktops render unchanged. */
+@media (min-width: 1536px) { html { font-size: 17px; } }
+@media (min-width: 2560px) { html { font-size: 18px; } }
+
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',

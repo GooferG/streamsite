@@ -156,7 +156,7 @@ export default function NeonTheme({ data, now }) {
         {/* Header */}
         <div className="px-4 sm:px-6 py-6 border-b border-nn-purple/25 text-center">
           <div
-            className="text-[13px] tracking-eyebrow-lg text-nn-cyan-lite"
+            className="text-[0.8125rem] tracking-eyebrow-lg text-nn-cyan-lite"
             style={{ textShadow: '0 0 12px rgba(33,230,255,0.6)' }}
           >
             {data.periodLabel}
@@ -174,7 +174,7 @@ export default function NeonTheme({ data, now }) {
           >
             {formatPrizeHeadline(data.prizePool)} LEADERBOARD
           </h2>
-          <div className="mt-2 text-[15px] tracking-eyebrow-md text-white/55 uppercase">
+          <div className="mt-2 text-[0.9375rem] tracking-eyebrow-md text-white/55 uppercase">
             Code{' '}
             <span className="text-nn-cyan" style={{ textShadow: '0 0 10px rgba(33,230,255,0.6)' }}>
               {data.referralCode}
@@ -217,7 +217,7 @@ export default function NeonTheme({ data, now }) {
                     seamColor="rgba(255,45,149,0.35)"
                     nudge="translateY(0.02em)"
                   />
-                  <div className="mt-2 text-[11px] tracking-eyebrow-md text-white/35 uppercase">
+                  <div className="mt-2 text-[0.6875rem] tracking-eyebrow-md text-white/35 uppercase">
                     {label}
                   </div>
                 </div>
@@ -230,7 +230,7 @@ export default function NeonTheme({ data, now }) {
         <NeonPodium players={players} animatedWagered={animatedWagered} />
 
         {/* Table header */}
-        <div className="grid grid-cols-[74px_minmax(0,1fr)_auto_auto] gap-4 px-4 sm:px-6 pt-4 pb-2 text-[11px] tracking-eyebrow uppercase text-white/30">
+        <div className="grid grid-cols-[74px_minmax(0,1fr)_auto_auto] gap-4 px-4 sm:px-6 pt-4 pb-2 text-[0.6875rem] tracking-eyebrow uppercase text-white/30">
           <span>Pos</span>
           <span>Player</span>
           <span className="text-right">Wagered</span>
@@ -259,7 +259,7 @@ export default function NeonTheme({ data, now }) {
               >
                 <span className="flex items-center gap-2 font-orbitron font-bold text-sm text-nn-pink-lite">
                   {formatPosition(p.position)}
-                  <span className={`text-[8px] ${d.cls}`} aria-hidden="true">
+                  <span className={`text-[0.5rem] ${d.cls}`} aria-hidden="true">
                     {d.glyph}
                   </span>
                 </span>
@@ -278,7 +278,7 @@ export default function NeonTheme({ data, now }) {
                     />
                   </div>
                   {climb > 0 && (
-                    <div className="pointer-events-none absolute left-[90px] -bottom-0.5 hidden sm:block text-[11px] text-nn-cyan opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                    <div className="pointer-events-none absolute left-[90px] -bottom-0.5 hidden sm:block text-[0.6875rem] text-nn-cyan opacity-0 transition-opacity duration-150 group-hover:opacity-100">
                       +{formatUSD(climb)} to climb
                     </div>
                   )}
@@ -299,7 +299,7 @@ export default function NeonTheme({ data, now }) {
         </div>
 
         {/* Last-updated */}
-        <div className="px-4 sm:px-6 py-4 border-t border-nn-purple/25 text-center text-[11px] tracking-eyebrow-md uppercase text-white/40 tabular-nums">
+        <div className="px-4 sm:px-6 py-4 border-t border-nn-purple/25 text-center text-[0.6875rem] tracking-eyebrow-md uppercase text-white/40 tabular-nums">
           Signal updated {freshness(now, data.lastUpdatedAt)}
         </div>
       </div>

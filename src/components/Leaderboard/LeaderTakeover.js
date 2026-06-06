@@ -25,7 +25,7 @@ export default function LeaderTakeover({ leader, runnerUp }) {
           aria-hidden="true"
         />
 
-        <div className="pointer-events-none absolute top-3 right-4 flex items-center gap-2 text-[10px] font-bold tracking-eyebrow-lg text-phosphor font-mono z-10">
+        <div className="pointer-events-none absolute top-3 right-4 flex items-center gap-2 text-[0.625rem] font-bold tracking-eyebrow-lg text-phosphor font-mono z-10">
           <span
             className="inline-block w-1.5 h-1.5 rounded-full bg-phosphor animate-pulse motion-reduce:animate-none"
             aria-hidden="true"
@@ -34,7 +34,7 @@ export default function LeaderTakeover({ leader, runnerUp }) {
         </div>
 
         <div className="relative p-5 sm:p-7 lg:p-8 flex flex-col gap-5 sm:gap-6 min-h-[22rem] sm:min-h-[24rem]">
-          <div className="text-[10px] sm:text-[11px] font-bold tracking-eyebrow-lg text-white/55 font-mono">
+          <div className="text-[0.625rem] sm:text-[0.6875rem] font-bold tracking-eyebrow-lg text-white/55 font-mono">
             ── THIS MONTH&apos;S LEADER ──
           </div>
 
@@ -61,7 +61,7 @@ export default function LeaderTakeover({ leader, runnerUp }) {
           </div>
 
           <div>
-            <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono mb-1">
+            <div className="text-[0.625rem] font-bold tracking-eyebrow-lg text-white/55 font-mono mb-1">
               TOTAL WAGERED
             </div>
             <div className="text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold tabular-nums font-mono text-phosphor leading-none">
@@ -71,7 +71,7 @@ export default function LeaderTakeover({ leader, runnerUp }) {
 
           <div className="mt-auto pt-4 border-t border-white/8 grid grid-cols-1 sm:grid-cols-2 gap-y-4 gap-x-6">
             <div>
-              <div className="text-[10px] font-bold tracking-eyebrow-lg text-phosphor/80 font-mono">
+              <div className="text-[0.625rem] font-bold tracking-eyebrow-lg text-phosphor/80 font-mono">
                 PRIZE
               </div>
               <div className="text-2xl sm:text-3xl font-extrabold tabular-nums font-mono text-phosphor leading-none">
@@ -80,13 +80,13 @@ export default function LeaderTakeover({ leader, runnerUp }) {
             </div>
             {lead > 0 && (
               <div className="sm:text-right">
-                <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono">
+                <div className="text-[0.625rem] font-bold tracking-eyebrow-lg text-white/55 font-mono">
                   LEADING BY
                 </div>
                 <div className="text-lg sm:text-xl font-bold tabular-nums font-mono text-white-body">
                   {formatUSD(lead)}
                 </div>
-                <div className="mt-2 flex items-center gap-2 sm:justify-end text-[11px] font-bold tracking-eyebrow-lg font-mono text-white/65">
+                <div className="mt-2 flex items-center gap-2 sm:justify-end text-[0.6875rem] font-bold tracking-eyebrow-lg font-mono text-white/65">
                   <TrendArrow
                     current={leader.position}
                     previous={leader.previousPosition}

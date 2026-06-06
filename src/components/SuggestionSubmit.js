@@ -53,7 +53,7 @@ export default function SuggestionSubmit({ hunt }) {
     return (
       <div className="border border-white/10 bg-zinc-card/30 px-4 py-4">
         <div className="flex items-center justify-between gap-3 flex-wrap">
-          <div className="inline-flex items-center gap-2 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 font-mono">
+          <div className="inline-flex items-center gap-2 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 font-mono">
             <Lightbulb size={11} aria-hidden="true" />
             Suggest a slot — sign in first
           </div>
@@ -62,7 +62,7 @@ export default function SuggestionSubmit({ hunt }) {
             onClick={loginWithTwitch}
             className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-gamba hover:bg-purple-bright text-white-body transition-colors duration-150"
           >
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">Sign in with Twitch</span>
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Sign in with Twitch</span>
           </button>
         </div>
       </div>
@@ -71,7 +71,7 @@ export default function SuggestionSubmit({ hunt }) {
 
   if (!huntOpen) {
     return (
-      <div className="border border-white/10 bg-zinc-card/30 px-4 py-3 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
+      <div className="border border-white/10 bg-zinc-card/30 px-4 py-3 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
         Suggestions closed
       </div>
     );
@@ -116,7 +116,7 @@ export default function SuggestionSubmit({ hunt }) {
 
   return (
     <div className="border border-white/10 bg-zinc-card/30">
-      <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold tracking-eyebrow-md uppercase font-mono">
+      <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono">
         <span className="inline-flex items-center gap-2 text-emerald-signal">
           <Lightbulb size={11} aria-hidden="true" />
           <span>▸ Suggest a slot</span>
@@ -130,7 +130,7 @@ export default function SuggestionSubmit({ hunt }) {
       <form onSubmit={submit} className="px-4 py-4 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-[2fr_3fr_auto] gap-2 items-end">
           <label className="block">
-            <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1 font-mono">Slot name</span>
+            <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1 font-mono">Slot name</span>
             <input
               value={slot}
               onChange={(e) => setSlot(e.target.value)}
@@ -141,7 +141,7 @@ export default function SuggestionSubmit({ hunt }) {
             />
           </label>
           <label className="block">
-            <span className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1 font-mono">Note <span className="text-white/30 normal-case font-normal">· optional</span></span>
+            <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1 font-mono">Note <span className="text-white/30 normal-case font-normal">· optional</span></span>
             <input
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -157,19 +157,19 @@ export default function SuggestionSubmit({ hunt }) {
             className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-40 disabled:cursor-not-allowed h-[38px]"
           >
             <Send size={13} aria-hidden="true" />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
               {submitting ? 'Sending…' : 'Submit'}
             </span>
           </button>
         </div>
         {capReached && (
-          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-orange-admin font-mono">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-orange-admin font-mono">
             You've used all your suggestions for this hunt.
           </p>
         )}
         {feedback && (
           <div
-            className={`flex items-center gap-2 text-[11px] font-bold tracking-eyebrow uppercase font-mono ${
+            className={`flex items-center gap-2 text-[0.6875rem] font-bold tracking-eyebrow uppercase font-mono ${
               feedback.kind === 'success' ? 'text-emerald-signal' : 'text-red-destructive'
             }`}
           >

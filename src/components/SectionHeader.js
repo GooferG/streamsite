@@ -14,7 +14,7 @@ export default function SectionHeader({
 
   return (
     <div className="mb-8 sm:mb-10">
-      <div className="font-mono text-[10px] sm:text-xs font-bold tracking-eyebrow-lg uppercase text-white/45 mb-3">
+      <div className="font-mono text-[0.625rem] sm:text-xs font-bold tracking-eyebrow-lg uppercase text-white/45 mb-3">
         {segment && (
           <>
             <span className="text-white/30">SEGMENT {segment}</span>

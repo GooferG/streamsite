@@ -27,7 +27,7 @@ export default class ErrorBoundary extends Component {
       return (
         <div className="min-h-[60vh] flex items-center justify-center px-4">
           <div className="max-w-md w-full border border-white/8 bg-zinc-card/40 p-6 text-center space-y-4">
-            <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-red-destructive font-mono">
+            <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-red-destructive font-mono">
               ▸ Something broke
             </p>
             <p className="text-sm text-white/65 leading-snug">
@@ -39,7 +39,7 @@ export default class ErrorBoundary extends Component {
                 onClick={this.handleReset}
                 className="px-4 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
               >
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                   Try again
                 </span>
               </button>
@@ -47,7 +47,7 @@ export default class ErrorBoundary extends Component {
                 href="/"
                 className="px-4 py-2 border border-white/15 text-white/70 hover:text-white-body hover:border-white/30 transition-colors duration-150"
               >
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                   Go home
                 </span>
               </a>

@@ -139,7 +139,7 @@ function HubCard({ to, icon: Icon, code, title, description, onClick }) {
       onClick={onClick}
       className="group text-left border border-white/8 bg-zinc-card/30 hover:border-orange-admin/40 hover:bg-zinc-card/50 transition-colors duration-150"
     >
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-lg font-mono">
+      <div className="flex items-center justify-between px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg font-mono">
         <span className="inline-flex items-center gap-2 text-orange-admin">
           <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
           <span>Module</span>
@@ -221,7 +221,7 @@ function ResetModal({ onClose }) {
         <div className="flex items-center justify-between px-5 py-3 border-b border-white/10">
           <div className="flex items-center gap-2 text-red-destructive">
             <AlertTriangle size={14} aria-hidden="true" />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
               Danger zone · wipe test data
             </span>
           </div>
@@ -237,7 +237,7 @@ function ResetModal({ onClose }) {
 
         {result ? (
           <div className="p-5 space-y-4">
-            <p className="text-[11px] font-bold tracking-eyebrow uppercase text-emerald-signal font-mono">
+            <p className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-emerald-signal font-mono">
               Done. Wiped:
             </p>
             <ul className="text-sm text-white/75 space-y-1 font-mono">
@@ -251,7 +251,7 @@ function ResetModal({ onClose }) {
             <button
               type="button"
               onClick={onClose}
-              className="w-full mt-2 px-3 py-2.5 border border-white/15 text-white/70 hover:text-white-body text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+              className="w-full mt-2 px-3 py-2.5 border border-white/15 text-white/70 hover:text-white-body text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
             >
               Close
             </button>
@@ -276,10 +276,10 @@ function ResetModal({ onClose }) {
                     className="mt-0.5"
                   />
                   <div className="flex-1 min-w-0">
-                    <p className="text-[11px] font-bold tracking-eyebrow uppercase text-white-body font-mono">
+                    <p className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-white-body font-mono">
                       {scope.label}
                     </p>
-                    <p className="mt-1 text-[11px] text-white/50 leading-snug">
+                    <p className="mt-1 text-[0.6875rem] text-white/50 leading-snug">
                       {scope.detail}
                     </p>
                   </div>
@@ -288,7 +288,7 @@ function ResetModal({ onClose }) {
             </div>
 
             <div>
-              <label className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+              <label className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
                 Type WIPE to confirm
               </label>
               <input
@@ -302,7 +302,7 @@ function ResetModal({ onClose }) {
             </div>
 
             {error && (
-              <p className="text-[11px] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
+              <p className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
                 {error}
               </p>
             )}
@@ -312,7 +312,7 @@ function ResetModal({ onClose }) {
                 type="button"
                 onClick={onClose}
                 disabled={running}
-                className="flex-1 px-3 py-2.5 border border-white/10 text-white/60 hover:text-white-body text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono disabled:opacity-50"
+                className="flex-1 px-3 py-2.5 border border-white/10 text-white/60 hover:text-white-body text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono disabled:opacity-50"
               >
                 Cancel
               </button>
@@ -320,7 +320,7 @@ function ResetModal({ onClose }) {
                 type="button"
                 onClick={run}
                 disabled={!canRun}
-                className="flex-1 px-3 py-2.5 bg-red-destructive text-white-body hover:opacity-90 transition-opacity text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono disabled:opacity-30 disabled:cursor-not-allowed"
+                className="flex-1 px-3 py-2.5 bg-red-destructive text-white-body hover:opacity-90 transition-opacity text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono disabled:opacity-30 disabled:cursor-not-allowed"
               >
                 {running ? 'Wiping…' : 'Wipe selected'}
               </button>
@@ -343,7 +343,7 @@ export default function AdminHubPage() {
     <div className="p-6 sm:p-8 max-w-4xl mx-auto">
       {/* Slate header */}
       <header className="mb-10">
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
             <span>OPERATOR HUB</span>
@@ -383,7 +383,7 @@ export default function AdminHubPage() {
         <section className="mt-12 border border-red-destructive/30 bg-red-destructive/5">
           <div className="px-5 py-3 border-b border-red-destructive/20 flex items-center gap-2">
             <AlertTriangle size={13} className="text-red-destructive" aria-hidden="true" />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-red-destructive font-mono">
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-red-destructive font-mono">
               Danger zone · database
             </span>
           </div>
@@ -397,7 +397,7 @@ export default function AdminHubPage() {
             <button
               type="button"
               onClick={() => setResetOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/10 transition-colors duration-150 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+              className="inline-flex items-center gap-2 px-4 py-2.5 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/10 transition-colors duration-150 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
             >
               <AlertTriangle size={12} aria-hidden="true" />
               Open wipe panel

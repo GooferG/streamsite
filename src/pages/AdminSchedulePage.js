@@ -27,7 +27,7 @@ const STATUS_ACCENT = {
 function FieldLabel({ icon: Icon, children, code }) {
   return (
     <span
-      className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-eyebrow-md text-white/50 mb-1.5 font-mono"
+      className="flex items-center gap-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-md text-white/50 mb-1.5 font-mono"
       >
       {code && (
         <span className="text-orange-admin tabular-nums">{code}</span>
@@ -46,7 +46,7 @@ function DayPanel({ day, index, onChange }) {
     <div className="border border-white/8 bg-zinc-card/30">
       {/* Day header strip */}
       <div
-        className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
+        className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono"
       >
         <span className={`inline-flex items-center gap-2 ${accent.text}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${accent.dot}`} />
@@ -176,7 +176,7 @@ export default function AdminSchedulePage() {
             aria-hidden="true"
           />
           <p
-            className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
+            className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
       >
             Loading schedule…
           </p>
@@ -190,7 +190,7 @@ export default function AdminSchedulePage() {
       {/* Slate header */}
       <header className="mb-8">
         <div
-          className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono"
+          className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono"
       >
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
@@ -246,7 +246,7 @@ export default function AdminSchedulePage() {
           )}
           <div className="min-w-0">
             <div
-              className={`text-[10px] font-bold tracking-eyebrow-md uppercase mb-0.5 ${
+              className={`text-[0.625rem] font-bold tracking-eyebrow-md uppercase mb-0.5 ${
                 message.type === 'success'
                   ? 'text-emerald-signal'
                   : 'text-red-destructive/80'
@@ -275,7 +275,7 @@ export default function AdminSchedulePage() {
       {/* Save bar */}
       <div className="border border-white/8 bg-zinc-card/30">
         <div
-          className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
+          className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono"
       >
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
@@ -291,7 +291,7 @@ export default function AdminSchedulePage() {
           >
             <Save size={16} aria-hidden="true" />
             <span
-              className="text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono"
+              className="text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
               {saving ? 'Saving…' : 'Save schedule'}
             </span>

@@ -51,7 +51,7 @@ export default function BroadcastFrame({ children }) {
         </span>
       ))}
 
-      <div className="pointer-events-none absolute top-2 right-6 sm:right-8 z-10 flex items-center gap-2 text-[10px] font-bold font-mono tracking-eyebrow-lg text-white/65">
+      <div className="pointer-events-none absolute top-2 right-6 sm:right-8 z-10 flex items-center gap-2 text-[0.625rem] font-bold font-mono tracking-eyebrow-lg text-white/65">
         <span
           className="inline-block w-2 h-2 rounded-full bg-red-destructive animate-pulse motion-reduce:animate-none"
           aria-hidden="true"

@@ -84,12 +84,12 @@ export default function AdminLayout() {
           {!collapsed && (
             <div className="flex flex-col leading-none gap-1">
               <span
-                className="text-[9px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
+                className="text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
       >
                 Channel
               </span>
               <span
-                className="text-[11px] font-bold tracking-eyebrow-lg uppercase text-orange-admin font-mono"
+                className="text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase text-orange-admin font-mono"
       >
                 {role === 'owner' ? 'GG-ADMIN' : 'GG-MOD'}
               </span>
@@ -116,7 +116,7 @@ export default function AdminLayout() {
                 <>
                   {!collapsed && (
                     <span
-                      className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums ${
+                      className={`text-[0.625rem] font-bold tracking-eyebrow-md tabular-nums ${
                         isActive ? 'text-orange-admin' : 'text-white/30'
                       }`}
                       
@@ -132,7 +132,7 @@ export default function AdminLayout() {
                   )}
                   {!collapsed && isActive && (
                     <span
-                      className="ml-auto text-[9px] font-bold tracking-eyebrow-lg text-orange-admin font-mono"
+                      className="ml-auto text-[0.5625rem] font-bold tracking-eyebrow-lg text-orange-admin font-mono"
       >
                       ON
                     </span>
@@ -153,7 +153,7 @@ export default function AdminLayout() {
           >
             {!collapsed && (
               <span
-                className="text-[10px] font-bold tracking-eyebrow-md text-red-destructive/60 font-mono"
+                className="text-[0.625rem] font-bold tracking-eyebrow-md text-red-destructive/60 font-mono"
       >
                 OUT
               </span>
@@ -175,7 +175,7 @@ export default function AdminLayout() {
             ) : (
               <>
                 <span
-                  className="text-[10px] font-bold tracking-eyebrow-md text-white/30 font-mono"
+                  className="text-[0.625rem] font-bold tracking-eyebrow-md text-white/30 font-mono"
       >
                   HIDE
                 </span>

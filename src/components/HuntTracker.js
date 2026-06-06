@@ -123,7 +123,7 @@ export default function HuntTracker() {
   if (status === 'loading') {
     return (
       <div className="border border-white/8 bg-zinc-card/30 py-16 text-center">
-        <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
+        <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
           {tuningPhrase}
         </p>
       </div>
@@ -515,7 +515,7 @@ export default function HuntTracker() {
       {/* Hunt header */}
       <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-white/8">
         <div className="min-w-0">
-          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono mb-0.5">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono mb-0.5">
             ▸ {phase === 'opening' ? 'Opening slots' : 'Active hunt'}
           </p>
           {editingName ? (
@@ -562,7 +562,7 @@ export default function HuntTracker() {
             className="inline-flex items-center gap-2 px-3 py-1.5 bg-purple-gamba text-white-body hover:bg-purple-bright transition-colors duration-150 disabled:opacity-40"
           >
             <Play size={12} aria-hidden="true" />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg">
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg">
               START OPENING
             </span>
           </button>
@@ -574,7 +574,7 @@ export default function HuntTracker() {
             className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/15 text-white/70 hover:text-white-body hover:border-white/30 transition-colors duration-150"
           >
             <ArrowLeft size={12} aria-hidden="true" />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg">
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg">
               EDIT BONUSES
             </span>
           </button>
@@ -589,7 +589,7 @@ export default function HuntTracker() {
               className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/10 text-white/30 cursor-not-allowed"
             >
               <Users size={12} aria-hidden="true" />
-              <span className="text-[10px] font-bold tracking-eyebrow-lg">COLLAB</span>
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg">COLLAB</span>
             </button>
             <button
               type="button"
@@ -597,7 +597,7 @@ export default function HuntTracker() {
               className="inline-flex items-center gap-2 px-3 py-1.5 border border-emerald-signal/40 text-emerald-signal hover:bg-emerald-signal/10 transition-colors duration-150"
             >
               <Download size={12} aria-hidden="true" />
-              <span className="text-[10px] font-bold tracking-eyebrow-lg">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg">
                 EXPORT SPLIT
               </span>
             </button>
@@ -608,7 +608,7 @@ export default function HuntTracker() {
                 className="inline-flex items-center gap-2 px-3 py-1.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150"
               >
                 <CheckCircle2 size={12} aria-hidden="true" />
-                <span className="text-[10px] font-bold tracking-eyebrow-lg">
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg">
                   COMPLETE
                 </span>
               </button>
@@ -619,7 +619,7 @@ export default function HuntTracker() {
                   onClick={handleComplete}
                   className="inline-flex items-center gap-2 px-3 py-1.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
                 >
-                  <span className="text-[10px] font-bold tracking-eyebrow-lg">
+                  <span className="text-[0.625rem] font-bold tracking-eyebrow-lg">
                     CONFIRM + EXPORT
                   </span>
                 </button>
@@ -628,7 +628,7 @@ export default function HuntTracker() {
                   onClick={() => setConfirmingComplete(false)}
                   className="px-3 py-1.5 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
                 >
-                  <span className="text-[10px] font-bold tracking-eyebrow-lg">
+                  <span className="text-[0.625rem] font-bold tracking-eyebrow-lg">
                     CANCEL
                   </span>
                 </button>
@@ -647,7 +647,7 @@ export default function HuntTracker() {
                 className="inline-flex items-center gap-2 px-3 py-1.5 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 transition-colors duration-150"
               >
                 <Trash2 size={12} aria-hidden="true" />
-                <span className="text-[10px] font-bold tracking-eyebrow-lg">
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg">
                   DISCARD HUNT
                 </span>
               </button>
@@ -656,7 +656,7 @@ export default function HuntTracker() {
                 onClick={() => setConfirmingDiscard(false)}
                 className="px-3 py-1.5 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
               >
-                <span className="text-[10px] font-bold tracking-eyebrow-lg">
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg">
                   KEEP
                 </span>
               </button>
@@ -683,7 +683,7 @@ export default function HuntTracker() {
                       setMenuOpen(false);
                       setTourOpen(true);
                     }}
-                    className="w-full text-left px-3 py-2 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono text-white/70 hover:bg-white/5 inline-flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono text-white/70 hover:bg-white/5 inline-flex items-center gap-2"
                   >
                     <HelpCircle size={12} aria-hidden="true" /> How it works
                   </button>
@@ -693,7 +693,7 @@ export default function HuntTracker() {
                       setMenuOpen(false);
                       setConfirmingDiscard(true);
                     }}
-                    className="w-full text-left px-3 py-2 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono text-white/60 hover:text-red-destructive hover:bg-red-destructive/10 inline-flex items-center gap-2"
+                    className="w-full text-left px-3 py-2 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono text-white/60 hover:text-red-destructive hover:bg-red-destructive/10 inline-flex items-center gap-2"
                   >
                     <Trash2 size={12} aria-hidden="true" /> Discard hunt
                   </button>
@@ -713,7 +713,7 @@ export default function HuntTracker() {
         >
           {/* WATCH track */}
           <div className="border border-white/10 bg-zinc-broadcast/40 p-2.5">
-            <p className="flex items-center gap-2 text-[9px] font-bold tracking-eyebrow-lg uppercase font-mono text-red-destructive mb-2">
+            <p className="flex items-center gap-2 text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase font-mono text-red-destructive mb-2">
               <span
                 className={`w-1.5 h-1.5 rounded-full ${shareId ? 'bg-red-destructive animate-pulse' : 'bg-white/25'}`}
               />
@@ -726,7 +726,7 @@ export default function HuntTracker() {
                   readOnly
                   value={shareUrl}
                   onFocus={(e) => e.target.select()}
-                  className="flex-1 min-w-0 bg-zinc-broadcast/60 border border-white/10 px-2.5 py-2 text-[11px] font-mono text-white/70 focus:outline-none"
+                  className="flex-1 min-w-0 bg-zinc-broadcast/60 border border-white/10 px-2.5 py-2 text-[0.6875rem] font-mono text-white/70 focus:outline-none"
                 />
                 <CopyLinkButton
                   url={shareUrl}
@@ -737,7 +737,7 @@ export default function HuntTracker() {
                   type="button"
                   onClick={stopSharing}
                   title="Stop sharing. Link dies."
-                  className="px-2.5 py-2 border border-red-destructive/55 text-red-300 hover:bg-red-destructive/15 transition-colors text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                  className="px-2.5 py-2 border border-red-destructive/55 text-red-300 hover:bg-red-destructive/15 transition-colors text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
                 >
                   Stop
                 </button>
@@ -749,7 +749,7 @@ export default function HuntTracker() {
                 className="w-full inline-flex items-center justify-center gap-2 px-3 py-2.5 border border-red-destructive/40 text-red-300 hover:bg-red-destructive/10 transition-colors duration-150"
               >
                 <Radio size={13} aria-hidden="true" />
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                   Go live
                 </span>
               </button>
@@ -757,7 +757,7 @@ export default function HuntTracker() {
           </div>
           {/* COLLECT track */}
           <div className="border border-white/10 bg-zinc-broadcast/40 p-2.5">
-            <p className="flex items-center gap-2 text-[9px] font-bold tracking-eyebrow-lg uppercase font-mono text-purple-bright mb-2">
+            <p className="flex items-center gap-2 text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase font-mono text-purple-bright mb-2">
               <span
                 className={`w-1.5 h-1.5 rounded-full ${
                   activeHunt.intakeLinkId && activeHunt.intakeOpen !== false
@@ -782,7 +782,7 @@ export default function HuntTracker() {
       )}
 
       {/* Status bar */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
         <span className="text-white/65">BONUSES</span>
         <span className="text-white/70 tabular-nums tracking-eyebrow-lg">
           {String(bonuses.length).padStart(3, '0')}
@@ -826,7 +826,7 @@ export default function HuntTracker() {
         </div>
         <div className="flex flex-wrap gap-3 mt-3">
           <label className="block">
-            <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
+            <span className="block text-[0.625rem] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
               Start bal
             </span>
             <input
@@ -838,7 +838,7 @@ export default function HuntTracker() {
             />
           </label>
           <label className="block">
-            <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
+            <span className="block text-[0.625rem] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
               Finish bal
             </span>
             <input
@@ -917,7 +917,7 @@ export default function HuntTracker() {
                     onClick={() => setCallerHot((h) => !h)}
                     aria-pressed={callerHot}
                     title={callerHot ? 'Caller is hot — kept after each bonus. Click to clear after add.' : 'Keep this caller after logging each bonus'}
-                    className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-2.5 border transition-colors duration-150 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono ${
+                    className={`shrink-0 inline-flex items-center gap-1 px-2.5 py-2.5 border transition-colors duration-150 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono ${
                       callerHot
                         ? 'border-orange-admin bg-orange-admin/10 text-orange-admin'
                         : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
@@ -946,7 +946,7 @@ export default function HuntTracker() {
                           if (opt.key !== 'five') setHiddenInput(false);
                         }}
                         aria-pressed={tierInput === opt.key}
-                        className={`inline-flex items-center justify-center px-3 py-2.5 border transition-colors duration-150 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono ${
+                        className={`inline-flex items-center justify-center px-3 py-2.5 border transition-colors duration-150 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono ${
                           tierInput === opt.key
                             ? opt.active
                             : 'border-white/10 text-white/55 hover:text-white-body hover:border-white/25'
@@ -961,7 +961,7 @@ export default function HuntTracker() {
                       type="button"
                       onClick={() => setHiddenInput((h) => !h)}
                       aria-pressed={hiddenInput}
-                      className={`w-full inline-flex items-center justify-center gap-2 px-3 py-2 border transition-colors duration-150 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono ${
+                      className={`w-full inline-flex items-center justify-center gap-2 px-3 py-2 border transition-colors duration-150 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono ${
                         hiddenInput
                           ? 'border-gold-scatter bg-gold-scatter text-zinc-broadcast'
                           : 'border-gold-scatter/40 text-gold-scatter/80 hover:border-gold-scatter'
@@ -977,7 +977,7 @@ export default function HuntTracker() {
                   className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
                 >
                   <Plus size={14} aria-hidden="true" />
-                  <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                     Log bonus
                   </span>
                 </button>
@@ -1048,14 +1048,14 @@ export default function HuntTracker() {
               </div>
 
               {gamblers.length === 0 ? (
-                <p className="text-center text-white/55 py-4 text-[12px] font-mono">
+                <p className="text-center text-white/55 py-4 text-[0.75rem] font-mono">
                   No squad yet.
                 </p>
               ) : (
                 <div className="border border-white/8 overflow-x-auto overflow-y-auto max-h-[60vh] [scrollbar-width:thin]">
                   <table className="w-full text-sm min-w-[480px]">
                     <thead>
-                      <tr className="border-b border-white/10 text-white/65 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono sticky top-0 z-10">
+                      <tr className="border-b border-white/10 text-white/65 text-[0.625rem] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono sticky top-0 z-10">
                         <th className="text-left px-3 py-2 font-bold">Name</th>
                         <th className="text-right px-3 py-2 font-bold">
                           In for
@@ -1133,7 +1133,7 @@ export default function HuntTracker() {
                       ))}
                     </tbody>
                     <tfoot>
-                      <tr className="border-t border-white/10 bg-zinc-broadcast/50 text-[10px] uppercase tracking-eyebrow-md font-mono sticky bottom-0 z-10">
+                      <tr className="border-t border-white/10 bg-zinc-broadcast/50 text-[0.625rem] uppercase tracking-eyebrow-md font-mono sticky bottom-0 z-10">
                         <td className="px-3 py-2 font-bold text-white/65">
                           Total
                         </td>
@@ -1210,7 +1210,7 @@ export default function HuntTracker() {
           panelClassName="w-full max-w-md border border-emerald-signal/40 bg-zinc-card p-5 space-y-4"
         >
           <div>
-            <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono mb-1">
+            <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono mb-1">
               ▸ Hunt complete
             </p>
             <p className="text-sm text-white/65 leading-snug">
@@ -1219,7 +1219,7 @@ export default function HuntTracker() {
             </p>
           </div>
           <label className="block">
-            <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
+            <span className="block text-[0.625rem] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
               Finish balance ($)
             </span>
             <input
@@ -1264,7 +1264,7 @@ export default function HuntTracker() {
               className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
             >
               <CheckCircle2 size={14} aria-hidden="true" />
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                 Complete + Export
               </span>
             </button>
@@ -1273,7 +1273,7 @@ export default function HuntTracker() {
               onClick={() => setShowWrapUp(false)}
               className="px-4 py-2 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
             >
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                 Keep editing
               </span>
             </button>
@@ -1288,19 +1288,19 @@ export default function HuntTracker() {
           label="Bonus landed — add to hunt"
           panelClassName="w-full max-w-sm border border-emerald-signal/40 bg-zinc-card p-5 space-y-3"
         >
-          <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono">
             ▸ Bonus landed
           </p>
           <div>
             <p className="font-black text-white-body text-xl leading-tight truncate">
               {landingSuggestion.slot.name}
             </p>
-            <p className="text-[11px] font-mono text-purple-bright mt-0.5 truncate">
+            <p className="text-[0.6875rem] font-mono text-purple-bright mt-0.5 truncate">
               📣 {landingSuggestion.person}
             </p>
           </div>
           <label className="block">
-            <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
+            <span className="block text-[0.625rem] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
               Bet ($)
             </span>
             <input
@@ -1323,7 +1323,7 @@ export default function HuntTracker() {
               className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150"
             >
               <Plus size={14} aria-hidden="true" />
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                 Add to hunt
               </span>
             </button>
@@ -1332,7 +1332,7 @@ export default function HuntTracker() {
               onClick={() => setLandingSuggestion(null)}
               className="px-4 py-2 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
             >
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                 Cancel
               </span>
             </button>

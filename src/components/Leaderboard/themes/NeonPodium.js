@@ -65,7 +65,7 @@ function PodiumCard({ player, animatedWagered }) {
           {cfg.label}
         </span>
         <span
-          className="text-[12px] tracking-eyebrow text-nn-cyan"
+          className="text-[0.75rem] tracking-eyebrow text-nn-cyan"
           style={{ textShadow: '0 0 8px rgba(33,230,255,0.5)' }}
         >
           {formatPosition(player.position)}
@@ -76,13 +76,13 @@ function PodiumCard({ player, animatedWagered }) {
         {player.maskedUsername}
       </div>
       <div
-        className="relative mt-1.5 text-2xl sm:text-[36px] font-bold tabular-nums text-nn-cyan-lite leading-none"
+        className="relative mt-1.5 text-2xl sm:text-[2.25rem] font-bold tabular-nums text-nn-cyan-lite leading-none"
         style={{ textShadow: '0 0 14px rgba(33,230,255,0.5)' }}
       >
         {formatUSD(wag)}
       </div>
 
-      <div className="relative flex items-center justify-between mt-4 pt-3 border-t border-nn-purple/25 text-[13px] tracking-eyebrow-sm uppercase text-white/55">
+      <div className="relative flex items-center justify-between mt-4 pt-3 border-t border-nn-purple/25 text-[0.8125rem] tracking-eyebrow-sm uppercase text-white/55">
         <span>Prize</span>
         <span
           className="text-nn-pink-lite font-bold"

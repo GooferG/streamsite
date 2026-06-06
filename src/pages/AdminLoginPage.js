@@ -9,7 +9,7 @@ function Field({ label, code, icon: Icon, type, value, onChange, placeholder, au
   return (
     <label className="block">
       <div
-        className="flex items-baseline gap-3 mb-2 text-[10px] font-bold uppercase tracking-eyebrow-lg font-mono"
+        className="flex items-baseline gap-3 mb-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg font-mono"
       >
         <span className="text-orange-admin tabular-nums">{code}</span>
         <span className="text-white/55">{label}</span>
@@ -81,7 +81,7 @@ export default function AdminLoginPage({ onLoginSuccess, signedIn = false }) {
 
           {/* Status bar */}
           <div
-            className="relative flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
+            className="relative flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono"
       >
             <span className="inline-flex items-center gap-2 text-orange-admin">
               <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
@@ -97,7 +97,7 @@ export default function AdminLoginPage({ onLoginSuccess, signedIn = false }) {
             {/* Slate */}
             <div className="mb-7">
               <div
-                className="flex items-baseline gap-3 mb-3 text-[10px] font-bold uppercase tracking-eyebrow-lg font-mono"
+                className="flex items-baseline gap-3 mb-3 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg font-mono"
       >
                 <span className="text-white/30">TERMINAL</span>
                 <span className="text-orange-admin tabular-nums">T-01</span>
@@ -112,7 +112,7 @@ export default function AdminLoginPage({ onLoginSuccess, signedIn = false }) {
                 Operator sign-in.
               </h1>
               <p
-                className="mt-3 text-[11px] tracking-eyebrow uppercase text-white/40 font-mono"
+                className="mt-3 text-[0.6875rem] tracking-eyebrow uppercase text-white/40 font-mono"
       >
                 Authorized personnel only.
               </p>
@@ -131,7 +131,7 @@ export default function AdminLoginPage({ onLoginSuccess, signedIn = false }) {
                 />
                 <div className="min-w-0">
                   <div
-                    className="text-[10px] font-bold tracking-eyebrow-md uppercase text-red-destructive/80 mb-0.5 font-mono"
+                    className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-red-destructive/80 mb-0.5 font-mono"
       >
                     Signal rejected
                   </div>
@@ -168,13 +168,13 @@ export default function AdminLoginPage({ onLoginSuccess, signedIn = false }) {
                 className="w-full inline-flex items-center justify-center gap-3 px-6 py-3 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span
-                  className="text-[10px] font-bold tracking-eyebrow-lg font-mono"
+                  className="text-[0.625rem] font-bold tracking-eyebrow-lg font-mono"
       >
                   {loading ? 'AUTH...' : 'AUTHENTICATE'}
                 </span>
                 {!loading && (
                   <span
-                    className="text-[10px] font-bold tracking-eyebrow-lg opacity-70 font-mono"
+                    className="text-[0.625rem] font-bold tracking-eyebrow-lg opacity-70 font-mono"
       >
                     →
                   </span>
@@ -183,7 +183,7 @@ export default function AdminLoginPage({ onLoginSuccess, signedIn = false }) {
             </form>
 
             {/* Divider */}
-            <div className="my-6 flex items-center gap-3 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/30 font-mono">
+            <div className="my-6 flex items-center gap-3 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/30 font-mono">
               <span className="flex-1 h-px bg-white/10" />
               <span>or moderator</span>
               <span className="flex-1 h-px bg-white/10" />
@@ -208,7 +208,7 @@ export default function AdminLoginPage({ onLoginSuccess, signedIn = false }) {
                   className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-white/15 text-white/65 hover:text-white-body hover:border-white/30 transition-colors duration-150"
                 >
                   <LogOut size={13} aria-hidden="true" />
-                  <span className="text-[10px] font-bold tracking-eyebrow-lg font-mono">
+                  <span className="text-[0.625rem] font-bold tracking-eyebrow-lg font-mono">
                     Sign out
                   </span>
                 </button>
@@ -220,7 +220,7 @@ export default function AdminLoginPage({ onLoginSuccess, signedIn = false }) {
                 className="w-full inline-flex items-center justify-center gap-3 px-6 py-3 border border-purple-bright/50 bg-purple-gamba/20 text-white-body hover:bg-purple-gamba/40 transition-colors duration-150"
               >
                 <ShieldCheck size={14} className="text-purple-bright" aria-hidden="true" />
-                <span className="text-[10px] font-bold tracking-eyebrow-lg font-mono">
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg font-mono">
                   Continue with Twitch
                 </span>
               </button>
@@ -229,7 +229,7 @@ export default function AdminLoginPage({ onLoginSuccess, signedIn = false }) {
 
           {/* Footer */}
           <div
-            className="relative flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 border-t border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md text-white/30 font-mono"
+            className="relative flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 border-t border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md text-white/30 font-mono"
       >
             <span>SECURE TERMINAL</span>
             <span className="text-white/15">·</span>

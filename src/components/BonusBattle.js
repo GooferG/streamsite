@@ -69,13 +69,13 @@ export function FinishedScreen({ battle, players, derived, interactive = false, 
       </div>
 
       <div className="relative text-center font-mono">
-        <p className="text-[11px] tracking-eyebrow-lg uppercase text-purple-bright mb-1 inline-flex items-center gap-1.5 justify-center">
+        <p className="text-[0.6875rem] tracking-eyebrow-lg uppercase text-purple-bright mb-1 inline-flex items-center gap-1.5 justify-center">
           <Trophy size={13} /> {battle?.title || 'Bonus Battle'} · Finished
         </p>
 
         {winner ? (
           <div className="bb-pop">
-            <div className="text-[11px] tracking-eyebrow-lg uppercase text-crt-amber mt-4 mb-2 inline-flex items-center gap-2">
+            <div className="text-[0.6875rem] tracking-eyebrow-lg uppercase text-crt-amber mt-4 mb-2 inline-flex items-center gap-2">
               <Crown size={16} className="text-crt-amber" /> Winner Takes All
             </div>
             <h2
@@ -85,12 +85,12 @@ export function FinishedScreen({ battle, players, derived, interactive = false, 
               {winner.name}
             </h2>
             {winner.slot && (
-              <p className="text-[12px] tracking-eyebrow-md uppercase text-purple-bright mt-2">{winner.slot}</p>
+              <p className="text-[0.75rem] tracking-eyebrow-md uppercase text-purple-bright mt-2">{winner.slot}</p>
             )}
             <div className="mt-5 text-5xl sm:text-7xl font-extrabold tabular-nums text-emerald-signal leading-none">
               {fmt(derived.potAfterRake)}
             </div>
-            <p className="text-[11px] tracking-eyebrow-sm uppercase text-white/45 mt-2 tabular-nums">
+            <p className="text-[0.6875rem] tracking-eyebrow-sm uppercase text-white/45 mt-2 tabular-nums">
               {fmt(winner.payout)} pulled · pot {fmt(derived.totalPot)} − {battle?.rakePct ?? 10}% rake
             </p>
           </div>
@@ -101,7 +101,7 @@ export function FinishedScreen({ battle, players, derived, interactive = false, 
         {/* Final standings */}
         {sorted.length > 0 && (
           <div className="mt-8 max-w-md mx-auto text-left">
-            <p className="text-[10px] tracking-eyebrow-lg uppercase text-white/55 mb-3 text-center">Final Standings</p>
+            <p className="text-[0.625rem] tracking-eyebrow-lg uppercase text-white/55 mb-3 text-center">Final Standings</p>
             <div className="space-y-2">
               {sorted.map((p, i) => {
                 const isWin = winner && p.id === winner.id;
@@ -122,7 +122,7 @@ export function FinishedScreen({ battle, players, derived, interactive = false, 
                     </span>
                     {isWin && <Crown size={14} className="text-crt-amber flex-shrink-0" />}
                     <span className="text-sm font-bold text-white-body truncate">{p.name}</span>
-                    {p.slot && <span className="text-[10px] uppercase text-white/45 truncate">· {p.slot}</span>}
+                    {p.slot && <span className="text-[0.625rem] uppercase text-white/45 truncate">· {p.slot}</span>}
                     <span
                       className={`ml-auto text-base font-black tabular-nums ${
                         isWin ? 'text-emerald-signal' : isLose ? 'text-red-destructive' : 'text-white-body'
@@ -135,7 +135,7 @@ export function FinishedScreen({ battle, players, derived, interactive = false, 
               })}
             </div>
             {loser && ran > 1 && (
-              <div className="border border-red-destructive/50 bg-red-destructive/10 p-3 mt-3 text-center text-[11px] tracking-eyebrow-sm uppercase text-red-destructive/90 inline-flex w-full items-center justify-center gap-1.5">
+              <div className="border border-red-destructive/50 bg-red-destructive/10 p-3 mt-3 text-center text-[0.6875rem] tracking-eyebrow-sm uppercase text-red-destructive/90 inline-flex w-full items-center justify-center gap-1.5">
                 <Ticket size={13} /> {loser.name} → free ticket next game
               </div>
             )}
@@ -146,7 +146,7 @@ export function FinishedScreen({ battle, players, derived, interactive = false, 
           <button
             type="button"
             onClick={onResume}
-            className="mt-8 px-5 py-2.5 border border-white/15 text-white/55 hover:text-white-body hover:border-white/30 text-[10px] font-bold tracking-eyebrow-md uppercase font-mono transition-colors"
+            className="mt-8 px-5 py-2.5 border border-white/15 text-white/55 hover:text-white-body hover:border-white/30 text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono transition-colors"
           >
             ← Back to battle
           </button>
@@ -212,8 +212,8 @@ export function BattleBoard({
         </p>
         <div className="relative overflow-hidden border border-purple-gamba/70 bg-purple-gamba/10 p-4 mb-4">
           <div className="flex items-center justify-between">
-            <div className="text-[11px] tracking-eyebrow-md uppercase text-purple-bright">Total Pot</div>
-            <div className="text-[10px] tracking-eyebrow-sm uppercase text-white/55 tabular-nums">
+            <div className="text-[0.6875rem] tracking-eyebrow-md uppercase text-purple-bright">Total Pot</div>
+            <div className="text-[0.625rem] tracking-eyebrow-sm uppercase text-white/55 tabular-nums">
               {fmt(derived.entryFee)} entry
             </div>
           </div>
@@ -229,7 +229,7 @@ export function BattleBoard({
               {fmt(derived.totalPot)}
             </span>
           </div>
-          <div className="text-[10px] tracking-eyebrow-sm uppercase text-white/45 mt-1.5 tabular-nums">
+          <div className="text-[0.625rem] tracking-eyebrow-sm uppercase text-white/45 mt-1.5 tabular-nums">
             {fmt(derived.entryFee)} × {derived.total} {derived.total === 1 ? 'player' : 'players'}
           </div>
         </div>
@@ -256,7 +256,7 @@ export function BattleBoard({
             <button
               type="button"
               onClick={submitPlayer}
-              className="w-full px-3 py-2.5 bg-white/10 hover:bg-white/15 text-white-body text-[11px] font-bold tracking-eyebrow-md uppercase font-mono transition-colors"
+              className="w-full px-3 py-2.5 bg-white/10 hover:bg-white/15 text-white-body text-[0.6875rem] font-bold tracking-eyebrow-md uppercase font-mono transition-colors"
             >
               + Add player
             </button>
@@ -274,12 +274,12 @@ export function BattleBoard({
               } ${p.ran ? '' : 'opacity-70'} ${current && current.id === p.id ? 'border-amber-rust/60 bg-amber-rust/5' : ''}`}
             >
               {!lobby && (
-                <span className="text-[11px] font-black text-white/30 tabular-nums w-5">{i + 1}</span>
+                <span className="text-[0.6875rem] font-black text-white/30 tabular-nums w-5">{i + 1}</span>
               )}
               <span className={`font-bold text-white-body truncate ${lobby ? 'text-sm' : 'text-base'}`}>{p.name}</span>
-              {p.slot && <span className="text-[10px] uppercase text-white/50 tracking-eyebrow-sm truncate">· {p.slot}</span>}
+              {p.slot && <span className="text-[0.625rem] uppercase text-white/50 tracking-eyebrow-sm truncate">· {p.slot}</span>}
               {!lobby && !p.ran && current?.id !== p.id && (
-                <span className="text-[9px] tracking-eyebrow-sm uppercase text-white/35">waiting</span>
+                <span className="text-[0.5625rem] tracking-eyebrow-sm uppercase text-white/35">waiting</span>
               )}
               <span className={`ml-auto font-black tabular-nums ${lobby ? 'text-sm' : 'text-base'} ${p.ran ? 'text-emerald-signal' : 'text-white/40'}`}>
                 {p.ran ? fmt(p.payout) : '—'}
@@ -311,7 +311,7 @@ export function BattleBoard({
           <button
             type="button"
             onClick={onUnlockEntries}
-            className="w-full mt-4 px-4 py-2.5 border border-white/15 text-white/55 hover:text-white-body hover:border-white/30 text-[10px] font-bold tracking-eyebrow-md uppercase font-mono transition-colors"
+            className="w-full mt-4 px-4 py-2.5 border border-white/15 text-white/55 hover:text-white-body hover:border-white/30 text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono transition-colors"
           >
             Unlock entries
           </button>
@@ -320,7 +320,7 @@ export function BattleBoard({
         {/* Payout entry — running phase only, for the current player. */}
         {interactive && !lobby && current && (
           <div className="border border-dashed border-emerald-signal/40 p-4 mt-4">
-            <div className="text-[11px] tracking-eyebrow-md uppercase text-emerald-signal mb-2">
+            <div className="text-[0.6875rem] tracking-eyebrow-md uppercase text-emerald-signal mb-2">
               {current.name} — How much did it pay?
             </div>
             <input
@@ -348,7 +348,7 @@ export function BattleBoard({
           // Lobby: signups open. No wheel, no payout — just the call to add
           // players and lock in.
           <div className="text-center py-6">
-            <p className="text-[13px] tracking-eyebrow-lg uppercase text-purple-bright mb-2">Signups open</p>
+            <p className="text-[0.8125rem] tracking-eyebrow-lg uppercase text-purple-bright mb-2">Signups open</p>
             <div className="border border-white/10 bg-zinc-broadcast h-44 sm:h-52 flex flex-col items-center justify-center gap-2.5 font-mono px-4">
               <span className="text-5xl font-black text-white-body tabular-nums leading-none">{derived.total}</span>
               <span className="text-sm sm:text-base tracking-eyebrow-sm uppercase text-white/70">
@@ -362,7 +362,7 @@ export function BattleBoard({
           </div>
         ) : (
           <>
-            <p className="text-center text-[13px] tracking-eyebrow-lg uppercase text-purple-bright mb-2">
+            <p className="text-center text-[0.8125rem] tracking-eyebrow-lg uppercase text-purple-bright mb-2">
               Who plays next?
             </p>
             {interactive ? (
@@ -376,9 +376,9 @@ export function BattleBoard({
         )}
         {!lobby && current && (
           <div className="border border-amber-rust/60 bg-amber-rust/10 p-4 mt-5 text-center">
-            <div className="text-[11px] tracking-eyebrow-md uppercase text-amber-rust">Now Playing</div>
+            <div className="text-[0.6875rem] tracking-eyebrow-md uppercase text-amber-rust">Now Playing</div>
             <div className="text-2xl font-black text-white-body mt-1">{current.name}</div>
-            {current.slot && <div className="text-[12px] uppercase text-white/70 tracking-eyebrow-sm mt-1">{current.slot}</div>}
+            {current.slot && <div className="text-[0.75rem] uppercase text-white/70 tracking-eyebrow-sm mt-1">{current.slot}</div>}
           </div>
         )}
       </div>
@@ -401,7 +401,7 @@ export function BattleBoard({
               >
                 <span className="text-base font-black text-crt-amber w-5 tabular-nums">{i + 1}</span>
                 <span className="text-sm font-bold text-white-body truncate">{p.name}</span>
-                {p.slot && <span className="text-[10px] uppercase text-white/45 truncate">· {p.slot}</span>}
+                {p.slot && <span className="text-[0.625rem] uppercase text-white/45 truncate">· {p.slot}</span>}
                 <span className={`ml-auto text-base font-black tabular-nums ${isWin ? 'text-emerald-signal' : isLose ? 'text-red-destructive' : 'text-white-body'}`}>
                   {fmt(p.payout)}
                 </span>
@@ -412,7 +412,7 @@ export function BattleBoard({
         </div>
 
         <div className="relative overflow-hidden border border-purple-gamba/70 bg-purple-gamba/10 p-4 mt-4 text-center">
-          <div className="text-[12px] tracking-eyebrow-md uppercase text-purple-bright flex items-center justify-center gap-1.5">
+          <div className="text-[0.75rem] tracking-eyebrow-md uppercase text-purple-bright flex items-center justify-center gap-1.5">
             <Trophy size={13} /> Winner Takes All
           </div>
           {/* Hero prize number with ghost layer behind. */}
@@ -427,15 +427,15 @@ export function BattleBoard({
               {fmt(derived.potAfterRake)}
             </span>
           </div>
-          <div className="text-[12px] text-white/55 tabular-nums">
+          <div className="text-[0.75rem] text-white/55 tabular-nums">
             Pot {fmt(derived.totalPot)} − {rakePct}% rake ({fmt(derived.rakeAmount)})
           </div>
-          <div className="text-[10px] text-white/40 tabular-nums mt-0.5">
+          <div className="text-[0.625rem] text-white/40 tabular-nums mt-0.5">
             {fmt(derived.totalPayouts)} paid out across {derived.ran} {derived.ran === 1 ? 'bonus' : 'bonuses'}
           </div>
           {interactive && (
             <div className="flex items-center justify-center gap-4 mt-3 flex-wrap">
-              <label className="text-[10px] tracking-eyebrow-md uppercase text-white/50">
+              <label className="text-[0.625rem] tracking-eyebrow-md uppercase text-white/50">
                 Entry
                 <input
                   type="number"
@@ -444,7 +444,7 @@ export function BattleBoard({
                   className="ml-2 w-16 bg-black/30 border border-white/12 text-white-body text-sm px-2 py-1 font-mono tabular-nums"
                 />
               </label>
-              <label className="text-[10px] tracking-eyebrow-md uppercase text-white/50">
+              <label className="text-[0.625rem] tracking-eyebrow-md uppercase text-white/50">
                 Cur
                 <select
                   value={cur}
@@ -458,7 +458,7 @@ export function BattleBoard({
                   ))}
                 </select>
               </label>
-              <label className="text-[10px] tracking-eyebrow-md uppercase text-white/50">
+              <label className="text-[0.625rem] tracking-eyebrow-md uppercase text-white/50">
                 Rake %
                 <input
                   type="number"
@@ -470,7 +470,7 @@ export function BattleBoard({
             </div>
           )}
         </div>
-        <div className="border border-red-destructive/50 bg-red-destructive/10 p-3 mt-2.5 text-center text-[12px] tracking-eyebrow-sm uppercase text-red-destructive/90 flex items-center justify-center gap-1.5">
+        <div className="border border-red-destructive/50 bg-red-destructive/10 p-3 mt-2.5 text-center text-[0.75rem] tracking-eyebrow-sm uppercase text-red-destructive/90 flex items-center justify-center gap-1.5">
           <Ticket size={13} /> Biggest loser → free ticket
         </div>
       </div>
@@ -482,7 +482,7 @@ function Stat({ n, k, border, text }) {
   return (
     <div className={`border p-3 text-center ${border}`}>
       <div className={`text-2xl font-black tabular-nums ${text}`}>{n}</div>
-      <div className="text-[10px] tracking-eyebrow-md uppercase text-white/55 mt-1">{k}</div>
+      <div className="text-[0.625rem] tracking-eyebrow-md uppercase text-white/55 mt-1">{k}</div>
     </div>
   );
 }
@@ -501,7 +501,7 @@ function StartScreen({ onStart }) {
       <p className="text-sm font-bold tracking-eyebrow-lg uppercase text-emerald-signal mb-1">◉ New Bonus Battle</p>
       <p className="text-xs text-white/50 mb-6">Name it and set the buy-in. Entry fees fund the pot.</p>
 
-      <label className="block text-[10px] tracking-eyebrow-md uppercase text-white/50 mb-1.5">Battle title</label>
+      <label className="block text-[0.625rem] tracking-eyebrow-md uppercase text-white/50 mb-1.5">Battle title</label>
       <input
         value={title}
         onChange={(e) => setTitle(e.target.value)}
@@ -511,7 +511,7 @@ function StartScreen({ onStart }) {
 
       <div className="flex gap-3 mb-6">
         <div className="flex-1">
-          <label className="block text-[10px] tracking-eyebrow-md uppercase text-white/50 mb-1.5">Entry fee (per player)</label>
+          <label className="block text-[0.625rem] tracking-eyebrow-md uppercase text-white/50 mb-1.5">Entry fee (per player)</label>
           <input
             type="number"
             inputMode="decimal"
@@ -522,7 +522,7 @@ function StartScreen({ onStart }) {
           />
         </div>
         <div className="w-32">
-          <label className="block text-[10px] tracking-eyebrow-md uppercase text-white/50 mb-1.5">Currency</label>
+          <label className="block text-[0.625rem] tracking-eyebrow-md uppercase text-white/50 mb-1.5">Currency</label>
           <select
             value={cur}
             onChange={(e) => setCur(e.target.value)}
@@ -590,14 +590,14 @@ export default function BonusBattle() {
           <button
             type="button"
             onClick={() => { if (window.confirm('Reset the battle? This clears all players.')) reset(); }}
-            className="text-[10px] tracking-eyebrow-md uppercase text-white/40 hover:text-red-destructive font-mono"
+            className="text-[0.625rem] tracking-eyebrow-md uppercase text-white/40 hover:text-red-destructive font-mono"
           >
             Reset
           </button>
         </div>
       </div>
       {!ownerId && (
-        <p className="text-[10px] tracking-eyebrow-sm uppercase text-amber-rust/80 font-mono">
+        <p className="text-[0.625rem] tracking-eyebrow-sm uppercase text-amber-rust/80 font-mono">
           Not signed in — running locally. Log in to share a live link with viewers.
         </p>
       )}

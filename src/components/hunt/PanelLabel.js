@@ -7,7 +7,7 @@ export default function PanelLabel({ code, icon: Icon, label, accent = 'emerald'
         : 'text-emerald-signal';
   return (
     <div
-      className={`flex items-center gap-3 text-[10px] font-bold uppercase tracking-eyebrow-lg font-mono ${quiet ? 'text-white/50' : 'text-white/65'}`}
+      className={`flex items-center gap-3 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg font-mono ${quiet ? 'text-white/50' : 'text-white/65'}`}
     >
       {code && <span className={`${color} tabular-nums`}>{code}</span>}
       <span className="inline-flex items-center gap-1.5">

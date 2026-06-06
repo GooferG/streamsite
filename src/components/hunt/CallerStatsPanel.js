@@ -11,13 +11,13 @@ export default function CallerStatsPanel({ bonuses, history, skippedCalls, onOpe
     return (
       <div className="space-y-3">
         <PanelLabel code="05" label="Caller stats" accent="purple" quiet />
-        <p className="text-center text-white/55 py-4 text-[12px] font-mono">No calls tagged yet.</p>
+        <p className="text-center text-white/55 py-4 text-[0.75rem] font-mono">No calls tagged yet.</p>
       </div>
     );
   }
   const Tile = ({ tone, icon: Icon, k, primary, sub }) => (
     <div className="px-3 py-2 bg-zinc-broadcast/50 border border-white/8">
-      <p className={`text-[10px] font-bold uppercase tracking-eyebrow-lg mb-1 font-mono inline-flex items-center gap-1.5 ${tone}`}>
+      <p className={`text-[0.625rem] font-bold uppercase tracking-eyebrow-lg mb-1 font-mono inline-flex items-center gap-1.5 ${tone}`}>
         <Icon size={11} aria-hidden="true" /> {k}
       </p>
       <p className="text-sm font-bold text-white-body tabular-nums">
@@ -42,7 +42,7 @@ export default function CallerStatsPanel({ bonuses, history, skippedCalls, onOpe
       <div className="border border-white/8 bg-zinc-broadcast/40">
         {s.leaderboard.map((r, i) => (
           <div key={r.name} className="flex items-center gap-3 px-3 py-1.5 border-b border-white/5 last:border-b-0">
-            <span className="text-[10px] font-bold tabular-nums text-white/30 font-mono w-5">
+            <span className="text-[0.625rem] font-bold tabular-nums text-white/30 font-mono w-5">
               {String(i + 1).padStart(2, '0')}
             </span>
             <button type="button" onClick={() => onOpenLog(r.name)}
@@ -50,11 +50,11 @@ export default function CallerStatsPanel({ bonuses, history, skippedCalls, onOpe
               {r.name}
             </button>
             <StatusBadge status={r.status} />
-            <span className="text-[10px] font-mono tabular-nums text-white/55 w-14 text-right">
+            <span className="text-[0.625rem] font-mono tabular-nums text-white/55 w-14 text-right">
               {r.gotIn}/{r.calls}
             </span>
             <span className="w-16 flex justify-end"><FormStrip form={r.form} /></span>
-            <span className={`text-[11px] font-bold tabular-nums w-14 text-right ${
+            <span className={`text-[0.6875rem] font-bold tabular-nums w-14 text-right ${
               r.avgX == null ? 'text-white/40' : r.avgX >= CALLER_WIN_X ? 'text-emerald-signal' : r.avgX < CALLER_BRICK_X ? 'text-red-destructive' : 'text-white/70'
             }`}>
               {r.avgX == null ? '—' : fmtX(r.avgX)}
@@ -63,7 +63,7 @@ export default function CallerStatsPanel({ bonuses, history, skippedCalls, onOpe
         ))}
       </div>
       {s.coldCaller && (
-        <p className="text-[10px] font-mono text-white/50 tracking-eyebrow-md">
+        <p className="text-[0.625rem] font-mono text-white/50 tracking-eyebrow-md">
           {s.coldCaller.name} on a cold streak · {Math.round(s.coldCaller.acceptRate * 100)}% of calls get in
         </p>
       )}

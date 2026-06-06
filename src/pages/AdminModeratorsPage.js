@@ -133,12 +133,12 @@ export default function AdminModeratorsPage() {
         <button
           type="button"
           onClick={() => navigate('/admin')}
-          className="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/50 hover:text-white-body font-mono mb-3"
+          className="inline-flex items-center gap-1.5 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/50 hover:text-white-body font-mono mb-3"
         >
           <ArrowLeft size={11} aria-hidden="true" />
           Back to hub
         </button>
-        <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-orange-admin font-mono mb-2">
+        <div className="flex items-center gap-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-orange-admin font-mono mb-2">
           <ShieldCheck size={11} aria-hidden="true" />
           <span>Module MOD</span>
         </div>
@@ -152,7 +152,7 @@ export default function AdminModeratorsPage() {
       {error && (
         <div className="mb-4 px-3 py-2 border border-red-destructive/40 bg-red-destructive/10 flex items-start gap-2">
           <AlertCircle size={13} className="text-red-destructive flex-shrink-0 mt-0.5" />
-          <span className="text-[12px] text-red-destructive/90">{error}</span>
+          <span className="text-[0.75rem] text-red-destructive/90">{error}</span>
         </div>
       )}
 
@@ -162,7 +162,7 @@ export default function AdminModeratorsPage() {
         className="mb-6 border border-white/10 bg-zinc-card/30 p-4 flex items-end gap-3"
       >
         <label className="flex-1 block">
-          <div className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+          <div className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
             Twitch username
           </div>
           <input
@@ -180,7 +180,7 @@ export default function AdminModeratorsPage() {
           className="inline-flex items-center gap-2 px-4 py-2 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50"
         >
           <Plus size={13} aria-hidden="true" />
-          <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+          <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
             {adding ? 'Adding…' : 'Add mod'}
           </span>
         </button>
@@ -189,16 +189,16 @@ export default function AdminModeratorsPage() {
       {/* List */}
       <section className="border border-white/10 bg-zinc-card/30">
         <header className="px-4 py-2.5 border-b border-white/10 flex items-center justify-between">
-          <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white-body font-mono">
+          <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white-body font-mono">
             Active moderators
           </span>
-          <span className="text-[10px] font-mono text-white/45 tabular-nums">
+          <span className="text-[0.625rem] font-mono text-white/45 tabular-nums">
             {loading ? '…' : mods.length}
           </span>
         </header>
         <div>
           {loading ? (
-            <p className="p-6 text-center text-[11px] font-mono uppercase tracking-eyebrow text-white/40">
+            <p className="p-6 text-center text-[0.6875rem] font-mono uppercase tracking-eyebrow text-white/40">
               Loading…
             </p>
           ) : mods.length === 0 ? (
@@ -214,7 +214,7 @@ export default function AdminModeratorsPage() {
                     <div className="text-sm font-bold text-white-body truncate">
                       {m.displayName || m.twitchName}
                     </div>
-                    <div className="text-[11px] text-white/45 font-mono truncate">
+                    <div className="text-[0.6875rem] text-white/45 font-mono truncate">
                       @{m.twitchName} <span className="text-white/25">· id {m.twitchId}</span>
                     </div>
                   </div>
@@ -225,7 +225,7 @@ export default function AdminModeratorsPage() {
                     className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-red-destructive/40 text-red-destructive hover:bg-red-destructive/10 transition-colors duration-150 disabled:opacity-50"
                   >
                     <Trash2 size={11} aria-hidden="true" />
-                    <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                    <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                       {removingId === m.twitchId ? 'Removing…' : 'Remove'}
                     </span>
                   </button>

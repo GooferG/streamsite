@@ -60,7 +60,7 @@ export default function GiveawayPage() {
       <div className="relative z-10 max-w-3xl mx-auto space-y-5">
         {/* Header */}
         <header className="mb-2">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono">
             <span className="inline-flex items-center gap-2 text-emerald-signal">
               <span className="relative flex w-1.5 h-1.5">
                 <span className="absolute inset-0 rounded-full bg-emerald-signal motion-safe:animate-ping opacity-50" />
@@ -96,7 +96,7 @@ export default function GiveawayPage() {
                 className="pointer-events-none absolute -top-32 -right-24 w-96 h-96 rounded-full bg-emerald-signal/10 blur-3xl motion-reduce:hidden"
                 aria-hidden="true"
               />
-              <div className="relative flex items-center gap-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold tracking-eyebrow-md uppercase font-mono">
+              <div className="relative flex items-center gap-2 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono">
                 <Megaphone size={11} className="text-emerald-signal" aria-hidden="true" />
                 <span className="text-emerald-signal">
                   {active.status === 'rolling' ? 'Rolling now' : 'Live giveaway'}
@@ -108,7 +108,7 @@ export default function GiveawayPage() {
 
               <div className="relative px-5 sm:px-7 py-6 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-5 items-end">
                 <div className="min-w-0">
-                  <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal/80 mb-2 font-mono">
+                  <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal/80 mb-2 font-mono">
                     ▸ Prize
                   </p>
                   <p
@@ -124,7 +124,7 @@ export default function GiveawayPage() {
 
                   {active.status === 'open' && (
                     <div className="mt-5 inline-flex items-baseline gap-3 px-4 py-3 border-2 border-emerald-signal/50 bg-emerald-signal/5">
-                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal/80 font-mono">
+                      <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal/80 font-mono">
                         Type in chat
                       </span>
                       <span
@@ -147,22 +147,22 @@ export default function GiveawayPage() {
                         onClick={loginWithTwitch}
                         className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-gamba hover:bg-purple-bright text-white-body transition-colors duration-150"
                       >
-                        <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                        <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                           Sign in for bonus weight
                         </span>
                       </button>
-                      <p className="mt-2 text-[10px] tracking-eyebrow uppercase text-white/40 font-mono">
+                      <p className="mt-2 text-[0.625rem] tracking-eyebrow uppercase text-white/40 font-mono">
                         Anyone in chat can enter — signing in here adds +1 entry weight.
                       </p>
                     </div>
                   ) : (
-                    <p className="mt-4 text-[11px] tracking-eyebrow uppercase text-white/45 font-mono">
+                    <p className="mt-4 text-[0.6875rem] tracking-eyebrow uppercase text-white/45 font-mono">
                       Signed in as <span className="text-emerald-signal/85">{twitchUser.displayName}</span>
                       {user?.discordVerifiedAt ? <span className="text-white/40"> · Discord linked (extra weight)</span> : null}
                     </p>
                   )}
                   {eligibleNote && (
-                    <p className="mt-2 text-[11px] tracking-eyebrow uppercase text-orange-admin font-mono">
+                    <p className="mt-2 text-[0.6875rem] tracking-eyebrow uppercase text-orange-admin font-mono">
                       {eligibleNote}
                     </p>
                   )}
@@ -172,7 +172,7 @@ export default function GiveawayPage() {
 
             {/* Entries grid */}
             <div className="border border-white/8 bg-zinc-card/30 p-5 sm:p-6">
-              <div className="flex items-center justify-between mb-5 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+              <div className="flex items-center justify-between mb-5 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
                 <span className="inline-flex items-center gap-2 text-white/55">
                   <Users size={11} aria-hidden="true" />
                   Who&apos;s in
@@ -191,7 +191,7 @@ export default function GiveawayPage() {
           </>
         ) : (
           <div className="border border-white/8 bg-zinc-card/30 py-12 text-center">
-            <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono">
+            <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono">
               No active giveaway
             </p>
             <p className="text-sm text-white/55">
@@ -203,7 +203,7 @@ export default function GiveawayPage() {
         {/* Past winners */}
         {past.length > 0 && (
           <div className="border border-white/8 bg-zinc-card/30">
-            <div className="px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md text-white/55 font-mono inline-flex items-center gap-2">
+            <div className="px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md text-white/55 font-mono inline-flex items-center gap-2">
               <Trophy size={11} aria-hidden="true" />
               Recent winners
             </div>
@@ -228,7 +228,7 @@ export default function GiveawayPage() {
                       <span className="text-white/45 font-normal">won</span>{' '}
                       {g.prize}
                     </p>
-                    <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono">
+                    <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono">
                       {formatTs(g.confirmedAt)}
                     </p>
                   </div>

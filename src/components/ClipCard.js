@@ -35,11 +35,11 @@ export default function ClipCard({ clip, index = 0, onPlay }) {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-zinc-broadcast/85 via-zinc-broadcast/10 to-transparent" />
 
-        <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-zinc-broadcast/80 text-emerald-signal text-[10px] font-bold font-mono tracking-eyebrow-sm">
+        <div className="absolute top-2 left-2 px-1.5 py-0.5 bg-zinc-broadcast/80 text-emerald-signal text-[0.625rem] font-bold font-mono tracking-eyebrow-sm">
           #{tapeNumber}
         </div>
 
-        <div className="absolute top-2 right-2 px-2 py-0.5 border border-white/30 text-white/80 text-[10px] font-bold font-mono tracking-eyebrow-xs bg-zinc-broadcast/60">
+        <div className="absolute top-2 right-2 px-2 py-0.5 border border-white/30 text-white/80 text-[0.625rem] font-bold font-mono tracking-eyebrow-xs bg-zinc-broadcast/60">
           {clip.duration}
         </div>
 
@@ -52,7 +52,7 @@ export default function ClipCard({ clip, index = 0, onPlay }) {
         <h3 className="text-sm font-bold text-white-body line-clamp-2 leading-snug mb-1.5">
           {clip.title}
         </h3>
-        <div className="flex items-center justify-between gap-3 text-[10px] font-bold tracking-eyebrow-xs uppercase">
+        <div className="flex items-center justify-between gap-3 text-[0.625rem] font-bold tracking-eyebrow-xs uppercase">
           <span className="truncate text-white/55">{clip.game}</span>
           <span className="shrink-0 text-emerald-signal tabular-nums font-mono">
             {clip.views}

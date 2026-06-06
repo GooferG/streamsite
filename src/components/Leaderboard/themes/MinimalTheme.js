@@ -40,7 +40,7 @@ export default function MinimalTheme({ data, now }) {
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-x-8 gap-y-5 px-5 sm:px-8 py-7 border-b border-white/8">
         <div>
-          <div className="text-[12px] tracking-eyebrow-md text-white/30 uppercase mb-3">
+          <div className="text-[0.75rem] tracking-eyebrow-md text-white/30 uppercase mb-3">
             {data.periodLabel}
           </div>
           <h2 className="text-4xl sm:text-5xl font-bold tracking-tight leading-none">
@@ -63,7 +63,7 @@ export default function MinimalTheme({ data, now }) {
             </div>
           ) : (
             <>
-              <div className="text-[11px] tracking-eyebrow text-white/30 uppercase mb-3">
+              <div className="text-[0.6875rem] tracking-eyebrow text-white/30 uppercase mb-3">
                 Ends in
               </div>
               <div className="flex items-start gap-4 sm:gap-5">
@@ -82,7 +82,7 @@ export default function MinimalTheme({ data, now }) {
                     <span className="text-4xl sm:text-5xl font-semibold tabular-nums leading-none tracking-tight">
                       {pad2(value)}
                     </span>
-                    <span className="mt-2 text-[10px] tracking-eyebrow text-white/30 uppercase">
+                    <span className="mt-2 text-[0.625rem] tracking-eyebrow text-white/30 uppercase">
                       {label}
                     </span>
                   </div>
@@ -121,19 +121,19 @@ export default function MinimalTheme({ data, now }) {
                 )}
                 <div className="flex items-center justify-between mb-4">
                   <span
-                    className={`text-[12px] tracking-eyebrow uppercase ${
+                    className={`text-[0.75rem] tracking-eyebrow uppercase ${
                       lead ? 'text-mn-acc' : 'text-white/30'
                     }`}
                   >
                     {labels[i]} place
                   </span>
-                  <span className="text-[11px] font-semibold text-white/40 border border-white/8 rounded-full px-2.5 py-0.5">
+                  <span className="text-[0.6875rem] font-semibold text-white/40 border border-white/8 rounded-full px-2.5 py-0.5">
                     {formatPosition(p.position)}
                   </span>
                 </div>
                 <div className="text-xl font-semibold truncate">{p.maskedUsername}</div>
                 <div
-                  className={`mt-3.5 text-2xl sm:text-[32px] font-bold tabular-nums tracking-tight leading-none ${
+                  className={`mt-3.5 text-2xl sm:text-[2rem] font-bold tabular-nums tracking-tight leading-none ${
                     lead ? 'text-mn-acc' : 'text-white-body'
                   }`}
                 >
@@ -147,7 +147,7 @@ export default function MinimalTheme({ data, now }) {
       )}
 
       {/* Table header */}
-      <div className="grid grid-cols-[64px_minmax(0,1fr)_auto_auto] gap-4 px-5 sm:px-8 pb-3.5 text-[11px] tracking-eyebrow text-white/30 uppercase">
+      <div className="grid grid-cols-[64px_minmax(0,1fr)_auto_auto] gap-4 px-5 sm:px-8 pb-3.5 text-[0.6875rem] tracking-eyebrow text-white/30 uppercase">
         <span>#</span>
         <span>Player</span>
         <span className="text-right">Wagered</span>
@@ -166,14 +166,14 @@ export default function MinimalTheme({ data, now }) {
             >
               <span className="flex items-center gap-2 text-sm font-semibold tabular-nums text-white/35">
                 {formatPosition(p.position)}
-                <span className={`text-[8px] ${d.cls}`} aria-hidden="true">
+                <span className={`text-[0.5rem] ${d.cls}`} aria-hidden="true">
                   {d.glyph}
                 </span>
               </span>
               <span className="min-w-0 flex items-center text-base font-medium">
                 <span className="truncate">{p.maskedUsername}</span>
                 {climb > 0 && (
-                  <span className="ml-3 whitespace-nowrap text-[11px] text-mn-acc opacity-0 -translate-x-1.5 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0">
+                  <span className="ml-3 whitespace-nowrap text-[0.6875rem] text-mn-acc opacity-0 -translate-x-1.5 transition-all duration-200 group-hover:opacity-100 group-hover:translate-x-0">
                     +{formatUSD(climb)} to climb
                   </span>
                 )}

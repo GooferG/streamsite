@@ -427,7 +427,7 @@ export default function HomeLeaderboardCallout({
               aria-hidden="true"
             />
 
-            <div className="pointer-events-none absolute top-3 right-4 flex items-center gap-2 text-[10px] font-bold tracking-eyebrow-lg text-emerald-signal font-mono z-10">
+            <div className="pointer-events-none absolute top-3 right-4 flex items-center gap-2 text-[0.625rem] font-bold tracking-eyebrow-lg text-emerald-signal font-mono z-10">
               <span
                 className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-signal animate-pulse motion-reduce:animate-none"
                 aria-hidden="true"
@@ -437,7 +437,7 @@ export default function HomeLeaderboardCallout({
 
             <div className="relative p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-[3fr_2fr] gap-8 items-center">
               <div className="space-y-4">
-                <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono">
+                <div className="text-[0.625rem] font-bold tracking-eyebrow-lg text-white/55 font-mono">
                   NOW SHOWING · CH 01 · {data.periodLabel}
                 </div>
                 <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl tracking-tight leading-none uppercase">
@@ -480,7 +480,7 @@ export default function HomeLeaderboardCallout({
 
               <div className="grid grid-cols-2 gap-4 lg:border-l lg:border-white/8 lg:pl-8">
                 <div className="space-y-1.5">
-                  <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono">
+                  <div className="text-[0.625rem] font-bold tracking-eyebrow-lg text-white/55 font-mono">
                     CURRENT LEADER
                   </div>
                   <div className="font-display text-2xl sm:text-3xl text-white-body tracking-tight uppercase leading-none break-all">
@@ -492,7 +492,7 @@ export default function HomeLeaderboardCallout({
                 </div>
 
                 <div className="space-y-1.5">
-                  <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono">
+                  <div className="text-[0.625rem] font-bold tracking-eyebrow-lg text-white/55 font-mono">
                     T-MINUS
                   </div>
                   <div className="text-2xl sm:text-3xl font-bold tabular-nums font-mono text-white-body leading-none">
@@ -505,7 +505,7 @@ export default function HomeLeaderboardCallout({
 
                 <div className="col-span-2 pt-3 border-t border-white/8 flex items-baseline justify-between gap-3">
                   <div>
-                    <div className="text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono">
+                    <div className="text-[0.625rem] font-bold tracking-eyebrow-lg text-white/55 font-mono">
                       LEADING BY
                     </div>
                     <div className="text-base sm:text-lg font-bold tabular-nums font-mono text-white-body">
@@ -513,7 +513,7 @@ export default function HomeLeaderboardCallout({
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] font-bold tracking-eyebrow-lg text-emerald-signal/80 font-mono">
+                    <div className="text-[0.625rem] font-bold tracking-eyebrow-lg text-emerald-signal/80 font-mono">
                       1ST PRIZE
                     </div>
                     <div className="text-base sm:text-lg font-bold tabular-nums font-mono text-emerald-signal">

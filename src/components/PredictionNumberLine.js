@@ -77,7 +77,7 @@ export default function PredictionNumberLine({ round }) {
 
   return (
     <div className="border border-white/10 bg-zinc-card/30 px-4 sm:px-6 py-4">
-      <div className="flex items-center justify-between mb-3 text-[10px] font-bold tracking-eyebrow-md uppercase font-mono">
+      <div className="flex items-center justify-between mb-3 text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono">
         <span className="text-white/55">Distribution</span>
         <span className="text-white/35 tabular-nums">{ticks.length} guesses</span>
       </div>
@@ -124,7 +124,7 @@ export default function PredictionNumberLine({ round }) {
               transform: 'translateX(-50%)',
             }}
           >
-            <span className="text-[8px] font-bold tracking-eyebrow-lg uppercase text-orange-admin bg-zinc-broadcast/90 px-1 py-0.5 font-mono mb-0.5">
+            <span className="text-[0.5rem] font-bold tracking-eyebrow-lg uppercase text-orange-admin bg-zinc-broadcast/90 px-1 py-0.5 font-mono mb-0.5">
               Actual
             </span>
             <span className="w-0.5 flex-1 bg-orange-admin" />
@@ -132,7 +132,7 @@ export default function PredictionNumberLine({ round }) {
         )}
       </div>
 
-      <div className="flex items-center justify-between mt-2 text-[10px] font-bold tracking-eyebrow-md uppercase text-white/45 font-mono tabular-nums">
+      <div className="flex items-center justify-between mt-2 text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/45 font-mono tabular-nums">
         <span>{fmt(min)}</span>
         <span>{fmt(max)}</span>
       </div>

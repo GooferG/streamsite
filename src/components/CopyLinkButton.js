@@ -31,7 +31,7 @@ export default function CopyLinkButton({
       type="button"
       onClick={copy}
       title={url}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-2 border border-white/20 bg-zinc-broadcast/60 text-white-body hover:border-white/40 transition-colors text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono whitespace-nowrap ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-2 border border-white/20 bg-zinc-broadcast/60 text-white-body hover:border-white/40 transition-colors text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono whitespace-nowrap ${className}`}
     >
       {copied ? (
         <Check size={12} aria-hidden="true" className={iconClassName} />

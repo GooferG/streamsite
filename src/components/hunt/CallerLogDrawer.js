@@ -24,7 +24,7 @@ export default function CallerLogDrawer({ name, bonuses, history, skippedCalls, 
   const priorAvg = priorPlayed ? priorXsum / priorPlayed : null;
   const Stat = ({ k, children }) => (
     <div className="px-3 py-2 bg-zinc-broadcast/50 border border-white/8 text-center">
-      <div className="text-[9px] font-bold uppercase tracking-eyebrow-md text-white/45 font-mono mb-1">{k}</div>
+      <div className="text-[0.5625rem] font-bold uppercase tracking-eyebrow-md text-white/45 font-mono mb-1">{k}</div>
       <div className="text-sm font-bold text-white-body tabular-nums">{children}</div>
     </div>
   );
@@ -36,7 +36,7 @@ export default function CallerLogDrawer({ name, bonuses, history, skippedCalls, 
           <div className="font-black text-white-body text-lg leading-tight flex items-center gap-2">
             {name} <StatusBadge status={row.status} />
           </div>
-          <div className="text-[11px] font-mono text-white/50 mt-0.5">
+          <div className="text-[0.6875rem] font-mono text-white/50 mt-0.5">
             {row.gotIn} of {row.calls} calls made the hunt · {Math.round(row.acceptRate * 100)}% accept
           </div>
         </div>
@@ -51,15 +51,15 @@ export default function CallerLogDrawer({ name, bonuses, history, skippedCalls, 
         <Stat k="Form"><FormStrip form={row.form} /></Stat>
       </div>
       <div className="space-y-1.5">
-        <div className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-purple-bright font-mono">
+        <div className="text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-purple-bright font-mono">
           This hunt · {huntCalls.length} in
         </div>
-        {huntCalls.length === 0 && <p className="text-[11px] font-mono text-white/40">No calls in the hunt yet.</p>}
+        {huntCalls.length === 0 && <p className="text-[0.6875rem] font-mono text-white/40">No calls in the hunt yet.</p>}
         {huntCalls.map((b) => {
           const stake = Number(b.stake) || 0, win = Number(b.win) || 0;
           const x = stake > 0 && win > 0 ? win / stake : null;
           return (
-            <div key={b.id} className="flex items-center justify-between text-[12px] font-mono">
+            <div key={b.id} className="flex items-center justify-between text-[0.75rem] font-mono">
               <span className="text-white-body">{b.slot}</span>
               <span className={x == null ? 'text-white/40' : 'text-white/70'}>{x == null ? 'opening…' : fmtX(x)}</span>
             </div>
@@ -67,8 +67,8 @@ export default function CallerLogDrawer({ name, bonuses, history, skippedCalls, 
         })}
       </div>
       <div className="space-y-1.5">
-        <div className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 font-mono">Prior hunts</div>
-        <p className="text-[11px] font-mono text-white/55 tabular-nums">
+        <div className="text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/45 font-mono">Prior hunts</div>
+        <p className="text-[0.6875rem] font-mono text-white/55 tabular-nums">
           {priorIn} slots in · {priorPlayed} played{priorAvg != null ? ` · avg ${fmtX(priorAvg)}` : ''}
         </p>
       </div>

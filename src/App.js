@@ -220,7 +220,7 @@ function StreamingSiteContent() {
         <Suspense
           fallback={
             <div className="min-h-[60vh] flex items-center justify-center">
-              <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
+              <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
                 Loading…
               </p>
             </div>

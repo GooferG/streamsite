@@ -72,7 +72,7 @@ function RosterSearch() {
 
   return (
     <div className="border border-white/8 bg-zinc-broadcast/40 p-3 space-y-2">
-      <span className="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono text-white/65">
+      <span className="inline-flex items-center gap-1.5 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono text-white/65">
         <UserPlus size={12} aria-hidden="true" className="text-purple-bright" />
         Add a registered viewer
       </span>
@@ -91,11 +91,11 @@ function RosterSearch() {
                 <p className="text-sm text-white-body truncate">{v.twitchName}</p>
                 <p className="text-xs text-white/40 truncate">{v.defaultSlots.join(', ')}</p>
                 {v.rainbetUsername ? (
-                  <p className="text-[10px] font-mono tracking-eyebrow-md uppercase text-emerald-signal/80 truncate mt-0.5">
+                  <p className="text-[0.625rem] font-mono tracking-eyebrow-md uppercase text-emerald-signal/80 truncate mt-0.5">
                     Rainbet: {v.rainbetUsername}
                   </p>
                 ) : (
-                  <p className="text-[10px] font-mono tracking-eyebrow-md uppercase text-white/30 truncate mt-0.5">
+                  <p className="text-[0.625rem] font-mono tracking-eyebrow-md uppercase text-white/30 truncate mt-0.5">
                     No Rainbet set
                   </p>
                 )}
@@ -106,7 +106,7 @@ function RosterSearch() {
                 disabled={busy}
                 className="shrink-0 inline-flex items-center gap-1 px-3 py-1.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-40"
               >
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                   Add
                 </span>
               </button>
@@ -115,7 +115,7 @@ function RosterSearch() {
         </ul>
       )}
       {msg && (
-        <p className="text-[11px] tracking-eyebrow uppercase text-white/55 font-mono">{msg}</p>
+        <p className="text-[0.6875rem] tracking-eyebrow uppercase text-white/55 font-mono">{msg}</p>
       )}
     </div>
   );
@@ -157,7 +157,7 @@ export default function SuggestionsPanel({
   return (
     <div className="space-y-3" data-tour="suggestions">
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/65 font-mono">
+        <div className="flex items-center gap-3 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/65 font-mono">
           <span className="inline-flex items-center gap-1.5">
             <ClipboardList size={12} aria-hidden="true" className="text-purple-bright" />
             <span>Add calls</span>
@@ -170,7 +170,7 @@ export default function SuggestionsPanel({
               setImporting((v) => !v);
               setPreview(null);
             }}
-            className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono px-2 py-1 border border-white/15 text-white/65 hover:text-white-body hover:border-white/30 transition-colors"
+            className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono px-2 py-1 border border-white/15 text-white/65 hover:text-white-body hover:border-white/30 transition-colors"
           >
             {importing ? 'Close' : hasList ? 'Import more' : 'Import from sheet'}
           </button>
@@ -183,14 +183,14 @@ export default function SuggestionsPanel({
                     onClear();
                     setConfirmingClear(false);
                   }}
-                  className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono px-2 py-1 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 transition-colors"
+                  className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono px-2 py-1 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 transition-colors"
                 >
                   Clear all
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirmingClear(false)}
-                  className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono px-2 py-1 border border-white/10 text-white/60 hover:text-white-body transition-colors"
+                  className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono px-2 py-1 border border-white/10 text-white/60 hover:text-white-body transition-colors"
                 >
                   Keep
                 </button>
@@ -199,7 +199,7 @@ export default function SuggestionsPanel({
               <button
                 type="button"
                 onClick={() => setConfirmingClear(true)}
-                className="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono px-2 py-1 border border-white/15 text-white/40 hover:text-red-destructive hover:border-red-destructive/40 transition-colors"
+                className="inline-flex items-center gap-1.5 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono px-2 py-1 border border-white/15 text-white/40 hover:text-red-destructive hover:border-red-destructive/40 transition-colors"
               >
                 <RotateCcw size={11} aria-hidden="true" />
                 Clear
@@ -216,7 +216,7 @@ export default function SuggestionsPanel({
         <div className="border border-white/8 bg-zinc-broadcast/40 p-3 space-y-2">
           {!preview ? (
             <>
-              <p className="text-[11px] text-white/55 leading-snug">
+              <p className="text-[0.6875rem] text-white/55 leading-snug">
                 Copy the cells from your Google Sheet (Name + Slot columns) and paste
                 below. Header row and empty cells are handled automatically.
               </p>
@@ -233,27 +233,27 @@ export default function SuggestionsPanel({
                 disabled={!raw.trim()}
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 bg-purple-gamba text-white-body hover:bg-purple-bright transition-colors duration-150 disabled:opacity-40"
               >
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                   Preview
                 </span>
               </button>
             </>
           ) : (
             <>
-              <p className="text-[11px] font-bold tracking-eyebrow-lg uppercase text-white/65 font-mono">
+              <p className="text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase text-white/65 font-mono">
                 {preview.length} {preview.length === 1 ? 'person' : 'people'} ·{' '}
                 {countSlots(preview)} slots
               </p>
               <div className="max-h-48 overflow-y-auto border border-white/8 [scrollbar-width:thin]">
                 {preview.length === 0 ? (
-                  <p className="text-center text-white/50 py-4 text-[11px] font-mono">
+                  <p className="text-center text-white/50 py-4 text-[0.6875rem] font-mono">
                     Nothing parsed — check the paste.
                   </p>
                 ) : (
                   preview.map((p) => (
                     <div key={p.id} className="px-3 py-2 border-b border-white/5 last:border-b-0">
                       <p className="text-xs font-bold text-white-body mb-1">{p.person}</p>
-                      <p className="text-[11px] text-white/55 leading-snug">
+                      <p className="text-[0.6875rem] text-white/55 leading-snug">
                         {p.slots.map((s) => s.name).join(' · ')}
                       </p>
                     </div>
@@ -268,7 +268,7 @@ export default function SuggestionsPanel({
                     disabled={preview.length === 0}
                     className="flex-1 px-3 py-2 border border-emerald-signal/40 text-emerald-signal hover:bg-emerald-signal/10 transition-colors disabled:opacity-40"
                   >
-                    <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                    <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                       Add to list
                     </span>
                   </button>
@@ -279,7 +279,7 @@ export default function SuggestionsPanel({
                   disabled={preview.length === 0}
                   className="flex-1 px-3 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors disabled:opacity-40"
                 >
-                  <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                     {hasList ? 'Replace list' : 'Import'}
                   </span>
                 </button>
@@ -288,7 +288,7 @@ export default function SuggestionsPanel({
                   onClick={() => setPreview(null)}
                   className="px-3 py-2 border border-white/10 text-white/60 hover:text-white-body transition-colors"
                 >
-                  <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                     Back
                   </span>
                 </button>

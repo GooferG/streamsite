@@ -45,7 +45,7 @@ export default function BroadcastTheme({ data, now }) {
 
         <SponsorBanner />
 
-        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 px-4 sm:px-6 py-3 border-b border-white/8 text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto_auto] items-center gap-4 px-4 sm:px-6 py-3 border-b border-white/8 text-[0.625rem] font-bold tracking-eyebrow-lg text-white/55 font-mono">
           <span className="w-16 sm:w-20" aria-hidden="true" />
           <span aria-hidden="true" />
           <span className="text-right">WAGERED</span>

@@ -65,7 +65,7 @@ function NavLink({ item, active, accent = 'emerald', onClick, size = 'md' }) {
   const accentDot =
     accent === 'orange' ? 'bg-orange-admin' : 'bg-emerald-signal';
   const sizeCls =
-    size === 'lg' ? 'text-[18px]' : 'text-sm md:text-[15px]';
+    size === 'lg' ? 'text-[1.125rem]' : 'text-sm md:text-[0.9375rem]';
 
   return (
     <button
@@ -193,7 +193,7 @@ function NavDropdown({ item, items, active, setPage }) {
                 className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-white/75 hover:text-white-body hover:bg-zinc-broadcast/50 transition-colors duration-150"
               >
                 {Icon && <Icon size={13} aria-hidden="true" />}
-                <span className="text-[11px] font-bold tracking-eyebrow uppercase font-mono">
+                <span className="text-[0.6875rem] font-bold tracking-eyebrow uppercase font-mono">
                   {tool.label}
                 </span>
               </button>
@@ -236,7 +236,7 @@ function ViewerAuthControl({ onNavigate }) {
         >
           <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z" />
         </svg>
-        <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+        <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
           Sign in
         </span>
       </button>
@@ -261,13 +261,13 @@ function ViewerAuthControl({ onNavigate }) {
             <UserIcon size={12} aria-hidden="true" />
           </span>
         )}
-        <span className="text-[11px] font-bold tracking-eyebrow uppercase text-white/80 max-w-[10ch] truncate font-mono">
+        <span className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-white/80 max-w-[10ch] truncate font-mono">
           {twitchUser.displayName}
         </span>
       </button>
       {menuOpen && (
         <div className="absolute right-0 top-full mt-2 w-48 border border-white/10 bg-zinc-card shadow-lg z-50">
-          <div className="px-3 py-2 border-b border-white/8 text-[9px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
+          <div className="px-3 py-2 border-b border-white/8 text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
             Signed in
           </div>
           <button
@@ -279,7 +279,7 @@ function ViewerAuthControl({ onNavigate }) {
             className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-white/75 hover:text-white-body hover:bg-zinc-broadcast/50 transition-colors duration-150"
           >
             <UserIcon size={13} aria-hidden="true" />
-            <span className="text-[11px] font-bold tracking-eyebrow uppercase font-mono">
+            <span className="text-[0.6875rem] font-bold tracking-eyebrow uppercase font-mono">
               My account
             </span>
           </button>
@@ -292,7 +292,7 @@ function ViewerAuthControl({ onNavigate }) {
             className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-white/75 hover:text-white-body hover:bg-zinc-broadcast/50 transition-colors duration-150"
           >
             <StoreIcon size={13} aria-hidden="true" />
-            <span className="text-[11px] font-bold tracking-eyebrow uppercase font-mono">
+            <span className="text-[0.6875rem] font-bold tracking-eyebrow uppercase font-mono">
               Store
             </span>
           </button>
@@ -305,7 +305,7 @@ function ViewerAuthControl({ onNavigate }) {
             className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-red-destructive/80 hover:text-red-destructive hover:bg-red-destructive/5 border-t border-white/8 transition-colors duration-150"
           >
             <LogOut size={13} aria-hidden="true" />
-            <span className="text-[11px] font-bold tracking-eyebrow uppercase font-mono">
+            <span className="text-[0.6875rem] font-bold tracking-eyebrow uppercase font-mono">
               Sign out
             </span>
           </button>
@@ -362,7 +362,7 @@ export default function Navigation({ currentPage, setPage }) {
           <div className="hidden md:flex items-center gap-2 lg:gap-3 flex-shrink-0">
             {isAdmin ? (
               <div className="flex items-center gap-2 lg:gap-3">
-                <span className="inline-flex items-center gap-1.5 px-2 py-1 border border-orange-admin/30 bg-orange-admin/5 text-[10px] font-bold tracking-eyebrow-lg uppercase text-orange-admin font-mono">
+                <span className="inline-flex items-center gap-1.5 px-2 py-1 border border-orange-admin/30 bg-orange-admin/5 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-orange-admin font-mono">
                   <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" aria-hidden="true" />
                   Operator
                 </span>
@@ -417,7 +417,7 @@ export default function Navigation({ currentPage, setPage }) {
               </span>
               <div className="min-w-0">
                 <p className="text-sm font-bold text-white-body truncate">Operator</p>
-                <p className="text-[9px] font-bold tracking-eyebrow-lg uppercase text-orange-admin/80 font-mono">
+                <p className="text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase text-orange-admin/80 font-mono">
                   Signed in · Admin
                 </p>
               </div>
@@ -436,7 +436,7 @@ export default function Navigation({ currentPage, setPage }) {
                   <p className="text-sm font-bold text-white-body truncate">
                     {twitchUser.displayName}
                   </p>
-                  <p className="text-[9px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal/80 font-mono">
+                  <p className="text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal/80 font-mono">
                     Signed in · Twitch
                   </p>
                 </div>
@@ -445,7 +445,7 @@ export default function Navigation({ currentPage, setPage }) {
                 <button
                   type="button"
                   onClick={() => handleNavClick('me')}
-                  className="flex-1 px-2 py-2 border border-white/10 text-white/70 hover:text-white-body transition-colors text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                  className="flex-1 px-2 py-2 border border-white/10 text-white/70 hover:text-white-body transition-colors text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
                 >
                   Account
                 </button>
@@ -455,7 +455,7 @@ export default function Navigation({ currentPage, setPage }) {
                     logout();
                     setMobileMenuOpen(false);
                   }}
-                  className="px-2 py-2 border border-red-destructive/40 text-red-destructive/80 hover:bg-red-destructive/5 transition-colors text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                  className="px-2 py-2 border border-red-destructive/40 text-red-destructive/80 hover:bg-red-destructive/5 transition-colors text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
                 >
                   Out
                 </button>
@@ -477,14 +477,14 @@ export default function Navigation({ currentPage, setPage }) {
               >
                 <path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z" />
               </svg>
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                 Sign in with Twitch
               </span>
             </button>
           )}
         </div>
 
-        <div className="px-5 py-4 border-b border-white/10 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
+        <div className="px-5 py-4 border-b border-white/10 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
           Channel Index
         </div>
 
@@ -541,7 +541,7 @@ export default function Navigation({ currentPage, setPage }) {
                             }`}
                           >
                             {Icon && <Icon size={14} aria-hidden="true" />}
-                            <span className="text-[11px] font-bold tracking-eyebrow uppercase font-mono">
+                            <span className="text-[0.6875rem] font-bold tracking-eyebrow uppercase font-mono">
                               {tool.label}
                             </span>
                           </button>
@@ -571,7 +571,7 @@ export default function Navigation({ currentPage, setPage }) {
                   {item.label}
                 </span>
                 {isActive && (
-                  <span className="ml-auto text-[9px] font-bold tracking-eyebrow-lg text-emerald-signal font-mono">
+                  <span className="ml-auto text-[0.5625rem] font-bold tracking-eyebrow-lg text-emerald-signal font-mono">
                     ON
                   </span>
                 )}
@@ -582,7 +582,7 @@ export default function Navigation({ currentPage, setPage }) {
           {isAdmin && (
             <>
               {/* Admin separator */}
-              <div className="mt-2 px-5 pt-4 pb-2 border-t border-white/10 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
+              <div className="mt-2 px-5 pt-4 pb-2 border-t border-white/10 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
                 Operator
               </div>
 
@@ -605,7 +605,7 @@ export default function Navigation({ currentPage, setPage }) {
                   {ADMIN_ITEM.label}
                 </span>
                 {currentPage === ADMIN_ITEM.id && (
-                  <span className="ml-auto text-[9px] font-bold tracking-eyebrow-lg text-orange-admin font-mono">
+                  <span className="ml-auto text-[0.5625rem] font-bold tracking-eyebrow-lg text-orange-admin font-mono">
                     ON
                   </span>
                 )}

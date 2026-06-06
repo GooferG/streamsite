@@ -51,7 +51,7 @@ export default function BattleWheel({ players = [], onResult, disabled = false }
       `}</style>
 
       {/* Pool indicator */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 border border-white/8 bg-zinc-broadcast/40 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 py-2 border border-white/8 bg-zinc-broadcast/40 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
         <span className="inline-flex items-center gap-2 text-purple-bright">
           <span className={`w-1.5 h-1.5 rounded-full bg-purple-bright ${spinning ? 'bw-pulse' : ''}`} />
           <span>{spinning ? 'Spinning…' : 'Wheel ready'}</span>
@@ -68,7 +68,7 @@ export default function BattleWheel({ players = [], onResult, disabled = false }
             <div className="bw-scan-line absolute inset-x-0 h-32" />
           </div>
         )}
-        <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-3 py-2 border-b border-white/8 bg-zinc-broadcast/80 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+        <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between px-3 py-2 border-b border-white/8 bg-zinc-broadcast/80 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
           <span className={`inline-flex items-center gap-2 ${spinning ? 'text-purple-bright bw-pulse' : 'text-emerald-signal'}`}>
             <span className={`w-1.5 h-1.5 rounded-full ${spinning ? 'bg-purple-bright' : 'bg-emerald-signal'}`} />
             <span>{spinning ? 'Spinning…' : result ? 'Player locked' : 'Stand by'}</span>
@@ -86,14 +86,14 @@ export default function BattleWheel({ players = [], onResult, disabled = false }
                 {display.name}
               </p>
               {!spinning && display.slot && (
-                <p className="text-[11px] tracking-eyebrow-md uppercase text-purple-bright mt-2 font-mono">
+                <p className="text-[0.6875rem] tracking-eyebrow-md uppercase text-purple-bright mt-2 font-mono">
                   {display.slot}
                 </p>
               )}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center gap-2 px-4 font-mono">
-              <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/60">No signal</span>
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/60">No signal</span>
               <span className="text-sm text-white/70 text-center">
                 {players.length === 0 ? 'Everyone has played.' : 'Spin to pick the next player.'}
               </span>

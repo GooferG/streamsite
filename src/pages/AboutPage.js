@@ -6,7 +6,7 @@ import { useNowTimestamp, formatTimecode } from '../utils/timecode';
 function StationRail({ now }) {
   return (
     <aside
-      className="font-mono hidden lg:flex flex-col gap-8 sticky top-32 self-start text-[10px] uppercase tracking-eyebrow-md text-white/40"
+      className="font-mono hidden lg:flex flex-col gap-8 sticky top-32 self-start text-[0.625rem] uppercase tracking-eyebrow-md text-white/40"
       aria-hidden="true"
     >
       <div className="flex flex-col gap-1">
@@ -40,7 +40,7 @@ function StationRail({ now }) {
         </span>
       </div>
       <div className="mt-2 w-12 h-px bg-white/15" />
-      <div className="flex flex-col gap-3 text-[9px] leading-relaxed text-white/30">
+      <div className="flex flex-col gap-3 text-[0.5625rem] leading-relaxed text-white/30">
         <span>This is a continuous</span>
         <span>broadcast. The signal</span>
         <span>repeats nightly until</span>
@@ -55,7 +55,7 @@ function SegmentSlate({ index, label, title, accent = 'white' }) {
     accent === 'emerald' ? 'text-emerald-signal' : 'text-white-body';
   return (
     <header className="mb-6">
-      <div className="flex items-center gap-3 text-[10px] sm:text-[11px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-4 font-mono">
+      <div className="flex items-center gap-3 text-[0.625rem] sm:text-[0.6875rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-4 font-mono">
         <span className="text-white/30">SEGMENT</span>
         <span className="text-white-body tabular-nums">{index}</span>
         <span className="text-white/20">·</span>
@@ -76,7 +76,7 @@ function SegmentSlate({ index, label, title, accent = 'white' }) {
 
 function MetaRow({ k, v, accent = false }) {
   return (
-    <div className="grid grid-cols-[120px_1fr] gap-4 py-2 border-b border-white/5 text-[11px] uppercase tracking-eyebrow font-mono">
+    <div className="grid grid-cols-[120px_1fr] gap-4 py-2 border-b border-white/5 text-[0.6875rem] uppercase tracking-eyebrow font-mono">
       <span className="text-white/40">{k}</span>
       <span className={accent ? 'text-emerald-signal' : 'text-white/75'}>
         {v}
@@ -89,7 +89,7 @@ function ProgramLine({ slug, title, body }) {
   return (
     <article className="grid grid-cols-[auto_1fr] gap-5 sm:gap-7 py-5 border-t border-white/8">
       <div className="pt-1">
-        <span className="block text-[10px] font-bold tracking-eyebrow-md text-emerald-signal/80 font-mono">
+        <span className="block text-[0.625rem] font-bold tracking-eyebrow-md text-emerald-signal/80 font-mono">
           {slug}
         </span>
       </div>
@@ -97,7 +97,7 @@ function ProgramLine({ slug, title, body }) {
         <h3 className="text-lg sm:text-xl font-bold text-white-body tracking-tight mb-1.5">
           {title}
         </h3>
-        <p className="text-sm sm:text-[15px] text-white/70 leading-relaxed max-w-2xl">
+        <p className="text-sm sm:text-[0.9375rem] text-white/70 leading-relaxed max-w-2xl">
           {body}
         </p>
       </div>
@@ -120,11 +120,11 @@ function SignOffSocial({ icon, label, href, hostname }) {
         <span className="text-base font-bold tracking-tight text-white-body">
           {label}
         </span>
-        <span className="text-[11px] tracking-eyebrow text-white/35 truncate font-mono">
+        <span className="text-[0.6875rem] tracking-eyebrow text-white/35 truncate font-mono">
           {hostname}
         </span>
       </span>
-      <span className="text-[11px] font-bold tracking-eyebrow-lg text-white/40 group-hover:text-emerald-signal transition-colors duration-200 font-mono">
+      <span className="text-[0.6875rem] font-bold tracking-eyebrow-lg text-white/40 group-hover:text-emerald-signal transition-colors duration-200 font-mono">
         TUNE IN →
       </span>
     </a>
@@ -165,7 +165,7 @@ export default function AboutPage() {
         <main>
           {/* Slate header — the station ID */}
           <div className="mb-20 sm:mb-24">
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] sm:text-[11px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-6 font-mono">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] sm:text-[0.6875rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-6 font-mono">
               <span className="inline-flex items-center gap-2">
                 <span className="relative flex w-1.5 h-1.5">
                   <span className="absolute inset-0 rounded-full bg-emerald-signal motion-safe:animate-ping opacity-50" />
@@ -220,7 +220,7 @@ export default function AboutPage() {
               title="A chill Brazilian guy on the internet."
             />
             <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-10 md:gap-16 items-start">
-              <div className="space-y-5 text-[15px] sm:text-base text-white/75 leading-relaxed max-w-2xl">
+              <div className="space-y-5 text-[0.9375rem] sm:text-base text-white/75 leading-relaxed max-w-2xl">
                 <p>
                   Streams are a mix of gaming with friends, story games at my
                   own pace, the occasional gamba session for the thrill, and
@@ -232,7 +232,7 @@ export default function AboutPage() {
                   point of the channel is to share that — not to perform.
                 </p>
               </div>
-              <div className="hidden md:flex flex-col gap-2 text-[10px] uppercase tracking-eyebrow-md text-white/35 border-l border-white/10 pl-6 font-mono">
+              <div className="hidden md:flex flex-col gap-2 text-[0.625rem] uppercase tracking-eyebrow-md text-white/35 border-l border-white/10 pl-6 font-mono">
                 <span>RUN TIME</span>
                 <span className="text-white/65 text-xs tracking-eyebrow-lg">
                   ~4 HR
@@ -285,7 +285,7 @@ export default function AboutPage() {
                 <span className="text-emerald-signal text-xs font-bold tracking-eyebrow-lg pt-1.5 font-mono">
                   01
                 </span>
-                <p className="text-[15px] sm:text-base text-white/80 leading-relaxed">
+                <p className="text-[0.9375rem] sm:text-base text-white/80 leading-relaxed">
                   Toxicity isn't welcome. The chat is the room — keep it a room
                   people want to be in.
                 </p>
@@ -294,7 +294,7 @@ export default function AboutPage() {
                 <span className="text-emerald-signal text-xs font-bold tracking-eyebrow-lg pt-1.5 font-mono">
                   02
                 </span>
-                <p className="text-[15px] sm:text-base text-white/80 leading-relaxed">
+                <p className="text-[0.9375rem] sm:text-base text-white/80 leading-relaxed">
                   Lurking is fine. Chatting is fine. Eating dinner with the
                   stream on in the background is more than fine.
                 </p>
@@ -303,7 +303,7 @@ export default function AboutPage() {
                 <span className="text-emerald-signal text-xs font-bold tracking-eyebrow-lg pt-1.5 font-mono">
                   03
                 </span>
-                <p className="text-[15px] sm:text-base text-white/80 leading-relaxed">
+                <p className="text-[0.9375rem] sm:text-base text-white/80 leading-relaxed">
                   Don't be a cunt.
                 </p>
               </li>
@@ -339,7 +339,7 @@ export default function AboutPage() {
               <div className="border-t border-white/10" />
             </div>
 
-            <div className="mt-16 flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] uppercase tracking-eyebrow-lg text-white/30 font-mono">
+            <div className="mt-16 flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] uppercase tracking-eyebrow-lg text-white/30 font-mono">
               <span>END OF TRANSMISSION</span>
               <span className="text-white/15">·</span>
               <span className="text-white/50">REEL #A-013</span>

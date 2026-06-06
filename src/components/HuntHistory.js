@@ -37,7 +37,7 @@ function HistoryRow({ hunt, onReexport, onReopen, onDelete, onOpenLog }) {
         </button>
         <button type="button" onClick={() => setOpen((o) => !o)} className="min-w-0 text-left">
           <p className="font-bold text-white-body text-sm truncate">{hunt.name || 'Untitled'}</p>
-          <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5 tabular-nums">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5 tabular-nums">
             {dateLabel} · {s.bonusCount} bonuses · best {s.bestX != null ? fmtX(s.bestX) : '—'}
           </p>
         </button>
@@ -70,7 +70,7 @@ function HistoryRow({ hunt, onReexport, onReopen, onDelete, onOpenLog }) {
                   onReopen(hunt.id);
                   setConfirmingReopen(false);
                 }}
-                className="p-1.5 bg-purple-gamba/20 border border-purple-gamba/60 text-purple-bright text-[9px] font-bold tracking-eyebrow-md uppercase font-mono"
+                className="p-1.5 bg-purple-gamba/20 border border-purple-gamba/60 text-purple-bright text-[0.5625rem] font-bold tracking-eyebrow-md uppercase font-mono"
                 title="Confirm re-open"
               >
                 Open
@@ -78,7 +78,7 @@ function HistoryRow({ hunt, onReexport, onReopen, onDelete, onOpenLog }) {
               <button
                 type="button"
                 onClick={() => setConfirmingReopen(false)}
-                className="p-1.5 border border-white/10 text-white/50 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono"
+                className="p-1.5 border border-white/10 text-white/50 text-[0.5625rem] font-bold tracking-eyebrow-md uppercase font-mono"
                 title="Cancel"
               >
                 ✕
@@ -107,7 +107,7 @@ function HistoryRow({ hunt, onReexport, onReopen, onDelete, onOpenLog }) {
                   onDelete(hunt.id);
                   setConfirming(false);
                 }}
-                className="p-1.5 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive text-[9px] font-bold tracking-eyebrow-md uppercase font-mono"
+                className="p-1.5 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive text-[0.5625rem] font-bold tracking-eyebrow-md uppercase font-mono"
                 title="Confirm delete"
               >
                 Del
@@ -115,7 +115,7 @@ function HistoryRow({ hunt, onReexport, onReopen, onDelete, onOpenLog }) {
               <button
                 type="button"
                 onClick={() => setConfirming(false)}
-                className="p-1.5 border border-white/10 text-white/50 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono"
+                className="p-1.5 border border-white/10 text-white/50 text-[0.5625rem] font-bold tracking-eyebrow-md uppercase font-mono"
                 title="Cancel"
               >
                 ✕
@@ -144,7 +144,7 @@ function HistoryRow({ hunt, onReexport, onReopen, onDelete, onOpenLog }) {
             <div className="border border-white/8 overflow-x-auto [scrollbar-width:thin]">
               <table className="w-full text-sm min-w-[360px]">
                 <thead>
-                  <tr className="border-b border-white/10 text-white/65 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono">
+                  <tr className="border-b border-white/10 text-white/65 text-[0.625rem] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono">
                     <th className="text-left px-3 py-2 font-bold">Slot</th>
                     <th className="text-right px-3 py-2 font-bold">Bet</th>
                     <th className="text-right px-3 py-2 font-bold">Win</th>
@@ -166,12 +166,12 @@ function HistoryRow({ hunt, onReexport, onReopen, onDelete, onOpenLog }) {
                               <button
                                 type="button"
                                 onClick={() => onOpenLog(b.caller)}
-                                className="block text-[10px] font-mono tracking-eyebrow-md uppercase text-purple-bright truncate mt-0.5 hover:underline text-left"
+                                className="block text-[0.625rem] font-mono tracking-eyebrow-md uppercase text-purple-bright truncate mt-0.5 hover:underline text-left"
                               >
                                 📣 {b.caller}
                               </button>
                             ) : (
-                              <span className="block text-[10px] font-mono tracking-eyebrow-md uppercase text-purple-bright truncate mt-0.5">
+                              <span className="block text-[0.625rem] font-mono tracking-eyebrow-md uppercase text-purple-bright truncate mt-0.5">
                                 📣 {b.caller}
                               </span>
                             )
@@ -189,7 +189,7 @@ function HistoryRow({ hunt, onReexport, onReopen, onDelete, onOpenLog }) {
               </table>
             </div>
           ) : (
-            <p className="text-center text-white/40 py-3 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono">
+            <p className="text-center text-white/40 py-3 text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase font-mono">
               No bonuses logged.
             </p>
           )}
@@ -199,7 +199,7 @@ function HistoryRow({ hunt, onReexport, onReopen, onDelete, onOpenLog }) {
             <div className="border border-white/8 overflow-x-auto [scrollbar-width:thin]">
               <table className="w-full text-sm min-w-[360px]">
                 <thead>
-                  <tr className="border-b border-white/10 text-white/65 text-[10px] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono">
+                  <tr className="border-b border-white/10 text-white/65 text-[0.625rem] uppercase tracking-eyebrow-md bg-zinc-broadcast/50 font-mono">
                     <th className="text-left px-3 py-2 font-bold">Name</th>
                     <th className="text-right px-3 py-2 font-bold">In for</th>
                     <th className="text-right px-3 py-2 font-bold">%</th>
@@ -229,18 +229,18 @@ function HistoryRow({ hunt, onReexport, onReopen, onDelete, onOpenLog }) {
           {/* Caller calls */}
           {callerStats.leaderboard.length > 0 && (
             <div className="border border-white/8 bg-zinc-broadcast/30 px-3 py-2.5 space-y-2">
-              <p className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-purple-bright font-mono">
+              <p className="text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-purple-bright font-mono">
                 Slot calls
               </p>
               <div className="flex flex-wrap gap-x-3 gap-y-1">
                 {callerStats.leaderboard.map((row) => (
-                  <span key={row.name} className="text-[11px] font-mono text-white/70">
+                  <span key={row.name} className="text-[0.6875rem] font-mono text-white/70">
                     <span className="font-bold text-white-body">{row.name}</span>
                     <span className="text-purple-bright tabular-nums"> {row.calls}</span>
                   </span>
                 ))}
               </div>
-              <div className="text-[11px] font-mono text-white/60 space-y-0.5 tabular-nums">
+              <div className="text-[0.6875rem] font-mono text-white/60 space-y-0.5 tabular-nums">
                 {callerStats.bestCall && (
                   <p>
                     <span className="text-emerald-signal font-bold uppercase tracking-eyebrow-md">Best</span>{' '}
@@ -265,7 +265,7 @@ function HistoryRow({ hunt, onReexport, onReopen, onDelete, onOpenLog }) {
 export default function HuntHistory({ history, onReexport, onReopen, onDelete, onOpenLog }) {
   return (
     <div className="space-y-2">
-      <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/65 font-mono">
+      <div className="flex items-center gap-3 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/65 font-mono">
         <History size={12} className="text-white/45" aria-hidden="true" />
         <span>Past hunts</span>
         <span className="text-white/70 tabular-nums tracking-eyebrow-lg">
@@ -273,7 +273,7 @@ export default function HuntHistory({ history, onReexport, onReopen, onDelete, o
         </span>
       </div>
       {history.length === 0 ? (
-        <p className="text-center text-white/50 py-6 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono">
+        <p className="text-center text-white/50 py-6 text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase font-mono">
           No completed hunts yet.
         </p>
       ) : (

@@ -80,7 +80,7 @@ function SortableRow({ suggestion, onHighlight, onEdit, onDelete, index }) {
 
       <div className="flex items-center gap-2.5">
         <span
-          className={`text-[10px] font-bold tracking-eyebrow-md tabular-nums ${
+          className={`text-[0.625rem] font-bold tracking-eyebrow-md tabular-nums ${
             highlighted ? 'text-emerald-signal' : 'text-white/30'
           } font-mono`}
       >
@@ -102,7 +102,7 @@ function SortableRow({ suggestion, onHighlight, onEdit, onDelete, index }) {
           </p>
           {highlighted && (
             <span
-              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[9px] font-bold tracking-eyebrow-md text-emerald-signal border border-emerald-signal/40 font-mono"
+              className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow-md text-emerald-signal border border-emerald-signal/40 font-mono"
       >
               <Check size={9} aria-hidden="true" />
               PICKED
@@ -110,7 +110,7 @@ function SortableRow({ suggestion, onHighlight, onEdit, onDelete, index }) {
           )}
         </div>
         <p
-          className="mt-0.5 text-[10px] tracking-eyebrow-sm uppercase text-white/40 truncate font-mono"
+          className="mt-0.5 text-[0.625rem] tracking-eyebrow-sm uppercase text-white/40 truncate font-mono"
       >
           {suggestion.twitchName}
           {suggestion.rainbetName ? (
@@ -189,7 +189,7 @@ function EditModal({ suggestion, onClose, onSave }) {
       >
         {/* Status bar */}
         <div
-          className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
+          className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono"
       >
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
@@ -208,7 +208,7 @@ function EditModal({ suggestion, onClose, onSave }) {
         <div className="px-5 py-5 space-y-4">
           <label className="block">
             <span
-              className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono"
+              className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono"
       >
               <span className="text-orange-admin tabular-nums">01</span>{' '}
               Game / slot name <span className="text-emerald-signal">*</span>
@@ -222,7 +222,7 @@ function EditModal({ suggestion, onClose, onSave }) {
           </label>
           <label className="block">
             <span
-              className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono"
+              className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono"
       >
               <span className="text-orange-admin tabular-nums">02</span> Twitch name
             </span>
@@ -235,7 +235,7 @@ function EditModal({ suggestion, onClose, onSave }) {
           </label>
           <label className="block">
             <span
-              className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono"
+              className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono"
       >
               <span className="text-orange-admin tabular-nums">03</span> Rainbet
               username <span className="text-white/30">· optional</span>
@@ -250,7 +250,7 @@ function EditModal({ suggestion, onClose, onSave }) {
           </label>
           <label className="block">
             <span
-              className="block text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono"
+              className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono"
       >
               <span className="text-orange-admin tabular-nums">04</span> Status
             </span>
@@ -272,7 +272,7 @@ function EditModal({ suggestion, onClose, onSave }) {
             className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2.5 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
           >
             <span
-              className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+              className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
               Cancel
             </span>
@@ -284,7 +284,7 @@ function EditModal({ suggestion, onClose, onSave }) {
             className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50"
           >
             <span
-              className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+              className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
               {saving ? 'Saving…' : 'Save'}
             </span>
@@ -353,7 +353,7 @@ export default function AdminSuggestionsPage() {
       {/* Slate header */}
       <header className="mb-8">
         <div
-          className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono"
+          className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-5 font-mono"
       >
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
@@ -400,7 +400,7 @@ export default function AdminSuggestionsPage() {
         >
           <ExternalLink size={12} aria-hidden="true" />
           <span
-            className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+            className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
             goofer.tv/suggest
           </span>
@@ -415,7 +415,7 @@ export default function AdminSuggestionsPage() {
           >
             <RefreshCcw size={12} aria-hidden="true" />
             <span
-              className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+              className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
               Clear all
             </span>
@@ -428,7 +428,7 @@ export default function AdminSuggestionsPage() {
               className="px-3 py-2 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 transition-colors duration-150"
             >
               <span
-                className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
                 Confirm clear
               </span>
@@ -439,7 +439,7 @@ export default function AdminSuggestionsPage() {
               className="px-3 py-2 border border-white/10 text-white/60 hover:text-white-body transition-colors duration-150"
             >
               <span
-                className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
                 Cancel
               </span>
@@ -452,7 +452,7 @@ export default function AdminSuggestionsPage() {
       {suggestions.length === 0 ? (
         <div className="border border-white/8 bg-zinc-card/30 py-16 text-center">
           <p
-            className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono"
+            className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-2 font-mono"
       >
             Empty queue
           </p>
@@ -464,7 +464,7 @@ export default function AdminSuggestionsPage() {
       ) : (
         <div className="border border-white/8 bg-zinc-card/30">
           <div
-            className="flex items-center gap-3 px-4 py-2 border-b border-white/8 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
+            className="flex items-center gap-3 px-4 py-2 border-b border-white/8 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono"
       >
             <span>Order</span>
             <span className="text-white/15">·</span>

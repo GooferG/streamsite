@@ -10,7 +10,7 @@ export default function StatCell({ label, value, variant = 'box', hero = false }
   const valueCls = hero ? 'text-2xl' : 'text-base';
   return (
     <div className={wrap}>
-      <p className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/65 mb-1 font-mono">
+      <p className="text-[0.625rem] font-bold uppercase tracking-eyebrow-lg text-white/65 mb-1 font-mono">
         {label}
       </p>
       <p className={`font-bold text-white-body ${valueCls} tabular-nums`}>{value}</p>

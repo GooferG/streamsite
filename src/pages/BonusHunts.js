@@ -82,7 +82,7 @@ function MultiplierBar({ value, max }) {
         />
       </div>
       <span
-        className="text-[10px] text-white/75 w-10 text-right tabular-nums tracking-eyebrow-sm font-mono"
+        className="text-[0.625rem] text-white/75 w-10 text-right tabular-nums tracking-eyebrow-sm font-mono"
       >
         {value?.toFixed(0)}x
       </span>
@@ -121,7 +121,7 @@ function HuntCard({ hunt, index }) {
         <div className="flex items-start justify-between gap-4 flex-wrap">
           <div className="flex items-start gap-3 min-w-0 flex-1">
             <span
-              className="mt-1 text-[10px] font-bold tracking-eyebrow-md tabular-nums text-emerald-signal/80 font-mono"
+              className="mt-1 text-[0.625rem] font-bold tracking-eyebrow-md tabular-nums text-emerald-signal/80 font-mono"
       >
               #{tape}
             </span>
@@ -132,7 +132,7 @@ function HuntCard({ hunt, index }) {
                 </h3>
                 {isOpening && (
                   <span
-                    className="inline-flex items-center gap-1.5 px-1.5 py-0.5 text-[9px] font-bold tracking-eyebrow-md text-emerald-signal border border-emerald-signal/40 font-mono"
+                    className="inline-flex items-center gap-1.5 px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow-md text-emerald-signal border border-emerald-signal/40 font-mono"
       >
                     <span className="relative flex w-1.5 h-1.5">
                       <span className="absolute inset-0 rounded-full bg-emerald-signal motion-safe:animate-ping opacity-50" />
@@ -143,7 +143,7 @@ function HuntCard({ hunt, index }) {
                 )}
               </div>
               <p
-                className="mt-1 text-[11px] tracking-eyebrow-sm uppercase text-white/65 truncate font-mono"
+                className="mt-1 text-[0.6875rem] tracking-eyebrow-sm uppercase text-white/65 truncate font-mono"
       >
                 {hunt.casino} · {formatDate(hunt.createdAt)}
               </p>
@@ -153,7 +153,7 @@ function HuntCard({ hunt, index }) {
           <div className="flex items-center gap-6 flex-shrink-0">
             <div className="text-right hidden sm:block">
               <p
-                className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/65 mb-0.5 font-mono"
+                className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/65 mb-0.5 font-mono"
       >
                 Cost
               </p>
@@ -163,7 +163,7 @@ function HuntCard({ hunt, index }) {
             </div>
             <div className="text-right hidden sm:block">
               <p
-                className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/65 mb-0.5 font-mono"
+                className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/65 mb-0.5 font-mono"
       >
                 Payout
               </p>
@@ -173,7 +173,7 @@ function HuntCard({ hunt, index }) {
             </div>
             <div className="text-right">
               <p
-                className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/65 mb-0.5 font-mono"
+                className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/65 mb-0.5 font-mono"
       >
                 Result
               </p>
@@ -181,7 +181,7 @@ function HuntCard({ hunt, index }) {
             </div>
             <div className="text-right hidden md:block">
               <p
-                className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/65 mb-0.5 font-mono"
+                className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/65 mb-0.5 font-mono"
       >
                 Bonuses
               </p>
@@ -203,7 +203,7 @@ function HuntCard({ hunt, index }) {
         <div className="sm:hidden grid grid-cols-3 gap-3 mt-3 pt-3 border-t border-white/8">
           <div>
             <p
-              className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/65 font-mono"
+              className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/65 font-mono"
       >
               Cost
             </p>
@@ -213,7 +213,7 @@ function HuntCard({ hunt, index }) {
           </div>
           <div>
             <p
-              className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/65 font-mono"
+              className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/65 font-mono"
       >
               Payout
             </p>
@@ -223,7 +223,7 @@ function HuntCard({ hunt, index }) {
           </div>
           <div>
             <p
-              className="text-[10px] font-bold tracking-eyebrow-md uppercase text-white/65 font-mono"
+              className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/65 font-mono"
       >
               Bonuses
             </p>
@@ -238,7 +238,7 @@ function HuntCard({ hunt, index }) {
       {expanded && bonuses.length > 0 && (
         <div className="border-t border-white/8 px-4 sm:px-5 pb-5 pt-4">
           <p
-            className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/65 mb-3 font-mono"
+            className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/65 mb-3 font-mono"
       >
             Bonus reel · {bonuses.length}
           </p>
@@ -263,7 +263,7 @@ function HuntCard({ hunt, index }) {
                     {bonus.slotName ?? `Bonus ${i + 1}`}
                   </p>
                   <p
-                    className="text-[10px] tracking-eyebrow-sm uppercase text-white/65 truncate mt-0.5 font-mono"
+                    className="text-[0.625rem] tracking-eyebrow-sm uppercase text-white/65 truncate mt-0.5 font-mono"
       >
                     {bonus.provider} · Bet {formatCurrency(bonus.betSize)}
                   </p>
@@ -276,7 +276,7 @@ function HuntCard({ hunt, index }) {
                     {formatCurrency(bonus.payout)}
                   </p>
                   <p
-                    className="text-[10px] tracking-eyebrow-sm text-white/65 tabular-nums font-mono"
+                    className="text-[0.625rem] tracking-eyebrow-sm text-white/65 tabular-nums font-mono"
       >
                     {(bonus.multiplier ?? 0).toFixed(1)}x
                   </p>
@@ -310,7 +310,7 @@ function PredictionModeBanner({ round }) {
   const label = `${features} · ${statusLabel}`;
 
   return (
-    <div className={`flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border ${tone} bg-zinc-card/30 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono`}>
+    <div className={`flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border ${tone} bg-zinc-card/30 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono`}>
       <span className="inline-flex items-center gap-2">
         <span className="relative flex w-1.5 h-1.5">
           {round.status === 'open' && (
@@ -447,7 +447,7 @@ export default function BonusHuntsPage() {
       {/* Active hunt iframe — kept as-is */}
       <div className="border border-white/8 overflow-hidden">
         <div
-          className="flex items-center gap-3 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md bg-zinc-broadcast/40 font-mono"
+          className="flex items-center gap-3 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md bg-zinc-broadcast/40 font-mono"
       >
           <span className="inline-flex items-center gap-2 text-emerald-signal">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
@@ -468,7 +468,7 @@ export default function BonusHuntsPage() {
       {/* Archive */}
       <div className="border border-white/8 bg-zinc-card/30">
         <div
-          className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono"
+          className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono"
       >
           <span className="inline-flex items-center gap-2 text-emerald-signal">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" />
@@ -489,7 +489,7 @@ export default function BonusHuntsPage() {
               aria-hidden="true"
               className={loading ? 'animate-spin' : ''}
             />
-            <span className="text-[10px] font-bold tracking-eyebrow-lg">
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg">
               Refresh
             </span>
           </button>
@@ -500,7 +500,7 @@ export default function BonusHuntsPage() {
           <div className="py-16 flex flex-col items-center gap-3 text-white/65">
             <RefreshCcw size={20} className="animate-spin" aria-hidden="true" />
             <p
-              className="text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono"
+              className="text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
               {tuningPhrase}
             </p>
@@ -508,7 +508,7 @@ export default function BonusHuntsPage() {
         ) : error ? (
           <div className="py-16 px-4 flex flex-col items-center gap-3 text-center">
             <p
-              className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-red-destructive/80 font-mono"
+              className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-red-destructive/80 font-mono"
       >
               Signal lost
             </p>
@@ -520,7 +520,7 @@ export default function BonusHuntsPage() {
             >
               <RefreshCcw size={12} aria-hidden="true" />
               <span
-                className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
       >
                 Retry
               </span>
@@ -528,10 +528,10 @@ export default function BonusHuntsPage() {
           </div>
         ) : hunts.length === 0 ? (
           <div className="text-center py-16 font-mono space-y-1">
-            <p className="text-[11px] font-bold tracking-eyebrow-lg uppercase text-white/65">
+            <p className="text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase text-white/65">
               No hunts on file.
             </p>
-            <p className="text-[11px] tracking-eyebrow-lg uppercase text-white/35">
+            <p className="text-[0.6875rem] tracking-eyebrow-lg uppercase text-white/35">
               The reels are quiet.
             </p>
           </div>
@@ -544,7 +544,7 @@ export default function BonusHuntsPage() {
         )}
 
         <div
-          className="px-4 py-3 border-t border-white/8 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/60 text-center font-mono"
+          className="px-4 py-3 border-t border-white/8 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/60 text-center font-mono"
       >
           Tracker by{' '}
           <a

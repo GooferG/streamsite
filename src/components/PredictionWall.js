@@ -75,11 +75,11 @@ function Card({ entry, round, dim, winnerInfo }) {
               loading="lazy"
             />
           ) : (
-            <div className="w-7 h-7 rounded-full border-2 border-zinc-800/30 bg-zinc-800/10 flex items-center justify-center text-[11px] font-bold text-zinc-700/80">
+            <div className="w-7 h-7 rounded-full border-2 border-zinc-800/30 bg-zinc-800/10 flex items-center justify-center text-[0.6875rem] font-bold text-zinc-700/80">
               {(entry.displayName || entry.twitchName || '?').charAt(0).toUpperCase()}
             </div>
           )}
-          <p className="text-[10px] font-bold tracking-eyebrow-md uppercase text-zinc-800/75 font-mono truncate flex-1">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-zinc-800/75 font-mono truncate flex-1">
             {entry.displayName || entry.twitchName}
           </p>
         </div>
@@ -94,7 +94,7 @@ function Card({ entry, round, dim, winnerInfo }) {
         )}
         {showSlot && (
           <p
-            className="mt-1.5 text-[10px] font-bold tracking-eyebrow-md uppercase text-zinc-700/80 font-mono truncate"
+            className="mt-1.5 text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-zinc-700/80 font-mono truncate"
             title={entry.topSlotGuess}
           >
             ◇ {entry.topSlotGuess}
@@ -104,7 +104,7 @@ function Card({ entry, round, dim, winnerInfo }) {
         {/* Winner stamp */}
         {winnerInfo && (
           <span
-            className={`absolute -top-1 -right-2 rotate-[12deg] px-2 py-0.5 text-[10px] font-bold tracking-eyebrow-lg uppercase border-2 font-mono ${
+            className={`absolute -top-1 -right-2 rotate-[12deg] px-2 py-0.5 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase border-2 font-mono ${
               winnerInfo.place === 1
                 ? 'text-orange-admin border-orange-admin bg-zinc-broadcast/85'
                 : winnerInfo.place === 2
@@ -151,7 +151,7 @@ export default function PredictionWall({ round }) {
         <div className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/15 mb-3 text-white/35">
           <Pin size={14} aria-hidden="true" />
         </div>
-        <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
+        <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
           Wall empty
         </p>
         <p className="text-sm text-white/55">
@@ -186,7 +186,7 @@ export default function PredictionWall({ round }) {
 
       {overflow > 0 && (
         <div className="mt-6 text-center">
-          <span className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/20 text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/65 font-mono">
+          <span className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/20 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/65 font-mono">
             +{overflow} more pinned elsewhere
           </span>
         </div>

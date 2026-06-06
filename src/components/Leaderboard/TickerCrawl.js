@@ -22,7 +22,7 @@ export default function TickerCrawl() {
       className="relative overflow-hidden border-t border-white/8 bg-zinc-broadcast/60"
       aria-hidden="true"
     >
-      <div className="ticker-track whitespace-nowrap py-2.5 text-[10px] font-bold tracking-eyebrow-lg text-white/55 font-mono motion-reduce:[animation:none]">
+      <div className="ticker-track whitespace-nowrap py-2.5 text-[0.625rem] font-bold tracking-eyebrow-lg text-white/55 font-mono motion-reduce:[animation:none]">
         <span className="px-6">{line}</span>
         <span className="px-6">{line}</span>
       </div>

@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { adminDb } from '../_lib/firebaseAdmin.js';
 import { applyCors } from '../_lib/verifyAuth.js';
+import { takenSlotSet, dedupeAgainstTaken } from '../../src/utils/suggestionBoard.js';
 
 // Public, password-gated suggestion submission. No login required — the link's
 // password is the gate. Validates server-side, then appends/overwrites the
@@ -8,10 +9,15 @@ import { applyCors } from '../_lib/verifyAuth.js';
 //
 // POST { linkId, password, name, slots: string[] }
 
-const MAX_SLOTS = 6;
+// Doc-size budget: the whole hunt (bonuses + suggestions + squad) lives in one
+// Firestore doc capped at 1MB. Worst case per submitter ≈ MAX_SLOTS × (MAX_SLOT_LEN
+// + UUID/status overhead) ≈ 20 × ~130B ≈ 2.6KB. MAX_PEOPLE × that ≈ 150 × 2.6KB
+// ≈ 390KB, leaving comfortable headroom for bonuses/squad. Keep MAX_SLOTS in sync
+// with src/pages/HuntSuggestPage.js.
+const MAX_SLOTS = 20;
 const MAX_NAME_LEN = 40;
 const MAX_SLOT_LEN = 80;
-const MAX_PEOPLE = 300; // cap link-sourced submitters to keep the hunt doc well under Firestore's 1MB limit
+const MAX_PEOPLE = 150; // cap link-sourced submitters to keep the hunt doc under Firestore's 1MB limit
 const SUBMIT_COOLDOWN_MS = 5 * 1000;
 
 function hashPassword(password, salt) {
@@ -84,7 +90,19 @@ export default async function handler(req, res) {
         throw new Error('LIST_FULL');
       }
 
-      const slotObjs = cleanSlots.map((nm) => ({
+      // Global first-caller-wins dedup. taken = every slot name already on the
+      // board EXCEPT this submitter's own prior entry (a re-submit replaces it,
+      // so their old picks must not block their new ones).
+      const replacedId = existingIdx !== -1 ? suggestions[existingIdx].id : null;
+      const taken = takenSlotSet(suggestions, { excludePersonId: replacedId });
+      const { accepted, dropped } = dedupeAgainstTaken(cleanSlots, taken);
+
+      // Everything was already called — don't create/replace with an empty entry.
+      if (accepted.length === 0) {
+        return { added: 0, dropped, replaced: existingIdx !== -1, empty: true };
+      }
+
+      const slotObjs = accepted.map((nm) => ({
         id: crypto.randomUUID(),
         name: nm,
         status: 'open',
@@ -103,7 +121,7 @@ export default async function handler(req, res) {
           : [...suggestions, person];
 
       tx.update(activeRef, { suggestions: next });
-      return { replaced: existingIdx !== -1 };
+      return { added: accepted.length, dropped, replaced: existingIdx !== -1 };
     });
 
     return res.status(200).json({ ok: true, ...result });

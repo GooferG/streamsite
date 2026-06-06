@@ -40,6 +40,7 @@ const EMPTY_HUNT = (name, startBalance) => ({
   bonuses: [],
   gamblers: [],
   bannedSlots: '',
+  skippedCalls: [],
   status: 'active',
   startedAt: Date.now(),
   completedAt: null,
@@ -198,6 +199,30 @@ export function useHuntStore() {
       writeActive({ ...activeHunt, ...patch });
     },
     [activeHunt, writeActive]
+  );
+
+  // Append entries to skippedCalls using the freshest state (functional update),
+  // then persist through the same debounced writer used for other hunt fields.
+  // Avoids the stale-closure drop when two skips fire before a re-render: an
+  // object-patch updateHunt would spread the same stale skippedCalls twice and
+  // drop one entry. Reading `prev` here always sees the latest committed state.
+  //
+  // writeActive is called from inside the updater, which React may double-invoke
+  // in StrictMode dev. That's safe here: writeActive is idempotent per-value
+  // (it sets state + (re)schedules a single debounced write keyed off the same
+  // merged `next`), and each invocation appends onto the same `prev`, so the
+  // persisted and local results are identical regardless of double-invoke.
+  const appendSkippedCalls = useCallback(
+    (entries) => {
+      if (!entries || entries.length === 0) return;
+      setActiveHunt((prev) => {
+        if (!prev) return prev;
+        const next = { ...prev, skippedCalls: [...(prev.skippedCalls ?? []), ...entries] };
+        writeActive(next);
+        return next;
+      });
+    },
+    [writeActive]
   );
 
   // Owner-side suggestions writer. Writes ONLY the suggestions[] field, and does
@@ -395,6 +420,7 @@ export function useHuntStore() {
     shareId: activeHunt?.shareId || null,
     startHunt,
     updateHunt,
+    appendSkippedCalls,
     updateSuggestions,
     completeHunt,
     discardActiveHunt,

@@ -10,7 +10,7 @@ function tsToDate(ts) {
   return new Date(ts);
 }
 
-function HistoryRow({ hunt, onReexport, onReopen, onDelete }) {
+function HistoryRow({ hunt, onReexport, onReopen, onDelete, onOpenLog }) {
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [confirmingReopen, setConfirmingReopen] = useState(false);
@@ -162,9 +162,19 @@ function HistoryRow({ hunt, onReexport, onReopen, onDelete }) {
                             <span className="truncate">{b.slot}</span>
                           </span>
                           {b.caller && (
-                            <span className="block text-[10px] font-mono tracking-eyebrow-md uppercase text-purple-bright truncate mt-0.5">
-                              📣 {b.caller}
-                            </span>
+                            onOpenLog ? (
+                              <button
+                                type="button"
+                                onClick={() => onOpenLog(b.caller)}
+                                className="block text-[10px] font-mono tracking-eyebrow-md uppercase text-purple-bright truncate mt-0.5 hover:underline text-left"
+                              >
+                                📣 {b.caller}
+                              </button>
+                            ) : (
+                              <span className="block text-[10px] font-mono tracking-eyebrow-md uppercase text-purple-bright truncate mt-0.5">
+                                📣 {b.caller}
+                              </span>
+                            )
                           )}
                         </td>
                         <td className="px-3 py-2 text-right text-white/70 tabular-nums">{fmt(b.stake)}</td>
@@ -224,8 +234,8 @@ function HistoryRow({ hunt, onReexport, onReopen, onDelete }) {
               </p>
               <div className="flex flex-wrap gap-x-3 gap-y-1">
                 {callerStats.leaderboard.map((row) => (
-                  <span key={row.caller} className="text-[11px] font-mono text-white/70">
-                    <span className="font-bold text-white-body">{row.caller}</span>
+                  <span key={row.name} className="text-[11px] font-mono text-white/70">
+                    <span className="font-bold text-white-body">{row.name}</span>
                     <span className="text-purple-bright tabular-nums"> {row.calls}</span>
                   </span>
                 ))}
@@ -252,7 +262,7 @@ function HistoryRow({ hunt, onReexport, onReopen, onDelete }) {
   );
 }
 
-export default function HuntHistory({ history, onReexport, onReopen, onDelete }) {
+export default function HuntHistory({ history, onReexport, onReopen, onDelete, onOpenLog }) {
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/65 font-mono">
@@ -275,6 +285,7 @@ export default function HuntHistory({ history, onReexport, onReopen, onDelete })
               onReexport={onReexport}
               onReopen={onReopen}
               onDelete={onDelete}
+              onOpenLog={onOpenLog}
             />
           ))}
         </div>

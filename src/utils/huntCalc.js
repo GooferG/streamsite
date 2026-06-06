@@ -122,60 +122,132 @@ export function bestWorstSlot(bonuses) {
   return { best, worst };
 }
 
+// Tunable thresholds for the "fun stat" reputation layer. Adjust here only.
+const REP = {
+  winX: 20,      // form pip "win" / hot-pace threshold
+  brickX: 1,     // form pip "brick" / cold-pace threshold
+  hotAvgX: 25,
+  hotAccept: 0.6,
+  coldAccept: 0.35,
+  streakLen: 2,
+  minColdCalls: 3,
+};
+
+// Public thresholds the UI reuses so row tints match form-pip colors.
+export const CALLER_WIN_X = REP.winX;
+export const CALLER_BRICK_X = REP.brickX;
+
+function playedX(b) {
+  const stake = Number(b.stake) || 0;
+  const win = Number(b.win) || 0;
+  return stake > 0 && win > 0 ? win / stake : null;
+}
+
 /**
- * Slot-caller leaderboard + best/worst/most-consistent stats.
- * Only bonuses with a non-empty `caller` count. Ranking uses X (win / stake).
- * "Played" = stake > 0 && win > 0 — best/worst/avg ignore un-entered wins so
- * they don't all tie at 0; the leaderboard counts every called bonus.
+ * Slot-caller leaderboard + cross-hunt reputation.
+ * @param {Array} bonuses        current hunt bonuses (with caller, stake, win)
+ * @param {Array} history        completed hunts [{ bonuses:[...] }] for prior plays
+ * @param {Array} skippedCalls   [{ caller }] viewer calls skipped this hunt
+ * Backward compatible: history/skippedCalls default to []. Legacy keys
+ * (leaderboard, bestCall, worstCall, bestAvgCaller) are preserved.
  */
-export function computeCallerStats(bonuses) {
-  const called = (bonuses ?? []).filter((b) => (b.caller || '').trim() !== '');
+export function computeCallerStats(bonuses, history = [], skippedCalls = []) {
+  const cur = (bonuses ?? []).filter((b) => (b.caller || '').trim() !== '');
 
-  // Leaderboard — all called bonuses, played or not.
-  const counts = new Map();
-  for (const b of called) {
-    const name = b.caller.trim();
-    counts.set(name, (counts.get(name) || 0) + 1);
-  }
-  const leaderboard = [...counts.entries()]
-    .map(([caller, calls]) => ({ caller, calls }))
-    .sort((a, b) => b.calls - a.calls || a.caller.localeCompare(b.caller));
+  // Per-caller accumulator.
+  const map = new Map();
+  const ensure = (name) => {
+    if (!map.has(name)) {
+      map.set(name, { name, gotIn: 0, missed: 0, xs: [] });
+    }
+    return map.get(name);
+  };
 
-  // Played called bonuses, with X.
-  const played = called
-    .map((b) => {
-      const stake = Number(b.stake) || 0;
-      const win = Number(b.win) || 0;
-      return stake > 0 && win > 0
-        ? { caller: b.caller.trim(), slot: b.slot, x: win / stake }
-        : null;
-    })
-    .filter(Boolean);
-
-  let bestCall = null;
-  let worstCall = null;
-  for (const p of played) {
-    if (!bestCall || p.x > bestCall.x) bestCall = p;
-    if (!worstCall || p.x < worstCall.x) worstCall = p;
-  }
-
-  // Best average caller (mean X across each caller's played calls).
-  const byCaller = new Map();
-  for (const p of played) {
-    const cur = byCaller.get(p.caller) || { sum: 0, calls: 0 };
-    cur.sum += p.x;
-    cur.calls += 1;
-    byCaller.set(p.caller, cur);
-  }
-  let bestAvgCaller = null;
-  for (const [caller, { sum, calls }] of byCaller.entries()) {
-    const avgX = sum / calls;
-    if (!bestAvgCaller || avgX > bestAvgCaller.avgX) {
-      bestAvgCaller = { caller, avgX, calls };
+  // History first (older plays at the front of each caller's X list).
+  for (const h of history ?? []) {
+    for (const b of h.bonuses ?? []) {
+      const name = (b.caller || '').trim();
+      if (!name) continue;
+      const rec = ensure(name);
+      rec.gotIn += 1;
+      const x = playedX(b);
+      if (x != null) rec.xs.push(x);
     }
   }
+  // Current hunt.
+  for (const b of cur) {
+    const name = b.caller.trim();
+    const rec = ensure(name);
+    rec.gotIn += 1;
+    const x = playedX(b);
+    if (x != null) rec.xs.push(x);
+  }
+  // Skips → missed.
+  for (const s of skippedCalls ?? []) {
+    const name = (s.caller || '').trim();
+    if (!name) continue;
+    ensure(name).missed += 1;
+  }
 
-  return { leaderboard, bestCall, worstCall, bestAvgCaller };
+  const formPip = (x) => (x >= REP.winX ? 'win' : x < REP.brickX ? 'brick' : 'ok');
+  const trailingRun = (xs, pred) => {
+    let n = 0;
+    for (let i = xs.length - 1; i >= 0 && pred(xs[i]); i--) n += 1;
+    return n;
+  };
+
+  const leaderboard = [...map.values()]
+    .map((rec) => {
+      const calls = rec.gotIn + rec.missed;
+      const plays = rec.xs.length;
+      const avgX = plays ? rec.xs.reduce((s, x) => s + x, 0) / plays : null;
+      const best = plays ? Math.max(...rec.xs) : null;
+      const acceptRate = calls ? rec.gotIn / calls : 0;
+      const form = rec.xs.slice(-5).map(formPip);
+      const hotStreak = trailingRun(rec.xs, (x) => x >= REP.winX);
+      const coldStreak = trailingRun(rec.xs, (x) => x < REP.brickX);
+      let status = 'steady';
+      if (hotStreak >= REP.streakLen || (avgX != null && avgX >= REP.hotAvgX && acceptRate >= REP.hotAccept)) {
+        status = 'hot';
+      } else if (coldStreak >= REP.streakLen || (acceptRate < REP.coldAccept && calls >= REP.minColdCalls)) {
+        status = 'cold';
+      }
+      return {
+        name: rec.name, calls, gotIn: rec.gotIn, missed: rec.missed,
+        acceptRate, avgX, best, plays, form, status, hotStreak, coldStreak,
+      };
+    })
+    .sort((a, b) => b.calls - a.calls || a.name.localeCompare(b.name));
+
+  // Best/worst single call — current hunt played bonuses only (the "this hunt" highlight).
+  let bestCall = null;
+  let worstCall = null;
+  for (const b of cur) {
+    const x = playedX(b);
+    if (x == null) continue;
+    const cand = { slot: b.slot, x, caller: b.caller.trim() };
+    if (!bestCall || x > bestCall.x) bestCall = cand;
+    if (!worstCall || x < worstCall.x) worstCall = cand;
+  }
+
+  const withPlays = leaderboard.filter((r) => r.plays >= 2);
+  const mostConsistent = withPlays.reduce(
+    (best, r) => (!best || r.avgX > best.avgX ? r : best), null
+  );
+  const hotRows = leaderboard.filter((r) => r.status === 'hot');
+  const hotCaller = hotRows.reduce(
+    (best, r) => (!best || (r.avgX ?? 0) > (best.avgX ?? 0) ? r : best), null
+  );
+  const coldRows = leaderboard.filter((r) => r.status === 'cold');
+  const coldCaller = coldRows.reduce(
+    (worst, r) => (!worst || r.acceptRate < worst.acceptRate ? r : worst), null
+  );
+
+  return {
+    leaderboard, bestCall, worstCall,
+    mostConsistent, hotCaller, coldCaller,
+    bestAvgCaller: mostConsistent, // legacy alias
+  };
 }
 
 /**

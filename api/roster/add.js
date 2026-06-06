@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { adminDb } from '../_lib/firebaseAdmin.js';
 import { applyCors, requireAuth } from '../_lib/verifyAuth.js';
+import { takenSlotSet, normalizeSlotName } from '../../src/utils/suggestionBoard.js';
 
 // Host adds a registered viewer's default slots into the host's own active
 // hunt. Auth = the host (any signed-in user). The target viewer must have an
@@ -55,18 +56,25 @@ export default async function handler(req, res) {
         throw new Error('LIST_FULL');
       }
 
+      // Global first-caller-wins dedup: skip any default slot already on the
+      // board (any person). Exclude this viewer's own existing entry so a re-add
+      // doesn't self-block; the merge branch re-applies an own-entry filter below.
+      const excludeId = existingIdx !== -1 ? suggestions[existingIdx].id : null;
+      const taken = takenSlotSet(suggestions, { excludePersonId: excludeId });
+      const freshNames = defaultSlots.filter(
+        (nm) => !taken.has(normalizeSlotName(nm))
+      );
+
       let addedCount = 0;
       let next;
       if (existingIdx !== -1) {
-        // Merge: append only slots whose name isn't already on this entry.
         const entry = suggestions[existingIdx];
+        // Own-entry filter: don't re-add a game this entry already lists.
         const have = new Set(
-          (Array.isArray(entry.slots) ? entry.slots : []).map((s) =>
-            String(s.name || '').toLowerCase()
-          )
+          (Array.isArray(entry.slots) ? entry.slots : []).map((s) => normalizeSlotName(s.name))
         );
-        const newSlots = defaultSlots
-          .filter((nm) => !have.has(String(nm).toLowerCase()))
+        const newSlots = freshNames
+          .filter((nm) => !have.has(normalizeSlotName(nm)))
           .map((nm) => ({ id: crypto.randomUUID(), name: nm, status: 'open' }));
         addedCount = newSlots.length;
         const merged = {
@@ -75,12 +83,16 @@ export default async function handler(req, res) {
         };
         next = suggestions.map((p, i) => (i === existingIdx ? merged : p));
       } else {
-        const slotObjs = defaultSlots.map((nm) => ({
+        const slotObjs = freshNames.map((nm) => ({
           id: crypto.randomUUID(),
           name: nm,
           status: 'open',
         }));
         addedCount = slotObjs.length;
+        // Don't create an empty person row if every default was already taken.
+        if (addedCount === 0) {
+          return { added: 0, merged: false };
+        }
         const person = {
           id: crypto.randomUUID(),
           person: personName,

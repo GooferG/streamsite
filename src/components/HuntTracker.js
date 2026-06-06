@@ -6,282 +6,45 @@ import {
   TrendingDown,
   Download,
   CheckCircle2,
-  GripVertical,
   Pencil,
-  Megaphone,
-  Trophy,
-  ArrowUp,
-  ArrowDown,
-  ArrowUpDown,
   ArrowLeft,
   Play,
-  SkipForward,
-  Clock,
   Radio,
   Trash2,
   MoreHorizontal,
   HelpCircle,
-  Target,
 } from 'lucide-react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core';
-import {
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-  arrayMove,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { arrayMove } from '@dnd-kit/sortable';
 import SlotAutocomplete from './SlotAutocomplete';
 import SuggestionsPanel from './SuggestionsPanel';
-import ScatterPill from './ScatterPill';
+import ViewerCalls from './hunt/ViewerCalls';
 import HuntStartScreen from './HuntStartScreen';
 import Modal from './Modal';
 import StatCell from './StatCell';
 import CopyLinkButton from './CopyLinkButton';
 import HuntLinkControls from './HuntLinkControls';
-import CappedScroll from './CappedScroll';
 import HuntTour from './HuntTour';
+import PanelLabel from './hunt/PanelLabel';
+import BonusTable from './hunt/BonusTable';
+import OpeningFocus from './hunt/OpeningFocus';
+import HuntHero from './hunt/HuntHero';
+import HuntStatGrid from './hunt/HuntStatGrid';
+import CallerStatsPanel from './hunt/CallerStatsPanel';
+import CallerLogDrawer from './hunt/CallerLogDrawer';
 import { useHuntStore } from '../hooks/useHuntStore';
 import useTuningPhrase from '../hooks/useTuningPhrase';
 import { useFirstVisit } from '../hooks/useFirstVisit';
 import {
   fmt,
-  fmtX,
   makeId,
   computeStats,
-  computeCallerStats,
   openingOrder,
 } from '../utils/huntCalc';
 import { renderSplit, renderRecap } from '../utils/huntExport';
-import { scatterTierKey } from '../utils/scatterTier';
 import { authedFetch } from '../utils/authedFetch';
 
 const inputCls =
   'bg-zinc-broadcast/60 border border-white/10 px-3.5 py-2.5 text-sm text-white-body placeholder:text-white/50 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';
-
-function PanelLabel({ code, icon: Icon, label, accent = 'emerald', quiet = false }) {
-  const color =
-    accent === 'orange'
-      ? 'text-orange-admin'
-      : accent === 'purple'
-        ? 'text-purple-bright'
-        : 'text-emerald-signal';
-  return (
-    <div
-      className={`flex items-center gap-3 text-[10px] font-bold uppercase tracking-eyebrow-lg font-mono ${quiet ? 'text-white/50' : 'text-white/65'}`}
-    >
-      {code && <span className={`${color} tabular-nums`}>{code}</span>}
-      <span className="inline-flex items-center gap-1.5">
-        {Icon && <Icon size={12} aria-hidden="true" className={color} />}
-        <span>{label}</span>
-      </span>
-    </div>
-  );
-}
-
-function SortableBonusRow({
-  bonus,
-  reqX,
-  opening = false,
-  isCurrent = false,
-  onJump,
-  onWin,
-  onStake,
-  onRemove,
-  onSetTier,
-  onToggleHidden,
-  onDefer,
-  onCaller,
-  editingCaller,
-  setEditingCaller,
-}) {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: bonus.id, disabled: opening });
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-  const x = bonus.stake > 0 ? bonus.win / bonus.stake : null;
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-1.5 border-b border-white/5 transition-colors ${
-        isCurrent
-          ? 'bg-purple-gamba/15 border-purple-gamba/30'
-          : 'hover:bg-zinc-broadcast/40'
-      }`}
-    >
-      {opening ? (
-        <button
-          type="button"
-          onClick={() => onJump && onJump(bonus.id)}
-          title="Jump to this slot"
-          className={`p-1 shrink-0 ${isCurrent ? 'text-purple-bright' : 'text-white/25 hover:text-white/65'}`}
-        >
-          <Play size={13} aria-hidden="true" />
-        </button>
-      ) : (
-        <button
-          type="button"
-          {...attributes}
-          {...listeners}
-          className="p-1 text-white/25 hover:text-white/65 cursor-grab active:cursor-grabbing shrink-0"
-          aria-label="Drag to reorder"
-        >
-          <GripVertical size={14} aria-hidden="true" />
-        </button>
-      )}
-      <div className="min-w-0">
-        <span className="flex items-center gap-1.5 min-w-0 font-bold text-white-body">
-          {/* Tier pill — click cycles regular → super → five → regular.
-              Shift-click toggles the hidden modifier when already at five. */}
-          <button
-            type="button"
-            onClick={(e) => {
-              const tier = scatterTierKey(bonus);
-              if (e.shiftKey && tier === 'five') {
-                onToggleHidden(bonus.id);
-                return;
-              }
-              const nextTier =
-                tier === 'regular' ? 'super' : tier === 'super' ? 'five' : 'regular';
-              onSetTier(bonus.id, nextTier);
-            }}
-            title="Click: cycle tier (regular → super → 5 scatter). Shift-click on 5 scatter: toggle hidden."
-            className="shrink-0 leading-none"
-          >
-            {scatterTierKey(bonus) === 'regular' ? (
-              <span className="px-1 py-0.5 text-[8px] font-bold tracking-eyebrow-md uppercase font-mono border border-white/15 text-white/30 hover:text-white/60 hover:border-white/30 leading-none">
-                tier
-              </span>
-            ) : (
-              <ScatterPill bonus={bonus} size="sm" />
-            )}
-          </button>
-          <span className="truncate">{bonus.slot}</span>
-          {bonus.deferred && (
-            <span className="shrink-0 px-1 py-0.5 text-[8px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">
-              Later
-            </span>
-          )}
-        </span>
-        {/* Caller — click to edit inline. */}
-        {editingCaller ? (
-          <input
-            type="text"
-            list="hunt-callers"
-            autoFocus
-            defaultValue={bonus.caller || ''}
-            onBlur={(e) => {
-              onCaller(bonus.id, e.target.value);
-              setEditingCaller(null);
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                onCaller(bonus.id, e.target.value);
-                setEditingCaller(null);
-              }
-              if (e.key === 'Escape') setEditingCaller(null);
-            }}
-            placeholder="Caller"
-            className="mt-0.5 w-32 bg-zinc-broadcast/80 border border-purple-gamba/50 px-1.5 py-0.5 text-[11px] text-white-body focus:outline-none"
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setEditingCaller(bonus.id)}
-            title="Set slot caller"
-            className="mt-0.5 block text-[10px] font-mono tracking-eyebrow-md uppercase truncate max-w-full text-left transition-colors"
-          >
-            {bonus.caller ? (
-              <span className="text-purple-bright">📣 {bonus.caller}</span>
-            ) : (
-              <span className="text-white/25 hover:text-white/50">
-                + caller
-              </span>
-            )}
-          </button>
-        )}
-      </div>
-      {opening ? (
-        <span className="w-20 px-2 py-1 text-sm text-right text-white/70 tabular-nums">
-          {fmt(bonus.stake)}
-        </span>
-      ) : (
-        <input
-          type="number"
-          value={bonus.stake || ''}
-          onChange={(e) => onStake(bonus.id, e.target.value)}
-          placeholder="—"
-          aria-label="Bet"
-          className="w-20 bg-zinc-broadcast/60 border border-white/10 px-2 py-1 text-sm text-right focus:border-emerald-signal/70 focus:outline-none placeholder:text-white/20 tabular-nums"
-        />
-      )}
-      <input
-        type="number"
-        value={bonus.win || ''}
-        onChange={(e) => onWin(bonus.id, e.target.value)}
-        placeholder="—"
-        aria-label="Win"
-        className="w-24 bg-zinc-broadcast/60 border border-white/10 px-2 py-1 text-sm text-right focus:border-emerald-signal/70 focus:outline-none placeholder:text-white/20 tabular-nums"
-      />
-      <span
-        className={`text-right font-bold tabular-nums px-1 w-16 ${
-          x != null && x >= (reqX ?? 0)
-            ? 'text-emerald-signal'
-            : 'text-white/70'
-        }`}
-      >
-        {x != null ? fmtX(x) : '—'}
-      </span>
-      {opening ? (
-        <button
-          type="button"
-          onClick={() => onDefer(bonus.id)}
-          title={
-            bonus.deferred
-              ? 'Bring back into order'
-              : 'Come back to this slot later'
-          }
-          className={`p-1 border transition-colors ${
-            bonus.deferred
-              ? 'border-orange-admin/60 text-orange-admin bg-orange-admin/10'
-              : 'border-white/15 text-white/40 hover:text-white-body hover:border-white/30'
-          }`}
-          aria-label="Defer slot"
-        >
-          <Clock size={11} aria-hidden="true" />
-        </button>
-      ) : (
-        <button
-          type="button"
-          onClick={() => onRemove(bonus.id)}
-          className="p-1 border border-red-destructive/30 text-red-destructive/80 hover:bg-red-destructive/15 transition-colors"
-          aria-label="Remove bonus"
-        >
-          <X size={11} aria-hidden="true" />
-        </button>
-      )}
-    </div>
-  );
-}
 
 export default function HuntTracker() {
   const store = useHuntStore();
@@ -295,6 +58,7 @@ export default function HuntTracker() {
     error,
     startHunt,
     updateHunt,
+    appendSkippedCalls,
     updateSuggestions,
     completeHunt,
     discardActiveHunt,
@@ -343,12 +107,8 @@ export default function HuntTracker() {
   // Suggestion-intake link controls.
   const [linkBusy, setLinkBusy] = useState(false);
   const [linkError, setLinkError] = useState(null);
-
-  // Drag sensors must be created unconditionally (before any early return).
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
-  );
+  // Caller call-log drawer — holds the caller name while open, else null.
+  const [callerLogName, setCallerLogName] = useState(null);
 
   // First-visit coachmark tour: auto-open once on the first active view, for
   // both owners and logged-out visitors (the tour rewords its owner-only steps
@@ -394,6 +154,7 @@ export default function HuntTracker() {
   const finishBalance = activeHunt.finishBalance ?? '';
   const bannedSlots = activeHunt.bannedSlots ?? '';
   const suggestions = activeHunt.suggestions ?? [];
+  const skippedCalls = activeHunt.skippedCalls ?? [];
   const phase = activeHunt.phase === 'opening' ? 'opening' : 'collecting';
 
   // Opening-phase order + clamped current index.
@@ -403,7 +164,6 @@ export default function HuntTracker() {
     Math.max(0, order.length - 1)
   );
   const currentBonus = order[openingIdx] || null;
-  const nextBonus = order[openingIdx + 1] || null;
   const openedCount = bonuses.filter((b) => (Number(b.win) || 0) > 0).length;
 
   function startOpening() {
@@ -497,6 +257,11 @@ export default function HuntTracker() {
       ),
     });
   }
+  function updateBonusNote(id, value) {
+    updateHunt({
+      bonuses: bonuses.map((b) => (b.id === id ? { ...b, note: value } : b)),
+    });
+  }
   function saveName() {
     const trimmed = nameInput.trim();
     if (trimmed && trimmed !== activeHunt.name) updateHunt({ name: trimmed });
@@ -519,6 +284,27 @@ export default function HuntTracker() {
   }
   function clearSuggestions() {
     updateSuggestions([]);
+  }
+  // Skip a viewer call: record it against the caller (accept-rate), then mark
+  // the suggestion 'passed' so it leaves the open list.
+  function skipCall(person, slot) {
+    appendSkippedCalls([{ caller: person, slot: slot.name, ts: Date.now() }]);
+    updateSuggestions(
+      suggestions.map((p) => ({
+        ...p,
+        slots: p.slots.map((s) => (s.id === slot.id ? { ...s, status: 'passed' } : s)),
+      }))
+    );
+  }
+  function skipAllCalls(person, slots) {
+    appendSkippedCalls(slots.map((s) => ({ caller: person, slot: s.name, ts: Date.now() })));
+    const ids = new Set(slots.map((s) => s.id));
+    updateSuggestions(
+      suggestions.map((p) => ({
+        ...p,
+        slots: p.slots.map((s) => (ids.has(s.id) ? { ...s, status: 'passed' } : s)),
+      }))
+    );
   }
   // "Got in" — open the stake prompt for this suggested slot.
   function startLanding(person, slot) {
@@ -711,8 +497,6 @@ export default function HuntTracker() {
     return { ...g, pct, payout };
   });
 
-  const callerStats = computeCallerStats(bonuses);
-
   // Sort is a display lens — it never rewrites the saved order. Manual
   // (drag) order is preserved and restored when the sort is cleared.
   const displayBonuses =
@@ -806,6 +590,15 @@ export default function HuntTracker() {
         <div className="ml-auto flex gap-2 items-center" data-html2canvas-ignore="true">
           {/* Primary actions — spotlit by the tour */}
           <div data-tour="complete-actions" className="flex gap-2 items-center">
+            <button
+              type="button"
+              disabled
+              title="Collab — coming soon"
+              className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/10 text-white/30 cursor-not-allowed"
+            >
+              <Users size={12} aria-hidden="true" />
+              <span className="text-[10px] font-bold tracking-eyebrow-lg">COLLAB</span>
+            </button>
             <button
               type="button"
               onClick={() => renderSplit(activeHunt)}
@@ -1023,70 +816,24 @@ export default function HuntTracker() {
         )}
       </div>
 
-      {/* Overall stats band */}
-      <div data-tour="stats" className="border-b border-white/8 bg-emerald-signal/[0.03]">
-        <div className="flex flex-wrap divide-x divide-white/10">
-          <StatCell
-            variant="bare"
-            hero
-            label="Profit / loss"
-            value={
-              (() => {
-                // Finish-based profit once a finish balance is entered;
-                // otherwise the running P/L (winnings − start) so the figure
-                // is live through the whole hunt.
-                const p = profit != null ? profit : runningProfit;
-                return p == null ? (
-                  '—'
-                ) : (
-                  <span
-                    className={
-                      p >= 0 ? 'text-emerald-signal' : 'text-red-destructive'
-                    }
-                  >
-                    {p >= 0 ? '+' : '−'}
-                    {fmt(Math.abs(p))}
-                  </span>
-                );
-              })()
-            }
+      {/* Stat grid — hero P/L + 4-up secondary */}
+      <div data-tour="stats" className="border-b border-white/8 bg-emerald-signal/[0.03] px-4 py-4">
+        <div className="grid lg:grid-cols-[360px_1fr] gap-4 items-start">
+          <HuntHero
+            profit={profit != null ? profit : runningProfit}
+            avgReqRemaining={stats.avgReqRemaining}
+            totalWins={totalWins}
+            start={stats.start}
+            wlMultiplier={wlMultiplier}
           />
-          <StatCell variant="bare" label="Total wins" value={fmt(totalWins)} />
-          <StatCell
-            variant="bare"
-            label="Avg req"
-            value={stats.avgReqRemaining != null ? fmt(stats.avgReqRemaining) : '—'}
+          <HuntStatGrid
+            stats={stats}
+            bonusCount={bonuses.length}
+            pendingCount={bonuses.length - openedCount}
           />
-          <StatCell
-            variant="bare"
-            label="Cur avg"
-            value={stats.curAvgWin != null ? fmt(stats.curAvgWin) : '—'}
-          />
-          <StatCell
-            variant="bare"
-            label="Req X"
-            value={reqX != null ? `${reqX.toFixed(1)}x` : '—'}
-          />
-          <StatCell
-            variant="bare"
-            label="Cur avg X"
-            value={stats.curAvgX != null ? fmtX(stats.curAvgX) : '—'}
-          />
-          <StatCell
-            variant="bare"
-            label="Total X"
-            value={stats.totalX > 0 ? fmtX(stats.totalX) : '—'}
-          />
-          <StatCell
-            variant="bare"
-            label="W/L mult"
-            value={
-              wlMultiplier != null
-                ? fmtX(Math.round(wlMultiplier * 100) / 100)
-                : '—'
-            }
-          />
-          <label className="px-3 py-2.5 block">
+        </div>
+        <div className="flex flex-wrap gap-3 mt-3">
+          <label className="block">
             <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
               Start bal
             </span>
@@ -1098,7 +845,7 @@ export default function HuntTracker() {
               className={`w-28 ${inputCls} tabular-nums`}
             />
           </label>
-          <label className="px-3 py-2.5 block">
+          <label className="block">
             <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
               Finish bal
             </span>
@@ -1115,7 +862,7 @@ export default function HuntTracker() {
 
       {/* Body */}
       <div className="px-4 py-5">
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid lg:grid-cols-[1.35fr_1fr] gap-6">
           {/* LEFT — Bonus list */}
           <div className="space-y-4">
             <PanelLabel
@@ -1124,120 +871,20 @@ export default function HuntTracker() {
               accent={phase === 'opening' ? 'purple' : 'emerald'}
             />
 
-            {/* OPENING — current / next slot */}
+            {/* OPENING — centered focus card */}
             {phase === 'opening' && currentBonus && (
-              <div className="space-y-3">
-                <div className="border border-purple-gamba/40 bg-purple-gamba/5 p-4">
-                  <div className="flex items-center justify-between gap-2 mb-2">
-                    <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-purple-bright font-mono">
-                      Current slot
-                    </span>
-                    <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono tabular-nums">
-                      {openedCount} / {bonuses.length} opened
-                    </span>
-                  </div>
-                  <div className="h-0.5 bg-white/10 mb-2">
-                    <div
-                      className="h-full bg-purple-bright transition-all"
-                      style={{
-                        width: `${bonuses.length ? (openedCount / bonuses.length) * 100 : 0}%`,
-                      }}
-                    />
-                  </div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <ScatterPill bonus={currentBonus} size="md" />
-                    {currentBonus.deferred && (
-                      <span className="shrink-0 px-1 py-0.5 text-[9px] font-bold tracking-eyebrow-md uppercase font-mono border border-orange-admin/60 text-orange-admin leading-none">
-                        Later
-                      </span>
-                    )}
-                    <p className="font-black text-white-body text-2xl leading-tight truncate">
-                      {currentBonus.slot}
-                    </p>
-                  </div>
-                  <p className="text-[11px] font-mono text-white/50 mb-3 tabular-nums">
-                    bet {fmt(currentBonus.stake)}
-                    {currentBonus.caller ? ` · 📣 ${currentBonus.caller}` : ''}
-                  </p>
-                  <input
-                    type="number"
-                    autoFocus
-                    value={currentBonus.win || ''}
-                    onChange={(e) =>
-                      updateBonusWin(currentBonus.id, e.target.value)
-                    }
-                    onKeyDown={(e) => {
-                      if (e.key !== 'Enter') return;
-                      // Last slot: Enter opens the wrap-up prompt (finish balance
-                      // + export) instead of dead-ending on a clamped Next. It does
-                      // NOT auto-complete — the user confirms in the modal.
-                      if (openingIdx >= order.length - 1) setShowWrapUp(true);
-                      else advanceOpening();
-                    }}
-                    placeholder="Win ($)"
-                    aria-label="Win for current slot"
-                    className="w-full bg-zinc-broadcast/70 border border-purple-gamba/50 px-3 py-2 text-base text-right text-white-body focus:border-purple-bright focus:outline-none tabular-nums"
-                  />
-                  <div className="grid grid-cols-3 gap-2 mt-2">
-                    <button
-                      type="button"
-                      onClick={prevOpening}
-                      disabled={openingIdx === 0}
-                      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border border-white/15 text-white/60 hover:text-white-body hover:border-white/30 transition-colors duration-150 disabled:opacity-30"
-                    >
-                      <ArrowLeft size={12} aria-hidden="true" />
-                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                        Prev
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => toggleDeferred(currentBonus.id)}
-                      title="Come back to this slot later"
-                      className={`inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border transition-colors duration-150 ${
-                        currentBonus.deferred
-                          ? 'border-orange-admin bg-orange-admin/10 text-orange-admin'
-                          : 'border-white/15 text-white/60 hover:text-white-body hover:border-white/30'
-                      }`}
-                    >
-                      <Clock size={13} aria-hidden="true" />
-                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                        Later
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={advanceOpening}
-                      disabled={openingIdx >= order.length - 1}
-                      className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-purple-gamba text-white-body hover:bg-purple-bright transition-colors duration-150 disabled:opacity-30"
-                    >
-                      <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                        Next
-                      </span>
-                      <SkipForward size={12} aria-hidden="true" />
-                    </button>
-                  </div>
-                </div>
-                {/* Next up */}
-                <div className="border border-white/10 bg-zinc-broadcast/40 px-4 py-2.5">
-                  <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
-                    Next up
-                  </span>
-                  {nextBonus ? (
-                    <p className="font-bold text-white-body text-sm truncate mt-0.5 tabular-nums">
-                      {nextBonus.slot}
-                      <span className="text-white/40 font-normal">
-                        {' '}
-                        · {fmt(nextBonus.stake)}
-                      </span>
-                    </p>
-                  ) : (
-                    <p className="text-white/40 text-sm mt-0.5">
-                      That's the last reel. Roll credits when ready.
-                    </p>
-                  )}
-                </div>
-              </div>
+              <OpeningFocus
+                order={order}
+                idx={openingIdx}
+                openedCount={openedCount}
+                onWin={updateBonusWin}
+                onNote={updateBonusNote}
+                onPrev={prevOpening}
+                onNext={advanceOpening}
+                onDefer={toggleDeferred}
+                onExit={backToCollecting}
+                onFinish={() => setShowWrapUp(true)}
+              />
             )}
 
             {/* COLLECTING — add bonus form */}
@@ -1345,110 +992,30 @@ export default function HuntTracker() {
               </div>
             )}
 
-            {bonuses.length === 0 ? (
-              <p className="text-center text-white/55 py-6 text-[12px] font-mono">
-                Nothing logged yet. Call the first slot.
-              </p>
-            ) : (
-              <div className="border border-white/8 overflow-x-auto [scrollbar-width:thin]">
-                <div className="min-w-[480px] text-sm">
-                  {/* Column headers */}
-                  <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-2 border-b border-white/10 bg-zinc-broadcast/50 sticky top-0 z-10 text-white/65 text-[10px] uppercase tracking-eyebrow-md font-mono font-bold">
-                    <span className="w-6" aria-hidden="true" />
-                    <span className="text-left">Slot</span>
-                    {phase === 'opening' ? (
-                      <span className="text-right w-20 px-1">Bet</span>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={cycleStakeSort}
-                        title={
-                          bonusSort == null
-                            ? 'Sort by bet (high to low)'
-                            : bonusSort === 'stake-desc'
-                              ? 'Sort by bet (low to high)'
-                              : 'Clear sort — back to manual order'
-                        }
-                        className={`text-right w-20 px-1 inline-flex items-center justify-end gap-1 uppercase tracking-eyebrow-md transition-colors ${
-                          bonusSort
-                            ? 'text-emerald-signal'
-                            : 'hover:text-white-body'
-                        }`}
-                      >
-                        Bet
-                        {bonusSort === 'stake-desc' ? (
-                          <ArrowDown size={11} aria-hidden="true" />
-                        ) : bonusSort === 'stake-asc' ? (
-                          <ArrowUp size={11} aria-hidden="true" />
-                        ) : (
-                          <ArrowUpDown
-                            size={11}
-                            aria-hidden="true"
-                            className="text-white/30"
-                          />
-                        )}
-                      </button>
-                    )}
-                    <span className="text-right w-24">Win</span>
-                    <span className="text-right w-16 px-1">X</span>
-                    <span className="w-6" aria-hidden="true" />
-                  </div>
-                  {/* Sortable rows. Drag only in manual mode (bonusSort == null);
-                      while a stake sort is active the list is a read-only lens.
-                      Capped height with internal scroll so a long hunt does not
-                      stretch the page; header + totals pin above/below. */}
-                  <CappedScroll maxClass="max-h-[60vh]">
-                    <DndContext
-                      sensors={sensors}
-                      collisionDetection={closestCenter}
-                      onDragEnd={handleBonusDragEnd}
-                    >
-                      <SortableContext
-                        items={rowList.map((b) => b.id)}
-                        strategy={verticalListSortingStrategy}
-                      >
-                        {rowList.map((b) => (
-                          <SortableBonusRow
-                            key={b.id}
-                            bonus={b}
-                            reqX={reqX}
-                            opening={phase === 'opening'}
-                            isCurrent={
-                              phase === 'opening' && currentBonus?.id === b.id
-                            }
-                            onJump={(id) =>
-                              gotoOpening(order.findIndex((o) => o.id === id))
-                            }
-                            onWin={updateBonusWin}
-                            onStake={updateBonusStake}
-                            onRemove={removeBonus}
-                            onSetTier={setBonusTier}
-                            onToggleHidden={toggleBonusHidden}
-                            onDefer={toggleDeferred}
-                            onCaller={updateBonusCaller}
-                            editingCaller={editingCallerId === b.id}
-                            setEditingCaller={setEditingCallerId}
-                          />
-                        ))}
-                      </SortableContext>
-                    </DndContext>
-                  </CappedScroll>
-                  {/* Totals */}
-                  <div className="grid grid-cols-[auto_1fr_auto_auto_auto_auto] gap-2 items-center px-2 py-2 border-t border-white/10 bg-zinc-broadcast/50 sticky bottom-0 z-10 text-[10px] uppercase tracking-eyebrow-md font-mono font-bold text-white/70">
-                    <span className="w-6" aria-hidden="true" />
-                    <span className="text-left text-white/65">Totals</span>
-                    <span className="text-right w-20 px-1 tabular-nums">
-                      {fmt(totalStakes)}
-                    </span>
-                    <span className="text-right w-24 tabular-nums">
-                      {fmt(totalWins)}
-                    </span>
-                    <span className="w-16 px-1" aria-hidden="true" />
-                    <span className="w-6" aria-hidden="true" />
-                  </div>
-                </div>
-              </div>
-            )}
+            <BonusTable
+              rowList={rowList}
+              bonuses={bonuses}
+              reqX={reqX}
+              phase={phase}
+              currentBonus={currentBonus}
+              totalStakes={totalStakes}
+              totalWins={totalWins}
+              bonusSort={bonusSort}
+              onCycleStakeSort={cycleStakeSort}
+              onJump={(id) =>
+                gotoOpening(order.findIndex((o) => o.id === id))
+              }
+              onWin={updateBonusWin}
+              onStake={updateBonusStake}
+              onRemove={removeBonus}
+              onSetTier={setBonusTier}
+              onToggleHidden={toggleBonusHidden}
+              onDefer={toggleDeferred}
+              onCaller={updateBonusCaller}
+              editingCallerId={editingCallerId}
+              setEditingCallerId={setEditingCallerId}
+              onDragEnd={handleBonusDragEnd}
+            />
           </div>
 
           {/* RIGHT — Split / Banned / Suggestions / Callers (quiet) */}
@@ -1597,6 +1164,16 @@ export default function HuntTracker() {
               )}
             </div>
 
+            {/* Grouped triage of open viewer calls (Add → hunt, Skip → passed) */}
+            <ViewerCalls
+              suggestions={suggestions}
+              onAdd={(person, slot) => startLanding(person, slot)}
+              onSkip={skipCall}
+              onSkipAll={skipAllCalls}
+              onOpenLog={setCallerLogName}
+              intakeControls={null}
+            />
+
             <div className="space-y-2">
               <PanelLabel
                 icon={TrendingDown}
@@ -1613,7 +1190,9 @@ export default function HuntTracker() {
               />
             </div>
 
-            {/* Slot suggestions imported from the sheet */}
+            {/* SuggestionsPanel owns sheet-import + roster search; ViewerCalls
+                above owns quick open-call triage. Overlap on open slots is an
+                accepted v1 tradeoff. */}
             <SuggestionsPanel
               suggestions={suggestions}
               onImport={importSuggestions}
@@ -1623,77 +1202,13 @@ export default function HuntTracker() {
               isLoggedIn={isLoggedIn}
             />
 
-            {/* Caller stats */}
-            <div className="space-y-3">
-              <PanelLabel
-                icon={Megaphone}
-                label="Slot calls"
-                accent="purple"
-                quiet
-              />
-              {callerStats.leaderboard.length === 0 ? (
-                <p className="text-center text-white/55 py-4 text-[12px] font-mono">
-                  No calls tagged yet.
-                </p>
-              ) : (
-                <>
-                  {/* Leaderboard */}
-                  <div className="border border-white/8 bg-zinc-broadcast/40">
-                    {callerStats.leaderboard.map((row, i) => (
-                      <div
-                        key={row.caller}
-                        className="flex items-center gap-3 px-3 py-1.5 border-b border-white/5 last:border-b-0"
-                      >
-                        <span className="text-[10px] font-bold tabular-nums text-white/30 font-mono w-5">
-                          {String(i + 1).padStart(2, '0')}
-                        </span>
-                        <span className="flex-1 min-w-0 truncate font-bold text-white-body text-sm">
-                          {row.caller}
-                        </span>
-                        <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-purple-bright font-mono tabular-nums">
-                          {row.calls} {row.calls === 1 ? 'call' : 'calls'}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Highlights */}
-                  <div className="grid grid-cols-1 gap-2">
-                    <div className="px-3 py-2 bg-zinc-broadcast/50 border border-emerald-signal/30">
-                      <p className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-emerald-signal mb-1 font-mono inline-flex items-center gap-1.5">
-                        <Trophy size={11} aria-hidden="true" /> Best call
-                      </p>
-                      <p className="text-sm font-bold text-white-body tabular-nums">
-                        {callerStats.bestCall
-                          ? `${callerStats.bestCall.slot} · ${fmtX(callerStats.bestCall.x)} · ${callerStats.bestCall.caller}`
-                          : '—'}
-                      </p>
-                    </div>
-                    <div className="px-3 py-2 bg-zinc-broadcast/50 border border-red-destructive/30">
-                      <p className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-red-destructive mb-1 font-mono inline-flex items-center gap-1.5">
-                        <TrendingDown size={11} aria-hidden="true" /> Brick of the
-                        hunt
-                      </p>
-                      <p className="text-sm font-bold text-white-body tabular-nums">
-                        {callerStats.worstCall
-                          ? `${callerStats.worstCall.slot} · ${fmtX(callerStats.worstCall.x)} · ${callerStats.worstCall.caller}`
-                          : '—'}
-                      </p>
-                    </div>
-                    <div className="px-3 py-2 bg-zinc-broadcast/50 border border-purple-gamba/30">
-                      <p className="text-[10px] font-bold uppercase tracking-eyebrow-lg text-purple-bright mb-1 font-mono inline-flex items-center gap-1.5">
-                        <Target size={11} aria-hidden="true" /> Most consistent
-                      </p>
-                      <p className="text-sm font-bold text-white-body tabular-nums">
-                        {callerStats.bestAvgCaller
-                          ? `${callerStats.bestAvgCaller.caller} · avg ${fmtX(callerStats.bestAvgCaller.avgX)} · ${callerStats.bestAvgCaller.calls} calls`
-                          : '—'}
-                      </p>
-                    </div>
-                  </div>
-                </>
-              )}
-            </div>
+            {/* Caller stats (05) */}
+            <CallerStatsPanel
+              bonuses={bonuses}
+              history={history}
+              skippedCalls={skippedCalls}
+              onOpenLog={setCallerLogName}
+            />
           </div>
         </div>
       </div>
@@ -1834,6 +1349,16 @@ export default function HuntTracker() {
             </button>
           </div>
         </Modal>
+      )}
+
+      {callerLogName && (
+        <CallerLogDrawer
+          name={callerLogName}
+          bonuses={bonuses}
+          history={history}
+          skippedCalls={skippedCalls}
+          onClose={() => setCallerLogName(null)}
+        />
       )}
 
       <HuntTour

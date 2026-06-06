@@ -1,6 +1,11 @@
 {
+  "functions": {
+    "api/og/live/[shareId].js": { "includeFiles": "api/og/fonts/**" },
+    "api/og/suggest/[linkId].js": { "includeFiles": "api/og/fonts/**" }
+  },
   "rewrites": [
     { "source": "/live/:shareId", "destination": "/api/live-preview" },
+    { "source": "/hunt-suggest/:linkId", "destination": "/api/hunt-suggest/preview" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "crons": [

@@ -149,19 +149,19 @@ export default function HuntSuggestPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-broadcast text-white-body flex items-start justify-center px-4 py-12">
+    <div className="min-h-screen bg-zinc-broadcast text-white-body flex items-start justify-center px-4 pt-28 pb-12">
       <div className="w-full max-w-4xl grid lg:grid-cols-2 gap-4 items-start">
         {/* LEFT — submission form card */}
         <div className="w-full border border-white/8 bg-zinc-card/40">
           {/* Header */}
-        <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8 text-[10px] font-bold uppercase tracking-eyebrow-md font-mono">
+        <div className="flex items-center gap-2 px-4 py-3 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
           <ClipboardList size={13} className="text-purple-bright" aria-hidden="true" />
           <span className="text-purple-bright">Slot suggestions</span>
         </div>
 
         <div className="px-5 py-6">
           {loading ? (
-            <p className="text-center text-white/50 py-10 text-[11px] font-bold tracking-eyebrow-lg uppercase font-mono">
+            <p className="text-center text-white/50 py-10 text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase font-mono">
               Loading…
             </p>
           ) : loadError ? (
@@ -191,7 +191,7 @@ export default function HuntSuggestPage() {
                   {info?.huntName}. Resubmit anytime to update them.
                 </p>
                 {dropped.length > 0 && (
-                  <p className="text-white/45 text-[12px] mt-1.5">
+                  <p className="text-white/45 text-[0.75rem] mt-1.5">
                     {sentCount === 0
                       ? 'All your picks were already called — try different games.'
                       : `Already called (skipped): ${dropped.join(', ')}.`}
@@ -203,7 +203,7 @@ export default function HuntSuggestPage() {
                 onClick={reset}
                 className="inline-flex items-center gap-2 px-4 py-2 border border-white/15 text-white/70 hover:text-white-body hover:border-white/30 transition-colors duration-150"
               >
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                   Add more picks
                 </span>
               </button>
@@ -211,7 +211,7 @@ export default function HuntSuggestPage() {
           ) : (
             <div className="space-y-5">
               <div>
-                <p className="text-[10px] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono mb-1">
+                <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono mb-1">
                   ▸ Suggest slots for
                 </p>
                 <p className="font-black text-white-body text-2xl leading-tight">
@@ -221,7 +221,7 @@ export default function HuntSuggestPage() {
                   Pick the slots you want played on this stream. The streamer reviews
                   the list live.
                 </p>
-                <p className="text-white/45 text-[12px] mt-1">
+                <p className="text-white/45 text-[0.75rem] mt-1">
                   Drop up to {MAX_SLOTS} slots. Same name resubmits to update your picks.
                 </p>
               </div>
@@ -232,7 +232,7 @@ export default function HuntSuggestPage() {
                 }`}
               >
                 <label className="block">
-                  <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
+                  <span className="block text-[0.625rem] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
                     Your name <span className="text-emerald-signal">*</span>
                   </span>
                   <input
@@ -245,7 +245,7 @@ export default function HuntSuggestPage() {
                 </label>
                 {requiresPassword && (
                 <label className="block">
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
+                  <span className="inline-flex items-center gap-1 text-[0.625rem] font-bold uppercase tracking-eyebrow-md text-white/65 mb-1.5 font-mono">
                     <Lock size={10} aria-hidden="true" /> Password <span className="text-emerald-signal">*</span>
                   </span>
                   <div className="relative">
@@ -265,7 +265,7 @@ export default function HuntSuggestPage() {
                       {showPw ? <EyeOff size={15} aria-hidden="true" /> : <Eye size={15} aria-hidden="true" />}
                     </button>
                   </div>
-                  <p className="text-[11.5px] text-white/45 mt-1.5">
+                  <p className="text-[0.71875rem] text-white/45 mt-1.5">
                     It's in chat or on stream right now.
                   </p>
                 </label>
@@ -274,10 +274,10 @@ export default function HuntSuggestPage() {
 
               <div className="space-y-2">
                 <div className="flex items-baseline justify-between">
-                  <span className="block text-[10px] font-bold uppercase tracking-eyebrow-md text-white/65 font-mono">
+                  <span className="block text-[0.625rem] font-bold uppercase tracking-eyebrow-md text-white/65 font-mono">
                     Your picks
                   </span>
-                  <span className="text-[10px] font-mono text-white/40 tabular-nums">
+                  <span className="text-[0.625rem] font-mono text-white/40 tabular-nums">
                     {filledSlots.length} / {MAX_SLOTS}
                   </span>
                 </div>
@@ -295,7 +295,7 @@ export default function HuntSuggestPage() {
                   <button
                     type="button"
                     onClick={() => setShownSlots((n) => Math.min(MAX_SLOTS, n + 1))}
-                    className="w-full px-3 py-2.5 border border-dashed border-purple-gamba/40 text-purple-bright hover:bg-purple-gamba/10 transition-colors text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono"
+                    className="w-full px-3 py-2.5 border border-dashed border-purple-gamba/40 text-purple-bright hover:bg-purple-gamba/10 transition-colors text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
                   >
                     + Add another slot
                   </button>
@@ -315,12 +315,12 @@ export default function HuntSuggestPage() {
                 className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-40"
               >
                 <Send size={14} aria-hidden="true" />
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
                   {submitting ? 'Sending…' : 'Send suggestions'}
                 </span>
               </button>
               {!canSubmit && !submitting && (
-                <p className="text-[11px] text-white/40 text-center font-mono">
+                <p className="text-[0.6875rem] text-white/40 text-center font-mono">
                   {!name.trim()
                     ? 'Add your name to send.'
                     : requiresPassword && !password

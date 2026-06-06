@@ -274,14 +274,6 @@ export default function HuntTracker() {
     const next = mode === 'merge' ? [...suggestions, ...people] : people;
     updateSuggestions(next);
   }
-  function setSuggestionStatus(slotId, status) {
-    updateSuggestions(
-      suggestions.map((p) => ({
-        ...p,
-        slots: p.slots.map((s) => (s.id === slotId ? { ...s, status } : s)),
-      }))
-    );
-  }
   function clearSuggestions() {
     updateSuggestions([]);
   }
@@ -1164,14 +1156,23 @@ export default function HuntTracker() {
               )}
             </div>
 
-            {/* Grouped triage of open viewer calls (Add → hunt, Skip → passed) */}
+            {/* Single home for viewer calls: intake (import / add registered
+                viewer / clear) feeds the list; triage is Add → hunt, Skip →
+                passed. Every suggestion shows in exactly one place. */}
             <ViewerCalls
               suggestions={suggestions}
               onAdd={(person, slot) => startLanding(person, slot)}
               onSkip={skipCall}
               onSkipAll={skipAllCalls}
               onOpenLog={setCallerLogName}
-              intakeControls={null}
+              intakeControls={
+                <SuggestionsPanel
+                  suggestions={suggestions}
+                  onImport={importSuggestions}
+                  onClear={clearSuggestions}
+                  isLoggedIn={isLoggedIn}
+                />
+              }
             />
 
             <div className="space-y-2">
@@ -1189,18 +1190,6 @@ export default function HuntTracker() {
                 className={`w-full ${inputCls} resize-none`}
               />
             </div>
-
-            {/* SuggestionsPanel owns sheet-import + roster search; ViewerCalls
-                above owns quick open-call triage. Overlap on open slots is an
-                accepted v1 tradeoff. */}
-            <SuggestionsPanel
-              suggestions={suggestions}
-              onImport={importSuggestions}
-              onSetStatus={setSuggestionStatus}
-              onLand={startLanding}
-              onClear={clearSuggestions}
-              isLoggedIn={isLoggedIn}
-            />
 
             {/* Caller stats (05) */}
             <CallerStatsPanel

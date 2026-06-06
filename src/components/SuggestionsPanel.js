@@ -1,91 +1,10 @@
 import { useRef, useState } from 'react';
-import { ClipboardList, Check, X, Radio, RotateCcw, Ban, UserPlus } from 'lucide-react';
+import { ClipboardList, RotateCcw, UserPlus } from 'lucide-react';
 import { parseSuggestions, countSlots } from '../utils/suggestionsParse';
 import { authedFetch } from '../utils/authedFetch';
 
 const inputCls =
   'bg-zinc-broadcast/60 border border-white/10 px-3.5 py-2.5 text-sm text-white-body placeholder:text-white/50 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';
-
-// One slot pill. Click cycles the action: open → in bonus → (lands) done.
-// A done pill can be reopened (e.g. mis-click). The "lands" step is delegated
-// to the parent so it can prompt for a stake and push into the hunt's bonuses.
-function SlotPill({ person, slot, onSetStatus, onLand }) {
-  const base =
-    'inline-flex items-center gap-1.5 px-2 py-1 text-xs font-bold border transition-colors duration-150 max-w-full';
-  if (slot.status === 'done') {
-    return (
-      <button
-        type="button"
-        onClick={() => onSetStatus(slot.id, 'open')}
-        title="Already in the hunt — click to reopen"
-        className={`${base} border-emerald-signal/50 bg-emerald-signal/10 text-emerald-signal`}
-      >
-        <Check size={11} aria-hidden="true" className="shrink-0" />
-        <span className="truncate">{slot.name}</span>
-      </button>
-    );
-  }
-  if (slot.status === 'passed') {
-    return (
-      <button
-        type="button"
-        onClick={() => onSetStatus(slot.id, 'open')}
-        title="Didn't bonus — click to reopen"
-        className={`${base} border-red-destructive/40 bg-red-destructive/10 text-red-destructive/80 hover:text-red-destructive hover:border-red-destructive/60`}
-      >
-        <Ban size={11} aria-hidden="true" className="shrink-0" />
-        <span className="truncate line-through">{slot.name}</span>
-      </button>
-    );
-  }
-  if (slot.status === 'in_bonus') {
-    return (
-      <span className={`${base} border-orange-admin bg-orange-admin/10 text-orange-admin`}>
-        <Radio size={11} aria-hidden="true" className="shrink-0 animate-pulse" />
-        <span className="truncate">{slot.name}</span>
-        <button
-          type="button"
-          onClick={() => onLand(person, slot)}
-          title="Bonus landed — add to hunt"
-          className="shrink-0 ml-0.5 px-1.5 py-0.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright text-[10px] uppercase tracking-eyebrow-md font-mono leading-none"
-        >
-          Got in
-        </button>
-        <button
-          type="button"
-          onClick={() => onSetStatus(slot.id, 'passed')}
-          title="Didn't bonus"
-          className="shrink-0 px-1.5 py-0.5 border border-white/20 text-white/55 hover:text-white-body hover:border-white/40 text-[10px] uppercase tracking-eyebrow-md font-mono leading-none"
-        >
-          Nope
-        </button>
-        <button
-          type="button"
-          onClick={() => onSetStatus(slot.id, 'open')}
-          title="Cancel — back to open"
-          className="shrink-0 text-orange-admin/70 hover:text-orange-admin"
-        >
-          <X size={11} aria-hidden="true" />
-        </button>
-      </span>
-    );
-  }
-  // open
-  return (
-    <button
-      type="button"
-      onClick={() => onSetStatus(slot.id, 'in_bonus')}
-      onContextMenu={(e) => {
-        e.preventDefault();
-        onSetStatus(slot.id, 'passed');
-      }}
-      title="Click: mark in bonus · Right-click: didn't bonus"
-      className={`${base} border-white/15 text-white/70 hover:text-white-body hover:border-white/35`}
-    >
-      <span className="truncate">{slot.name}</span>
-    </button>
-  );
-}
 
 // Owner control: search registered viewers who opted in and add their saved
 // default slots straight into this hunt's list (source: 'roster'). Independent
@@ -202,11 +121,13 @@ function RosterSearch() {
   );
 }
 
+// Intake controls for the viewer-call list: import-from-sheet, add a registered
+// viewer, and clear. The list itself (and its triage) lives in ViewerCalls now —
+// this only feeds slots in. Rendered inside ViewerCalls via its intakeControls
+// slot so every suggestion shows in exactly one place.
 export default function SuggestionsPanel({
   suggestions,
   onImport,
-  onSetStatus,
-  onLand,
   onClear,
   isLoggedIn,
 }) {
@@ -239,19 +160,52 @@ export default function SuggestionsPanel({
         <div className="flex items-center gap-3 text-[10px] font-bold uppercase tracking-eyebrow-lg text-white/65 font-mono">
           <span className="inline-flex items-center gap-1.5">
             <ClipboardList size={12} aria-hidden="true" className="text-purple-bright" />
-            <span>Suggestions</span>
+            <span>Add calls</span>
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => {
-            setImporting((v) => !v);
-            setPreview(null);
-          }}
-          className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono px-2 py-1 border border-white/15 text-white/65 hover:text-white-body hover:border-white/30 transition-colors"
-        >
-          {importing ? 'Close' : hasList ? 'Import more' : 'Import from sheet'}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setImporting((v) => !v);
+              setPreview(null);
+            }}
+            className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono px-2 py-1 border border-white/15 text-white/65 hover:text-white-body hover:border-white/30 transition-colors"
+          >
+            {importing ? 'Close' : hasList ? 'Import more' : 'Import from sheet'}
+          </button>
+          {hasList &&
+            (confirmingClear ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClear();
+                    setConfirmingClear(false);
+                  }}
+                  className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono px-2 py-1 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 transition-colors"
+                >
+                  Clear all
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmingClear(false)}
+                  className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono px-2 py-1 border border-white/10 text-white/60 hover:text-white-body transition-colors"
+                >
+                  Keep
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmingClear(true)}
+                className="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono px-2 py-1 border border-white/15 text-white/40 hover:text-red-destructive hover:border-red-destructive/40 transition-colors"
+              >
+                <RotateCcw size={11} aria-hidden="true" />
+                Clear
+              </button>
+            ))}
+        </div>
       </div>
 
       {/* Owner: add a registered viewer's saved default slots */}
@@ -342,72 +296,6 @@ export default function SuggestionsPanel({
             </>
           )}
         </div>
-      )}
-
-      {/* List */}
-      {!hasList ? (
-        !importing && (
-          <p className="text-center text-white/55 py-4 text-[12px] font-mono">
-            Nothing imported yet.
-          </p>
-        )
-      ) : (
-        <>
-          <div className="border border-white/8 bg-zinc-broadcast/40 divide-y divide-white/5">
-            {suggestions.map((p) => (
-              <div key={p.id} className="px-3 py-2.5">
-                <p className="text-[11px] font-bold tracking-eyebrow-md uppercase text-purple-bright font-mono mb-1.5 truncate">
-                  {p.person}
-                </p>
-                <div className="flex flex-wrap gap-1.5">
-                  {p.slots.map((s) => (
-                    <SlotPill
-                      key={s.id}
-                      person={p.person}
-                      slot={s}
-                      onSetStatus={onSetStatus}
-                      onLand={onLand}
-                    />
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-          {confirmingClear ? (
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  onClear();
-                  setConfirmingClear(false);
-                }}
-                className="flex-1 px-3 py-1.5 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 transition-colors"
-              >
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                  Clear all suggestions
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setConfirmingClear(false)}
-                className="px-3 py-1.5 border border-white/10 text-white/60 hover:text-white-body transition-colors"
-              >
-                <span className="text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono">
-                  Keep
-                </span>
-              </button>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setConfirmingClear(true)}
-              className="inline-flex items-center gap-1.5 text-[10px] font-bold tracking-eyebrow-lg uppercase font-mono text-white/40 hover:text-red-destructive transition-colors"
-            >
-              <RotateCcw size={11} aria-hidden="true" />
-              Clear
-            </button>
-          )}
-        </>
       )}
     </div>
   );

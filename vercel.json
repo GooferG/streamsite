@@ -9,6 +9,6 @@
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "crons": [
-    { "path": "/api/cron/award-watchtime", "schedule": "*/5 * * * *" }
+    { "path": "/api/cron/award-watchtime", "schedule": "0 0 * * *" }
   ]
 }

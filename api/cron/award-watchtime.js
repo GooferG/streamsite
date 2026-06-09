@@ -2,7 +2,9 @@ import crypto from 'crypto';
 import { adminDb, FieldValue } from '../_lib/firebaseAdmin.js';
 
 // Award tickets to currently-active chatters in GooferG's stream.
-// Runs on Vercel Cron every 5 minutes.
+// Runs once daily on Vercel Cron (Hobby plan caps cron at once/day) at
+// 00:00 UTC = 5 PM Arizona/MST, inside the usual live window. Each present
+// chatter gets a flat daily watchtime grant (WATCHTIME_TICKET_AWARD).
 //
 // Auth: Authorization: Bearer <CRON_SECRET>  (Vercel injects this when configured)
 //
@@ -12,12 +14,12 @@ import { adminDb, FieldValue } from '../_lib/firebaseAdmin.js';
 //   TWITCH_BROADCASTER_ID               numeric Twitch user id for GooferG
 //   TWITCH_BROADCASTER_REFRESH_TOKEN    refresh token w/ moderator:read:chatters
 //                                       (obtained one-time via scripts/get-broadcaster-refresh-token.mjs)
-//   WATCHTIME_TICKET_AWARD              optional, default 1
+//   WATCHTIME_TICKET_AWARD              optional, default 10 (flat daily grant)
 //
 // We persist a rotating refresh token back to Firestore (secrets/broadcaster_token)
 // because Twitch rotates refresh tokens on each refresh.
 
-const TICKET_AWARD = Number(process.env.WATCHTIME_TICKET_AWARD) || 1;
+const TICKET_AWARD = Number(process.env.WATCHTIME_TICKET_AWARD) || 10;
 const HELIX = 'https://api.twitch.tv/helix';
 
 async function getStoredRefreshToken() {

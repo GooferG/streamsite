@@ -11,6 +11,7 @@ import GameAutocomplete from '../components/GameAutocomplete';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { SCHEDULE as DEFAULT_SCHEDULE } from '../constants';
+import { orderByWeek, dayDisplay } from '../utils/scheduleWeek';
 
 const STATUS_OPTIONS = ['on', 'off', 'special', 'regular'];
 
@@ -35,6 +36,60 @@ function FieldLabel({ icon: Icon, children, code }) {
       {Icon && <Icon size={11} aria-hidden="true" className="opacity-80" />}
       <span>{children}</span>
     </span>
+  );
+}
+
+function DayFields({ day, onField }) {
+  return (
+    <div className="grid md:grid-cols-2 gap-4">
+      <label className="block">
+        <FieldLabel icon={Clock} code="01">
+          Time
+        </FieldLabel>
+        <input
+          type="text"
+          value={day.time}
+          onChange={(e) => onField('time', e.target.value)}
+          placeholder="7:00 PM EST"
+          className={inputCls}
+        />
+      </label>
+      <label className="block">
+        <FieldLabel code="02">Status</FieldLabel>
+        <select
+          value={day.status}
+          onChange={(e) => onField('status', e.target.value)}
+          className={inputCls}
+        >
+          {STATUS_OPTIONS.map((s) => (
+            <option key={s} value={s}>
+              {s.charAt(0).toUpperCase() + s.slice(1)}
+            </option>
+          ))}
+        </select>
+      </label>
+      <label className="block">
+        <FieldLabel code="03">Content description</FieldLabel>
+        <input
+          type="text"
+          value={day.content}
+          onChange={(e) => onField('content', e.target.value)}
+          placeholder="Gaming, Gambling, Just Chatting"
+          className={inputCls}
+        />
+      </label>
+      <label className="block">
+        <FieldLabel icon={Gamepad2} code="04">
+          Game name · optional
+        </FieldLabel>
+        <GameAutocomplete
+          value={day.gameName || ''}
+          onChange={(val) => onField('gameName', val)}
+          placeholder="Fortnite, Valorant…"
+          className={inputCls}
+        />
+      </label>
+    </div>
   );
 }
 
@@ -63,54 +118,11 @@ function DayPanel({ day, index, onChange }) {
       </div>
 
       {/* Fields */}
-      <div className="grid md:grid-cols-2 gap-4 px-4 py-4">
-        <label className="block">
-          <FieldLabel icon={Clock} code="01">
-            Time
-          </FieldLabel>
-          <input
-            type="text"
-            value={day.time}
-            onChange={(e) => onChange(index, 'time', e.target.value)}
-            placeholder="7:00 PM EST"
-            className={inputCls}
-          />
-        </label>
-        <label className="block">
-          <FieldLabel code="02">Status</FieldLabel>
-          <select
-            value={day.status}
-            onChange={(e) => onChange(index, 'status', e.target.value)}
-            className={inputCls}
-          >
-            {STATUS_OPTIONS.map((s) => (
-              <option key={s} value={s}>
-                {s.charAt(0).toUpperCase() + s.slice(1)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="block">
-          <FieldLabel code="03">Content description</FieldLabel>
-          <input
-            type="text"
-            value={day.content}
-            onChange={(e) => onChange(index, 'content', e.target.value)}
-            placeholder="Gaming, Gambling, Just Chatting"
-            className={inputCls}
-          />
-        </label>
-        <label className="block">
-          <FieldLabel icon={Gamepad2} code="04">
-            Game name · optional
-          </FieldLabel>
-          <GameAutocomplete
-            value={day.gameName || ''}
-            onChange={(val) => onChange(index, 'gameName', val)}
-            placeholder="Fortnite, Valorant…"
-            className={inputCls}
-          />
-        </label>
+      <div className="px-4 py-4">
+        <DayFields
+          day={day}
+          onField={(field, value) => onChange(index, field, value)}
+        />
       </div>
     </div>
   );

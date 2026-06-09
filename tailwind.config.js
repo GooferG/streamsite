@@ -120,6 +120,10 @@ module.exports = {
           '95%': { opacity: '1' },
           '97%': { opacity: '0.85' },
         },
+        'drawer-in': {
+          '0%': { transform: 'translateX(100%)' },
+          '100%': { transform: 'translateX(0)' },
+        },
       },
       animation: {
         'slow-zoom': 'slow-zoom 18s ease-in-out infinite',
@@ -129,6 +133,7 @@ module.exports = {
         'cs-foil': 'cs-foil 6s linear infinite',
         'nn-grid': 'nn-grid 1.6s linear infinite',
         'nn-flicker': 'nn-flicker 6s steps(50) infinite',
+        'drawer-in': 'drawer-in 0.2s ease-out',
       },
     },
   },

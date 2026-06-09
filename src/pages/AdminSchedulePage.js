@@ -6,6 +6,8 @@ import {
   AlertCircle,
   CheckCircle,
   RefreshCcw,
+  X,
+  Pencil,
 } from 'lucide-react';
 import GameAutocomplete from '../components/GameAutocomplete';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -93,36 +95,118 @@ function DayFields({ day, onField }) {
   );
 }
 
-function DayPanel({ day, index, onChange }) {
+function DayCell({ day, index, onOpen }) {
   const accent = STATUS_ACCENT[day.status] || STATUS_ACCENT.regular;
   const dayCode = String(index + 1).padStart(2, '0');
+  const isOff = day.status === 'off';
 
   return (
-    <div className="border border-white/8 bg-zinc-card/30">
-      {/* Day header strip */}
-      <div
-        className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono"
-      >
-        <span className={`inline-flex items-center gap-2 ${accent.text}`}>
+    <button
+      type="button"
+      onClick={() => onOpen(index)}
+      className="group text-left border border-white/8 bg-zinc-card/30 hover:border-orange-admin/50 hover:bg-zinc-card/50 focus:outline-none focus:border-orange-admin/70 transition-colors duration-150 flex flex-col"
+    >
+      {/* Header strip */}
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-white/8 text-[0.5625rem] font-bold uppercase tracking-eyebrow-md font-mono">
+        <span className={`inline-flex items-center gap-1.5 ${accent.text}`}>
           <span className={`w-1.5 h-1.5 rounded-full ${accent.dot}`} />
           <span>{accent.label}</span>
         </span>
-        <span className="text-white/15">·</span>
-        <span className="text-white/45">DAY</span>
-        <span className="text-white/70 tabular-nums tracking-eyebrow-lg">
-          {dayCode}
+        <span className="ml-auto text-white/40 tabular-nums">{dayCode}</span>
+      </div>
+
+      {/* Body */}
+      <div className="px-3 py-3 flex-1 flex flex-col gap-1.5">
+        <span
+          className="text-base font-black tracking-tight leading-none text-white-body"
+          style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}
+        >
+          {dayDisplay(day.day)}
         </span>
-        <span className="ml-auto text-white-body text-sm font-bold tracking-tight tabular-nums">
-          {day.day}
+        <span className="text-[0.5625rem] font-bold tracking-eyebrow-sm uppercase text-white/45 font-mono">
+          {isOff ? 'DARK' : day.time || '—'}
+        </span>
+        <span className="mt-0.5 text-[0.6875rem] text-white/70 leading-snug line-clamp-2">
+          {day.content || <span className="text-white/30">Empty</span>}
         </span>
       </div>
 
-      {/* Fields */}
-      <div className="px-4 py-4">
-        <DayFields
-          day={day}
-          onField={(field, value) => onChange(index, field, value)}
-        />
+      {/* Edit affordance */}
+      <div className="px-3 py-2 border-t border-white/8 flex items-center gap-1.5 text-[0.5625rem] font-bold uppercase tracking-eyebrow-md text-white/30 group-hover:text-orange-admin font-mono transition-colors">
+        <Pencil size={10} aria-hidden="true" />
+        <span>Edit</span>
+      </div>
+    </button>
+  );
+}
+
+function DayEditorDrawer({ draft, dayLabel, onField, onClose }) {
+  const panelRef = React.useRef(null);
+
+  React.useEffect(() => {
+    const prevActive = document.activeElement;
+    panelRef.current?.focus();
+    const onKey = (e) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      if (prevActive instanceof HTMLElement) prevActive.focus();
+    };
+  }, [onClose]);
+
+  return (
+    <div className="fixed inset-0 z-50">
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/60"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      {/* Panel */}
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Edit ${dayLabel}`}
+        className="absolute top-0 right-0 h-full w-full max-w-md bg-zinc-broadcast border-l border-white/10 shadow-2xl focus:outline-none overflow-y-auto motion-safe:animate-drawer-in"
+      >
+        {/* Drawer header */}
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-white/10 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
+          <span className="inline-flex items-center gap-2 text-orange-admin">
+            <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
+            <span>Editing</span>
+          </span>
+          <span className="text-white-body text-sm font-bold tracking-tight ml-1">
+            {dayLabel}
+          </span>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close editor"
+            className="ml-auto p-1.5 text-white/40 hover:text-white-body hover:bg-white/5 transition-colors"
+          >
+            <X size={16} aria-hidden="true" />
+          </button>
+        </div>
+
+        {/* Fields */}
+        <div className="px-5 py-5">
+          <DayFields day={draft} onField={onField} />
+        </div>
+
+        {/* Done bar */}
+        <div className="px-5 py-4 border-t border-white/10">
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase font-mono"
+          >
+            Done
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -133,6 +217,8 @@ export default function AdminSchedulePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState(null);
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [draft, setDraft] = useState(null);
 
   useEffect(() => {
     const loadSchedule = async () => {
@@ -155,10 +241,29 @@ export default function AdminSchedulePage() {
     loadSchedule();
   }, []);
 
-  const handleFieldChange = (index, field, value) => {
-    const updated = [...schedule];
-    updated[index] = { ...updated[index], [field]: value };
-    setSchedule(updated);
+  const orderedWithIndex = orderByWeek(
+    schedule.map((day, index) => ({ ...day, _index: index }))
+  );
+
+  const openEditor = (index) => {
+    setDraft({ ...schedule[index] });
+    setEditingIndex(index);
+  };
+
+  const updateDraft = (field, value) => {
+    setDraft((d) => ({ ...d, [field]: value }));
+  };
+
+  const closeEditor = () => {
+    if (editingIndex != null && draft) {
+      setSchedule((prev) => {
+        const next = [...prev];
+        next[editingIndex] = draft;
+        return next;
+      });
+    }
+    setEditingIndex(null);
+    setDraft(null);
   };
 
   const handleSave = async () => {
@@ -272,14 +377,14 @@ export default function AdminSchedulePage() {
         </div>
       )}
 
-      {/* Day panels */}
-      <div className="space-y-4 mb-8">
-        {schedule.map((day, index) => (
-          <DayPanel
+      {/* Week grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 mb-8">
+        {orderedWithIndex.map((day) => (
+          <DayCell
             key={day.day}
             day={day}
-            index={index}
-            onChange={handleFieldChange}
+            index={day._index}
+            onOpen={openEditor}
           />
         ))}
       </div>
@@ -310,6 +415,15 @@ export default function AdminSchedulePage() {
           </button>
         </div>
       </div>
+
+      {editingIndex != null && draft && (
+        <DayEditorDrawer
+          draft={draft}
+          dayLabel={dayDisplay(draft.day)}
+          onField={updateDraft}
+          onClose={closeEditor}
+        />
+      )}
     </div>
   );
 }

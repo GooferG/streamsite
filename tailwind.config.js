@@ -120,9 +120,9 @@ module.exports = {
           '95%': { opacity: '1' },
           '97%': { opacity: '0.85' },
         },
-        'drawer-in': {
-          '0%': { transform: 'translateX(100%)' },
-          '100%': { transform: 'translateX(0)' },
+        'modal-in': {
+          '0%': { opacity: '0', transform: 'scale(0.96) translateY(8px)' },
+          '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
         },
       },
       animation: {
@@ -133,7 +133,7 @@ module.exports = {
         'cs-foil': 'cs-foil 6s linear infinite',
         'nn-grid': 'nn-grid 1.6s linear infinite',
         'nn-flicker': 'nn-flicker 6s steps(50) infinite',
-        'drawer-in': 'drawer-in 0.2s ease-out',
+        'modal-in': 'modal-in 0.2s ease-out',
       },
     },
   },

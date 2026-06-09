@@ -140,7 +140,7 @@ function DayCell({ day, index, onOpen }) {
   );
 }
 
-function DayEditorDrawer({ draft, dayLabel, onField, onClose }) {
+function DayEditorModal({ draft, dayLabel, onField, onClose }) {
   const panelRef = React.useRef(null);
 
   React.useEffect(() => {
@@ -157,10 +157,10 @@ function DayEditorDrawer({ draft, dayLabel, onField, onClose }) {
   }, [onClose]);
 
   return (
-    <div className="fixed inset-0 z-50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/60"
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -171,7 +171,7 @@ function DayEditorDrawer({ draft, dayLabel, onField, onClose }) {
         role="dialog"
         aria-modal="true"
         aria-label={`Edit ${dayLabel}`}
-        className="absolute top-0 right-0 h-full w-full max-w-md bg-zinc-broadcast border-l border-white/10 shadow-2xl focus:outline-none overflow-y-auto motion-safe:animate-drawer-in"
+        className="relative w-full max-w-md max-h-[90vh] bg-zinc-broadcast border border-white/10 shadow-2xl focus:outline-none overflow-y-auto motion-safe:animate-modal-in"
       >
         {/* Drawer header */}
         <div className="flex items-center gap-3 px-5 py-4 border-b border-white/10 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
@@ -417,7 +417,7 @@ export default function AdminSchedulePage() {
       </div>
 
       {editingIndex != null && draft && (
-        <DayEditorDrawer
+        <DayEditorModal
           draft={draft}
           dayLabel={dayDisplay(draft.day)}
           onField={updateDraft}

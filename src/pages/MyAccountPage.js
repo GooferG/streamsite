@@ -570,7 +570,7 @@ export default function MyAccountPage() {
               <span className="text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono w-24 flex-shrink-0">
                 Watch
               </span>
-              <span>Hang out in chat while the stream is live — tickets drop every 5 minutes.</span>
+              <span>Hang out in chat while the stream is live — tickets drop daily during the stream.</span>
             </li>
             <li className="flex items-baseline gap-2">
               <span className="text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono w-24 flex-shrink-0">

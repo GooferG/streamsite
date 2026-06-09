@@ -2,32 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { getGameCovers } from '../utils/igdbApi';
 import { useSchedule } from '../hooks/useSchedule';
 import { useNowTimestamp, formatTimecode } from '../utils/timecode';
-
-const DAY_INDEX = {
-  SUNDAY: 0,
-  MONDAY: 1,
-  TUESDAY: 2,
-  WEDNESDAY: 3,
-  THURSDAY: 4,
-  'FRY-DAY': 5,
-  FRIDAY: 5,
-  SATURDAY: 6,
-};
-
-const WEEK_ORDER = [
-  'MONDAY',
-  'TUESDAY',
-  'WEDNESDAY',
-  'THURSDAY',
-  'FRY-DAY',
-  'SATURDAY',
-  'SUNDAY',
-];
-
-function dayAbbrev(day) {
-  if (day === 'FRY-DAY') return 'FRI';
-  return day.slice(0, 3);
-}
+import { DAY_INDEX, dayAbbrev, dayDisplay, orderByWeek } from '../utils/scheduleWeek';
 
 function parseStartHour(timeString) {
   if (!timeString) return null;
@@ -91,10 +66,7 @@ function ScheduleRow({ item, coverUrl, isToday, isOff, isSpecial }) {
           }`}
           style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}
         >
-          {item.day === 'FRY-DAY'
-            ? 'FRY'
-            : dayAbbrev(item.day).charAt(0) +
-              dayAbbrev(item.day).slice(1).toLowerCase()}
+          {dayDisplay(item.day)}
         </span>
       </div>
 
@@ -164,6 +136,96 @@ function ScheduleRow({ item, coverUrl, isToday, isOff, isSpecial }) {
           </span>
         </div>
       )}
+    </div>
+  );
+}
+
+function SchedulePosterCell({ item, coverUrl, isToday, isOff, isSpecial }) {
+  return (
+    <div
+      className={`group relative aspect-[3/4] overflow-hidden bg-zinc-card border ${
+        isToday ? 'border-emerald-signal/60' : 'border-white/8'
+      } transition-colors duration-200`}
+    >
+      {/* Art / static */}
+      {isOff ? (
+        <StaticPattern />
+      ) : coverUrl ? (
+        <img
+          src={coverUrl}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      ) : (
+        <div className="absolute inset-0 flex items-center justify-center text-[0.5625rem] font-bold tracking-eyebrow-md text-white/30 font-mono">
+          NO ART
+        </div>
+      )}
+
+      {/* Bottom scrim for legibility */}
+      <div
+        className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-black/90 via-black/55 to-transparent pointer-events-none"
+        aria-hidden="true"
+      />
+
+      {/* SPECIAL tag */}
+      {isSpecial && !isOff && (
+        <span className="absolute top-2 right-2 px-2 py-0.5 border border-purple-gamba/50 bg-black/40 text-[0.5625rem] font-bold tracking-eyebrow-md text-purple-bright font-mono">
+          SPECIAL
+        </span>
+      )}
+
+      {/* Overlay text */}
+      <div className="absolute inset-x-0 bottom-0 p-3">
+        <div className="flex items-center gap-1.5 text-[0.5625rem] font-bold tracking-eyebrow-md font-mono mb-1">
+          <span className={isToday ? 'text-emerald-signal' : 'text-white/55'}>
+            {dayAbbrev(item.day)}
+          </span>
+          {isToday && (
+            <span className="relative flex w-1.5 h-1.5">
+              <span className="absolute inset-0 rounded-full bg-emerald-signal motion-safe:animate-ping opacity-50" />
+              <span className="relative w-1.5 h-1.5 rounded-full bg-emerald-signal" />
+            </span>
+          )}
+        </div>
+        <p
+          className={`text-sm font-black tracking-tight leading-none mb-1 ${
+            isOff ? 'text-white/40' : 'text-white-body'
+          }`}
+          style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}
+        >
+          {dayDisplay(item.day)}
+        </p>
+        <p
+          className={`text-[0.625rem] font-bold tracking-eyebrow-sm uppercase font-mono ${
+            isOff ? 'text-white/30' : 'text-white/60'
+          }`}
+        >
+          {isOff ? 'DARK' : item.time}
+        </p>
+        {!isOff && (
+          <p className="mt-1 text-[0.6875rem] text-white/80 leading-snug line-clamp-2">
+            {item.content}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function WeekStrip({ items, gameCovers, todayIndex }) {
+  return (
+    <div className="grid grid-cols-7 gap-3">
+      {items.map((item) => (
+        <SchedulePosterCell
+          key={item.day}
+          item={item}
+          coverUrl={item.gameName ? gameCovers[item.gameName] : null}
+          isToday={DAY_INDEX[item.day] === todayIndex}
+          isOff={item.status === 'off'}
+          isSpecial={item.status === 'special'}
+        />
+      ))}
     </div>
   );
 }
@@ -246,12 +308,7 @@ export default function SchedulePage() {
     };
   }, [schedule, scheduleLoading]);
 
-  const orderedSchedule = useMemo(() => {
-    if (!schedule || schedule.length === 0) return [];
-    return [...schedule].sort(
-      (a, b) => WEEK_ORDER.indexOf(a.day) - WEEK_ORDER.indexOf(b.day)
-    );
-  }, [schedule]);
+  const orderedSchedule = useMemo(() => orderByWeek(schedule), [schedule]);
 
   const todayIndex = now.getDay();
   const isLoading = scheduleLoading || coversLoading;
@@ -317,23 +374,32 @@ export default function SchedulePage() {
           ) : allDark ? (
             <DarkWeekNotice />
           ) : (
-            orderedSchedule.map((item) => {
-              const isToday = DAY_INDEX[item.day] === todayIndex;
-              const isOff = item.status === 'off';
-              const isSpecial = item.status === 'special';
-              return (
-                <ScheduleRow
-                  key={item.day}
-                  item={item}
-                  coverUrl={item.gameName ? gameCovers[item.gameName] : null}
-                  isToday={isToday}
-                  isOff={isOff}
-                  isSpecial={isSpecial}
+            <>
+              {/* Desktop: week strip */}
+              <div className="hidden lg:block">
+                <WeekStrip
+                  items={orderedSchedule}
+                  gameCovers={gameCovers}
+                  todayIndex={todayIndex}
                 />
-              );
-            })
+              </div>
+
+              {/* Mobile/tablet: row list */}
+              <div className="lg:hidden">
+                {orderedSchedule.map((item) => (
+                  <ScheduleRow
+                    key={item.day}
+                    item={item}
+                    coverUrl={item.gameName ? gameCovers[item.gameName] : null}
+                    isToday={DAY_INDEX[item.day] === todayIndex}
+                    isOff={item.status === 'off'}
+                    isSpecial={item.status === 'special'}
+                  />
+                ))}
+                <div className="border-t border-white/8" />
+              </div>
+            </>
           )}
-          {!allDark && <div className="border-t border-white/8" />}
         </section>
 
         {/* Footer note — minimal, no card */}

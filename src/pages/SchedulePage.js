@@ -2,32 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { getGameCovers } from '../utils/igdbApi';
 import { useSchedule } from '../hooks/useSchedule';
 import { useNowTimestamp, formatTimecode } from '../utils/timecode';
-
-const DAY_INDEX = {
-  SUNDAY: 0,
-  MONDAY: 1,
-  TUESDAY: 2,
-  WEDNESDAY: 3,
-  THURSDAY: 4,
-  'FRY-DAY': 5,
-  FRIDAY: 5,
-  SATURDAY: 6,
-};
-
-const WEEK_ORDER = [
-  'MONDAY',
-  'TUESDAY',
-  'WEDNESDAY',
-  'THURSDAY',
-  'FRY-DAY',
-  'SATURDAY',
-  'SUNDAY',
-];
-
-function dayAbbrev(day) {
-  if (day === 'FRY-DAY') return 'FRI';
-  return day.slice(0, 3);
-}
+import { DAY_INDEX, dayAbbrev, dayDisplay, orderByWeek } from '../utils/scheduleWeek';
 
 function parseStartHour(timeString) {
   if (!timeString) return null;
@@ -91,10 +66,7 @@ function ScheduleRow({ item, coverUrl, isToday, isOff, isSpecial }) {
           }`}
           style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif' }}
         >
-          {item.day === 'FRY-DAY'
-            ? 'FRY'
-            : dayAbbrev(item.day).charAt(0) +
-              dayAbbrev(item.day).slice(1).toLowerCase()}
+          {dayDisplay(item.day)}
         </span>
       </div>
 
@@ -246,12 +218,7 @@ export default function SchedulePage() {
     };
   }, [schedule, scheduleLoading]);
 
-  const orderedSchedule = useMemo(() => {
-    if (!schedule || schedule.length === 0) return [];
-    return [...schedule].sort(
-      (a, b) => WEEK_ORDER.indexOf(a.day) - WEEK_ORDER.indexOf(b.day)
-    );
-  }, [schedule]);
+  const orderedSchedule = useMemo(() => orderByWeek(schedule), [schedule]);
 
   const todayIndex = now.getDay();
   const isLoading = scheduleLoading || coversLoading;

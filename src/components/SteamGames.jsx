@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import SectionHeader from './SectionHeader';
+import SectionDivider from './SectionDivider';
 
 function GameSkeleton() {
   return (
@@ -54,7 +55,7 @@ function GameCard({ game, index }) {
   );
 }
 
-export default function SteamGames() {
+export default function SteamGames({ segment = '03', withDivider = false }) {
   const [games, setGames] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -81,10 +82,12 @@ export default function SteamGames() {
   }
 
   return (
-    <section className="py-16 px-6 sm:px-10">
+    <>
+      {withDivider && <SectionDivider />}
+      <section className="py-16 px-6 sm:px-10">
       <div className="max-w-7xl mx-auto">
         <SectionHeader
-          segment="03"
+          segment={segment}
           eyebrow="Most played · Steam"
           title="Off-air rotation"
           accent="white"
@@ -103,7 +106,8 @@ export default function SteamGames() {
             ))}
           </div>
         )}
-      </div>
-    </section>
+        </div>
+      </section>
+    </>
   );
 }

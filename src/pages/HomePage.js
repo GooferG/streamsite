@@ -10,6 +10,8 @@ import HomeGambaTools from '../components/HomeGambaTools';
 import WelcomeSignOn from '../components/WelcomeSignOn';
 import HomeLeaderboardCallout from '../components/HomeLeaderboardCallout';
 import VideoModal from '../components/VideoModal';
+import SectionDivider from '../components/SectionDivider';
+import SignOff from '../components/SignOff';
 import { useVideoModal } from '../hooks/useVideoModal';
 
 function ViewAllLink({ onClick, label, accent = 'emerald' }) {
@@ -64,6 +66,18 @@ export default function HomePage({
   // Get the latest VOD
   const latestVod = videos && videos.length > 0 ? videos[0] : null;
 
+  // Broadcast-rundown segment numbers, assigned in render order so the
+  // count always starts at 01 and never skips. Steam goes last because it
+  // hides itself when the API errors; absence truncates the rundown instead
+  // of leaving a gap.
+  let segCounter = 0;
+  const nextSegment = () => String(++segCounter).padStart(2, '0');
+  const liveSegment = isLive && !loading ? nextSegment() : null;
+  const gambaSegment = nextSegment();
+  const vodSegment = !loading && latestVod ? nextSegment() : null;
+  const clipsSegment = nextSegment();
+  const steamSegment = nextSegment();
+
   const formatDuration = (duration) => {
     const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
     if (!match) return duration;
@@ -97,7 +111,7 @@ export default function HomePage({
         <section className="py-16 px-6 sm:px-10">
           <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto">
             <SectionHeader
-              segment="01"
+              segment={liveSegment}
               eyebrow={`On air now${streamData?.viewers ? ` · ${streamData.viewers} watching` : ''}`}
               title="The broadcast"
               accent="emerald"
@@ -140,16 +154,20 @@ export default function HomePage({
         </section>
       )}
 
+      <SectionDivider />
+
       <HomeLeaderboardCallout />
 
-      <HomeGambaTools setPage={setPage} />
+      <SectionDivider />
+
+      <HomeGambaTools setPage={setPage} segment={gambaSegment} />
 
       {/* Latest VOD Section */}
       {!loading && latestVod && (
         <section className="py-16 px-6 sm:px-10 bg-zinc-card/40 border-y border-white/5">
           <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto">
             <SectionHeader
-              segment="02"
+              segment={vodSegment}
               eyebrow="Tape index · Most recent"
               title="Latest vod"
               accent="white"
@@ -243,14 +261,13 @@ export default function HomePage({
         </section>
       )}
 
-      {/* Steam Games Section */}
-      <SteamGames />
+      <SectionDivider />
 
       {/* Featured Clips Section */}
       <section className="py-16 px-6 sm:px-10">
         <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto">
           <SectionHeader
-            segment="04"
+            segment={clipsSegment}
             eyebrow="Tape index · Highlights"
             title="Featured clips"
             accent="emerald"
@@ -293,6 +310,9 @@ export default function HomePage({
         </div>
       </section>
 
+      {/* Steam Games Section — last numbered segment; hides itself on error */}
+      <SteamGames segment={steamSegment} withDivider />
+
       <StatsTicker
         channelData={channelData}
         streamData={streamData}
@@ -301,6 +321,8 @@ export default function HomePage({
         videos={videos}
         loading={loading}
       />
+
+      <SignOff onSchedule={() => setPage('schedule')} />
 
       <VideoModal video={current} onClose={close} />
     </div>

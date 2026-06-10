@@ -198,54 +198,62 @@ function LiveCenter({ streamData }) {
   );
 }
 
-function NextCenter({ nextStream, gameCover, onBrowseVods }) {
+function NextCenter({ nextStream, gameCover, onBrowseVods, clips }) {
   return (
     <div className="w-full max-w-3xl">
-      <div className="relative overflow-hidden rounded-xl border border-white/5 bg-zinc-card">
-        <div className="grid grid-cols-[auto_1fr] gap-5 sm:gap-7 p-5 sm:p-7">
-          <div className="w-24 sm:w-32 aspect-[3/4] overflow-hidden rounded-lg bg-zinc-elevated">
-            {gameCover ? (
-              <img
-                src={gameCover}
-                alt=""
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-white/30">
-                <Film size={28} aria-hidden="true" />
-              </div>
-            )}
+      <div className="relative overflow-hidden rounded-xl border border-white/5">
+        <div className="relative aspect-[16/9] bg-zinc-broadcast">
+          <TestPattern />
+          <ClipBackdrop clips={clips} />
+          <div className="absolute top-3 left-3 inline-flex items-center gap-2 px-2 py-1 bg-zinc-broadcast/80 border border-white/20 text-[0.625rem] font-bold tracking-eyebrow-sm uppercase font-mono text-white/80">
+            Up next
+            <span className="text-emerald-bright">
+              {nextStream.day} · {nextStream.time}
+            </span>
           </div>
-          <div className="flex flex-col justify-center min-w-0">
-            <div className="text-[0.6875rem] font-bold tracking-eyebrow text-emerald-bright uppercase mb-2">
-              Next on this channel
+        </div>
+        <div className="px-5 sm:px-7 py-4 bg-zinc-card border-t border-white/5 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="w-10 h-14 shrink-0 overflow-hidden rounded-sm bg-zinc-elevated">
+              {gameCover ? (
+                <img src={gameCover} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-white/30">
+                  <Film size={16} aria-hidden="true" />
+                </div>
+              )}
             </div>
-            <div className="flex items-baseline gap-3 flex-wrap mb-2">
-              <span className="text-2xl sm:text-3xl font-black tracking-tight text-white-body">
-                {nextStream.day}
-              </span>
-              <span className="inline-flex items-center gap-1.5 text-sm font-bold tracking-wider text-white/70">
-                <Clock size={14} aria-hidden="true" />
-                {nextStream.time}
-              </span>
-            </div>
-            <p className="text-sm sm:text-base text-white/80 line-clamp-2">
-              {nextStream.gameName || nextStream.content}
-            </p>
-            {nextStream.status === 'special' && (
-              <div className="mt-3 inline-block self-start px-2.5 py-1 border border-purple-gamba/40 text-[0.6875rem] font-bold tracking-eyebrow-sm text-purple-bright uppercase">
-                Special
+            <div className="min-w-0">
+              <div className="text-[0.6875rem] font-bold tracking-eyebrow text-emerald-bright uppercase mb-0.5 flex items-center gap-2">
+                Next on this channel
+                {nextStream.status === 'special' && (
+                  <span className="px-1.5 py-0.5 border border-purple-gamba/40 text-[0.5625rem] font-bold tracking-eyebrow-sm text-purple-bright uppercase">
+                    Special
+                  </span>
+                )}
               </div>
-            )}
-            <button
-              onClick={onBrowseVods}
-              className="mt-5 inline-flex items-center gap-2 px-5 py-2.5 bg-zinc-elevated hover:bg-zinc-700 text-white-body rounded-md text-sm font-bold tracking-wider uppercase transition-colors duration-300 self-start"
-              type="button"
-            >
-              <Film size={16} aria-hidden="true" />
-              Browse vods
-            </button>
+              <div className="flex items-baseline gap-3 flex-wrap min-w-0">
+                <span className="text-base sm:text-lg font-black tracking-tight text-white-body whitespace-nowrap">
+                  {nextStream.day}
+                  <span className="ml-2 inline-flex items-baseline gap-1 text-xs sm:text-sm font-bold tracking-wider text-white/70">
+                    <Clock size={12} aria-hidden="true" className="self-center" />
+                    {nextStream.time}
+                  </span>
+                </span>
+                <span className="text-sm text-white/70 truncate">
+                  {nextStream.gameName || nextStream.content}
+                </span>
+              </div>
+            </div>
           </div>
+          <button
+            onClick={onBrowseVods}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-zinc-elevated hover:bg-zinc-700 text-white-body rounded-md text-sm font-bold tracking-wider uppercase transition-colors duration-300 shrink-0"
+            type="button"
+          >
+            <Film size={16} aria-hidden="true" />
+            Browse vods
+          </button>
         </div>
       </div>
     </div>
@@ -436,6 +444,7 @@ export default function HomeHero({
         nextStream={nextStream}
         gameCover={gameCover}
         onBrowseVods={handleBrowseVods}
+        clips={clips}
       />
     );
   } else {

@@ -1,5 +1,15 @@
 import { useMemo } from 'react';
-import { SOCIAL_LINKS } from '../constants';
+import { useSchedule } from '../hooks/useSchedule';
+
+const DAYS_OF_WEEK = [
+  'SUNDAY',
+  'MONDAY',
+  'TUESDAY',
+  'WEDNESDAY',
+  'THURSDAY',
+  'FRY-DAY',
+  'SATURDAY',
+];
 
 function formatCount(n) {
   if (n == null) return null;
@@ -31,86 +41,105 @@ function formatRelativeTime(input) {
   return then.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-function Cell({ label, value, href, fadingPlaceholder }) {
-  const valueNode = (
-    <span
-      className={`block text-xl sm:text-2xl font-black tracking-tight tabular-nums ${
-        value == null ? 'text-white/30' : 'text-white-body'
-      } font-mono`}
-      >
-      {value ?? fadingPlaceholder ?? '—'}
-    </span>
-  );
+// Lower-third filler lines, rotated into the crawl between the live numbers.
+const BULLETINS = [
+  { label: 'Signal', value: 'Strong-ish' },
+  { label: 'Bulletin', value: 'No sleep detected' },
+  { label: 'PSA', value: 'Adjust your antenna' },
+  { label: 'Source', value: 'Broadcasting from the couch' },
+];
 
-  const labelNode = (
-    <span className="block text-[0.625rem] sm:text-xs font-bold tracking-eyebrow uppercase text-emerald-bright mb-1.5">
-      {label}
-    </span>
-  );
-
-  const body = (
-    <>
-      {labelNode}
-      {valueNode}
-    </>
-  );
-
-  if (href) {
-    return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex flex-col justify-center px-6 sm:px-8 py-4 min-w-[160px] sm:min-w-[200px] transition-colors duration-200 hover:bg-zinc-900/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-signal"
-      >
-        {body}
-      </a>
-    );
-  }
+function TickerItem({ label, value, tone = 'white' }) {
+  const valueColor =
+    tone === 'emerald'
+      ? 'text-emerald-bright'
+      : tone === 'purple'
+        ? 'text-purple-bright'
+        : tone === 'blue'
+          ? 'text-rainbet-blue-bright'
+          : 'text-white/85';
   return (
-    <div className="flex flex-col justify-center px-6 sm:px-8 py-4 min-w-[160px] sm:min-w-[200px]">
-      {body}
-    </div>
+    <span className="inline-flex items-baseline gap-2.5 px-6 sm:px-8 whitespace-nowrap">
+      <span className="text-[0.625rem] sm:text-xs font-bold tracking-eyebrow uppercase text-emerald-signal/80 font-mono">
+        {label}
+      </span>
+      <span
+        className={`text-xs sm:text-sm font-bold tracking-eyebrow-xs uppercase tabular-nums font-mono ${valueColor}`}
+      >
+        {value}
+      </span>
+      <span className="text-white/20 pl-6 sm:pl-8" aria-hidden="true">
+        ◆
+      </span>
+    </span>
   );
 }
 
 export default function StatsTicker({ channelData, streamData, isLive, clips, videos, loading }) {
-  const allFailed = !loading && !channelData && (!Array.isArray(clips) || clips.length === 0) && (!Array.isArray(videos) || videos.length === 0);
+  const { schedule } = useSchedule();
+  const allFailed =
+    !loading &&
+    !channelData &&
+    (!Array.isArray(clips) || clips.length === 0) &&
+    (!Array.isArray(videos) || videos.length === 0);
 
-  const cells = useMemo(() => {
-    const followersRaw = channelData?.followers;
-    const followers = followersRaw != null ? formatCount(followersRaw) : null;
+  const items = useMemo(() => {
+    const followers = channelData?.followers != null ? formatCount(channelData.followers) : null;
     const clipCount = formatListCount(clips);
     const vodCount = formatListCount(videos);
 
-    let lastLive;
+    let lastLive = null;
     if (isLive) {
-      lastLive = 'LIVE NOW';
+      lastLive = 'Live now';
     } else if (Array.isArray(videos) && videos.length > 0 && videos[0]?.created_at) {
       lastLive = formatRelativeTime(videos[0].created_at);
-    } else {
-      lastLive = null;
     }
 
-    return [
-      { label: 'Followers', value: followers, href: SOCIAL_LINKS.twitch },
-      { label: 'Clips', value: clipCount },
-      { label: 'Vods', value: vodCount },
-      { label: 'Last live', value: lastLive },
-    ];
-  }, [channelData, clips, videos, isLive]);
+    const upcoming = [];
+    if (Array.isArray(schedule) && schedule.length > 0) {
+      const today = new Date().getDay();
+      for (let i = 0; i < 7 && upcoming.length < 3; i += 1) {
+        const dayName = DAYS_OF_WEEK[(today + i) % 7];
+        const entry = schedule.find((s) => s.day === dayName);
+        if (entry && entry.status !== 'off') {
+          upcoming.push({
+            label: i === 0 ? 'Tonight' : entry.day,
+            value: `${entry.time} · ${entry.gameName || entry.content}`,
+            tone: entry.status === 'special' ? 'purple' : 'white',
+          });
+        }
+      }
+    }
 
-  const placeholder = loading ? '···' : '—';
+    const stats = [
+      followers && { label: 'Followers', value: followers },
+      lastLive && { label: 'Last live', value: lastLive, tone: isLive ? 'emerald' : 'white' },
+      clipCount && { label: 'Clips on file', value: clipCount },
+      vodCount && { label: 'Tapes archived', value: vodCount },
+    ].filter(Boolean);
+
+    // Interleave: stat, bulletin, schedule entry, stat, bulletin... so the
+    // crawl never reads as four numbers in a row.
+    const out = [];
+    const queues = [stats, [...BULLETINS], upcoming];
+    let qi = 0;
+    while (queues.some((q) => q.length > 0)) {
+      const q = queues[qi % queues.length];
+      if (q.length > 0) out.push(q.shift());
+      qi += 1;
+    }
+    out.push({ label: 'Sponsor', value: 'Code BEAN on Rainbet', tone: 'blue' });
+    return out;
+  }, [channelData, clips, videos, isLive, schedule]);
+
+  const content = items.map((item, i) => (
+    <TickerItem key={`${item.label}-${i}`} label={item.label} value={item.value} tone={item.tone} />
+  ));
 
   return (
-    <section
-      aria-label="Channel stats"
-      className="relative border-t border-emerald-signal/15"
-    >
+    <section aria-label="Channel ticker" className="relative border-t border-emerald-signal/15">
       <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-6 sm:px-10 pt-10 sm:pt-12 pb-6 sm:pb-8">
-        <div
-          className="text-[0.625rem] sm:text-xs font-bold tracking-eyebrow-lg uppercase text-white/45 mb-4 font-mono"
-      >
+        <div className="text-[0.625rem] sm:text-xs font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
           <span className="inline-block px-1.5 py-0.5 border border-white/30 text-white/70 mr-3 align-middle text-[0.5625rem] tracking-eyebrow">
             GG
           </span>
@@ -118,57 +147,44 @@ export default function StatsTicker({ channelData, streamData, isLive, clips, vi
         </div>
       </div>
 
-      <div className="relative bg-zinc-card/70 border-y border-white/5 backdrop-blur-sm overflow-hidden">
+      <div className="relative bg-zinc-card/70 border-y border-white/5 overflow-hidden">
         <div
-          className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 z-10 sm:hidden"
+          className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 sm:w-20 z-10"
           style={{ background: 'linear-gradient(to right, rgba(9,9,11,1), rgba(9,9,11,0))' }}
           aria-hidden="true"
         />
         <div
-          className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 z-10 sm:hidden"
+          className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 sm:w-20 z-10"
           style={{ background: 'linear-gradient(to left, rgba(9,9,11,1), rgba(9,9,11,0))' }}
           aria-hidden="true"
         />
-        <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto sm:flex sm:justify-between sm:divide-x sm:divide-white/5 overflow-x-auto sm:overflow-visible scrollbar-hide motion-safe:sm:overflow-visible">
-          <div className="flex sm:flex sm:flex-1 sm:justify-between sm:divide-x sm:divide-white/5 motion-safe:animate-[ticker_28s_linear_infinite] sm:motion-safe:animate-none whitespace-nowrap sm:whitespace-normal">
-            {cells.map((cell) => (
-              <Cell
-                key={cell.label}
-                label={cell.label}
-                value={cell.value}
-                href={cell.href}
-                fadingPlaceholder={placeholder}
-              />
-            ))}
-            <div className="sm:hidden flex shrink-0" aria-hidden="true">
-              {cells.map((cell) => (
-                <Cell
-                  key={`dup-${cell.label}`}
-                  label={cell.label}
-                  value={cell.value}
-                  fadingPlaceholder={placeholder}
-                />
-              ))}
+
+        <div className="gg-ticker-viewport overflow-hidden motion-reduce:overflow-x-auto scrollbar-hide">
+          <div className="gg-ticker-track flex whitespace-nowrap py-3.5 motion-safe:animate-[gg-ticker_50s_linear_infinite] w-max">
+            <div className="flex">{content}</div>
+            <div className="flex motion-reduce:hidden" aria-hidden="true">
+              {content}
             </div>
           </div>
         </div>
 
         {allFailed && (
-          <div
-            className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-6 sm:px-10 pb-3 text-[0.625rem] sm:text-xs font-bold tracking-eyebrow-lg uppercase text-red-destructive font-mono"
-      >
+          <div className="max-w-7xl 2xl:max-w-[1440px] mx-auto px-6 sm:px-10 pb-3 text-[0.625rem] sm:text-xs font-bold tracking-eyebrow-lg uppercase text-red-destructive font-mono">
             Signal lost
           </div>
         )}
       </div>
 
       <style>{`
-        @keyframes ticker {
+        @keyframes gg-ticker {
           from { transform: translateX(0); }
           to { transform: translateX(-50%); }
         }
+        .gg-ticker-viewport:hover .gg-ticker-track {
+          animation-play-state: paused;
+        }
         @media (prefers-reduced-motion: reduce) {
-          .animate-\\[ticker_28s_linear_infinite\\] {
+          .gg-ticker-track {
             animation: none !important;
           }
         }

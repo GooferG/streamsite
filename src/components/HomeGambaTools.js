@@ -7,9 +7,13 @@ const TOOL_BLURBS = {
   leaderboard: "See who's climbing the monthly standings.",
   'hunt-tracker': 'Follow the bonus hunt live, bonus by bonus.',
   'bonus-hunts': 'Browse past hunts and how they paid out.',
+  'bonus-battle': 'Pit two bonuses against each other.',
   wheel: 'Spin up a random slot to play next.',
   suggest: 'Drop a slot for the next hunt.',
 };
+
+// UHF-dial channel numbers for the EPG listing. Each tool is a "channel".
+const CHANNEL_BASE = 41;
 
 export default function HomeGambaTools({
   setPage,
@@ -29,37 +33,40 @@ export default function HomeGambaTools({
           title={title}
           accent="white"
         />
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {GAMBA_TOOLS.map((tool) => {
+        <div className="border border-white/8 rounded-lg overflow-hidden bg-zinc-card/40 divide-y divide-white/5">
+          {GAMBA_TOOLS.map((tool, i) => {
             const Icon = tool.icon;
             return (
               <button
                 key={tool.id}
                 type="button"
                 onClick={() => setPage(`gamba/${tool.id}`)}
-                className="group text-left bg-zinc-card border border-white/8 rounded-lg p-4 transition-colors duration-200 hover:border-purple-gamba/40 focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-gamba"
+                className="group w-full text-left grid grid-cols-[3.5rem_1fr_auto] sm:grid-cols-[5rem_auto_1fr_auto] items-center gap-x-3 sm:gap-x-6 px-4 sm:px-6 py-4 transition-colors duration-200 hover:bg-purple-gamba/[0.07] focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-purple-gamba"
               >
-                <div className="flex items-center gap-2.5 mb-2">
-                  {Icon && (
-                    <Icon
-                      size={16}
-                      className="text-purple-bright"
-                      aria-hidden="true"
-                    />
-                  )}
-                  <span className="text-sm font-bold tracking-tight text-white-body group-hover:text-white-body">
+                <span className="font-mono text-xs sm:text-sm font-bold tracking-eyebrow-sm text-purple-bright tabular-nums">
+                  CH {CHANNEL_BASE + i}
+                </span>
+                {Icon && (
+                  <Icon
+                    size={16}
+                    className="hidden sm:block text-white/40 group-hover:text-purple-bright transition-colors duration-200"
+                    aria-hidden="true"
+                  />
+                )}
+                <span className="min-w-0">
+                  <span className="block text-sm sm:text-base font-bold tracking-tight text-white-body leading-snug">
                     {tool.label}
                   </span>
-                  <span
-                    aria-hidden="true"
-                    className="ml-auto text-white/30 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-purple-bright"
-                  >
-                    →
+                  <span className="block text-xs sm:text-sm text-white/55 leading-relaxed truncate">
+                    {TOOL_BLURBS[tool.id] || 'Open this tool in the gamba wing.'}
                   </span>
-                </div>
-                <p className="text-sm text-white/60 leading-relaxed">
-                  {TOOL_BLURBS[tool.id] || 'Open this tool in the gamba wing.'}
-                </p>
+                </span>
+                <span
+                  aria-hidden="true"
+                  className="text-white/30 transition duration-200 group-hover:translate-x-0.5 group-hover:text-purple-bright"
+                >
+                  →
+                </span>
               </button>
             );
           })}

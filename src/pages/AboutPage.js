@@ -1,52 +1,101 @@
-import React from 'react';
-import { Twitch, Youtube, Twitter } from 'lucide-react';
+import React, { useState } from 'react';
+import { Twitch, Youtube, Twitter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SOCIAL_LINKS } from '../constants';
 import { useNowTimestamp, formatTimecode } from '../utils/timecode';
 
-function StationRail({ now }) {
+const STILLS = [
+  { src: '/about/operator.jpg', caption: 'Still · The operator' },
+  { src: '/about/rick-glassman.jpg', caption: 'Still · With Rick Glassman' },
+];
+
+// Photos piled like a deck of polaroids: the active card sits on top with a
+// slight tilt, the rest peek out behind it. Prev/next swaps cards with a
+// transform transition. Broken images drop out of the deck, so the page
+// works before assets land in /public/about/.
+function PhotoDeck() {
+  const [index, setIndex] = useState(0);
+  const [broken, setBroken] = useState(() => new Set());
+  const stills = STILLS.filter((s) => !broken.has(s.src));
+  if (stills.length === 0) return null;
+
+  const active = ((index % stills.length) + stills.length) % stills.length;
+  const markBroken = (src) =>
+    setBroken((prev) => {
+      const next = new Set(prev);
+      next.add(src);
+      return next;
+    });
+
   return (
-    <aside
-      className="font-mono hidden lg:flex flex-col gap-8 sticky top-32 self-start text-[0.625rem] uppercase tracking-eyebrow-md text-white/40"
-      aria-hidden="true"
-    >
-      <div className="flex flex-col gap-1">
-        <span className="text-white/30">Station</span>
-        <span className="text-white-body text-xs tracking-eyebrow-lg">
-          GG-01
-        </span>
+    <figure className="w-full max-w-[260px] mx-auto md:mx-0">
+      <div className="relative aspect-[4/5]">
+        {stills.map((still, i) => {
+          // depth = how far behind the active card this one sits
+          const depth = (i - active + stills.length) % stills.length;
+          const isActive = depth === 0;
+          return (
+            <div
+              key={still.src}
+              aria-hidden={!isActive}
+              className="absolute inset-0 overflow-hidden rounded-md border border-white/10 bg-zinc-card transition-transform duration-300 ease-out motion-reduce:transition-none"
+              style={{
+                transform: isActive
+                  ? 'rotate(1.5deg)'
+                  : `translate(${7 * depth}px, ${7 * depth}px) rotate(${-3 * depth}deg) scale(${1 - depth * 0.03})`,
+                zIndex: stills.length - depth,
+              }}
+            >
+              <img
+                src={still.src}
+                alt={still.caption}
+                className="absolute inset-0 w-full h-full object-cover"
+                style={{
+                  filter: 'saturate(0.85) contrast(1.05)',
+                  objectPosition: 'center 30%',
+                }}
+                onError={() => markBroken(still.src)}
+              />
+              <div
+                className="pointer-events-none absolute inset-0 opacity-[0.07] mix-blend-screen"
+                aria-hidden="true"
+                style={{
+                  backgroundImage:
+                    'repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(255,255,255,0.6) 2px, rgba(255,255,255,0.6) 3px)',
+                }}
+              />
+            </div>
+          );
+        })}
       </div>
-      <div className="flex flex-col gap-1">
-        <span className="text-white/30">Tape</span>
-        <span className="text-white/70 text-xs tracking-eyebrow-lg">
-          #A-013
-        </span>
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <figcaption className="text-[0.625rem] uppercase tracking-eyebrow-md text-white/40 font-mono min-w-0 truncate">
+          {stills[active].caption}
+        </figcaption>
+        {stills.length > 1 && (
+          <div className="flex items-center gap-1.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setIndex((i) => i - 1)}
+              aria-label="Previous photo"
+              className="p-1 border border-white/15 rounded-sm text-white/50 hover:text-emerald-signal hover:border-emerald-signal/50 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-signal"
+            >
+              <ChevronLeft size={13} aria-hidden="true" />
+            </button>
+            <span className="text-[0.625rem] tracking-eyebrow-sm text-white/35 font-mono tabular-nums">
+              {active + 1}/{stills.length}
+            </span>
+            <button
+              type="button"
+              onClick={() => setIndex((i) => i + 1)}
+              aria-label="Next photo"
+              className="p-1 border border-white/15 rounded-sm text-white/50 hover:text-emerald-signal hover:border-emerald-signal/50 transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-emerald-signal"
+            >
+              <ChevronRight size={13} aria-hidden="true" />
+            </button>
+          </div>
+        )}
       </div>
-      <div className="flex flex-col gap-1">
-        <span className="text-white/30">Format</span>
-        <span className="text-white/70 text-xs tracking-eyebrow-lg">
-          UHD / 1440p60
-        </span>
-      </div>
-      <div className="flex flex-col gap-1">
-        <span className="text-white/30">Region</span>
-        <span className="text-white/70 text-xs tracking-eyebrow-lg">
-          BR · GLOBAL
-        </span>
-      </div>
-      <div className="flex flex-col gap-1">
-        <span className="text-white/30">Timecode</span>
-        <span className="text-emerald-signal text-xs tracking-eyebrow-sm tabular-nums">
-          {formatTimecode(now, { frames: true })}
-        </span>
-      </div>
-      <div className="mt-2 w-12 h-px bg-white/15" />
-      <div className="flex flex-col gap-3 text-[0.5625rem] leading-relaxed text-white/30">
-        <span>This is a continuous</span>
-        <span>broadcast. The signal</span>
-        <span>repeats nightly until</span>
-        <span>the operator sleeps.</span>
-      </div>
-    </aside>
+    </figure>
   );
 }
 
@@ -56,7 +105,6 @@ function SegmentSlate({ index, label, title, accent = 'white' }) {
   return (
     <header className="mb-6">
       <div className="flex items-center gap-3 text-[0.625rem] sm:text-[0.6875rem] font-bold uppercase tracking-eyebrow-lg text-white/45 mb-4 font-mono">
-        <span className="text-white/30">SEGMENT</span>
         <span className="text-white-body tabular-nums">{index}</span>
         <span className="text-white/20">·</span>
         <span className="text-white/55">{label}</span>
@@ -159,9 +207,7 @@ export default function AboutPage() {
     <div className="relative pt-32 pb-32 px-6 sm:px-10">
       <ScanlineOverlay />
 
-      <div className="relative max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-[140px_1fr] gap-12 lg:gap-20">
-        <StationRail now={now} />
-
+      <div className="relative max-w-4xl mx-auto">
         <main>
           {/* Slate header — the station ID */}
           <div className="mb-20 sm:mb-24">
@@ -202,12 +248,10 @@ export default function AboutPage() {
               <div>
                 <MetaRow k="Operator" v="GOOFERG" accent />
                 <MetaRow k="Location" v="Phoenix, AZ" />
-                <MetaRow k="Languages" v="EN · PT-BR" />
               </div>
               <div>
+                <MetaRow k="Languages" v="EN · PT-BR" />
                 <MetaRow k="Hours" v="Late, Inconsistently Consistent" />
-                <MetaRow k="Format" v="Variety" />
-                <MetaRow k="Status" v="On the air" accent />
               </div>
             </div>
           </div>
@@ -219,7 +263,7 @@ export default function AboutPage() {
               label="Who"
               title="A chill Brazilian guy on the internet."
             />
-            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-10 md:gap-16 items-start">
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_260px] gap-10 md:gap-16 items-start">
               <div className="space-y-5 text-[0.9375rem] sm:text-base text-white/75 leading-relaxed max-w-2xl">
                 <p>
                   Streams are a mix of gaming with friends, story games at my
@@ -229,19 +273,10 @@ export default function AboutPage() {
                 </p>
                 <p>
                   Off camera I'm doing the same things, minus the camera. The
-                  point of the channel is to share that — not to perform.
+                  channel exists to share that.
                 </p>
               </div>
-              <div className="hidden md:flex flex-col gap-2 text-[0.625rem] uppercase tracking-eyebrow-md text-white/35 border-l border-white/10 pl-6 font-mono">
-                <span>RUN TIME</span>
-                <span className="text-white/65 text-xs tracking-eyebrow-lg">
-                  ~4 HR
-                </span>
-                <span className="mt-3">CADENCE</span>
-                <span className="text-white/65 text-xs tracking-eyebrow-lg">
-                  5/WK
-                </span>
-              </div>
+              <PhotoDeck />
             </div>
           </section>
 
@@ -262,12 +297,12 @@ export default function AboutPage() {
               <ProgramLine
                 slug="P-02"
                 title="Gamba"
-                body="High-stakes slot sessions. Played as entertainment, framed as entertainment, treated as entertainment. Not advice, not a strategy, not a plan."
+                body="High-stakes slot sessions, treated strictly as entertainment. None of it is advice."
               />
               <ProgramLine
                 slug="P-03"
                 title="React &amp; just chatting"
-                body="Reddit threads, YouTube videos, half-finished thoughts. Most chill block of the week — closer to a phone call than a show."
+                body="Reddit threads, YouTube videos, half-finished thoughts. Most chill block of the week; closer to a phone call than a show."
               />
               <div className="border-t border-white/8" />
             </div>
@@ -286,8 +321,8 @@ export default function AboutPage() {
                   01
                 </span>
                 <p className="text-[0.9375rem] sm:text-base text-white/80 leading-relaxed">
-                  Toxicity isn't welcome. The chat is the room — keep it a room
-                  people want to be in.
+                  Toxicity isn't welcome. The chat is the room, so keep it a
+                  room people want to be in.
                 </p>
               </li>
               <li className="grid grid-cols-[auto_1fr] gap-5">
@@ -343,11 +378,10 @@ export default function AboutPage() {
               <span>END OF TRANSMISSION</span>
               <span className="text-white/15">·</span>
               <span className="text-white/50">REEL #A-013</span>
-              <span className="text-white/15">·</span>
-              <span className="text-emerald-signal/70 tabular-nums">
-                {formatTimecode(now, { frames: true })}
-              </span>
             </div>
+            <p className="mt-3 text-[0.625rem] uppercase tracking-eyebrow-md text-white/25 font-mono">
+              The signal repeats nightly until the operator sleeps.
+            </p>
           </section>
         </main>
       </div>

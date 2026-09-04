@@ -10,6 +10,17 @@ jest.mock('react-router-dom', () => ({
   useSearchParams: () => [new URLSearchParams(mockSearch), jest.fn()],
 }));
 
+// Live mode fetches /api/leaderboard; force the deterministic mock board so
+// every theme has rows to render under Jest.
+jest.mock('../../../hooks/useLeaderboardData', () => {
+  const actual = jest.requireActual('../../../hooks/useLeaderboardData');
+  return {
+    ...actual,
+    useLeaderboardData: (options = {}) =>
+      actual.useLeaderboardData({ ...options, mock: true }),
+  };
+});
+
 function renderWithTheme(theme) {
   mockSearch = theme === undefined ? '' : `?theme=${theme}`;
   return render(<Leaderboard />);
@@ -47,11 +58,12 @@ describe('Leaderboard theme resolution', () => {
     expect(container.querySelector('[data-theme="neon"]')).toBeTruthy();
   });
 
-  it('always shows the demo-data disclaimer, regardless of theme', () => {
+  it('always shows the live-standings footer, regardless of theme', () => {
     ['broadcast', 'casino', 'minimal', 'neon'].forEach((theme) => {
       const { container } = renderWithTheme(theme);
-      expect(container.textContent).toMatch(/demo only/i);
-      expect(container.textContent).toMatch(/sample data/i);
+      expect(container.textContent).toMatch(/live standings/i);
+      expect(container.textContent).toMatch(/code BEAN on Rainbet/i);
+      expect(container.textContent).not.toMatch(/demo only/i);
     });
   });
 });

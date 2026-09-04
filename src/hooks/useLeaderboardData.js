@@ -10,6 +10,12 @@ import {
   PRIZE_POOL_TOTAL,
 } from '../components/Leaderboard/format';
 import { LEADERBOARD } from '../constants';
+import { mapBeanBoard } from '../utils/beanLeaderboard';
+
+// Live standings come from /api/leaderboard, which proxies the bean site's
+// public board for the Rainbet "code BEAN" leaderboard (recounted upstream
+// every 15 minutes). `mock: true` keeps the deterministic demo data for tests
+// and layout work.
 
 function attachPositions(players, previousIds = null, deltasById = {}) {
   const previousIndexById = previousIds
@@ -28,10 +34,7 @@ function attachPositions(players, previousIds = null, deltasById = {}) {
   }));
 }
 
-// Fixed demo end date. Set this to whenever you want the leaderboard race to
-// end; once it passes, the countdown shows the "leaderboard over" state. To
-// "reset" the demo, change this to a future date.
-// NOTE: month is 0-indexed — January = 0, June = 5, December = 11.
+// Fixed demo end date for mock mode. NOTE: month is 0-indexed.
 function leaderboardEndsAt() {
   return new Date(2026, 5, 13, 23, 59, 59).getTime(); // 2026-06-13 23:59:59
 }
@@ -51,37 +54,59 @@ function currentWeekLabel() {
 }
 
 const DEFAULT_OPTIONS = {
-  mock: true,
-  pollMs: 45000,
+  mock: false,
+  pollMs: 60000,
+  endpoint: '/api/leaderboard',
+  // Mock-mode pool. Live mode reads the pool bean advertises.
   prizePool: PRIZE_POOL_TOTAL,
   referralCode: LEADERBOARD.referralCode,
   brand: LEADERBOARD.brand,
 };
 
+function liveInitialState() {
+  return {
+    players: [],
+    prizePool: 0,
+    paidPlaces: 0,
+    lastUpdatedAt: Date.now(),
+    endsAt: null,
+    periodLabel: 'CURRENT PERIOD',
+    weekLabel: 'LIVE',
+    isLoading: true,
+    error: null,
+  };
+}
+
 export function useLeaderboardData(options = {}) {
-  const { mock, pollMs, prizePool, referralCode, brand } = {
+  const { mock, pollMs, endpoint, prizePool, referralCode, brand } = {
     ...DEFAULT_OPTIONS,
     ...options,
   };
 
   const baselineRef = useRef(null);
-  if (baselineRef.current === null) {
+  if (mock && baselineRef.current === null) {
     baselineRef.current = getBaselinePlayers();
   }
 
   const [state, setState] = useState(() => {
+    if (!mock) return liveInitialState();
     const initial = baselineRef.current;
     return {
       players: attachPositions(initial),
+      prizePool,
+      paidPlaces: initial.length,
       lastUpdatedAt: Date.now(),
       endsAt: leaderboardEndsAt(),
       periodLabel: currentPeriodLabel(),
       weekLabel: currentWeekLabel(),
+      isLoading: false,
+      error: null,
     };
   });
 
   const seedRef = useRef(1);
 
+  // Mock mode: deterministic simulated polls.
   useEffect(() => {
     if (!mock) return undefined;
 
@@ -101,6 +126,7 @@ export function useLeaderboardData(options = {}) {
         const nextPeriodLabel = currentPeriodLabel();
         const nextWeekLabel = currentWeekLabel();
         return {
+          ...prev,
           players: attachPositions(next, previousIds, deltas),
           lastUpdatedAt: Date.now(),
           endsAt: nextEndsAt === prev.endsAt ? prev.endsAt : nextEndsAt,
@@ -116,16 +142,63 @@ export function useLeaderboardData(options = {}) {
     return () => clearInterval(id);
   }, [mock, pollMs]);
 
+  // Live mode: poll our proxy of bean's board.
+  useEffect(() => {
+    if (mock) return undefined;
+    let cancelled = false;
+
+    const load = async () => {
+      try {
+        const res = await fetch(endpoint);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const payload = await res.json();
+        if (cancelled) return;
+        const board = payload && payload.board;
+        setState((prev) => {
+          if (!board) {
+            // Nothing polled upstream yet. Keep whatever we last showed; only
+            // report unavailable when there is nothing to show at all.
+            return {
+              ...prev,
+              isLoading: false,
+              error: prev.players.length ? prev.error : 'Standings unavailable',
+            };
+          }
+          const mapped = mapBeanBoard(board, {
+            previousPlayers: prev.players,
+            now: Date.now(),
+          });
+          return { ...mapped, isLoading: false, error: null };
+        });
+      } catch (e) {
+        if (cancelled) return;
+        setState((prev) => ({
+          ...prev,
+          isLoading: false,
+          error: e && e.message ? e.message : 'fetch failed',
+        }));
+      }
+    };
+
+    load();
+    const id = setInterval(load, pollMs);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [mock, pollMs, endpoint]);
+
   return {
     players: state.players,
-    prizePool,
+    prizePool: mock ? prizePool : state.prizePool,
+    paidPlaces: state.paidPlaces,
     referralCode,
     brand,
     periodLabel: state.periodLabel,
     weekLabel: state.weekLabel,
     endsAt: state.endsAt,
     lastUpdatedAt: state.lastUpdatedAt,
-    isLoading: false,
-    error: null,
+    isLoading: state.isLoading,
+    error: state.error,
   };
 }

@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 
 function compute(endsAt) {
+  // No close date published yet: not over, nothing to count down.
+  if (endsAt == null || !Number.isFinite(endsAt)) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0, isOver: false, unknown: true };
+  }
   const diff = endsAt - Date.now();
   if (diff <= 0) {
     return { days: 0, hours: 0, minutes: 0, seconds: 0, isOver: true };

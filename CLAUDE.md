@@ -65,6 +65,7 @@ All files are Vercel function handlers (`export default async function handler(r
 ## Gotchas
 
 - Third-party API keys (BonusHunt, SlotsLaunch) and Twitch secrets now live in env only — `BONUSHUNT_API_KEY`, `SLOTSLAUNCH_API_KEY`, `TWITCH_CLIENT_SECRET`. Set them in Vercel (prod) and `.env.local` (for `vercel dev`). The proxies fail closed when unset. The previously-committed keys are dead (rotated) but remain in git history.
+- Leaderboard (`/gamba/leaderboard`, home callout) is live, not mock: `api/leaderboard.js` proxies the bean site's public tRPC read `leaderBoard.getLatest` (Rainbet code BEAN board, recounted upstream every 15 min; host via optional `BEAN_SITE_URL`, default `https://www.beantwitch.com`). `src/utils/beanLeaderboard.js` maps bean's `Leaderboard` shape onto our theme player shape — handles arrive pre-masked, never re-mask. `useLeaderboardData({ mock: true })` keeps the deterministic demo data for tests/layout work.
 - `FIREBASE_SETUP.md` step 9's "Update Your App.js" snippet is stale — the app already uses react-router routes for `/admin`, not the `setPage` state pattern shown there.
 - Most page-level routes (admin pages, secondary public pages, `TVStaticIntro`, `HuntSuggestPage`) are `lazy()`-loaded in `App.js` behind a single `<Suspense>`; only `HomePage` and `GambaPage` are eager. `GENERATE_SOURCEMAP=false` is set in committed `.env.production`.
 

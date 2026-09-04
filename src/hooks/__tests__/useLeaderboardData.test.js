@@ -119,3 +119,87 @@ describe('useLeaderboardData (mock mode)', () => {
     expect(true).toBe(true);
   });
 });
+
+describe('useLeaderboardData (live mode)', () => {
+  const board = {
+    id: '1',
+    prizePool: 250000,
+    rankingField: 'Weighted Wager',
+    closesAt: '2026-09-12T00:00:00.000Z',
+    fetchedAt: '2026-09-04T15:16:05.990Z',
+    paidPlaces: 2,
+    entries: [
+      { rank: 1, maskedHandle: '2A***r', playerId: 'a', weightedWager: 100, prize: 70000, delta: 0, tier: 1 },
+      { rank: 2, maskedHandle: 've***y', playerId: 'b', weightedWager: 50, prize: 40000, delta: 1, tier: 1 },
+    ],
+  };
+
+  const originalFetch = global.fetch;
+  beforeEach(() => {
+    jest.useFakeTimers();
+  });
+  afterEach(() => {
+    jest.useRealTimers();
+    global.fetch = originalFetch;
+  });
+
+  it('starts loading with no players, then maps the fetched board', async () => {
+    global.fetch = jest.fn(() =>
+      Promise.resolve({ ok: true, json: () => Promise.resolve({ board }) }),
+    );
+    const { result } = renderHook(() => useLeaderboardData({ pollMs: 60000 }));
+    expect(result.current.isLoading).toBe(true);
+    expect(result.current.players).toEqual([]);
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(global.fetch).toHaveBeenCalledWith('/api/leaderboard');
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.error).toBeNull();
+    expect(result.current.players).toHaveLength(2);
+    expect(result.current.players[0].maskedUsername).toBe('2A***r');
+    expect(result.current.players[1].previousPosition).toBe(3);
+    expect(result.current.prizePool).toBe(250000);
+    expect(result.current.endsAt).toBe(Date.parse(board.closesAt));
+    expect(result.current.lastUpdatedAt).toBe(Date.parse(board.fetchedAt));
+  });
+
+  it('reports an error and keeps an empty board when the proxy fails', async () => {
+    global.fetch = jest.fn(() => Promise.resolve({ ok: false, status: 502 }));
+    const { result } = renderHook(() => useLeaderboardData({ pollMs: 60000 }));
+
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    expect(result.current.isLoading).toBe(false);
+    expect(result.current.error).toBe('HTTP 502');
+    expect(result.current.players).toEqual([]);
+  });
+
+  it('keeps the last good board when a later poll returns null', async () => {
+    let call = 0;
+    global.fetch = jest.fn(() => {
+      call += 1;
+      return Promise.resolve({
+        ok: true,
+        json: () => Promise.resolve({ board: call === 1 ? board : null }),
+      });
+    });
+    const { result } = renderHook(() => useLeaderboardData({ pollMs: 30000 }));
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(result.current.players).toHaveLength(2);
+
+    await act(async () => {
+      jest.advanceTimersByTime(30000);
+      await Promise.resolve();
+    });
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+    expect(result.current.players).toHaveLength(2);
+    expect(result.current.error).toBeNull();
+  });
+});

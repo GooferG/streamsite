@@ -53,6 +53,24 @@ module.exports = function (app) {
     }
   });
 
+  // Dev handler for /api/leaderboard (mirrors the Vercel function): proxies the
+  // bean site's public tRPC board read. Override host with BEAN_SITE_URL.
+  app.get('/api/leaderboard', async (_req, res) => {
+    const base = (process.env.BEAN_SITE_URL || 'https://www.beantwitch.com').replace(/\/+$/, '');
+    try {
+      const upstream = await fetch(`${base}/api/trpc/leaderBoard.getLatest`, {
+        headers: { Accept: 'application/json' },
+      });
+      if (!upstream.ok) return res.status(502).json({ error: 'Leaderboard unavailable' });
+      const payload = await upstream.json();
+      const data = payload && payload.result && payload.result.data;
+      const board = data && 'json' in data ? data.json : data;
+      res.status(200).json({ board: board ?? null, source: base, cachedAt: Date.now() });
+    } catch (e) {
+      res.status(502).json({ error: 'Leaderboard unavailable' });
+    }
+  });
+
   // Dev handler for /api/btc (mirrors the Vercel function)
   app.get('/api/btc', async (_req, res) => {
     try {

@@ -4,30 +4,43 @@ import { adminDb, FieldValue } from './firebaseAdmin.js';
 // short-lived user-access tokens for Helix endpoints that require user scope
 // (Get Chatters, Create EventSub Subscription with user-auth scopes, etc.)
 //
-// Storage: secrets/broadcaster_token doc { refreshToken, updatedAt }.
-// Falls back to env TWITCH_BROADCASTER_REFRESH_TOKEN on cold start.
+// Storage: secrets/{account}_token doc { refreshToken, updatedAt }.
+// Falls back to the matching env var on cold start.
+//
+// Two accounts are supported:
+//   broadcaster  secrets/broadcaster_token  / TWITCH_BROADCASTER_REFRESH_TOKEN
+//   bot          secrets/bot_token          / TWITCH_BOT_REFRESH_TOKEN
+// The bot is optional. It exists so chat announcements can be posted by a
+// separate account rather than by the streamer, whose own announcement would
+// otherwise read as a keyword entry.
 
-const SECRET_PATH = ['secrets', 'broadcaster_token'];
+const ACCOUNTS = {
+  broadcaster: {
+    doc: 'secrets/broadcaster_token',
+    env: 'TWITCH_BROADCASTER_REFRESH_TOKEN',
+  },
+  bot: {
+    doc: 'secrets/bot_token',
+    env: 'TWITCH_BOT_REFRESH_TOKEN',
+  },
+};
 
-async function getStoredRefreshToken() {
-  const snap = await adminDb.doc(SECRET_PATH.join('/')).get();
+async function getStoredRefreshToken(account) {
+  const snap = await adminDb.doc(account.doc).get();
   if (snap.exists && snap.data().refreshToken) return snap.data().refreshToken;
-  return process.env.TWITCH_BROADCASTER_REFRESH_TOKEN || null;
+  return process.env[account.env] || null;
 }
 
-async function storeRefreshToken(refreshToken) {
-  await adminDb.doc(SECRET_PATH.join('/')).set(
+async function storeRefreshToken(account, refreshToken) {
+  await adminDb.doc(account.doc).set(
     { refreshToken, updatedAt: FieldValue.serverTimestamp() },
     { merge: true }
   );
 }
 
-/**
- * Mint a fresh broadcaster user-access token. Rotates the stored refresh
- * token if Twitch issues a new one.
- */
-export async function getBroadcasterAccessToken() {
-  const refreshToken = await getStoredRefreshToken();
+async function getUserAccessToken(which) {
+  const account = ACCOUNTS[which];
+  const refreshToken = await getStoredRefreshToken(account);
   if (!refreshToken) throw new Error('NO_REFRESH_TOKEN');
   const r = await fetch('https://id.twitch.tv/oauth2/token', {
     method: 'POST',
@@ -45,9 +58,22 @@ export async function getBroadcasterAccessToken() {
   }
   const data = await r.json();
   if (data.refresh_token && data.refresh_token !== refreshToken) {
-    await storeRefreshToken(data.refresh_token);
+    await storeRefreshToken(account, data.refresh_token);
   }
   return data.access_token;
+}
+
+/**
+ * Mint a fresh broadcaster user-access token. Rotates the stored refresh
+ * token if Twitch issues a new one.
+ */
+export function getBroadcasterAccessToken() {
+  return getUserAccessToken('broadcaster');
+}
+
+/** Same, for the optional bot account. Throws NO_REFRESH_TOKEN if unset. */
+export function getBotAccessToken() {
+  return getUserAccessToken('bot');
 }
 
 /**

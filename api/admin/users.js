@@ -151,13 +151,17 @@ async function getUserDetail(twitchId) {
           prize: d.prize,
           status: d.status,
           winnerTwitchId: d.winnerTwitchId || null,
+          winnerIds: (d.winners || []).map((w) => w.twitchId).filter(Boolean),
         };
       }
     });
   }
   giveawayEntries.forEach((e) => {
     e.giveaway = giveawayMeta[e.giveawayId] || null;
-    e.isWinner = giveawayMeta[e.giveawayId]?.winnerTwitchId === twitchId;
+    const meta = giveawayMeta[e.giveawayId];
+    // A giveaway can name several winners; any confirmed one counts.
+    e.isWinner =
+      !!meta && (meta.winnerTwitchId === twitchId || meta.winnerIds.includes(twitchId));
   });
 
   // Same enrichment for hunts.

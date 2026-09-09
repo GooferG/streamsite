@@ -186,6 +186,7 @@ export default function GiveawayPage() {
                 rolling={active.status === 'rolling'}
                 winnerTwitchId={active.winnerTwitchId || null}
                 skippedIds={active.skippedIds || []}
+                wonIds={(active.winners || []).map((w) => w.twitchId).filter(Boolean)}
               />
             </div>
           </>
@@ -208,33 +209,40 @@ export default function GiveawayPage() {
               Recent winners
             </div>
             <ul>
-              {past.map((g) => (
-                <li
-                  key={g.id}
-                  className="grid grid-cols-[auto_1fr_auto] gap-3 items-center px-4 py-2.5 border-t border-white/8"
-                >
-                  {g.winner?.profileImageUrl ? (
-                    <img
-                      src={g.winner.profileImageUrl}
-                      alt=""
-                      className="w-8 h-8 rounded-full border border-white/15"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 border border-white/15" />
-                  )}
-                  <div className="min-w-0">
-                    <p className="font-bold text-white-body text-sm truncate">
-                      <span className="text-emerald-signal">{g.winner?.displayName || g.winner?.twitchName}</span>{' '}
-                      <span className="text-white/45 font-normal">won</span>{' '}
-                      {g.prize}
-                    </p>
-                    <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono">
-                      {formatTs(g.confirmedAt)}
-                    </p>
-                  </div>
-                  <Gift size={13} className="text-white/30" aria-hidden="true" />
-                </li>
-              ))}
+              {past.flatMap((g) => {
+                // A giveaway may have named several winners; older docs only
+                // carry `winner`. One row each, newest giveaway first.
+                const rows =
+                  g.winners && g.winners.length > 0 ? g.winners : g.winner ? [g.winner] : [];
+                return rows.map((w, i) => (
+                  <li
+                    key={`${g.id}-${w.twitchId || w.twitchName || i}`}
+                    className="grid grid-cols-[auto_1fr_auto] gap-3 items-center px-4 py-2.5 border-t border-white/8"
+                  >
+                    {w.profileImageUrl ? (
+                      <img
+                        src={w.profileImageUrl}
+                        alt=""
+                        className="w-8 h-8 rounded-full border border-white/15"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 border border-white/15" />
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-bold text-white-body text-sm truncate">
+                        <span className="text-emerald-signal">{w.displayName || w.twitchName}</span>{' '}
+                        <span className="text-white/45 font-normal">won</span>{' '}
+                        {g.prize}
+                      </p>
+                      <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono">
+                        {formatTs(g.confirmedAt)}
+                        {rows.length > 1 && <span className="text-white/25"> · {i + 1}/{rows.length}</span>}
+                      </p>
+                    </div>
+                    <Gift size={13} className="text-white/30" aria-hidden="true" />
+                  </li>
+                ));
+              })}
             </ul>
           </div>
         )}

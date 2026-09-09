@@ -1,8 +1,13 @@
 #!/usr/bin/env node
 /**
- * One-time helper: mint a Twitch refresh token from your BROADCASTER account
- * with the `moderator:read:chatters` scope, so the production watchtime cron
- * can list active chatters.
+ * One-time helper: mint a Twitch refresh token for a user account.
+ *
+ * Two modes:
+ *   (default)  BROADCASTER account — every scope the site needs from GooferG
+ *              (chatters, followers, chat read, chat write, EventSub auth).
+ *   --bot      BOT account — chat write only. Used so giveaway announcements
+ *              post as the bot instead of as GooferG (whose own announcement
+ *              would otherwise read as a keyword entry).
  *
  * Usage:
  *   1. Make sure TWITCH_CLIENT_ID and TWITCH_CLIENT_SECRET are in your .env.local
@@ -10,11 +15,13 @@
  *   2. In the Twitch dev console for that client, add this redirect URI:
  *        http://localhost:8765/callback
  *   3. Run:    node scripts/get-broadcaster-refresh-token.mjs
- *   4. A URL prints — open it, sign in as GooferG, approve.
+ *        or:   node scripts/get-broadcaster-refresh-token.mjs --bot
+ *   4. A URL prints — open it in a PRIVATE window, sign in as the right
+ *      account (GooferG, or the bot), approve.
  *   5. The script captures the code, exchanges it, and prints:
- *        TWITCH_BROADCASTER_ID
- *        TWITCH_BROADCASTER_REFRESH_TOKEN
- *      Paste both into Vercel project env vars (and .env.local for local cron tests).
+ *        TWITCH_BROADCASTER_ID + TWITCH_BROADCASTER_REFRESH_TOKEN
+ *        or TWITCH_BOT_ID + TWITCH_BOT_REFRESH_TOKEN
+ *      Paste both into Vercel project env vars (and .env.local for local tests).
  *
  * This script does not write env files for you — it just prints values to copy.
  */
@@ -57,7 +64,7 @@ const REDIRECT_URI = 'http://localhost:8765/callback';
 // channel:bot              — broadcaster authorizing app to read chat in their channel
 // user:write:chat          — needed to POST /chat/messages (announce giveaway start
 //                            and winner)
-const SCOPES = [
+const BROADCASTER_SCOPES = [
   'moderator:read:chatters',
   'moderator:read:followers',
   'user:read:chat',
@@ -65,6 +72,14 @@ const SCOPES = [
   'channel:bot',
   'user:write:chat',
 ];
+// user:write:chat — POST /chat/messages as the bot
+// user:bot        — lets the app act on the bot's behalf in channels that
+//                   granted channel:bot (the broadcaster token above does)
+const BOT_SCOPES = ['user:write:chat', 'user:bot'];
+
+const BOT_MODE = process.argv.includes('--bot');
+const SCOPES = BOT_MODE ? BOT_SCOPES : BROADCASTER_SCOPES;
+const ENV_PREFIX = BOT_MODE ? 'TWITCH_BOT' : 'TWITCH_BROADCASTER';
 
 if (!CLIENT_ID || !CLIENT_SECRET) {
   console.error('Missing TWITCH_CLIENT_ID or TWITCH_CLIENT_SECRET in env / .env.local');
@@ -78,8 +93,12 @@ authUrl.searchParams.set('response_type', 'code');
 authUrl.searchParams.set('scope', SCOPES.join(' '));
 authUrl.searchParams.set('force_verify', 'true');
 
-console.log('\n=== Twitch broadcaster token helper ===\n');
-console.log('Open this URL in your browser, sign in as GooferG, and approve:\n');
+console.log(`\n=== Twitch ${BOT_MODE ? 'BOT' : 'broadcaster'} token helper ===\n`);
+console.log(
+  BOT_MODE
+    ? 'Open this URL in a PRIVATE window, sign in as the BOT account, and approve:\n'
+    : 'Open this URL in your browser, sign in as GooferG, and approve:\n'
+);
 console.log(authUrl.toString());
 console.log('\nWaiting for callback on http://localhost:8765 …\n');
 
@@ -137,8 +156,14 @@ const server = http.createServer(async (req, res) => {
     console.log('\n=== SUCCESS ===\n');
     console.log(`Twitch user:        ${me.display_name} (login=${me.login})`);
     console.log(`\nPaste into Vercel project env (and .env.local):\n`);
-    console.log(`TWITCH_BROADCASTER_ID=${me.id}`);
-    console.log(`TWITCH_BROADCASTER_REFRESH_TOKEN=${tokenData.refresh_token}`);
+    console.log(`${ENV_PREFIX}_ID=${me.id}`);
+    console.log(`${ENV_PREFIX}_REFRESH_TOKEN=${tokenData.refresh_token}`);
+    if (BOT_MODE) {
+      console.log(
+        '\nHeads up: if this account is GooferG, you signed into the wrong one.' +
+          ' Re-run in a private window as the bot.'
+      );
+    }
     console.log(`\nScopes granted: ${(tokenData.scope || []).join(' ')}\n`);
     server.close();
     process.exit(0);

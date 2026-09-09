@@ -20,6 +20,8 @@ import {
   ChevronRight,
   Users,
   Timer,
+  ArrowLeft,
+  Flag,
 } from 'lucide-react';
 import { db } from '../config/firebase';
 import { authedFetch } from '../utils/authedFetch';
@@ -84,6 +86,11 @@ function NewGiveawayForm({ onClose, onCreated }) {
   const [form, setForm] = useState(DEFAULT_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
+  // A click-outside close must start AND end on the backdrop. A drag that
+  // begins inside a text field (selecting text) and releases over the
+  // backdrop still fires `click` on the backdrop, which closed the form and
+  // lost everything typed. Track where the press began.
+  const pressOnBackdrop = useRef(false);
 
   const setW = (k, v) => setForm((f) => ({ ...f, weights: { ...f.weights, [k]: v } }));
 
@@ -122,12 +129,19 @@ function NewGiveawayForm({ onClose, onCreated }) {
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-broadcast/70 backdrop-blur-sm"
-      onClick={onClose}
+      onMouseDown={(e) => {
+        pressOnBackdrop.current = e.target === e.currentTarget;
+      }}
+      onClick={(e) => {
+        const endedOnBackdrop = e.target === e.currentTarget;
+        const startedOnBackdrop = pressOnBackdrop.current;
+        pressOnBackdrop.current = false;
+        if (startedOnBackdrop && endedOnBackdrop) onClose();
+      }}
     >
       <form
         onSubmit={submit}
-        onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg border border-white/10 bg-zinc-card"
+        className="w-full max-w-lg max-h-full overflow-y-auto border border-white/10 bg-zinc-card"
       >
         <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
           <span className="inline-flex items-center gap-2 text-orange-admin">
@@ -397,10 +411,12 @@ function WinnerTimer({ rolledAt, firstMessageAt }) {
   );
 }
 
-function WinnerModal({ giveaway, onClose, onAnnounceError }) {
-  const [busy, setBusy] = useState(null); // 'reroll' | 'skip' | 'confirm'
+function WinnerModal({ giveaway, onAnnounceError }) {
+  // 'reroll' | 'skip' | 'confirm' | 'roll' | 'back' | 'end'
+  const [busy, setBusy] = useState(null);
   const [messages, setMessages] = useState([]);
   const [prizeNote, setPrizeNote] = useState('');
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     if (!giveaway?.id) return undefined;
@@ -420,6 +436,7 @@ function WinnerModal({ giveaway, onClose, onAnnounceError }) {
 
   const act = async (action) => {
     setBusy(action);
+    setError(null);
     try {
       const body = { action, id: giveaway.id };
       if (action === 'confirm') body.prizeNote = prizeNote || null;
@@ -429,12 +446,12 @@ function WinnerModal({ giveaway, onClose, onAnnounceError }) {
       });
       const data = await res.json();
       if (!res.ok) {
-        alert(`Action failed: ${data.error || res.status}`);
+        setError(`Action failed: ${data.error || res.status}`);
         return;
       }
-      // Announce now fires on roll/reroll/skip (whenever a new winner is picked).
+      // Announce fires whenever a new winner is picked.
       if (
-        ['reroll', 'skip'].includes(action) &&
+        ['roll', 'reroll', 'skip'].includes(action) &&
         data.announce &&
         data.announce.posted === false &&
         data.announce.reason &&
@@ -444,9 +461,9 @@ function WinnerModal({ giveaway, onClose, onAnnounceError }) {
       ) {
         onAnnounceError(data.announce.reason);
       }
-      if (action === 'confirm') {
-        onClose();
-      }
+      if (['roll', 'reroll', 'skip'].includes(action)) setPrizeNote('');
+    } catch (err) {
+      setError('Network error.');
     } finally {
       setBusy(null);
     }
@@ -454,6 +471,13 @@ function WinnerModal({ giveaway, onClose, onAnnounceError }) {
 
   if (!giveaway || giveaway.status !== 'rolling' || !giveaway.winner) return null;
   const w = giveaway.winner;
+  const winners = giveaway.winners || [];
+  // Confirmed = written down. The window stays up either way; what changes is
+  // which actions make sense. Nothing here closes on a click outside.
+  const confirmed = winners.some((x) => x.twitchId === giveaway.winnerTwitchId);
+  const winnerNo = confirmed
+    ? winners.findIndex((x) => x.twitchId === giveaway.winnerTwitchId) + 1
+    : winners.length + 1;
 
   return (
     <div
@@ -487,7 +511,12 @@ function WinnerModal({ giveaway, onClose, onAnnounceError }) {
         <div className="relative px-6 sm:px-10 py-8">
           <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 mb-2 font-mono inline-flex items-center gap-2">
             <Trophy size={11} className="text-orange-admin" aria-hidden="true" />
-            Winner picked
+            {confirmed ? `Winner #${winnerNo} · confirmed` : `Winner #${winnerNo} picked`}
+            {winners.length > 0 && !confirmed && (
+              <span className="text-white/30 normal-case font-normal tracking-normal">
+                · {winners.length} already confirmed
+              </span>
+            )}
           </p>
           <div className="flex items-center gap-4 mb-5 flex-wrap">
             {w.profileImageUrl ? (
@@ -549,55 +578,129 @@ function WinnerModal({ giveaway, onClose, onAnnounceError }) {
             </div>
           </div>
 
-          {/* Prize note (optional, attached on confirm) */}
-          <label className="block mb-4">
-            <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
-              Prize note · attached to redemption
-            </span>
-            <input
-              value={prizeNote}
-              onChange={(e) => setPrizeNote(e.target.value)}
-              placeholder="Steam key — will DM after stream"
-              className={inputCls}
-            />
-          </label>
+          {confirmed ? (
+            <div className="mb-4 flex items-center gap-2 px-3 py-2 border border-emerald-signal/40 bg-emerald-signal/5 text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+              <Check size={12} aria-hidden="true" />
+              Recorded · redemption created
+              {winners[winnerNo - 1]?.prizeNote && (
+                <span className="text-white/45 normal-case font-normal tracking-normal truncate">
+                  · {winners[winnerNo - 1].prizeNote}
+                </span>
+              )}
+            </div>
+          ) : (
+            /* Prize note (optional, attached on confirm) */
+            <label className="block mb-4">
+              <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
+                Prize note · attached to redemption
+              </span>
+              <input
+                value={prizeNote}
+                onChange={(e) => setPrizeNote(e.target.value)}
+                placeholder="Steam key — will DM after stream"
+                className={inputCls}
+              />
+            </label>
+          )}
 
           {/* Actions */}
-          <div className="flex gap-2 flex-wrap">
-            <button
-              type="button"
-              onClick={() => act('reroll')}
-              disabled={!!busy}
-              className="inline-flex items-center gap-2 px-3.5 py-2.5 border border-white/15 text-white/75 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-40"
-            >
-              <RefreshCcw size={13} aria-hidden="true" />
-              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-                {busy === 'reroll' ? 'Rolling…' : 'Reroll'}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => act('skip')}
-              disabled={!!busy}
-              className="inline-flex items-center gap-2 px-3.5 py-2.5 border border-red-destructive/40 text-red-destructive hover:bg-red-destructive/10 transition-colors duration-150 disabled:opacity-40"
-            >
-              <SkipForward size={13} aria-hidden="true" />
-              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-                {busy === 'skip' ? 'Skipping…' : 'Skip'}
-              </span>
-            </button>
-            <button
-              type="button"
-              onClick={() => act('confirm')}
-              disabled={!!busy}
-              className="ml-auto inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-50"
-            >
-              <Check size={13} aria-hidden="true" />
-              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-                {busy === 'confirm' ? 'Confirming…' : 'Confirm winner'}
-              </span>
-            </button>
-          </div>
+          {!confirmed ? (
+            <div className="flex gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => act('reroll')}
+                disabled={!!busy}
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 border border-white/15 text-white/75 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-40"
+              >
+                <RefreshCcw size={13} aria-hidden="true" />
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  {busy === 'reroll' ? 'Rolling…' : 'Reroll'}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => act('skip')}
+                disabled={!!busy}
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 border border-red-destructive/40 text-red-destructive hover:bg-red-destructive/10 transition-colors duration-150 disabled:opacity-40"
+              >
+                <SkipForward size={13} aria-hidden="true" />
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  {busy === 'skip' ? 'Skipping…' : 'Skip'}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => act('back')}
+                disabled={!!busy}
+                title="Drop this pick and return to the entries. Nothing is recorded."
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 border border-white/10 text-white/50 hover:text-white-body hover:border-white/30 transition-colors duration-150 disabled:opacity-40"
+              >
+                <ArrowLeft size={13} aria-hidden="true" />
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  {busy === 'back' ? 'Going back…' : 'Discard · back to entries'}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => act('confirm')}
+                disabled={!!busy}
+                className="ml-auto inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-50"
+              >
+                <Check size={13} aria-hidden="true" />
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  {busy === 'confirm' ? 'Confirming…' : 'Confirm winner'}
+                </span>
+              </button>
+            </div>
+          ) : (
+            /*
+              After the pick is written down the giveaway is still live. The
+              operator chooses: draw again for another prize from the same
+              pool (past winners and skips excluded), go back to the entries
+              and let them keep coming, or end it.
+            */
+            <div className="flex gap-2 flex-wrap">
+              <button
+                type="button"
+                onClick={() => act('back')}
+                disabled={!!busy}
+                className="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50"
+              >
+                <ArrowLeft size={13} aria-hidden="true" />
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  {busy === 'back' ? 'Going back…' : 'Back to entries'}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => act('roll')}
+                disabled={!!busy}
+                className="inline-flex items-center gap-2 px-3.5 py-2.5 border border-white/15 text-white/75 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-40"
+              >
+                <Gift size={13} aria-hidden="true" />
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  {busy === 'roll' ? 'Rolling…' : 'Roll another'}
+                </span>
+              </button>
+              <button
+                type="button"
+                onClick={() => act('end')}
+                disabled={!!busy}
+                className="ml-auto inline-flex items-center gap-2 px-3.5 py-2.5 border border-white/15 text-white/60 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-40"
+              >
+                <Flag size={13} aria-hidden="true" />
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+                  {busy === 'end' ? 'Ending…' : 'End giveaway'}
+                </span>
+              </button>
+            </div>
+          )}
+
+          {error && (
+            <p role="alert" className="mt-3 text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
+              {error}
+            </p>
+          )}
         </div>
       </div>
     </div>
@@ -739,6 +842,9 @@ function GiveawayRow({ giveaway, onOpen }) {
       </div>
       <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono tabular-nums">
         {giveaway.entryCount ?? 0} entries
+        {(giveaway.winners?.length ?? 0) > 1 && (
+          <span className="text-emerald-signal/70"> · {giveaway.winners.length} winners</span>
+        )}
       </span>
       <ChevronRight size={14} className="text-white/30" aria-hidden="true" />
     </button>
@@ -781,6 +887,9 @@ function AnimatedCount({ value }) {
 function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
   const [busy, setBusy] = useState(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [confirmingEnd, setConfirmingEnd] = useState(false);
+  const winners = useMemo(() => giveaway.winners || [], [giveaway.winners]);
+  const wonIds = useMemo(() => winners.map((w) => w.twitchId).filter(Boolean), [winners]);
 
   const act = async (action) => {
     setBusy(action);
@@ -912,15 +1021,56 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
           >
             <Gift size={13} aria-hidden="true" />
             <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-              {busy === 'roll' ? 'Rolling…' : 'Roll winner'}
+              {busy === 'roll' ? 'Rolling…' : winners.length > 0 ? 'Roll another' : 'Roll winner'}
             </span>
           </button>
         )}
-        {giveaway.status === 'rolled' && giveaway.winner && (
+        {(giveaway.status === 'open' || giveaway.status === 'closed') &&
+          (!confirmingEnd ? (
+            <button
+              type="button"
+              onClick={() => setConfirmingEnd(true)}
+              disabled={!!busy}
+              className="inline-flex items-center gap-2 px-3.5 py-2 border border-white/15 text-white/60 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-50"
+            >
+              <Flag size={12} aria-hidden="true" />
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+                End giveaway
+              </span>
+            </button>
+          ) : (
+            <div className="inline-flex gap-2">
+              <button
+                type="button"
+                onClick={() => act('end').then(() => setConfirmingEnd(false))}
+                disabled={!!busy}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono disabled:opacity-50"
+              >
+                {busy === 'end'
+                  ? 'Ending…'
+                  : winners.length > 0
+                    ? `End · ${winners.length} winner${winners.length === 1 ? '' : 's'}`
+                    : 'End with no winner'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingEnd(false)}
+                className="px-3 py-2 border border-white/10 text-white/60 hover:text-white-body text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
+              >
+                Cancel
+              </button>
+            </div>
+          ))}
+        {giveaway.status === 'rolled' && winners.length === 0 && giveaway.winner && (
           <div className="inline-flex items-center gap-2 px-3 py-2 border border-emerald-signal/40 bg-emerald-signal/5 text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
             <Trophy size={12} aria-hidden="true" />
             Winner: {giveaway.winner.displayName}
           </div>
+        )}
+        {giveaway.status === 'rolled' && winners.length === 0 && !giveaway.winner && (
+          <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
+            Ended · no winner
+          </span>
         )}
 
         <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/30 font-mono ml-1">
@@ -956,6 +1106,36 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
         )}
       </div>
 
+      {/* Confirmed winners so far. Out of every later draw. */}
+      {winners.length > 0 && (
+        <div className="border border-emerald-signal/25 bg-emerald-signal/[0.03] px-4 py-3">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal mb-2 font-mono inline-flex items-center gap-2">
+            <Trophy size={11} aria-hidden="true" />
+            {isLive ? 'Confirmed so far' : 'Winners'} · {winners.length}
+          </p>
+          <ul className="flex flex-wrap gap-2">
+            {winners.map((x, i) => (
+              <li
+                key={`${x.twitchId || x.twitchName}-${i}`}
+                className="inline-flex items-center gap-2 pl-1 pr-3 py-1 border border-white/10 bg-zinc-broadcast/40"
+                title={x.prizeNote || undefined}
+              >
+                {x.profileImageUrl ? (
+                  <img src={x.profileImageUrl} alt="" className="w-6 h-6 rounded-full border border-emerald-signal/40" />
+                ) : (
+                  <span className="w-6 h-6 rounded-full border border-emerald-signal/40 bg-zinc-card text-[0.625rem] font-mono font-bold text-white/55 flex items-center justify-center" aria-hidden="true">
+                    {(x.displayName || x.twitchName || '?').charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <span className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono text-white-body">
+                  <span className="text-emerald-signal/70 tabular-nums">#{i + 1}</span> {x.displayName || x.twitchName}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Entries grid */}
       <div className="border border-white/8 bg-zinc-card/30 p-5 sm:p-6">
         <div className="flex items-center justify-between mb-5 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
@@ -972,6 +1152,7 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
           rolling={giveaway.status === 'rolling'}
           winnerTwitchId={giveaway.winnerTwitchId || null}
           skippedIds={giveaway.skippedIds || []}
+          wonIds={wonIds}
         />
       </div>
     </div>
@@ -1129,7 +1310,6 @@ export default function AdminGiveawaysPage() {
       {activeRolling && (
         <WinnerModal
           giveaway={activeRolling}
-          onClose={() => setActiveRollingId(null)}
           onAnnounceError={(reason) =>
             setWarning(`Winner confirmed, but chat announce failed: ${reason}`)
           }

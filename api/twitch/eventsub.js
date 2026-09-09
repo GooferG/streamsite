@@ -122,12 +122,26 @@ function extractMessageText(event) {
   return (event?.message?.text || '').toString();
 }
 
+// The people who run the giveaway cannot be in it. The start announcement
+// contains the keyword, so without this the broadcaster (or the bot, when one
+// posts instead) enters their own giveaway the moment it opens.
+function isHostAccount(event) {
+  const chatterId = event.chatter_user_id;
+  if (chatterId && chatterId === event.broadcaster_user_id) return true;
+  if (chatterId && chatterId === process.env.TWITCH_BROADCASTER_ID) return true;
+  if (chatterId && process.env.TWITCH_BOT_ID && chatterId === process.env.TWITCH_BOT_ID) {
+    return true;
+  }
+  return false;
+}
+
 async function handleChatMessage(event) {
   const chatterId = event.chatter_user_id;
   const chatterLogin = (event.chatter_user_login || '').toLowerCase();
   const chatterName = event.chatter_user_name;
   const text = extractMessageText(event);
   if (!chatterId || !text) return { processed: false };
+  if (isHostAccount(event)) return { processed: false, reason: 'host_account' };
   const chatRoles = rolesFromBadges(event.badges);
 
   // Pull only what we need. Most messages are not for active giveaways, so

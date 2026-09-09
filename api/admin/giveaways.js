@@ -30,7 +30,19 @@ async function tryAnnounce(text) {
 //   roll     { id }                       -> pick weighted winner, status='rolling'
 //   reroll   { id }                       -> pick again silently from remaining
 //   skip     { id }                       -> mark current pick skipped, then re-pick
-//   confirm  { id, prizeNote? }           -> create redemption, status='rolled', close
+//   confirm  { id, prizeNote? }           -> create redemption, append to winners[];
+//                                            giveaway stays 'rolling' so the
+//                                            operator can roll another, go back,
+//                                            or end
+//   back     { id }                       -> leave the winner window without
+//                                            ending: status returns to open/closed,
+//                                            an unconfirmed pick is dropped
+//   end      { id }                       -> status='rolled' (terminal)
+//
+// A giveaway can name several winners. Every confirmed winner is appended to
+// `winners[]` and excluded from later draws, alongside `skippedIds`. `winner`
+// / `winnerTwitchId` always describe the CURRENT pick on screen; after `end`
+// they settle on the last confirmed winner so past lists keep working.
 
 function sanitizeWeights(w = {}) {
   const num = (v, dflt) => {
@@ -69,6 +81,23 @@ async function clearWinnerStream(giveawayRef) {
   const batch = adminDb.batch();
   snap.docs.forEach((d) => batch.delete(d.ref));
   await batch.commit();
+}
+
+// Every entry id that a fresh draw must not return: skipped picks and anyone
+// already confirmed as a winner of this giveaway.
+function excludedIds(giveaway, extra = []) {
+  const won = (giveaway.winners || []).map((w) => w.twitchId);
+  return [...new Set([...(giveaway.skippedIds || []), ...won, ...extra].filter(Boolean))];
+}
+
+function currentPickConfirmed(giveaway) {
+  if (!giveaway.winnerTwitchId) return false;
+  return (giveaway.winners || []).some((w) => w.twitchId === giveaway.winnerTwitchId);
+}
+
+function lastConfirmedWinner(giveaway) {
+  const winners = giveaway.winners || [];
+  return winners.length > 0 ? winners[winners.length - 1] : null;
 }
 
 function trimEntry(entry) {
@@ -125,10 +154,12 @@ export default async function handler(req, res) {
         winner: null,
         winnerTwitchId: null,
         skippedIds: [],
+        winners: [],
         startedAt: now,
         closedAt: null,
         rolledAt: null,
         confirmedAt: null,
+        endedAt: null,
         createdAt: now,
         createdBy: admin.email,
       });
@@ -174,10 +205,15 @@ export default async function handler(req, res) {
     };
 
     if (action === 'roll') {
-      if (!['open', 'closed'].includes(giveaway.status)) {
+      // Rollable from open/closed, or from the winner window once the pick on
+      // screen has been confirmed. That is "roll another" for a second prize.
+      const rollable =
+        ['open', 'closed'].includes(giveaway.status) ||
+        (giveaway.status === 'rolling' && currentPickConfirmed(giveaway));
+      if (!rollable) {
         return res.status(400).json({ error: 'NOT_ROLLABLE' });
       }
-      const winner = await pickWeightedWinner(ref, giveaway.skippedIds || []);
+      const winner = await pickWeightedWinner(ref, excludedIds(giveaway));
       if (!winner) return res.status(400).json({ error: 'NO_ENTRIES' });
       await clearWinnerStream(ref); // reset chat stream for the modal
       await ref.update({
@@ -194,8 +230,10 @@ export default async function handler(req, res) {
       if (giveaway.status !== 'rolling') {
         return res.status(400).json({ error: 'NOT_ROLLING' });
       }
-      const exclude = [giveaway.winnerTwitchId, ...(giveaway.skippedIds || [])].filter(Boolean);
-      const winner = await pickWeightedWinner(ref, exclude);
+      if (currentPickConfirmed(giveaway)) {
+        return res.status(400).json({ error: 'ALREADY_CONFIRMED' });
+      }
+      const winner = await pickWeightedWinner(ref, excludedIds(giveaway, [giveaway.winnerTwitchId]));
       if (!winner) return res.status(400).json({ error: 'NO_MORE_ENTRIES' });
       await clearWinnerStream(ref);
       await ref.update({
@@ -211,6 +249,9 @@ export default async function handler(req, res) {
       if (giveaway.status !== 'rolling') {
         return res.status(400).json({ error: 'NOT_ROLLING' });
       }
+      if (currentPickConfirmed(giveaway)) {
+        return res.status(400).json({ error: 'ALREADY_CONFIRMED' });
+      }
       const skipped = giveaway.winner;
       const skippedIds = [...(giveaway.skippedIds || [])];
       if (giveaway.winnerTwitchId && !skippedIds.includes(giveaway.winnerTwitchId)) {
@@ -224,7 +265,7 @@ export default async function handler(req, res) {
         at: FieldValue.serverTimestamp(),
         by: admin.email,
       });
-      const winner = await pickWeightedWinner(ref, skippedIds);
+      const winner = await pickWeightedWinner(ref, excludedIds({ ...giveaway, skippedIds }));
       if (!winner) {
         await ref.update({
           skippedIds,
@@ -252,6 +293,9 @@ export default async function handler(req, res) {
       if (!giveaway.winner || !giveaway.winnerTwitchId) {
         return res.status(400).json({ error: 'NO_WINNER' });
       }
+      if (currentPickConfirmed(giveaway)) {
+        return res.status(400).json({ error: 'ALREADY_CONFIRMED' });
+      }
       const winner = giveaway.winner;
       const now = FieldValue.serverTimestamp();
       const redemptionRef = adminDb.collection('redemptions').doc();
@@ -271,14 +315,67 @@ export default async function handler(req, res) {
         createdAt: now,
         fulfilledAt: null,
       });
+      // Confirming does not end the giveaway. The pick is written down, the
+      // window stays up, and the operator decides what comes next: roll
+      // another for a second prize, go back to entries, or end it.
+      const record = {
+        ...trimEntry(winner),
+        twitchId: giveaway.winnerTwitchId,
+        redemptionId: redemptionRef.id,
+        prizeNote: payload.prizeNote || null,
+        confirmedAt: new Date().toISOString(),
+      };
       await ref.update({
-        status: 'rolled',
+        winners: FieldValue.arrayUnion(record),
         confirmedAt: now,
         confirmedBy: admin.email,
         redemptionId: redemptionRef.id,
       });
-      // No chat announce here — winner is already announced at pick time.
+      // No chat announce here. The winner is already announced at pick time.
       return res.status(200).json({ ok: true, redemptionId: redemptionRef.id });
+    }
+
+    if (action === 'back') {
+      // Leave the winner window without ending anything. Entries resume if
+      // they were open before the roll. An unconfirmed pick is simply dropped;
+      // Skip is the explicit way to exclude someone who went silent.
+      if (giveaway.status !== 'rolling') {
+        return res.status(400).json({ error: 'NOT_ROLLING' });
+      }
+      await clearWinnerStream(ref);
+      await ref.update({
+        status: giveaway.closedAt ? 'closed' : 'open',
+        winner: null,
+        winnerTwitchId: null,
+        rolledAt: null,
+      });
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === 'end') {
+      if (!['open', 'closed', 'rolling'].includes(giveaway.status)) {
+        return res.status(400).json({ error: 'NOT_LIVE' });
+      }
+      const now = FieldValue.serverTimestamp();
+      // Settle `winner` on the last confirmed winner so past lists and the
+      // users API keep a single "the winner" to point at. An unconfirmed pick
+      // on screen is dropped, never recorded.
+      const settled = currentPickConfirmed(giveaway)
+        ? giveaway.winner
+        : lastConfirmedWinner(giveaway);
+      const update = {
+        status: 'rolled',
+        endedAt: now,
+        endedBy: admin.email,
+        winner: settled ? trimEntry(settled) : null,
+        winnerTwitchId: settled
+          ? settled.twitchId || giveaway.winnerTwitchId
+          : null,
+      };
+      if (!giveaway.confirmedAt) update.confirmedAt = now;
+      if (giveaway.status === 'rolling') await clearWinnerStream(ref);
+      await ref.update(update);
+      return res.status(200).json({ ok: true, winners: (giveaway.winners || []).length });
     }
 
     if (action === 'delete') {

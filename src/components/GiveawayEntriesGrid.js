@@ -6,7 +6,7 @@ import {
   query,
   limit as fLimit,
 } from 'firebase/firestore';
-import { Users } from 'lucide-react';
+import { Trophy, Users } from 'lucide-react';
 import { db } from '../config/firebase';
 
 const MAX_VISIBLE = 60;
@@ -64,17 +64,21 @@ function FallbackAvatar({ name, className = '' }) {
 }
 
 function EntryTile({ entry, state }) {
-  // state: 'normal' | 'winner' | 'dimmed' | 'skipped'
+  // state: 'normal' | 'winner' | 'won' | 'dimmed' | 'skipped'
   const ring =
     state === 'winner'
       ? 'border-orange-admin/80 ring-2 ring-orange-admin/40'
-      : 'border-white/15';
+      : state === 'won'
+        ? 'border-emerald-signal/70'
+        : 'border-white/15';
   const opacity =
     state === 'dimmed'
       ? 'opacity-30'
       : state === 'skipped'
         ? 'opacity-25'
-        : 'opacity-100';
+        : state === 'won'
+          ? 'opacity-60'
+          : 'opacity-100';
   const scale = state === 'winner' ? 'scale-110' : 'scale-100';
   return (
     <div
@@ -104,10 +108,23 @@ function EntryTile({ entry, state }) {
             <span className="w-full h-[2px] bg-red-destructive rotate-[-30deg]" />
           </span>
         )}
+        {state === 'won' && (
+          <span
+            aria-hidden="true"
+            title="Already won — out of later draws"
+            className="absolute -top-1 -left-1 inline-flex items-center justify-center w-[1.1rem] h-[1.1rem] rounded-full bg-emerald-signal text-zinc-broadcast border border-zinc-broadcast"
+          >
+            <Trophy size={9} />
+          </span>
+        )}
       </div>
       <span
         className={`text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono text-center max-w-[6.5rem] truncate ${
-          state === 'winner' ? 'text-orange-admin' : 'text-white/70'
+          state === 'winner'
+            ? 'text-orange-admin'
+            : state === 'won'
+              ? 'text-emerald-signal/80'
+              : 'text-white/70'
         }`}
       >
         {entry.displayName || entry.twitchName}
@@ -124,16 +141,18 @@ function EntryTile({ entry, state }) {
  *  - rolling: bool        (dim non-winners, scale winner)
  *  - winnerTwitchId: string | null
  *  - skippedIds: string[] (mark as skipped)
- *  - dense: bool          (smaller tiles when used in tight layouts)
+ *  - wonIds: string[]     (already confirmed as a winner; out of later draws)
  */
 export default function GiveawayEntriesGrid({
   giveawayId,
   rolling = false,
   winnerTwitchId = null,
   skippedIds = [],
+  wonIds = [],
 }) {
   const [entries, setEntries] = useState([]);
   const skippedSet = useMemo(() => new Set(skippedIds || []), [skippedIds]);
+  const wonSet = useMemo(() => new Set(wonIds || []), [wonIds]);
   const containerRef = useRef(null);
 
   useEffect(() => {
@@ -181,6 +200,9 @@ export default function GiveawayEntriesGrid({
           if (rolling && winnerTwitchId) {
             state = entry.id === winnerTwitchId ? 'winner' : 'dimmed';
           }
+          // The pick on screen wins the orange ring even once confirmed; every
+          // earlier winner is marked out.
+          if (wonSet.has(entry.id) && state !== 'winner') state = 'won';
           if (skippedSet.has(entry.id)) state = 'skipped';
           return <EntryTile key={entry.id} entry={entry} state={state} />;
         })}

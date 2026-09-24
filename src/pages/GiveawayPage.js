@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { collection, onSnapshot, orderBy, query, where, limit as fLimit } from 'firebase/firestore';
-import { Gift, Trophy, Megaphone, Users } from 'lucide-react';
+import { Gift, Trophy, Megaphone, Users, Timer } from 'lucide-react';
 import { db } from '../config/firebase';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 import { useUserDoc } from '../hooks/useUserDoc';
+import { useClock } from '../hooks/useClock';
 import GiveawayEntriesGrid from '../components/GiveawayEntriesGrid';
+import RevealScreen, { CrtStyles, useRevealState } from '../components/giveaway/RevealScreen';
+import { formatClock, tsMillis } from '../utils/giveaway';
 
 function formatTs(ts) {
   if (!ts) return '—';
@@ -17,16 +20,77 @@ function formatTs(ts) {
   });
 }
 
+// Which bonus tickets this giveaway hands out, in viewer words.
+function bonusList(weights = {}) {
+  const out = [];
+  if (weights.sub) out.push('subs');
+  if (weights.vip) out.push('VIPs');
+  if (weights.discord) out.push('Discord linked');
+  if (weights.registered) out.push('signed in here');
+  return out;
+}
+
+function useTimeUp(giveaway) {
+  const closesAt = tsMillis(giveaway?.closesAt);
+  const now = useClock({ intervalMs: 500, active: !!closesAt && giveaway?.status === 'open' });
+  return { closesAt, now, timeUp: closesAt != null && now >= closesAt };
+}
+
+function PublicReveal({ giveaway, reveal }) {
+  // Entrants for the channel surf. Frozen while rolling, so one read is fine.
+  const [pool, setPool] = useState([]);
+  useEffect(() => {
+    const q = query(
+      collection(db, 'giveaways', giveaway.id, 'entries'),
+      orderBy('enteredAt', 'desc'),
+      fLimit(40)
+    );
+    return onSnapshot(q, (snap) => setPool(snap.docs.map((d) => ({ id: d.id, ...d.data() }))));
+  }, [giveaway.id]);
+  const w = giveaway.winner;
+
+  return (
+    <div className="mt-5 grid grid-cols-1 sm:grid-cols-[15rem_1fr] gap-5 items-center">
+      <CrtStyles />
+      <div className="w-full max-w-[15rem]">
+        <RevealScreen giveaway={giveaway} pool={pool} reveal={reveal} size="md" />
+      </div>
+      <div className="min-w-0">
+        {reveal.landed ? (
+          <>
+            <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal mb-1 font-mono">
+              Winner
+            </p>
+            <p className="text-3xl font-black text-white-body tracking-tight leading-none truncate">
+              {w.displayName || w.twitchName}
+            </p>
+            <p className="mt-2 text-sm text-white/55">They have to answer in chat to claim it.</p>
+          </>
+        ) : (
+          <p
+            className="gvo-motion text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase text-orange-admin font-mono"
+            style={{ animation: 'gvo-blink 0.8s steps(1) infinite' }}
+          >
+            Picking a winner on stream…
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function GiveawayPage() {
   const { twitchUser, loginWithTwitch } = useTwitchAuth();
   const { user } = useUserDoc();
   const [active, setActive] = useState(null);
   const [past, setPast] = useState([]);
+  const reveal = useRevealState(active);
+  const { closesAt, now, timeUp } = useTimeUp(active);
 
   useEffect(() => {
     const q = query(
       collection(db, 'giveaways'),
-      where('status', 'in', ['open', 'rolling']),
+      where('status', 'in', ['open', 'closed', 'rolling']),
       orderBy('createdAt', 'desc'),
       fLimit(1)
     );
@@ -52,8 +116,12 @@ export default function GiveawayPage() {
   const userRegistered = !!user;
   const eligibleNote =
     twitchUser && !userRegistered
-      ? 'Your account is initializing — try refreshing once it loads.'
+      ? 'Your account is still setting up. Refresh once it loads.'
       : null;
+  const entriesOpen = active?.status === 'open' && !timeUp;
+  const rolling = active?.status === 'rolling' && !!active?.winner;
+  const bonuses = bonusList(active?.weights);
+  const siteBonus = !!(active?.weights?.registered || active?.weights?.discord);
 
   return (
     <div className="relative min-h-screen pt-20 pb-20 px-4 sm:px-6 bg-zinc-broadcast text-white-body">
@@ -83,8 +151,8 @@ export default function GiveawayPage() {
           </h1>
           <p className="mt-4 text-sm text-white/60 leading-relaxed">
             Enter by typing the keyword in Twitch chat while live. One entry per
-            account. Sign in here for an extra entry weight, link Discord for
-            another.
+            account. Some giveaways hand out bonus tickets for subs, VIPs, or
+            signing in here.
           </p>
         </header>
 
@@ -99,7 +167,7 @@ export default function GiveawayPage() {
               <div className="relative flex items-center gap-2 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono">
                 <Megaphone size={11} className="text-emerald-signal" aria-hidden="true" />
                 <span className="text-emerald-signal">
-                  {active.status === 'rolling' ? 'Rolling now' : 'Live giveaway'}
+                  {rolling ? 'Rolling now' : entriesOpen ? 'Live giveaway' : 'Entries closed'}
                 </span>
                 <span className="ml-auto text-white/40 tabular-nums">
                   {String(active.entryCount ?? 0).padStart(4, '0')} entries
@@ -122,7 +190,7 @@ export default function GiveawayPage() {
                   </p>
                   <p className="text-sm text-white/55 mt-1">{active.title}</p>
 
-                  {active.status === 'open' && (
+                  {entriesOpen && (
                     <div className="mt-5 inline-flex items-baseline gap-3 px-4 py-3 border-2 border-emerald-signal/50 bg-emerald-signal/5">
                       <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal/80 font-mono">
                         Type in chat
@@ -134,13 +202,29 @@ export default function GiveawayPage() {
                       </span>
                     </div>
                   )}
-                  {active.status === 'rolling' && (
-                    <p className="mt-4 text-sm text-orange-admin">
-                      Entries closed — a winner is being picked on stream.
+                  {entriesOpen && closesAt && (
+                    <p className="mt-3 flex items-center gap-2 text-[0.6875rem] font-bold tracking-eyebrow uppercase text-white/55 font-mono">
+                      <Timer size={12} aria-hidden="true" />
+                      Closes in
+                      <span className="text-sm font-black tabular-nums tracking-normal text-white-body">
+                        {formatClock((closesAt - now) / 1000)}
+                      </span>
                     </p>
                   )}
+                  {entriesOpen && bonuses.length > 0 && (
+                    <p className="mt-3 text-[0.6875rem] tracking-eyebrow uppercase text-white/45 font-mono">
+                      +1 ticket each for {bonuses.join(', ')}
+                    </p>
+                  )}
+                  {!entriesOpen && !rolling && (
+                    <p className="mt-4 text-sm text-orange-admin">
+                      Entries are closed. The winner gets picked on stream.
+                    </p>
+                  )}
+                  {rolling && <PublicReveal giveaway={active} reveal={reveal} />}
 
-                  {!twitchUser ? (
+                  {!entriesOpen ? null : !twitchUser ? (
+                    siteBonus && (
                     <div className="pt-4">
                       <button
                         type="button"
@@ -148,17 +232,18 @@ export default function GiveawayPage() {
                         className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-purple-gamba hover:bg-purple-bright text-white-body transition-colors duration-150"
                       >
                         <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-                          Sign in for bonus weight
+                          Sign in for a bonus ticket
                         </span>
                       </button>
                       <p className="mt-2 text-[0.625rem] tracking-eyebrow uppercase text-white/40 font-mono">
-                        Anyone in chat can enter — signing in here adds +1 entry weight.
+                        Anyone in chat can enter. Signing in here adds a bonus ticket.
                       </p>
                     </div>
+                    )
                   ) : (
                     <p className="mt-4 text-[0.6875rem] tracking-eyebrow uppercase text-white/45 font-mono">
                       Signed in as <span className="text-emerald-signal/85">{twitchUser.displayName}</span>
-                      {user?.discordVerifiedAt ? <span className="text-white/40"> · Discord linked (extra weight)</span> : null}
+                      {user?.discordVerifiedAt ? <span className="text-white/40"> · Discord linked</span> : null}
                     </p>
                   )}
                   {eligibleNote && (
@@ -184,7 +269,9 @@ export default function GiveawayPage() {
               <GiveawayEntriesGrid
                 giveawayId={active.id}
                 rolling={active.status === 'rolling'}
-                winnerTwitchId={active.winnerTwitchId || null}
+                // Held back until the reveal lands, so the grid doesn't
+                // spoil the pick before the stream shows it.
+                winnerTwitchId={reveal.landed ? active.winnerTwitchId || null : null}
                 skippedIds={active.skippedIds || []}
                 wonIds={(active.winners || []).map((w) => w.twitchId).filter(Boolean)}
               />
@@ -196,7 +283,7 @@ export default function GiveawayPage() {
               No active giveaway
             </p>
             <p className="text-sm text-white/55">
-              Check back during the stream — giveaways drop live.
+              Check back during the stream. Giveaways drop live.
             </p>
           </div>
         )}

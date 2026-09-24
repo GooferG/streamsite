@@ -1,6 +1,7 @@
 import { adminDb, FieldValue } from '../_lib/firebaseAdmin.js';
 import { applyCors, requireAdmin } from '../_lib/verifyAuth.js';
 import { sendChannelMessage } from '../_lib/twitchChat.js';
+import { normalizeKeyword } from '../_lib/giveawayKeyword.js';
 
 // Substitute template tokens in announcement text. Unknown tokens are
 // left intact so the admin sees something is off.
@@ -25,11 +26,24 @@ async function tryAnnounce(text) {
 // Admin giveaway lifecycle endpoint. POST { action, ...payload }.
 //
 // Actions:
-//   create   { title, prize, keyword, weights: { base, registered, discord, sub, vip } }
+//   create   { prize, keyword, title?, weights, durationSec?, autoRoll?,
+//              targetWinners?, requireFollow?, announce* / *Message }
+//            durationSec > 0 sets `closesAt`; EventSub ignores entries after
+//            it even if nobody closes the giveaway. The admin page closes it
+//            (and rolls, with autoRoll) when the clock runs out.
 //   close    { id }                       -> stop accepting entries
+//   lastCall { id }                       -> post the last-call chat message
+//                                            once (admin page fires it at T-30s)
 //   roll     { id }                       -> pick weighted winner, status='rolling'
 //   reroll   { id }                       -> pick again silently from remaining
 //   skip     { id }                       -> mark current pick skipped, then re-pick
+//   announce { id, winnerTwitchId, rolledAtMs }
+//                                         -> post the winner chat message for
+//                                            the current pick, once. The admin
+//                                            page calls it after the on-stream
+//                                            reveal has played; posting at pick
+//                                            time spoiled the reveal, since chat
+//                                            runs seconds ahead of the video.
 //   confirm  { id, prizeNote? }           -> create redemption, append to winners[];
 //                                            giveaway stays 'rolling' so the
 //                                            operator can roll another, go back,
@@ -56,6 +70,24 @@ function sanitizeWeights(w = {}) {
     sub: num(w.sub, 0),
     vip: num(w.vip, 0),
   };
+}
+
+function clampInt(value, min, max, dflt) {
+  const n = Math.floor(Number(value));
+  if (!Number.isFinite(n)) return dflt;
+  return Math.min(max, Math.max(min, n));
+}
+
+// Claim a one-shot field inside a transaction so two admin tabs cannot both
+// post the same chat message. Returns false when it was already claimed.
+async function claimOnce(ref, field, value) {
+  return adminDb.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const current = snap.get(field);
+    if (current != null && (value === undefined || current === value)) return false;
+    tx.update(ref, { [field]: value === undefined ? FieldValue.serverTimestamp() : value });
+    return true;
+  });
 }
 
 async function pickWeightedWinner(giveawayRef, excludeIds = []) {
@@ -125,18 +157,23 @@ export default async function handler(req, res) {
 
   try {
     if (action === 'create') {
-      const title = String(payload.title || '').trim();
       const prize = String(payload.prize || '').trim();
-      const keyword = String(payload.keyword || '').trim().toLowerCase();
-      if (!title || !prize || !keyword) {
-        return res.status(400).json({ error: 'title, prize, keyword required' });
+      const keyword = normalizeKeyword(payload.keyword);
+      if (!prize || !keyword) {
+        return res.status(400).json({ error: 'prize and keyword required' });
       }
+      // The admin form fills a dated title when left blank; this is only the
+      // fallback for direct API calls.
+      const title = String(payload.title || '').trim() || 'Giveaway';
       const weights = sanitizeWeights(payload.weights);
       const announceStart = payload.announceStart !== false; // default true
       const announceWinner = payload.announceWinner !== false; // default true
       const requireFollow = payload.requireFollow !== false; // default true
       const startMessage = String(payload.startMessage || '').trim();
       const winnerMessage = String(payload.winnerMessage || '').trim();
+      const lastCallMessage = String(payload.lastCallMessage || '').trim();
+      const durationSec = clampInt(payload.durationSec, 0, 3600, 0);
+      const closesAt = durationSec > 0 ? new Date(Date.now() + durationSec * 1000) : null;
       const now = FieldValue.serverTimestamp();
       const ref = await adminDb.collection('giveaways').add({
         title,
@@ -148,6 +185,14 @@ export default async function handler(req, res) {
         requireFollow,
         startMessage: startMessage || null,
         winnerMessage: winnerMessage || null,
+        durationSec,
+        closesAt,
+        autoRoll: durationSec > 0 && payload.autoRoll === true,
+        announceLastCall: durationSec > 0 && payload.announceLastCall !== false,
+        lastCallMessage: lastCallMessage || null,
+        lastCallAt: null,
+        targetWinners: clampInt(payload.targetWinners, 1, 20, 1),
+        announcedPick: null,
         status: 'open',
         entryCount: 0,
         totalWeight: 0,
@@ -190,19 +235,56 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true });
     }
 
-    // Helper: fire winner announce in chat for a freshly picked entry.
-    const fireWinnerAnnounce = async (winner) => {
-      if (giveaway.announceWinner === false || !giveaway.winnerMessage) {
-        return { posted: false, reason: 'disabled' };
+    if (action === 'lastCall') {
+      if (giveaway.status !== 'open') {
+        return res.status(400).json({ error: 'NOT_OPEN' });
       }
+      if (!giveaway.announceLastCall || !giveaway.lastCallMessage) {
+        return res.status(200).json({ ok: true, announce: { posted: false, reason: 'disabled' } });
+      }
+      if (!(await claimOnce(ref, 'lastCallAt'))) {
+        return res.status(200).json({ ok: true, announce: { posted: false, reason: 'already' } });
+      }
+      const text = fillTemplate(giveaway.lastCallMessage, {
+        keyword: giveaway.keyword,
+        prize: giveaway.prize,
+        title: giveaway.title,
+      });
+      const announce = await tryAnnounce(text);
+      return res.status(200).json({ ok: true, announce });
+    }
+
+    if (action === 'announce') {
+      if (giveaway.status !== 'rolling' || !giveaway.winner || !giveaway.winnerTwitchId) {
+        return res.status(400).json({ error: 'NOT_ROLLING' });
+      }
+      const rolledAtMs = giveaway.rolledAt?.toMillis ? giveaway.rolledAt.toMillis() : null;
+      // The page asked about a pick that has since been rerolled or skipped.
+      if (
+        payload.winnerTwitchId !== giveaway.winnerTwitchId ||
+        Number(payload.rolledAtMs) !== rolledAtMs
+      ) {
+        return res.status(409).json({ error: 'STALE_PICK' });
+      }
+      if (giveaway.announceWinner === false || !giveaway.winnerMessage) {
+        return res.status(200).json({ ok: true, announce: { posted: false, reason: 'disabled' } });
+      }
+      const key = `${giveaway.winnerTwitchId}:${rolledAtMs}`;
+      if (!(await claimOnce(ref, 'announcedPick', key))) {
+        return res.status(200).json({ ok: true, announce: { posted: false, reason: 'already' } });
+      }
+      const winner = giveaway.winner;
       const text = fillTemplate(giveaway.winnerMessage, {
         keyword: giveaway.keyword,
         prize: giveaway.prize,
         title: giveaway.title,
         winner: winner.displayName || winner.twitchName,
       });
-      return tryAnnounce(text);
-    };
+      const announce = await tryAnnounce(text);
+      // Release the claim on failure so the operator can retry from the modal.
+      if (!announce.posted) await ref.update({ announcedPick: null });
+      return res.status(200).json({ ok: true, announce });
+    }
 
     if (action === 'roll') {
       // Rollable from open/closed, or from the winner window once the pick on
@@ -221,9 +303,11 @@ export default async function handler(req, res) {
         winner: trimEntry(winner),
         winnerTwitchId: winner.id,
         rolledAt: FieldValue.serverTimestamp(),
+        announcedPick: null,
       });
-      const announce = await fireWinnerAnnounce(winner);
-      return res.status(200).json({ ok: true, winner: trimEntry(winner), announce });
+      // Chat hears about the winner later, from `announce`, once the reveal
+      // has played on stream.
+      return res.status(200).json({ ok: true, winner: trimEntry(winner) });
     }
 
     if (action === 'reroll') {
@@ -240,9 +324,11 @@ export default async function handler(req, res) {
         winner: trimEntry(winner),
         winnerTwitchId: winner.id,
         rolledAt: FieldValue.serverTimestamp(),
+        announcedPick: null,
       });
-      const announce = await fireWinnerAnnounce(winner);
-      return res.status(200).json({ ok: true, winner: trimEntry(winner), announce });
+      // Chat hears about the winner later, from `announce`, once the reveal
+      // has played on stream.
+      return res.status(200).json({ ok: true, winner: trimEntry(winner) });
     }
 
     if (action === 'skip') {
@@ -267,11 +353,16 @@ export default async function handler(req, res) {
       });
       const winner = await pickWeightedWinner(ref, excludedIds({ ...giveaway, skippedIds }));
       if (!winner) {
+        // Nobody left to draw. Drop back to the entries (as `back` does) so
+        // the giveaway is not stuck in 'rolling' with no pick and no controls.
+        await clearWinnerStream(ref);
         await ref.update({
+          status: giveaway.closedAt ? 'closed' : 'open',
           skippedIds,
           winner: null,
           winnerTwitchId: null,
-          rolledAt: FieldValue.serverTimestamp(),
+          rolledAt: null,
+          announcedPick: null,
         });
         return res.status(400).json({ error: 'NO_MORE_ENTRIES' });
       }
@@ -281,9 +372,11 @@ export default async function handler(req, res) {
         winner: trimEntry(winner),
         winnerTwitchId: winner.id,
         rolledAt: FieldValue.serverTimestamp(),
+        announcedPick: null,
       });
-      const announce = await fireWinnerAnnounce(winner);
-      return res.status(200).json({ ok: true, winner: trimEntry(winner), announce });
+      // Chat hears about the winner later, from `announce`, once the reveal
+      // has played on stream.
+      return res.status(200).json({ ok: true, winner: trimEntry(winner) });
     }
 
     if (action === 'confirm') {
@@ -331,7 +424,7 @@ export default async function handler(req, res) {
         confirmedBy: admin.email,
         redemptionId: redemptionRef.id,
       });
-      // No chat announce here. The winner is already announced at pick time.
+      // No chat announce here. The winner was announced after the reveal.
       return res.status(200).json({ ok: true, redemptionId: redemptionRef.id });
     }
 
@@ -348,6 +441,7 @@ export default async function handler(req, res) {
         winner: null,
         winnerTwitchId: null,
         rolledAt: null,
+        announcedPick: null,
       });
       return res.status(200).json({ ok: true });
     }

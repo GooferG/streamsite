@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   collection,
   onSnapshot,
@@ -18,34 +18,59 @@ import {
   Webhook,
   Trash2,
   ChevronRight,
+  ChevronDown,
   Users,
   Timer,
   ArrowLeft,
   Flag,
+  Dices,
+  MonitorPlay,
+  Copy,
+  ExternalLink,
+  RotateCcw,
+  MessageSquare,
+  TriangleAlert,
 } from 'lucide-react';
 import { db } from '../config/firebase';
 import { authedFetch } from '../utils/authedFetch';
 import GiveawayEntriesGrid from '../components/GiveawayEntriesGrid';
+import { useRevealState } from '../components/giveaway/RevealScreen';
+import { useClock } from '../hooks/useClock';
+import {
+  AUTO_ROLL_GRACE_MS,
+  CHAT_ANNOUNCE_DELAY_MS,
+  DURATION_OPTIONS,
+  LAST_CALL_SECONDS,
+  REVEAL_MS,
+  WINNER_COUNT_OPTIONS,
+  defaultTitle,
+  formFromGiveaway,
+  formatClock,
+  keywordWarning,
+  normalizeKeyword,
+  pickKey,
+  rulesSummary,
+  suggestKeyword,
+  tsMillis,
+} from '../utils/giveaway';
 
 const inputCls =
   'w-full bg-zinc-broadcast/60 border border-white/10 px-3 py-2.5 text-sm text-white-body placeholder:text-white/25 focus:border-orange-admin/70 focus:outline-none transition-colors duration-150';
 
-const DEFAULT_START_MSG =
-  '🎁 GIVEAWAY → Type "{keyword}" in chat to enter. Prize: {prize}';
-const DEFAULT_WINNER_MSG =
-  '🎉 @{winner} has been picked for {prize}! Reply in chat to claim.';
+const labelCls =
+  'block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono';
 
-const DEFAULT_FORM = {
-  title: '',
-  prize: '',
-  keyword: '',
-  weights: { base: 1, registered: 1, discord: 1, sub: 1, vip: 1 },
-  announceStart: true,
-  startMessage: DEFAULT_START_MSG,
-  announceWinner: true,
-  winnerMessage: DEFAULT_WINNER_MSG,
-  requireFollow: true,
-};
+// Announce results that are not worth a warning toast.
+const QUIET_ANNOUNCE = ['disabled', 'empty', 'already'];
+
+async function postAction(action, body = {}) {
+  const res = await authedFetch('/api/admin/giveaways', {
+    method: 'POST',
+    body: JSON.stringify({ action, ...body }),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { ok: res.ok, status: res.status, data };
+}
 
 function formatTs(ts) {
   if (!ts) return '—';
@@ -64,6 +89,7 @@ function ToggleRow({ label, value, onChange, hint }) {
     <button
       type="button"
       onClick={() => onChange(on ? 0 : 1)}
+      aria-pressed={on}
       className={`w-full flex items-center justify-between gap-3 px-3 py-2 border transition-colors duration-150 ${
         on
           ? 'border-emerald-signal/40 bg-emerald-signal/5 text-white-body'
@@ -82,8 +108,206 @@ function ToggleRow({ label, value, onChange, hint }) {
   );
 }
 
-function NewGiveawayForm({ onClose, onCreated }) {
-  const [form, setForm] = useState(DEFAULT_FORM);
+function Chips({ options, value, onChange, label }) {
+  return (
+    <div role="group" aria-label={label} className="flex flex-wrap gap-1.5">
+      {options.map((o) => {
+        const active = o.value === value;
+        return (
+          <button
+            key={o.value}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onChange(o.value)}
+            className={`px-3 py-2 border text-[0.6875rem] font-bold tracking-eyebrow uppercase font-mono transition-colors duration-150 ${
+              active
+                ? 'border-orange-admin/70 bg-orange-admin/10 text-orange-admin'
+                : 'border-white/10 bg-zinc-broadcast/40 text-white/55 hover:text-white-body hover:border-white/25'
+            }`}
+          >
+            {o.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function Kbd({ children }) {
+  return (
+    <kbd className="ml-1.5 px-1 py-px border border-current text-[0.5625rem] font-mono opacity-50 normal-case tracking-normal">
+      {children}
+    </kbd>
+  );
+}
+
+// ─── Chat connection (EventSub) ─────────────────────────────────────────────
+
+function useEventSubStatus() {
+  const [status, setStatus] = useState('loading');
+  const [subs, setSubs] = useState([]);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  const refresh = useCallback(async () => {
+    setStatus('loading');
+    try {
+      const res = await authedFetch('/api/admin/eventsub', { method: 'GET' });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || 'Unknown');
+        setStatus('error');
+      } else {
+        setSubs(data.ours || []);
+        setStatus(data.ours?.some((s) => s.status === 'enabled') ? 'enabled' : 'missing');
+        setError(null);
+      }
+    } catch (e) {
+      setError(e.message);
+      setStatus('error');
+    }
+  }, []);
+
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
+
+  const subscribe = async () => {
+    setBusy(true);
+    try {
+      const res = await authedFetch('/api/admin/eventsub', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) setError(data.detail || data.error || 'Failed');
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async (id) => {
+    if (!window.confirm('Delete this subscription? Chat-keyword entries will stop until re-subscribed.')) return;
+    setBusy(true);
+    try {
+      await authedFetch(`/api/admin/eventsub?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
+      await refresh();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return { status, subs, busy, error, subscribe, remove };
+}
+
+function chatLabel(chat) {
+  if (chat.status === 'loading') return 'Checking…';
+  if (chat.status === 'enabled') return 'Connected to Twitch chat';
+  if (chat.status === 'missing') return 'Not subscribed. Chat keywords will not register entries';
+  if (chat.error === 'EVENTSUB_NOT_CONFIGURED') {
+    return 'Chat not configured on the server (TWITCH_BROADCASTER_ID / TWITCH_EVENTSUB_SECRET)';
+  }
+  return `Error: ${chat.error || 'unknown'}`;
+}
+
+function EventSubStatus({ chat }) {
+  const tone =
+    chat.status === 'enabled'
+      ? 'text-emerald-signal border-emerald-signal/40'
+      : chat.status === 'missing' || chat.status === 'loading'
+        ? 'text-orange-admin border-orange-admin/40'
+        : 'text-red-destructive border-red-destructive/40';
+
+  return (
+    <div className={`border ${tone} bg-zinc-card/30`}>
+      <div className="flex items-center justify-between gap-3 px-4 py-3 flex-wrap">
+        <div className="inline-flex items-center gap-3 min-w-0">
+          <Webhook size={14} aria-hidden="true" />
+          <span className="text-[0.6875rem] font-bold tracking-eyebrow uppercase font-mono">{chatLabel(chat)}</span>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {chat.status !== 'enabled' && chat.status !== 'loading' && (
+            <button
+              type="button"
+              onClick={chat.subscribe}
+              disabled={chat.busy}
+              className="inline-flex items-center gap-2 px-3 py-1.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50"
+            >
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+                {chat.busy ? 'Subscribing…' : 'Subscribe to chat'}
+              </span>
+            </button>
+          )}
+          {chat.subs.length > 0 && (
+            <button
+              type="button"
+              onClick={() => chat.remove(chat.subs[0].id)}
+              disabled={chat.busy}
+              className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/15 text-white/55 hover:text-red-destructive hover:border-red-destructive/40 transition-colors duration-150 disabled:opacity-50"
+              title="Delete subscription"
+            >
+              <Trash2 size={12} aria-hidden="true" />
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Reset</span>
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OverlayLink() {
+  const url = `${window.location.origin}/giveaway-overlay`;
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      window.prompt('Copy the overlay URL', url);
+    }
+  };
+  return (
+    <div className="border border-white/10 bg-zinc-card/30 px-4 py-3">
+      <div className="flex items-center gap-3 flex-wrap">
+        <MonitorPlay size={14} className="text-emerald-signal" aria-hidden="true" />
+        <span className="text-[0.6875rem] font-bold tracking-eyebrow uppercase font-mono text-white/70">
+          Stream overlay
+        </span>
+        <code className="text-xs text-white/55 font-mono truncate min-w-0">{url}</code>
+        <div className="ml-auto flex gap-2">
+          <button
+            type="button"
+            onClick={copy}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-white/15 text-white/70 hover:text-white-body hover:border-white/35 transition-colors duration-150"
+          >
+            {copied ? <Check size={12} aria-hidden="true" /> : <Copy size={12} aria-hidden="true" />}
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+              {copied ? 'Copied' : 'Copy'}
+            </span>
+          </button>
+          <a
+            href="/giveaway-overlay?demo=1"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-white/15 text-white/70 hover:text-white-body hover:border-white/35 transition-colors duration-150"
+          >
+            <ExternalLink size={12} aria-hidden="true" />
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Demo</span>
+          </a>
+        </div>
+      </div>
+      <p className="mt-2 text-[0.625rem] tracking-eyebrow text-white/35 font-mono">
+        OBS browser source, 1920×1080. Add ?sound=1 for reveal sound, ?pos=br|tl|tr to move the card.
+      </p>
+    </div>
+  );
+}
+
+// ─── New giveaway ───────────────────────────────────────────────────────────
+
+function NewGiveawayForm({ seed, chat, onClose, onCreated }) {
+  const [form, setForm] = useState(seed);
+  const [showMore, setShowMore] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
   // A click-outside close must start AND end on the backdrop. A drag that
@@ -92,32 +316,35 @@ function NewGiveawayForm({ onClose, onCreated }) {
   // lost everything typed. Track where the press began.
   const pressOnBackdrop = useRef(false);
 
+  const set = (patch) => setForm((f) => ({ ...f, ...patch }));
   const setW = (k, v) => setForm((f) => ({ ...f, weights: { ...f.weights, [k]: v } }));
+  const kwWarning = keywordWarning(form.keyword);
+  const titlePlaceholder = useMemo(() => defaultTitle(), []);
+  const chatDown = chat.status !== 'enabled' && chat.status !== 'loading';
 
   const submit = async (e) => {
     e.preventDefault();
     setError(null);
-    if (!form.title.trim() || !form.prize.trim() || !form.keyword.trim()) {
-      return setError('Title, prize, and keyword are required.');
-    }
+    if (!form.prize.trim()) return setError('What are you giving away?');
+    if (!normalizeKeyword(form.keyword)) return setError('Pick a chat keyword.');
     setSaving(true);
     try {
-      const res = await authedFetch('/api/admin/giveaways', {
-        method: 'POST',
-        body: JSON.stringify({ action: 'create', ...form }),
+      const { ok, data } = await postAction('create', {
+        ...form,
+        title: form.title.trim() || titlePlaceholder,
       });
-      const data = await res.json();
-      if (!res.ok) {
+      if (!ok) {
         setError(data.error || 'Failed to create.');
+      } else if (
+        data.announce &&
+        data.announce.posted === false &&
+        data.announce.reason &&
+        !QUIET_ANNOUNCE.includes(data.announce.reason)
+      ) {
+        // Giveaway exists either way; just surface the chat failure.
+        onCreated(data.id, { announceError: data.announce.reason });
       } else {
-        // Bubble a warning if chat announce failed (giveaway still created)
-        if (data.announce && data.announce.posted === false &&
-            data.announce.reason && data.announce.reason !== 'disabled' &&
-            data.announce.reason !== 'empty') {
-          onCreated(data.id, { announceError: data.announce.reason });
-        } else {
-          onCreated(data.id);
-        }
+        onCreated(data.id);
       }
     } catch (err) {
       setError('Network error.');
@@ -138,6 +365,9 @@ function NewGiveawayForm({ onClose, onCreated }) {
         pressOnBackdrop.current = false;
         if (startedOnBackdrop && endedOnBackdrop) onClose();
       }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') onClose();
+      }}
     >
       <form
         onSubmit={submit}
@@ -151,157 +381,217 @@ function NewGiveawayForm({ onClose, onCreated }) {
           <button
             type="button"
             onClick={onClose}
+            aria-label="Close"
             className="p-1 border border-white/10 text-white/55 hover:text-white-body hover:border-white/25"
           >
             <X size={12} aria-hidden="true" />
           </button>
         </div>
 
-        <div className="px-5 py-5 space-y-4">
+        <div className="px-5 py-5 space-y-5">
+          {chatDown && (
+            <div className="flex items-start gap-3 px-3 py-2.5 border border-red-destructive/50 bg-red-destructive/5">
+              <TriangleAlert size={14} className="text-red-destructive mt-0.5 flex-shrink-0" aria-hidden="true" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
+                  Chat isn&apos;t connected
+                </p>
+                <p className="text-xs text-white/60 mt-0.5">
+                  Nobody can enter until it is. {chatLabel(chat)}.
+                </p>
+              </div>
+              {chat.status === 'missing' && (
+                <button
+                  type="button"
+                  onClick={chat.subscribe}
+                  disabled={chat.busy}
+                  className="px-2.5 py-1.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase font-mono disabled:opacity-50 flex-shrink-0"
+                >
+                  {chat.busy ? 'Connecting…' : 'Connect'}
+                </button>
+              )}
+            </div>
+          )}
+
           <label className="block">
-            <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
-              <span className="text-orange-admin tabular-nums">01</span> Title <span className="text-emerald-signal">*</span>
+            <span className={labelCls}>
+              <span className="text-orange-admin tabular-nums">01</span> Prize <span className="text-emerald-signal">*</span>
             </span>
             <input
-              value={form.title}
-              onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-              placeholder="Friday Night Giveaway"
-              className={inputCls}
-            />
-          </label>
-          <label className="block">
-            <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
-              <span className="text-orange-admin tabular-nums">02</span> Prize <span className="text-emerald-signal">*</span>
-            </span>
-            <input
+              autoFocus
               value={form.prize}
-              onChange={(e) => setForm((f) => ({ ...f, prize: e.target.value }))}
-              placeholder="Steam key — Hades II"
-              className={inputCls}
-            />
-          </label>
-          <label className="block">
-            <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
-              <span className="text-orange-admin tabular-nums">03</span> Chat keyword <span className="text-emerald-signal">*</span>
-              <span className="text-white/30 normal-case font-normal"> · case-insensitive "contains"</span>
-            </span>
-            <input
-              value={form.keyword}
-              onChange={(e) => setForm((f) => ({ ...f, keyword: e.target.value.toLowerCase() }))}
-              placeholder="goofergiveaway"
-              className={inputCls}
+              onChange={(e) => set({ prize: e.target.value })}
+              placeholder="Hades II · Steam key"
+              className={`${inputCls} text-base font-bold`}
             />
           </label>
 
           <div>
-            <p className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-2 font-mono">
-              <span className="text-orange-admin tabular-nums">04</span> Weight rules
-            </p>
-            <div className="space-y-1.5">
-              <ToggleRow
-                label="Registered on site"
-                value={form.weights.registered}
-                onChange={(v) => setW('registered', v)}
-                hint="(+1 for viewers who signed in here)"
+            <label htmlFor="gw-keyword" className={labelCls}>
+              <span className="text-orange-admin tabular-nums">02</span> Chat keyword <span className="text-emerald-signal">*</span>
+              <span className="text-white/30 normal-case font-normal"> · whole word, any case</span>
+            </label>
+            <div className="flex gap-2">
+              <input
+                id="gw-keyword"
+                value={form.keyword}
+                onChange={(e) => set({ keyword: e.target.value.toLowerCase() })}
+                className={`${inputCls} font-mono`}
+                aria-describedby={kwWarning ? 'gw-keyword-warn' : undefined}
               />
-              <ToggleRow
-                label="Discord linked"
-                value={form.weights.discord}
-                onChange={(v) => setW('discord', v)}
-                hint="(+1 entry weight)"
-              />
-              <ToggleRow
-                label="Twitch sub"
-                value={form.weights.sub}
-                onChange={(v) => setW('sub', v)}
-                hint="(+1 entry weight)"
-              />
-              <ToggleRow
-                label="Twitch VIP"
-                value={form.weights.vip}
-                onChange={(v) => setW('vip', v)}
-                hint="(+1 entry weight)"
-              />
+              <button
+                type="button"
+                onClick={() => set({ keyword: suggestKeyword(form.keyword) })}
+                title="Suggest another keyword"
+                aria-label="Suggest another keyword"
+                className="px-3 border border-white/10 text-white/60 hover:text-orange-admin hover:border-orange-admin/50 transition-colors duration-150"
+              >
+                <Dices size={15} aria-hidden="true" />
+              </button>
             </div>
-            <p className="mt-2 text-[0.625rem] tracking-eyebrow uppercase text-white/35 font-mono">
-              Base entry weight is always 1. Toggles add +1 each.
-            </p>
+            {kwWarning && (
+              <p id="gw-keyword-warn" className="mt-1.5 text-[0.6875rem] text-orange-admin font-mono">
+                {kwWarning}
+              </p>
+            )}
           </div>
 
-          {/* Eligibility */}
           <div>
-            <p className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-2 font-mono">
-              <span className="text-orange-admin tabular-nums">04b</span> Eligibility
+            <p className={labelCls}>
+              <span className="text-orange-admin tabular-nums">03</span> Entry timer
             </p>
-            <div className="border border-white/10 bg-zinc-broadcast/40 p-3">
-              <label className="flex items-center gap-2 cursor-pointer">
+            <Chips
+              label="Entry timer"
+              options={DURATION_OPTIONS}
+              value={form.durationSec}
+              onChange={(v) => set({ durationSec: v, autoRoll: v > 0 ? form.autoRoll : false })}
+            />
+            {form.durationSec > 0 && (
+              <label className="mt-2 flex items-center gap-2 cursor-pointer">
                 <input
                   type="checkbox"
-                  checked={form.requireFollow}
-                  onChange={(e) => setForm((f) => ({ ...f, requireFollow: e.target.checked }))}
+                  checked={form.autoRoll}
+                  onChange={(e) => set({ autoRoll: e.target.checked })}
                 />
                 <span className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-white/70 font-mono">
-                  Require channel follow to enter
+                  Roll a winner when time&apos;s up
                 </span>
               </label>
-              <p className="mt-1 ml-6 text-[0.625rem] tracking-eyebrow text-white/35 font-mono">
-                Mods and VIPs are exempt. Non-followers' keyword messages are ignored.
-              </p>
-            </div>
+            )}
           </div>
 
-          {/* Chat announcements */}
           <div>
-            <p className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-2 font-mono">
-              <span className="text-orange-admin tabular-nums">05</span> Chat announcements
-              <span className="text-white/30 normal-case font-normal"> · vars: {'{keyword} {prize} {title} {winner}'}</span>
+            <p className={labelCls}>
+              <span className="text-orange-admin tabular-nums">04</span> Winners
             </p>
-            <div className="space-y-3">
-              {/* Start */}
-              <div className="border border-white/10 bg-zinc-broadcast/40 p-3 space-y-2">
-                <label className="flex items-center gap-2 cursor-pointer">
+            <Chips
+              label="Number of winners"
+              options={WINNER_COUNT_OPTIONS.map((n) => ({ label: String(n), value: n }))}
+              value={form.targetWinners}
+              onChange={(v) => set({ targetWinners: v })}
+            />
+          </div>
+
+          {/* Everything that stays the same giveaway to giveaway */}
+          <div className="border border-white/10">
+            <button
+              type="button"
+              onClick={() => setShowMore((s) => !s)}
+              aria-expanded={showMore}
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-zinc-broadcast/40 transition-colors duration-150"
+            >
+              <ChevronDown
+                size={14}
+                className={`text-white/45 flex-shrink-0 transition-transform duration-150 ${showMore ? 'rotate-180' : ''}`}
+                aria-hidden="true"
+              />
+              <span className="min-w-0">
+                <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/60 font-mono">
+                  Title, rules &amp; chat messages
+                </span>
+                <span className="block text-[0.6875rem] text-white/40 font-mono truncate mt-0.5">
+                  {rulesSummary(form)}
+                </span>
+              </span>
+            </button>
+
+            {showMore && (
+              <div className="px-3 pb-4 pt-1 space-y-4 border-t border-white/8">
+                <label className="block pt-3">
+                  <span className={labelCls}>Title</span>
+                  <input
+                    value={form.title}
+                    onChange={(e) => set({ title: e.target.value })}
+                    placeholder={titlePlaceholder}
+                    className={inputCls}
+                  />
+                </label>
+
+                <div>
+                  <p className={labelCls}>Bonus tickets</p>
+                  <div className="space-y-1.5">
+                    <ToggleRow label="Registered on site" value={form.weights.registered} onChange={(v) => setW('registered', v)} />
+                    <ToggleRow label="Discord linked" value={form.weights.discord} onChange={(v) => setW('discord', v)} />
+                    <ToggleRow label="Twitch sub" value={form.weights.sub} onChange={(v) => setW('sub', v)} />
+                    <ToggleRow label="Twitch VIP" value={form.weights.vip} onChange={(v) => setW('vip', v)} />
+                  </div>
+                  <p className="mt-2 text-[0.625rem] tracking-eyebrow uppercase text-white/35 font-mono">
+                    Everyone gets 1 ticket. Each toggle adds +1.
+                  </p>
+                </div>
+
+                <label className="flex items-start gap-2 cursor-pointer">
                   <input
                     type="checkbox"
-                    checked={form.announceStart}
-                    onChange={(e) => setForm((f) => ({ ...f, announceStart: e.target.checked }))}
+                    className="mt-0.5"
+                    checked={form.requireFollow}
+                    onChange={(e) => set({ requireFollow: e.target.checked })}
                   />
-                  <span className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-white/70 font-mono">
-                    Announce in chat when starting
+                  <span>
+                    <span className="block text-[0.6875rem] font-bold tracking-eyebrow uppercase text-white/70 font-mono">
+                      Require channel follow
+                    </span>
+                    <span className="block text-[0.625rem] tracking-eyebrow text-white/35 font-mono">
+                      Mods and VIPs are exempt.
+                    </span>
                   </span>
                 </label>
-                <textarea
-                  value={form.startMessage}
-                  onChange={(e) => setForm((f) => ({ ...f, startMessage: e.target.value }))}
-                  rows={2}
-                  disabled={!form.announceStart}
-                  className={`${inputCls} ${!form.announceStart ? 'opacity-40' : ''}`}
-                />
+
+                <div className="space-y-3">
+                  <p className={`${labelCls} mb-0`}>
+                    Chat messages
+                    <span className="text-white/30 normal-case font-normal"> · {'{keyword} {prize} {title} {winner}'}</span>
+                  </p>
+                  {[
+                    ['announceStart', 'startMessage', 'When it starts'],
+                    ...(form.durationSec > 0
+                      ? [['announceLastCall', 'lastCallMessage', `Last call (${LAST_CALL_SECONDS}s left)`]]
+                      : []),
+                    ['announceWinner', 'winnerMessage', 'Winner, after the reveal'],
+                  ].map(([flag, field, label]) => (
+                    <div key={field} className="border border-white/10 bg-zinc-broadcast/40 p-3 space-y-2">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" checked={form[flag]} onChange={(e) => set({ [flag]: e.target.checked })} />
+                        <span className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-white/70 font-mono">
+                          {label}
+                        </span>
+                      </label>
+                      <textarea
+                        value={form[field]}
+                        onChange={(e) => set({ [field]: e.target.value })}
+                        rows={2}
+                        disabled={!form[flag]}
+                        className={`${inputCls} ${!form[flag] ? 'opacity-40' : ''}`}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
-              {/* Winner */}
-              <div className="border border-white/10 bg-zinc-broadcast/40 p-3 space-y-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={form.announceWinner}
-                    onChange={(e) => setForm((f) => ({ ...f, announceWinner: e.target.checked }))}
-                  />
-                  <span className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-white/70 font-mono">
-                    Announce winner in chat on pick
-                  </span>
-                </label>
-                <textarea
-                  value={form.winnerMessage}
-                  onChange={(e) => setForm((f) => ({ ...f, winnerMessage: e.target.value }))}
-                  rows={2}
-                  disabled={!form.announceWinner}
-                  className={`${inputCls} ${!form.announceWinner ? 'opacity-40' : ''}`}
-                />
-              </div>
-            </div>
+            )}
           </div>
 
           {error && (
-            <p className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
+            <p role="alert" className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
               {error}
             </p>
           )}
@@ -318,11 +608,11 @@ function NewGiveawayForm({ onClose, onCreated }) {
           <button
             type="submit"
             disabled={saving}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50"
+            className="flex-[2] inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50"
           >
             <Check size={13} aria-hidden="true" />
             <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-              {saving ? 'Starting…' : 'Start giveaway'}
+              {saving ? 'Starting…' : chatDown ? 'Start anyway' : 'Start giveaway'}
             </span>
           </button>
         </div>
@@ -331,92 +621,152 @@ function NewGiveawayForm({ onClose, onCreated }) {
   );
 }
 
-function formatElapsed(seconds) {
-  if (seconds < 0) seconds = 0;
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60);
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
+// ─── Winner window ──────────────────────────────────────────────────────────
 
-function WinnerTimer({ rolledAt, firstMessageAt }) {
-  // Count up from rolledAt. Freeze when firstMessageAt is set.
-  const [now, setNow] = useState(() => Date.now());
+function ClaimTimer({ giveaway, firstMessageAt }) {
+  // Counts from when the name lands on stream (after the reveal), freezes on
+  // the winner's first chat message.
+  const reveal = useRevealState(giveaway);
+  const landedAt = tsMillis(giveaway.rolledAt) + REVEAL_MS;
+  const answeredAt = tsMillis(firstMessageAt);
 
-  useEffect(() => {
-    if (firstMessageAt) return undefined; // frozen
-    const t = setInterval(() => setNow(Date.now()), 250);
-    return () => clearInterval(t);
-  }, [firstMessageAt]);
-
-  const startMs = rolledAt?.toMillis ? rolledAt.toMillis() : null;
-  if (!startMs) {
+  if (!reveal.landed && !answeredAt) {
+    const left = Math.max(0, Math.ceil((landedAt - reveal.now) / 1000));
     return (
-      <div className="flex items-center gap-2 px-3 py-2 border border-white/15 bg-zinc-broadcast/40">
+      <div className="flex items-center gap-3 px-3 py-2 border border-white/15 bg-zinc-broadcast/40">
         <Timer size={13} className="text-white/40" aria-hidden="true" />
-        <span className="text-2xl font-black tabular-nums text-white/40 font-mono leading-none">
-          00:00
-        </span>
+        <div className="leading-none">
+          <p className="text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-0.5 font-mono">
+            On stream in
+          </p>
+          <p className="text-2xl font-black tabular-nums text-white/55 font-mono leading-none">{left}s</p>
+        </div>
       </div>
     );
   }
 
-  const endMs = firstMessageAt?.toMillis ? firstMessageAt.toMillis() : now;
-  const elapsed = Math.max(0, (endMs - startMs) / 1000);
-
+  const elapsed = answeredAt ? Math.max(0, (answeredAt - landedAt) / 1000) : reveal.sinceLanded;
   let tone;
-  if (firstMessageAt) {
-    tone = {
-      border: 'border-emerald-signal/50 bg-emerald-signal/5',
-      text: 'text-emerald-signal',
-      icon: 'text-emerald-signal',
-      label: 'RESPONDED IN',
-    };
+  if (answeredAt) {
+    tone = { box: 'border-emerald-signal/50 bg-emerald-signal/5', text: 'text-emerald-signal', label: 'Responded in' };
   } else if (elapsed >= 90) {
-    tone = {
-      border: 'border-red-destructive/50 bg-red-destructive/5',
-      text: 'text-red-destructive',
-      icon: 'text-red-destructive',
-      label: 'Waiting',
-    };
+    tone = { box: 'border-red-destructive/50 bg-red-destructive/5', text: 'text-red-destructive', label: 'Waiting' };
   } else if (elapsed >= 30) {
-    tone = {
-      border: 'border-orange-admin/50 bg-orange-admin/5',
-      text: 'text-orange-admin',
-      icon: 'text-orange-admin',
-      label: 'Waiting',
-    };
+    tone = { box: 'border-orange-admin/50 bg-orange-admin/5', text: 'text-orange-admin', label: 'Waiting' };
   } else {
-    tone = {
-      border: 'border-white/15 bg-zinc-broadcast/40',
-      text: 'text-white-body',
-      icon: 'text-white/55',
-      label: 'Waiting',
-    };
+    tone = { box: 'border-white/15 bg-zinc-broadcast/40', text: 'text-white-body', label: 'Waiting' };
   }
 
   return (
-    <div
-      className={`flex items-center gap-3 px-3 py-2 border transition-colors duration-300 ${tone.border}`}
-    >
-      <Timer size={13} className={tone.icon} aria-hidden="true" />
+    <div className={`flex items-center gap-3 px-3 py-2 border transition-colors duration-300 ${tone.box}`}>
+      <Timer size={13} className={tone.text} aria-hidden="true" />
       <div className="leading-none">
         <p className="text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-0.5 font-mono">
           {tone.label}
         </p>
         <p className={`text-2xl font-black tabular-nums font-mono leading-none ${tone.text}`}>
-          {formatElapsed(elapsed)}
+          {formatClock(elapsed)}
         </p>
       </div>
     </div>
   );
 }
 
-function WinnerModal({ giveaway, onAnnounceError }) {
+// Posts the winner in chat once the reveal has played on stream, then shows
+// where that stands. Retry appears if Twitch refused the message.
+function useWinnerAnnounce(giveaway) {
+  const key = pickKey(giveaway);
+  const rolledAtMs = tsMillis(giveaway.rolledAt);
+  const enabled = giveaway.announceWinner !== false && !!giveaway.winnerMessage;
+  const posted = !!key && giveaway.announcedPick === key;
+  const [state, setState] = useState({ key: null, posting: false, error: null });
+
+  const post = useCallback(async () => {
+    setState({ key, posting: true, error: null });
+    try {
+      const { ok, status, data } = await postAction('announce', {
+        id: giveaway.id,
+        winnerTwitchId: giveaway.winnerTwitchId,
+        rolledAtMs,
+      });
+      if (status === 409) return setState({ key, posting: false, error: null }); // pick moved on
+      const failed = !ok || (data.announce?.posted === false && !QUIET_ANNOUNCE.includes(data.announce.reason));
+      setState({
+        key,
+        posting: false,
+        error: failed ? data.announce?.reason || data.error || 'unknown' : null,
+      });
+    } catch {
+      setState({ key, posting: false, error: 'Network error' });
+    }
+  }, [key, giveaway.id, giveaway.winnerTwitchId, rolledAtMs]);
+
+  // One timer per pick. A reroll or skip changes the key and cancels it.
+  const postRef = useRef(post);
+  postRef.current = post;
+  const alreadyPosted = useRef(posted);
+  alreadyPosted.current = posted;
+  useEffect(() => {
+    if (!key || !enabled || alreadyPosted.current) return undefined;
+    const delay = Math.max(0, rolledAtMs + CHAT_ANNOUNCE_DELAY_MS - Date.now());
+    const t = setTimeout(() => {
+      if (!alreadyPosted.current) postRef.current();
+    }, delay);
+    return () => clearTimeout(t);
+  }, [key, enabled, rolledAtMs]);
+
+  const mine = state.key === key;
+  return {
+    enabled,
+    posted,
+    posting: mine && state.posting,
+    error: mine ? state.error : null,
+    dueAt: rolledAtMs != null ? rolledAtMs + CHAT_ANNOUNCE_DELAY_MS : null,
+    retry: post,
+  };
+}
+
+function ChatAnnounceStatus({ announce }) {
+  const now = useClock({ intervalMs: 500, active: announce.enabled && !announce.posted });
+  let body;
+  if (!announce.enabled) {
+    body = <span className="text-white/35">Chat announce off</span>;
+  } else if (announce.posted) {
+    body = <span className="text-emerald-signal">Posted in chat</span>;
+  } else if (announce.error) {
+    body = (
+      <>
+        <span className="text-red-destructive truncate">Chat post failed: {announce.error}</span>
+        <button
+          type="button"
+          onClick={announce.retry}
+          className="ml-auto px-2 py-0.5 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/10"
+        >
+          Retry
+        </button>
+      </>
+    );
+  } else if (announce.posting) {
+    body = <span className="text-white/55">Posting in chat…</span>;
+  } else {
+    const left = announce.dueAt ? Math.max(0, Math.ceil((announce.dueAt - now) / 1000)) : 0;
+    body = <span className="text-white/55">Posts in chat in {left}s (after the reveal)</span>;
+  }
+  return (
+    <div className="flex items-center gap-2 px-3 py-2 border border-white/10 bg-zinc-broadcast/40 text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono">
+      <MessageSquare size={11} className="text-white/40 flex-shrink-0" aria-hidden="true" />
+      {body}
+    </div>
+  );
+}
+
+function WinnerModal({ giveaway }) {
   // 'reroll' | 'skip' | 'confirm' | 'roll' | 'back' | 'end'
   const [busy, setBusy] = useState(null);
   const [messages, setMessages] = useState([]);
   const [prizeNote, setPrizeNote] = useState('');
   const [error, setError] = useState(null);
+  const announce = useWinnerAnnounce(giveaway);
 
   useEffect(() => {
     if (!giveaway?.id) return undefined;
@@ -434,50 +784,81 @@ function WinnerModal({ giveaway, onAnnounceError }) {
   // First message timestamp determines if we freeze the timer.
   const firstMessageAt = messages.length > 0 ? messages[0].createdAt : null;
 
-  const act = async (action) => {
-    setBusy(action);
-    setError(null);
-    try {
-      const body = { action, id: giveaway.id };
-      if (action === 'confirm') body.prizeNote = prizeNote || null;
-      const res = await authedFetch('/api/admin/giveaways', {
-        method: 'POST',
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(`Action failed: ${data.error || res.status}`);
-        return;
+  const act = useCallback(
+    async (action) => {
+      setBusy(action);
+      setError(null);
+      try {
+        const body = { id: giveaway.id };
+        if (action === 'confirm') body.prizeNote = prizeNote || null;
+        const { ok, status, data } = await postAction(action, body);
+        if (!ok) {
+          setError(
+            data.error === 'NO_MORE_ENTRIES' || data.error === 'NO_ENTRIES'
+              ? 'Nobody left to draw.'
+              : `Action failed: ${data.error || status}`
+          );
+          return;
+        }
+        if (['roll', 'reroll', 'skip'].includes(action)) setPrizeNote('');
+      } catch (err) {
+        setError('Network error.');
+      } finally {
+        setBusy(null);
       }
-      // Announce fires whenever a new winner is picked.
-      if (
-        ['roll', 'reroll', 'skip'].includes(action) &&
-        data.announce &&
-        data.announce.posted === false &&
-        data.announce.reason &&
-        data.announce.reason !== 'disabled' &&
-        data.announce.reason !== 'empty' &&
-        onAnnounceError
-      ) {
-        onAnnounceError(data.announce.reason);
-      }
-      if (['roll', 'reroll', 'skip'].includes(action)) setPrizeNote('');
-    } catch (err) {
-      setError('Network error.');
-    } finally {
-      setBusy(null);
-    }
-  };
+    },
+    [giveaway.id, prizeNote]
+  );
 
-  if (!giveaway || giveaway.status !== 'rolling' || !giveaway.winner) return null;
-  const w = giveaway.winner;
-  const winners = giveaway.winners || [];
+  const winners = useMemo(() => giveaway.winners || [], [giveaway.winners]);
   // Confirmed = written down. The window stays up either way; what changes is
   // which actions make sense. Nothing here closes on a click outside.
   const confirmed = winners.some((x) => x.twitchId === giveaway.winnerTwitchId);
+  const target = Number(giveaway.targetWinners) || 1;
+  const needMore = winners.length < target;
   const winnerNo = confirmed
     ? winners.findIndex((x) => x.twitchId === giveaway.winnerTwitchId) + 1
     : winners.length + 1;
+
+  // Hotkeys, so nobody has to aim a mouse while live. Letter keys are ignored
+  // while typing in the prize note; Enter there confirms.
+  const rootRef = useRef(null);
+  useEffect(() => {
+    const onKey = (e) => {
+      if (busy || e.metaKey || e.ctrlKey || e.altKey) return;
+      const tag = e.target?.tagName;
+      const k = e.key.toLowerCase();
+      // A focused button already acts on Enter/Space; don't fire twice.
+      if ((tag === 'BUTTON' || tag === 'A') && (k === 'enter' || k === ' ')) return;
+      const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag);
+      // Typing somewhere else (another dialog on top) is not for us.
+      if (typing && !rootRef.current?.contains(e.target)) return;
+      if (!confirmed) {
+        if (k === 'enter') act('confirm');
+        else if (typing) return;
+        else if (k === 'r') act('reroll');
+        else if (k === 's') act('skip');
+        else if (k === 'escape') act('back');
+        else return;
+      } else {
+        if (typing) return;
+        if (k === 'enter') act(needMore ? 'roll' : 'end');
+        else if (k === 'r') act('roll');
+        else if (k === 'escape') act('back');
+        else return;
+      }
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [busy, confirmed, needMore, act]);
+
+  if (!giveaway || giveaway.status !== 'rolling' || !giveaway.winner) return null;
+  const w = giveaway.winner;
+
+  const btnGhost =
+    'inline-flex items-center gap-2 px-3.5 py-2.5 border border-white/15 text-white/75 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-40';
+  const btnLabel = 'text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono';
 
   return (
     <div
@@ -488,7 +869,13 @@ function WinnerModal({ giveaway, onAnnounceError }) {
         e.stopPropagation();
       }}
     >
-      <div className="relative w-full max-w-2xl border border-orange-admin/40 bg-zinc-card overflow-hidden">
+      <div
+        ref={rootRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Giveaway winner"
+        className="relative w-full max-w-2xl max-h-full overflow-y-auto border border-orange-admin/40 bg-zinc-card"
+      >
         {/* Atmospheric backing */}
         <div
           className="pointer-events-none absolute -top-32 -right-32 w-96 h-96 rounded-full bg-orange-admin/15 blur-3xl motion-reduce:hidden"
@@ -511,12 +898,9 @@ function WinnerModal({ giveaway, onAnnounceError }) {
         <div className="relative px-6 sm:px-10 py-8">
           <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 mb-2 font-mono inline-flex items-center gap-2">
             <Trophy size={11} className="text-orange-admin" aria-hidden="true" />
-            {confirmed ? `Winner #${winnerNo} · confirmed` : `Winner #${winnerNo} picked`}
-            {winners.length > 0 && !confirmed && (
-              <span className="text-white/30 normal-case font-normal tracking-normal">
-                · {winners.length} already confirmed
-              </span>
-            )}
+            Winner #{winnerNo}
+            {target > 1 && ` of ${target}`}
+            {confirmed ? ' · confirmed' : ' · picked'}
           </p>
           <div className="flex items-center gap-4 mb-5 flex-wrap">
             {w.profileImageUrl ? (
@@ -541,7 +925,7 @@ function WinnerModal({ giveaway, onAnnounceError }) {
                 {!w.registered && (
                   <span
                     className="inline-flex items-center gap-1 px-2 py-1 border border-orange-admin/50 bg-orange-admin/5 text-orange-admin text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
-                    title="Winner has not signed in on goofer.tv — prize redemption won't show on /me. DM them on Twitch to deliver."
+                    title="Winner has not signed in on goofer.tv. Prize redemption won't show on /me; DM them on Twitch to deliver."
                   >
                     Not on site · DM to deliver
                   </span>
@@ -551,15 +935,16 @@ function WinnerModal({ giveaway, onAnnounceError }) {
                 {w.twitchName} · weight {w.weight} · via {w.source}
               </p>
             </div>
-            <WinnerTimer
-              rolledAt={giveaway.rolledAt}
-              firstMessageAt={firstMessageAt}
-            />
+            <ClaimTimer giveaway={giveaway} firstMessageAt={firstMessageAt} />
+          </div>
+
+          <div className="mb-3">
+            <ChatAnnounceStatus announce={announce} />
           </div>
 
           {/* Chat stream */}
           <div className="border border-white/10 bg-zinc-broadcast/40 mb-5">
-            <div className="px-3 py-2 border-b border-white/8 text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/55 font-mono inline-flex items-center gap-2">
+            <div className="px-3 py-2 border-b border-white/8 text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/55 font-mono flex items-center gap-2">
               <Radio size={11} aria-hidden="true" />
               Winner&apos;s live chat
               <span className="ml-auto text-white/30 tabular-nums">{messages.length}</span>
@@ -591,13 +976,11 @@ function WinnerModal({ giveaway, onAnnounceError }) {
           ) : (
             /* Prize note (optional, attached on confirm) */
             <label className="block mb-4">
-              <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
-                Prize note · attached to redemption
-              </span>
+              <span className={labelCls}>Prize note · attached to redemption</span>
               <input
                 value={prizeNote}
                 onChange={(e) => setPrizeNote(e.target.value)}
-                placeholder="Steam key — will DM after stream"
+                placeholder="Steam key, will DM after stream"
                 className={inputCls}
               />
             </label>
@@ -606,26 +989,24 @@ function WinnerModal({ giveaway, onAnnounceError }) {
           {/* Actions */}
           {!confirmed ? (
             <div className="flex gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() => act('reroll')}
-                disabled={!!busy}
-                className="inline-flex items-center gap-2 px-3.5 py-2.5 border border-white/15 text-white/75 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-40"
-              >
+              <button type="button" onClick={() => act('reroll')} disabled={!!busy} className={btnGhost}>
                 <RefreshCcw size={13} aria-hidden="true" />
-                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+                <span className={btnLabel}>
                   {busy === 'reroll' ? 'Rolling…' : 'Reroll'}
+                  <Kbd>R</Kbd>
                 </span>
               </button>
               <button
                 type="button"
                 onClick={() => act('skip')}
                 disabled={!!busy}
+                title="Rule this person out of the rest of the giveaway and pick again."
                 className="inline-flex items-center gap-2 px-3.5 py-2.5 border border-red-destructive/40 text-red-destructive hover:bg-red-destructive/10 transition-colors duration-150 disabled:opacity-40"
               >
                 <SkipForward size={13} aria-hidden="true" />
-                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+                <span className={btnLabel}>
                   {busy === 'skip' ? 'Skipping…' : 'Skip'}
+                  <Kbd>S</Kbd>
                 </span>
               </button>
               <button
@@ -636,8 +1017,9 @@ function WinnerModal({ giveaway, onAnnounceError }) {
                 className="inline-flex items-center gap-2 px-3.5 py-2.5 border border-white/10 text-white/50 hover:text-white-body hover:border-white/30 transition-colors duration-150 disabled:opacity-40"
               >
                 <ArrowLeft size={13} aria-hidden="true" />
-                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-                  {busy === 'back' ? 'Going back…' : 'Discard · back to entries'}
+                <span className={btnLabel}>
+                  {busy === 'back' ? 'Going back…' : 'Discard'}
+                  <Kbd>Esc</Kbd>
                 </span>
               </button>
               <button
@@ -647,52 +1029,68 @@ function WinnerModal({ giveaway, onAnnounceError }) {
                 className="ml-auto inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-50"
               >
                 <Check size={13} aria-hidden="true" />
-                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+                <span className={btnLabel}>
                   {busy === 'confirm' ? 'Confirming…' : 'Confirm winner'}
+                  <Kbd>Enter</Kbd>
                 </span>
               </button>
             </div>
           ) : (
             /*
-              After the pick is written down the giveaway is still live. The
-              operator chooses: draw again for another prize from the same
-              pool (past winners and skips excluded), go back to the entries
-              and let them keep coming, or end it.
+              After the pick is written down the giveaway is still live. With
+              winners still to go, rolling the next one is the main action;
+              once the target is met, wrapping up is.
             */
             <div className="flex gap-2 flex-wrap">
-              <button
-                type="button"
-                onClick={() => act('back')}
-                disabled={!!busy}
-                className="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50"
-              >
+              <button type="button" onClick={() => act('back')} disabled={!!busy} className={btnGhost}>
                 <ArrowLeft size={13} aria-hidden="true" />
-                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+                <span className={btnLabel}>
                   {busy === 'back' ? 'Going back…' : 'Back to entries'}
+                  <Kbd>Esc</Kbd>
                 </span>
               </button>
-              <button
-                type="button"
-                onClick={() => act('roll')}
-                disabled={!!busy}
-                className="inline-flex items-center gap-2 px-3.5 py-2.5 border border-white/15 text-white/75 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-40"
-              >
-                <Gift size={13} aria-hidden="true" />
-                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-                  {busy === 'roll' ? 'Rolling…' : 'Roll another'}
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => act('end')}
-                disabled={!!busy}
-                className="ml-auto inline-flex items-center gap-2 px-3.5 py-2.5 border border-white/15 text-white/60 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-40"
-              >
-                <Flag size={13} aria-hidden="true" />
-                <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-                  {busy === 'end' ? 'Ending…' : 'End giveaway'}
-                </span>
-              </button>
+              {needMore ? (
+                <>
+                  <button type="button" onClick={() => act('end')} disabled={!!busy} className={btnGhost}>
+                    <Flag size={13} aria-hidden="true" />
+                    <span className={btnLabel}>{busy === 'end' ? 'Ending…' : 'End early'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => act('roll')}
+                    disabled={!!busy}
+                    className="ml-auto inline-flex items-center gap-2 px-4 py-2.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50"
+                  >
+                    <Gift size={13} aria-hidden="true" />
+                    <span className={btnLabel}>
+                      {busy === 'roll' ? 'Rolling…' : `Roll #${winners.length + 1} of ${target}`}
+                      <Kbd>Enter</Kbd>
+                    </span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button type="button" onClick={() => act('roll')} disabled={!!busy} className={btnGhost}>
+                    <Gift size={13} aria-hidden="true" />
+                    <span className={btnLabel}>
+                      {busy === 'roll' ? 'Rolling…' : 'Roll a bonus winner'}
+                      <Kbd>R</Kbd>
+                    </span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => act('end')}
+                    disabled={!!busy}
+                    className="ml-auto inline-flex items-center gap-2 px-4 py-2.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50"
+                  >
+                    <Flag size={13} aria-hidden="true" />
+                    <span className={btnLabel}>
+                      {busy === 'end' ? 'Ending…' : 'Wrap it up'}
+                      <Kbd>Enter</Kbd>
+                    </span>
+                  </button>
+                </>
+              )}
             </div>
           )}
 
@@ -707,147 +1105,152 @@ function WinnerModal({ giveaway, onAnnounceError }) {
   );
 }
 
-function EventSubStatus() {
-  const [status, setStatus] = useState('loading');
-  const [subs, setSubs] = useState([]);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(null);
+// ─── Timer automation ───────────────────────────────────────────────────────
 
-  const fetchStatus = async () => {
-    setStatus('loading');
-    try {
-      const res = await authedFetch('/api/admin/eventsub', { method: 'GET' });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || 'Unknown');
-        setStatus('error');
-      } else {
-        setSubs(data.ours || []);
-        setStatus(data.ours?.some((s) => s.status === 'enabled') ? 'enabled' : 'missing');
-        setError(null);
-      }
-    } catch (e) {
-      setError(e.message);
-      setStatus('error');
-    }
-  };
+// Runs the entry timer while this page is open: posts the last call, closes
+// entries at zero, and rolls when the giveaway asked for it. EventSub already
+// refuses late entries on its own, so a closed tab only delays the status flip.
+function useGiveawayClock(list, onWarn) {
+  const listRef = useRef(list);
+  listRef.current = list;
+  const fired = useRef(new Set());
+  const timed = list.some((g) => g.status === 'open' && g.closesAt);
 
   useEffect(() => {
-    fetchStatus();
-  }, []);
+    if (!timed) return undefined;
+    const tick = async () => {
+      const now = Date.now();
+      for (const g of listRef.current) {
+        if (g.status !== 'open') continue;
+        const closesAt = tsMillis(g.closesAt);
+        if (!closesAt) continue;
 
-  const subscribe = async () => {
-    setBusy(true);
-    try {
-      const res = await authedFetch('/api/admin/eventsub', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) setError(data.detail || data.error || 'Failed');
-      await fetchStatus();
-    } finally {
-      setBusy(false);
-    }
-  };
+        const lcKey = `lastCall:${g.id}`;
+        if (
+          g.announceLastCall &&
+          !g.lastCallAt &&
+          now >= closesAt - LAST_CALL_SECONDS * 1000 &&
+          now < closesAt - 3000 &&
+          !fired.current.has(lcKey)
+        ) {
+          fired.current.add(lcKey);
+          postAction('lastCall', { id: g.id })
+            .then(({ data }) => {
+              const a = data.announce;
+              if (a && a.posted === false && !QUIET_ANNOUNCE.includes(a.reason)) {
+                onWarn(`Last call didn't post in chat: ${a.reason}`);
+              }
+            })
+            .catch(() => {});
+        }
 
-  const remove = async (id) => {
-    if (!window.confirm('Delete this subscription? Chat-keyword entries will stop until re-subscribed.')) return;
-    setBusy(true);
-    try {
-      await authedFetch(`/api/admin/eventsub?id=${encodeURIComponent(id)}`, { method: 'DELETE' });
-      await fetchStatus();
-    } finally {
-      setBusy(false);
-    }
-  };
+        const closeKey = `close:${g.id}`;
+        if (now >= closesAt && !fired.current.has(closeKey)) {
+          fired.current.add(closeKey);
+          const closed = await postAction('close', { id: g.id }).catch(() => ({ ok: false }));
+          // Only auto-roll when we watched the clock run out, not when the
+          // page is opened long after the timer ended.
+          if (closed.ok && g.autoRoll && now - closesAt < AUTO_ROLL_GRACE_MS) {
+            if ((g.entryCount ?? 0) === 0) {
+              onWarn('Time ran out with no entries, so nothing was rolled.');
+            } else {
+              const rolled = await postAction('roll', { id: g.id }).catch(() => ({ ok: false, data: {} }));
+              if (!rolled.ok) onWarn(`Auto-roll failed: ${rolled.data?.error || 'unknown'}`);
+            }
+          }
+        }
+      }
+    };
+    tick();
+    const t = setInterval(tick, 1000);
+    return () => clearInterval(t);
+  }, [timed, onWarn]);
+}
 
-  const label =
-    status === 'loading'
-      ? 'Checking…'
-      : status === 'enabled'
-        ? 'Connected to Twitch chat'
-        : status === 'missing'
-          ? 'Not subscribed — chat keywords will not register entries'
-          : `Error: ${error || 'unknown'}`;
-  const tone =
-    status === 'enabled'
-      ? 'text-emerald-signal border-emerald-signal/40'
-      : status === 'missing'
-        ? 'text-orange-admin border-orange-admin/40'
-        : 'text-red-destructive border-red-destructive/40';
-
+function ClosesIn({ giveaway }) {
+  const closesAt = tsMillis(giveaway.closesAt);
+  const now = useClock({ intervalMs: 500, active: !!closesAt });
+  if (!closesAt || giveaway.status !== 'open') return null;
+  const left = Math.max(0, (closesAt - now) / 1000);
+  const hot = left > 0 && left <= LAST_CALL_SECONDS;
   return (
-    <div className={`border ${tone} bg-zinc-card/30 mb-6`}>
-      <div className="flex items-center justify-between gap-3 px-4 py-3 flex-wrap">
-        <div className="inline-flex items-center gap-3 min-w-0">
-          <Webhook size={14} aria-hidden="true" />
-          <span className="text-[0.6875rem] font-bold tracking-eyebrow uppercase font-mono">{label}</span>
-        </div>
-        <div className="flex gap-2 flex-wrap">
-          {status !== 'enabled' && (
-            <button
-              type="button"
-              onClick={subscribe}
-              disabled={busy}
-              className="inline-flex items-center gap-2 px-3 py-1.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50"
-            >
-              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-                {busy ? 'Subscribing…' : 'Subscribe to chat'}
-              </span>
-            </button>
-          )}
-          {subs.length > 0 && (
-            <button
-              type="button"
-              onClick={() => remove(subs[0].id)}
-              disabled={busy}
-              className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/15 text-white/55 hover:text-red-destructive hover:border-red-destructive/40 transition-colors duration-150 disabled:opacity-50"
-              title="Delete subscription"
-            >
-              <Trash2 size={12} aria-hidden="true" />
-              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Reset</span>
-            </button>
-          )}
-        </div>
-      </div>
+    <div
+      className={`mt-3 inline-flex items-center gap-2 px-3 py-1.5 border text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono ${
+        left === 0
+          ? 'border-white/15 text-white/45'
+          : hot
+            ? 'border-orange-admin/60 text-orange-admin'
+            : 'border-white/15 text-white/65'
+      }`}
+    >
+      <Timer size={11} aria-hidden="true" />
+      {left > 0 ? (
+        <>
+          Closes in <span className="text-sm font-black tabular-nums tracking-normal">{formatClock(left)}</span>
+        </>
+      ) : (
+        "Time's up · closing"
+      )}
+      {giveaway.autoRoll && left > 0 && <span className="text-white/35">· auto-roll</span>}
     </div>
   );
 }
 
-function GiveawayRow({ giveaway, onOpen }) {
+// ─── List + detail ──────────────────────────────────────────────────────────
+
+function GiveawayRow({ giveaway, onOpen, onRunAgain }) {
+  const ended = giveaway.status === 'rolled';
   return (
-    <button
-      type="button"
-      onClick={() => onOpen(giveaway)}
-      className="w-full grid grid-cols-[auto_1fr_auto_auto] gap-3 items-center px-4 py-3 border-t border-white/8 first:border-t-0 hover:bg-zinc-broadcast/40 text-left"
-    >
-      <span
-        className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow-md uppercase border font-mono ${
-          giveaway.status === 'open'
-            ? 'text-emerald-signal border-emerald-signal/40'
-            : giveaway.status === 'rolling'
-              ? 'text-orange-admin border-orange-admin/40'
-              : giveaway.status === 'rolled'
-                ? 'text-white/65 border-white/20'
-                : 'text-white/40 border-white/15'
-        }`}
+    <div className="flex items-stretch border-t border-white/8 first:border-t-0 hover:bg-zinc-broadcast/40">
+      <button
+        type="button"
+        onClick={() => onOpen(giveaway)}
+        className="flex-1 min-w-0 grid grid-cols-[auto_1fr_auto_auto] gap-3 items-center px-4 py-3 text-left"
       >
-        {giveaway.status}
-      </span>
-      <div className="min-w-0">
-        <p className="font-bold text-white-body text-sm truncate">
-          {giveaway.title} <span className="text-white/45 font-normal">· {giveaway.prize}</span>
-        </p>
-        <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5">
-          keyword <span className="text-orange-admin/80">{giveaway.keyword}</span> · created {formatTs(giveaway.createdAt)}
-        </p>
-      </div>
-      <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono tabular-nums">
-        {giveaway.entryCount ?? 0} entries
-        {(giveaway.winners?.length ?? 0) > 1 && (
-          <span className="text-emerald-signal/70"> · {giveaway.winners.length} winners</span>
-        )}
-      </span>
-      <ChevronRight size={14} className="text-white/30" aria-hidden="true" />
-    </button>
+        <span
+          className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow-md uppercase border font-mono ${
+            giveaway.status === 'open'
+              ? 'text-emerald-signal border-emerald-signal/40'
+              : giveaway.status === 'rolling'
+                ? 'text-orange-admin border-orange-admin/40'
+                : giveaway.status === 'rolled'
+                  ? 'text-white/65 border-white/20'
+                  : 'text-white/40 border-white/15'
+          }`}
+        >
+          {giveaway.status === 'rolled' ? 'ended' : giveaway.status}
+        </span>
+        <div className="min-w-0">
+          <p className="font-bold text-white-body text-sm truncate">
+            {giveaway.prize} <span className="text-white/45 font-normal">· {giveaway.title}</span>
+          </p>
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5">
+            keyword <span className="text-orange-admin/80">{giveaway.keyword}</span> · {formatTs(giveaway.createdAt)}
+          </p>
+        </div>
+        <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono tabular-nums">
+          {giveaway.entryCount ?? 0} entries
+          {(giveaway.winners?.length ?? 0) > 0 && (
+            <span className="text-emerald-signal/70">
+              {' '}
+              · {giveaway.winners.length} winner{giveaway.winners.length === 1 ? '' : 's'}
+            </span>
+          )}
+        </span>
+        <ChevronRight size={14} className="text-white/30" aria-hidden="true" />
+      </button>
+      {ended && onRunAgain && (
+        <button
+          type="button"
+          onClick={() => onRunAgain(giveaway)}
+          title="New giveaway with the same prize and settings"
+          className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 border-l border-white/8 text-white/45 hover:text-orange-admin transition-colors duration-150"
+        >
+          <RotateCcw size={12} aria-hidden="true" />
+          <span className="text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Run again</span>
+        </button>
+      )}
+    </div>
   );
 }
 
@@ -884,42 +1287,36 @@ function AnimatedCount({ value }) {
   );
 }
 
-function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
+function GiveawayDetail({ giveaway, onBack, onRunAgain }) {
   const [busy, setBusy] = useState(null);
+  const [error, setError] = useState(null);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [confirmingEnd, setConfirmingEnd] = useState(false);
   const winners = useMemo(() => giveaway.winners || [], [giveaway.winners]);
   const wonIds = useMemo(() => winners.map((w) => w.twitchId).filter(Boolean), [winners]);
+  const target = Number(giveaway.targetWinners) || 1;
 
   const act = async (action) => {
     setBusy(action);
+    setError(null);
     try {
-      const res = await authedFetch('/api/admin/giveaways', {
-        method: 'POST',
-        body: JSON.stringify({ action, id: giveaway.id }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        alert(`Action failed: ${data.error || res.status}`);
-        return;
+      const { ok, status, data } = await postAction(action, { id: giveaway.id });
+      if (!ok) {
+        setError(
+          data.error === 'NO_ENTRIES' ? 'Nobody left to draw.' : `Action failed: ${data.error || status}`
+        );
       }
-      if (
-        action === 'roll' &&
-        data.announce &&
-        data.announce.posted === false &&
-        data.announce.reason &&
-        data.announce.reason !== 'disabled' &&
-        data.announce.reason !== 'empty' &&
-        onAnnounceError
-      ) {
-        onAnnounceError(data.announce.reason);
-      }
+      return ok;
+    } catch {
+      setError('Network error.');
+      return false;
     } finally {
       setBusy(null);
     }
   };
 
   const isLive = giveaway.status === 'open' || giveaway.status === 'rolling';
+  const ended = giveaway.status === 'rolled';
 
   return (
     <div className="space-y-5">
@@ -938,7 +1335,7 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
               giveaway.status === 'rolling' ? 'bg-orange-admin animate-pulse' : 'bg-orange-admin'
             }`}
           />
-          Giveaway · {giveaway.status}
+          Giveaway · {ended ? 'ended' : giveaway.status}
         </span>
       </div>
 
@@ -963,7 +1360,10 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
             >
               {giveaway.prize}
             </p>
-            <p className="mt-2 text-sm text-white/55">{giveaway.title}</p>
+            <p className="mt-2 text-sm text-white/55">
+              {giveaway.title}
+              {target > 1 && <span className="text-white/40"> · {target} winners</span>}
+            </p>
 
             {/* Keyword pill */}
             {isLive && (
@@ -978,6 +1378,9 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
                 </span>
               </div>
             )}
+            <div>
+              <ClosesIn giveaway={giveaway} />
+            </div>
           </div>
 
           {/* Count */}
@@ -1021,7 +1424,13 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
           >
             <Gift size={13} aria-hidden="true" />
             <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-              {busy === 'roll' ? 'Rolling…' : winners.length > 0 ? 'Roll another' : 'Roll winner'}
+              {busy === 'roll'
+                ? 'Rolling…'
+                : target > 1
+                  ? `Roll #${Math.min(winners.length + 1, target)} of ${target}`
+                  : winners.length > 0
+                    ? 'Roll another'
+                    : 'Roll winner'}
             </span>
           </button>
         )}
@@ -1061,50 +1470,68 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
               </button>
             </div>
           ))}
-        {giveaway.status === 'rolled' && winners.length === 0 && giveaway.winner && (
+        {ended && winners.length === 0 && giveaway.winner && (
           <div className="inline-flex items-center gap-2 px-3 py-2 border border-emerald-signal/40 bg-emerald-signal/5 text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
             <Trophy size={12} aria-hidden="true" />
             Winner: {giveaway.winner.displayName}
           </div>
         )}
-        {giveaway.status === 'rolled' && winners.length === 0 && !giveaway.winner && (
+        {ended && winners.length === 0 && !giveaway.winner && (
           <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
             Ended · no winner
           </span>
+        )}
+        {ended && (
+          <button
+            type="button"
+            onClick={() => onRunAgain(giveaway)}
+            className="inline-flex items-center gap-2 px-3.5 py-2 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150"
+          >
+            <RotateCcw size={12} aria-hidden="true" />
+            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Run it again</span>
+          </button>
         )}
 
         <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/30 font-mono ml-1">
           · created {formatTs(giveaway.createdAt)}
         </span>
 
-        {!confirmingDelete ? (
-          <button
-            type="button"
-            onClick={() => setConfirmingDelete(true)}
-            className="ml-auto inline-flex items-center gap-2 px-3 py-2 border border-red-destructive/30 text-red-destructive/70 hover:bg-red-destructive/10 hover:border-red-destructive/60 transition-colors duration-150"
-          >
-            <Trash2 size={12} aria-hidden="true" />
-            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Delete</span>
-          </button>
-        ) : (
-          <div className="ml-auto flex gap-2">
+        {/* Delete only once it's over, so it never sits next to live controls. */}
+        {ended &&
+          (!confirmingDelete ? (
             <button
               type="button"
-              onClick={() => act('delete').then(onBack)}
-              className="inline-flex items-center gap-2 px-3 py-2 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 transition-colors text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
+              onClick={() => setConfirmingDelete(true)}
+              className="ml-auto inline-flex items-center gap-2 px-3 py-2 border border-red-destructive/30 text-red-destructive/70 hover:bg-red-destructive/10 hover:border-red-destructive/60 transition-colors duration-150"
             >
-              Confirm delete
+              <Trash2 size={12} aria-hidden="true" />
+              <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Delete</span>
             </button>
-            <button
-              type="button"
-              onClick={() => setConfirmingDelete(false)}
-              className="px-3 py-2 border border-white/10 text-white/60 hover:text-white-body text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
-            >
-              Cancel
-            </button>
-          </div>
-        )}
+          ) : (
+            <div className="ml-auto flex gap-2">
+              <button
+                type="button"
+                onClick={() => act('delete').then((ok) => ok && onBack())}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 transition-colors text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
+              >
+                Confirm delete
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfirmingDelete(false)}
+                className="px-3 py-2 border border-white/10 text-white/60 hover:text-white-body text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
+              >
+                Cancel
+              </button>
+            </div>
+          ))}
       </div>
+
+      {error && (
+        <p role="alert" className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
+          {error}
+        </p>
+      )}
 
       {/* Confirmed winners so far. Out of every later draw. */}
       {winners.length > 0 && (
@@ -1112,6 +1539,7 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
           <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal mb-2 font-mono inline-flex items-center gap-2">
             <Trophy size={11} aria-hidden="true" />
             {isLive ? 'Confirmed so far' : 'Winners'} · {winners.length}
+            {target > 1 && ` of ${target}`}
           </p>
           <ul className="flex flex-wrap gap-2">
             {winners.map((x, i) => (
@@ -1161,10 +1589,13 @@ function GiveawayDetail({ giveaway, onBack, onAnnounceError }) {
 
 export default function AdminGiveawaysPage() {
   const [list, setList] = useState([]);
-  const [creating, setCreating] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  // null | form seed (see formFromGiveaway)
+  const [formSeed, setFormSeed] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
-  const [activeRollingId, setActiveRollingId] = useState(null);
   const [warning, setWarning] = useState(null);
+  const chat = useEventSubStatus();
+  const autoOpened = useRef(false);
 
   useEffect(() => {
     if (!warning) return undefined;
@@ -1176,21 +1607,25 @@ export default function AdminGiveawaysPage() {
     const q = query(collection(db, 'giveaways'), orderBy('createdAt', 'desc'), fLimit(50));
     const unsub = onSnapshot(q, (snap) => {
       setList(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      setLoaded(true);
     });
     return unsub;
   }, []);
 
-  // Auto-open the winner modal whenever any giveaway flips to 'rolling'.
+  // Land on the running giveaway instead of the list, once per visit, so
+  // "Back to list" still works afterwards.
   useEffect(() => {
-    const rolling = list.find((g) => g.status === 'rolling');
-    setActiveRollingId(rolling?.id || null);
-  }, [list]);
+    if (!loaded || autoOpened.current) return;
+    autoOpened.current = true;
+    const live = list.find((g) => ['open', 'closed', 'rolling'].includes(g.status));
+    if (live) setSelectedId((cur) => cur || live.id);
+  }, [loaded, list]);
+
+  useGiveawayClock(list, setWarning);
 
   const selected = useMemo(() => list.find((g) => g.id === selectedId) || null, [list, selectedId]);
-  const activeRolling = useMemo(
-    () => list.find((g) => g.id === activeRollingId) || null,
-    [list, activeRollingId]
-  );
+  // Auto-open the winner modal whenever any giveaway is 'rolling'.
+  const activeRolling = useMemo(() => list.find((g) => g.status === 'rolling') || null, [list]);
 
   const grouped = useMemo(() => {
     const open = list.filter((g) => g.status === 'open' || g.status === 'rolling');
@@ -1198,6 +1633,9 @@ export default function AdminGiveawaysPage() {
     const past = list.filter((g) => g.status === 'rolled');
     return { open, closed, past };
   }, [list]);
+
+  const startNew = () => setFormSeed(formFromGiveaway(list[0]));
+  const runAgain = (g) => setFormSeed(formFromGiveaway(g, { copyPrize: true }));
 
   return (
     <div className="p-6 sm:p-8 max-w-4xl mx-auto">
@@ -1211,40 +1649,40 @@ export default function AdminGiveawaysPage() {
           <span>MODULE</span>
           <span className="text-white/70 tracking-eyebrow-lg">GVW</span>
         </div>
-        <h1
-          className="font-black leading-[0.85] tracking-[-0.035em] text-white-body"
-          style={{
-            fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-            fontSize: 'clamp(2.25rem, 6vw, 3.25rem)',
-          }}
-        >
-          <span className="block">Run a</span>
-          <span className="block text-orange-admin">giveaway.</span>
-        </h1>
+        <div className="flex items-end justify-between gap-4 flex-wrap">
+          <h1
+            className="font-black leading-[0.85] tracking-[-0.035em] text-white-body"
+            style={{
+              fontFamily: 'ui-sans-serif, system-ui, sans-serif',
+              fontSize: 'clamp(2.25rem, 6vw, 3.25rem)',
+            }}
+          >
+            <span className="block">Run a</span>
+            <span className="block text-orange-admin">giveaway.</span>
+          </h1>
+          <button
+            type="button"
+            onClick={startNew}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150"
+          >
+            <Plus size={14} aria-hidden="true" />
+            <span className="text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+              New giveaway
+            </span>
+          </button>
+        </div>
       </header>
 
-      <EventSubStatus />
-
-      <div className="flex items-center justify-end mb-6">
-        <button
-          type="button"
-          onClick={() => setCreating(true)}
-          className="inline-flex items-center gap-2 px-3.5 py-2 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150"
-        >
-          <Plus size={13} aria-hidden="true" />
-          <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-            New giveaway
-          </span>
-        </button>
+      <div className="space-y-2 mb-6">
+        <EventSubStatus chat={chat} />
+        <OverlayLink />
       </div>
 
       {selected ? (
         <GiveawayDetail
           giveaway={selected}
           onBack={() => setSelectedId(null)}
-          onAnnounceError={(reason) =>
-            setWarning(`Winner picked, but chat announce failed: ${reason}`)
-          }
+          onRunAgain={runAgain}
         />
       ) : (
         <div className="space-y-6">
@@ -1279,7 +1717,12 @@ export default function AdminGiveawaysPage() {
               </p>
               <div className="border border-white/8 bg-zinc-card/30">
                 {grouped.past.map((g) => (
-                  <GiveawayRow key={g.id} giveaway={g} onOpen={(x) => setSelectedId(x.id)} />
+                  <GiveawayRow
+                    key={g.id}
+                    giveaway={g}
+                    onOpen={(x) => setSelectedId(x.id)}
+                    onRunAgain={runAgain}
+                  />
                 ))}
               </div>
             </section>
@@ -1295,11 +1738,13 @@ export default function AdminGiveawaysPage() {
         </div>
       )}
 
-      {creating && (
+      {formSeed && (
         <NewGiveawayForm
-          onClose={() => setCreating(false)}
+          seed={formSeed}
+          chat={chat}
+          onClose={() => setFormSeed(null)}
           onCreated={(id, meta) => {
-            setCreating(false);
+            setFormSeed(null);
             setSelectedId(id);
             if (meta?.announceError) {
               setWarning(`Giveaway started, but chat announce failed: ${meta.announceError}`);
@@ -1307,16 +1752,9 @@ export default function AdminGiveawaysPage() {
           }}
         />
       )}
-      {activeRolling && (
-        <WinnerModal
-          giveaway={activeRolling}
-          onAnnounceError={(reason) =>
-            setWarning(`Winner confirmed, but chat announce failed: ${reason}`)
-          }
-        />
-      )}
+      {activeRolling && <WinnerModal key={activeRolling.id} giveaway={activeRolling} />}
       {warning && (
-        <div className="fixed bottom-6 right-6 z-50 max-w-sm border border-orange-admin/60 bg-zinc-card/95 backdrop-blur px-4 py-3 shadow-lg">
+        <div role="status" className="fixed bottom-6 right-6 z-50 max-w-sm border border-orange-admin/60 bg-zinc-card/95 backdrop-blur px-4 py-3 shadow-lg">
           <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-orange-admin mb-1 font-mono">
             Warning
           </p>

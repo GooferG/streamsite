@@ -6,7 +6,10 @@ import {
   User as UserIcon,
   Store as StoreIcon,
   ChevronDown,
+  Gift,
 } from 'lucide-react';
+import { collection, onSnapshot, orderBy, query, where, limit as fLimit } from 'firebase/firestore';
+import { db } from '../config/firebase';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 import { useAuth } from '../contexts/AuthContext';
 import { GAMBA_TOOLS } from '../data/gambaTools';
@@ -25,6 +28,69 @@ const NAV_ITEMS = [
 ];
 
 const ADMIN_ITEM = { id: 'admin', label: 'Admin', code: 'AD' };
+const GIVEAWAY_ADMIN_PATH = 'admin/giveaways';
+
+// The running giveaway, if any. Only subscribed for the operator, so the
+// shortcut can show it's live and how many are in.
+function useLiveGiveaway(enabled) {
+  const [live, setLive] = useState(null);
+  useEffect(() => {
+    if (!enabled) {
+      setLive(null);
+      return undefined;
+    }
+    const q = query(
+      collection(db, 'giveaways'),
+      where('status', 'in', ['open', 'closed', 'rolling']),
+      orderBy('createdAt', 'desc'),
+      fLimit(1)
+    );
+    return onSnapshot(
+      q,
+      (snap) => setLive(snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() }),
+      () => setLive(null)
+    );
+  }, [enabled]);
+  return live;
+}
+
+function GiveawayShortcut({ live, onClick }) {
+  const label = live
+    ? live.status === 'rolling'
+      ? 'Rolling'
+      : live.status === 'closed'
+        ? 'Closed'
+        : 'Live'
+    : null;
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={live ? `Giveaway ${label.toLowerCase()}: ${live.prize}` : 'Open the giveaway panel'}
+      className={`inline-flex items-center gap-1.5 px-2.5 py-1 border transition-colors duration-150 whitespace-nowrap ${
+        live
+          ? 'border-emerald-signal/50 bg-emerald-signal/10 text-emerald-signal hover:bg-emerald-signal/20'
+          : 'border-orange-admin/30 text-orange-admin/90 hover:bg-orange-admin/10 hover:text-orange-admin'
+      }`}
+    >
+      <Gift size={12} aria-hidden="true" />
+      {/* Icon-only at md so the nav row doesn't crowd; label from lg up. */}
+      <span className="sr-only lg:not-sr-only text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+        Giveaways
+      </span>
+      {live && (
+        <span className="inline-flex items-center gap-1 pl-1.5 ml-0.5 border-l border-emerald-signal/30 text-[0.625rem] font-bold font-mono tabular-nums">
+          <span className="relative flex w-1.5 h-1.5" aria-hidden="true">
+            <span className="absolute inset-0 rounded-full bg-emerald-signal motion-safe:animate-ping opacity-60" />
+            <span className="relative w-1.5 h-1.5 rounded-full bg-emerald-signal" />
+          </span>
+          {live.entryCount ?? 0}
+          <span className="sr-only"> entries, {label}</span>
+        </span>
+      )}
+    </button>
+  );
+}
 
 function Wordmark({ onClick, onSecretActivate }) {
   const clicksRef = useRef([]);
@@ -321,6 +387,7 @@ export default function Navigation({ currentPage, setPage }) {
   const { twitchUser, loginWithTwitch, logout } = useTwitchAuth();
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.email === ADMIN_EMAIL;
+  const liveGiveaway = useLiveGiveaway(isAdmin);
 
   const handleNavClick = (pageId) => {
     setPage(pageId);
@@ -366,6 +433,7 @@ export default function Navigation({ currentPage, setPage }) {
                   <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" aria-hidden="true" />
                   Operator
                 </span>
+                <GiveawayShortcut live={liveGiveaway} onClick={() => setPage(GIVEAWAY_ADMIN_PATH)} />
                 <div className="pl-2 lg:pl-3 border-l border-white/10">
                   <NavLink
                     item={ADMIN_ITEM}
@@ -585,6 +653,21 @@ export default function Navigation({ currentPage, setPage }) {
               <div className="mt-2 px-5 pt-4 pb-2 border-t border-white/10 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
                 Operator
               </div>
+
+              <button
+                type="button"
+                onClick={() => handleNavClick(GIVEAWAY_ADMIN_PATH)}
+                className="group flex items-center gap-3 px-5 py-3.5 border-l-2 border-transparent hover:bg-zinc-card/50 transition-colors duration-150"
+              >
+                <Gift size={15} className="text-orange-admin" aria-hidden="true" />
+                <span className="text-sm font-bold tracking-tight text-white/70">Giveaways</span>
+                {liveGiveaway && (
+                  <span className="ml-auto inline-flex items-center gap-1.5 text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" aria-hidden="true" />
+                    Live · {liveGiveaway.entryCount ?? 0}
+                  </span>
+                )}
+              </button>
 
               <button
                 type="button"

@@ -57,6 +57,7 @@ const DiscordCallbackPage = lazy(() => import('./pages/DiscordCallbackPage'));
 const SuggestPage = lazy(() => import('./pages/SuggestPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const SuggestOverlay = lazy(() => import('./pages/SuggestOverlay'));
+const GiveawayOverlay = lazy(() => import('./pages/GiveawayOverlay'));
 const LiveHuntPage = lazy(() => import('./pages/LiveHuntPage'));
 const BattlePage = lazy(() => import('./pages/BattlePage'));
 const HuntSuggestPage = lazy(() => import('./pages/HuntSuggestPage'));
@@ -296,11 +297,25 @@ function StreamingSiteContent() {
   );
 }
 
+// OBS browser sources render bare: no nav, grain, TV intro or Twitch polling,
+// and nothing opaque behind them.
+function AppShell() {
+  const location = useLocation();
+  if (location.pathname === '/giveaway-overlay') {
+    return (
+      <Suspense fallback={null}>
+        <GiveawayOverlay />
+      </Suspense>
+    );
+  }
+  return <StreamingSiteContent />;
+}
+
 export default function StreamingSite() {
   return (
     <AuthProvider>
       <TwitchAuthProvider>
-        <StreamingSiteContent />
+        <AppShell />
       </TwitchAuthProvider>
     </AuthProvider>
   );

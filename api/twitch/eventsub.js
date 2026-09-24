@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 import { adminDb, FieldValue } from '../_lib/firebaseAdmin.js';
 import { getBroadcasterAccessToken, helix } from '../_lib/twitchBroadcasterToken.js';
+import { messageHasKeyword } from '../_lib/giveawayKeyword.js';
 
 // Twitch EventSub webhook receiver.
 //
@@ -15,9 +16,11 @@ import { getBroadcasterAccessToken, helix } from '../_lib/twitchBroadcasterToken
 // For `channel.chat.message`:
 //   1. If giveaway in 'rolling' state and message is from the rolled winner,
 //      write to giveaways/{id}/winner_messages.
-//   2. For each `open` giveaway where the keyword appears in the message,
-//      write entry to giveaways/{id}/entries/{twitchId} (idempotent — doc id
-//      = twitch id, so retyping the keyword doesn't double-enter).
+//   2. For each `open` giveaway where the keyword appears in the message as a
+//      whole word, write entry to giveaways/{id}/entries/{twitchId}
+//      (idempotent — doc id = twitch id, created with create() so retyping
+//      the keyword never double-enters or double-counts). Entries after the
+//      giveaway's `closesAt` are ignored even if its status is still 'open'.
 
 // Vercel runs the default body parser; we need the raw request bytes to
 // validate the HMAC, so disable it.
@@ -152,8 +155,6 @@ async function handleChatMessage(event) {
     .get();
   if (activeSnap.empty) return { processed: false, reason: 'no_active' };
 
-  const lowerText = text.toLowerCase();
-
   // Load (or skip) the user. We use the twitch user_id, which is the doc id.
   const userRef = adminDb.collection('users').doc(chatterId);
   let userSnap = null;
@@ -181,8 +182,11 @@ async function handleChatMessage(event) {
     // Anyone in chat can enter — registered viewers may receive weight bonuses
     // depending on the giveaway's toggles. Unregistered chatters get base weight.
     if (g.status === 'open' && g.keyword) {
-      const kw = String(g.keyword).toLowerCase();
-      if (!lowerText.includes(kw)) continue;
+      if (!messageHasKeyword(text, g.keyword)) continue;
+      // Timer ran out. The admin page flips status to 'closed' when it sees
+      // this, but entries stop here regardless of whether it is open.
+      const closesAtMs = g.closesAt?.toMillis ? g.closesAt.toMillis() : null;
+      if (closesAtMs && Date.now() >= closesAtMs) continue;
 
       // Lazy-load the user doc; user may be missing (chatter never logged in).
       if (userSnap === null) {
@@ -207,20 +211,29 @@ async function handleChatMessage(event) {
       }
 
       const weight = computeWeight(userData, chatRoles, g);
-      await entryRef.set({
-        twitchId: chatterId,
-        twitchName: userData?.twitchName || chatterLogin,
-        displayName: userData?.displayName || chatterName,
-        profileImageUrl: userData?.profileImageUrl || null,
-        registered: !!userData,
-        discordLinked: !!userData?.discordVerifiedAt,
-        isTwitchSub: chatRoles.isTwitchSub,
-        isVip: chatRoles.isVip,
-        isMod: chatRoles.isMod,
-        weight,
-        source: 'chat',
-        enteredAt: FieldValue.serverTimestamp(),
-      });
+      // create() fails if the doc exists. The get() above is only a cheap
+      // early-out; two keyword messages processed at once both pass it, and
+      // with set() both would bump entryCount/totalWeight.
+      try {
+        await entryRef.create({
+          twitchId: chatterId,
+          twitchName: userData?.twitchName || chatterLogin,
+          displayName: userData?.displayName || chatterName,
+          profileImageUrl: userData?.profileImageUrl || null,
+          registered: !!userData,
+          discordLinked: !!userData?.discordVerifiedAt,
+          isTwitchSub: chatRoles.isTwitchSub,
+          isVip: chatRoles.isVip,
+          isMod: chatRoles.isMod,
+          weight,
+          source: 'chat',
+          enteredAt: FieldValue.serverTimestamp(),
+        });
+      } catch (err) {
+        // gRPC ALREADY_EXISTS: a concurrent message entered them first.
+        if (err?.code === 6) continue;
+        throw err;
+      }
       await gdoc.ref.update({
         entryCount: FieldValue.increment(1),
         totalWeight: FieldValue.increment(weight),

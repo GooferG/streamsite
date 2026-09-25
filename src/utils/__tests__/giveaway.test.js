@@ -2,9 +2,13 @@ import {
   REVEAL_TIMELINE,
   SURF_FRAMES,
   WINNER_CHANNEL,
+  bonusPrize,
   buildSurfFrames,
   defaultTitle,
   formFromGiveaway,
+  formatMoney,
+  formatMulti,
+  parseMoney,
   formatClock,
   keywordWarning,
   pickKey,
@@ -209,5 +213,59 @@ describe('formFromGiveaway', () => {
     expect(rulesSummary(formFromGiveaway(past))).toBe(
       'Anyone in chat · sub/Discord +1 each · chat: last call, winner'
     );
+  });
+});
+
+describe('money', () => {
+  it('formats whole amounts without cents and keeps real cents', () => {
+    expect(formatMoney(100)).toBe('$100');
+    expect(formatMoney(43.2)).toBe('$43.20');
+    expect(formatMoney(1250)).toBe('$1,250');
+    expect(formatMoney(0)).toBe('$0');
+  });
+
+  it('parses typed amounts, ignoring $ and commas', () => {
+    expect(parseMoney('43.2')).toBe(43.2);
+    expect(parseMoney('$1,250.555')).toBe(1250.56);
+    expect(parseMoney('')).toBeNull();
+    expect(parseMoney(null)).toBeNull();
+  });
+
+  it('shows the payout as a multiple of the buy', () => {
+    expect(formatMulti(43.2, 100)).toBe('0.43x');
+    expect(formatMulti(1250, 100)).toBe('12.5x');
+    expect(formatMulti(25000, 100)).toBe('250x');
+    expect(formatMulti(0, 100)).toBe('0.00x');
+    expect(formatMulti(10, 0)).toBeNull();
+  });
+
+  it('names a bonus-buy prize from its value', () => {
+    expect(bonusPrize(100)).toBe('$100 bonus buy');
+  });
+});
+
+describe('formFromGiveaway prize types', () => {
+  it('defaults a first-ever giveaway to a bonus buy', () => {
+    expect(formFromGiveaway(null).kind).toBe('bonus');
+  });
+
+  it('treats giveaways from before prize types as plain prizes', () => {
+    expect(formFromGiveaway({ prize: 'Steam key' }).kind).toBe('item');
+  });
+
+  it('Run it again copies the buy value, not the derived prize text', () => {
+    const form = formFromGiveaway(
+      { kind: 'bonus', buyAmount: 100, prize: '$100 bonus buy' },
+      { copyPrize: true }
+    );
+    expect(form.kind).toBe('bonus');
+    expect(form.buyAmount).toBe('100');
+    expect(form.prize).toBe('');
+  });
+
+  it('mentions the payout message only for bonus buys', () => {
+    const bonus = formFromGiveaway({ kind: 'bonus' });
+    expect(rulesSummary(bonus)).toMatch(/payout/);
+    expect(rulesSummary({ ...bonus, kind: 'item' })).not.toMatch(/payout/);
   });
 });

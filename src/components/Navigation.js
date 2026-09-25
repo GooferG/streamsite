@@ -41,7 +41,7 @@ function useLiveGiveaway(enabled) {
     }
     const q = query(
       collection(db, 'giveaways'),
-      where('status', 'in', ['open', 'closed', 'rolling']),
+      where('status', 'in', ['open', 'closed', 'rolling', 'playing']),
       orderBy('createdAt', 'desc'),
       fLimit(1)
     );
@@ -55,13 +55,8 @@ function useLiveGiveaway(enabled) {
 }
 
 function GiveawayShortcut({ live, onClick }) {
-  const label = live
-    ? live.status === 'rolling'
-      ? 'Rolling'
-      : live.status === 'closed'
-        ? 'Closed'
-        : 'Live'
-    : null;
+  const STATUS_LABEL = { rolling: 'Rolling', playing: 'Playing', closed: 'Closed' };
+  const label = live ? STATUS_LABEL[live.status] || 'Live' : null;
   return (
     <button
       type="button"

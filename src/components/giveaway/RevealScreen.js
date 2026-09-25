@@ -114,7 +114,10 @@ export function GiveawayAvatar({ entry, className = '', ringClass = 'border-whit
 export function useRevealState(giveaway) {
   const reduced = usePrefersReducedMotion();
   const rolledAtMs = tsMillis(giveaway?.rolledAt);
-  const hasPick = giveaway?.status === 'rolling' && !!giveaway?.winner && rolledAtMs != null;
+  // 'playing' keeps the pick: a bonus-buy winner holds the landed screen for
+  // a moment after confirm before the overlay shrinks to the corner card.
+  const hasPick =
+    ['rolling', 'playing'].includes(giveaway?.status) && !!giveaway?.winner && rolledAtMs != null;
   const inReveal = hasPick && Date.now() - rolledAtMs < REVEAL_MS + 300;
   const now = useClock({ fast: inReveal && !reduced, intervalMs: 500, active: hasPick });
   const elapsed = hasPick ? now - rolledAtMs : null;

@@ -8,8 +8,12 @@ import RevealScreen, {
   useRevealState,
 } from '../components/giveaway/RevealScreen';
 import {
+  LOCK_HOLD_MS,
+  PAYOUT_COUNT_MS,
   REVEAL_MS,
   formatClock,
+  formatMoney,
+  formatMulti,
   tsMillis,
 } from '../utils/giveaway';
 
@@ -18,9 +22,11 @@ import {
 // and this follows along.
 //
 // Query params:
-//   pos=bl|br|tl|tr   corner for the entry card (default bl)
-//   sound=1           static/channel-click sound on the reveal (OBS audio)
-//   demo=1            loop a fake giveaway, for positioning it in OBS
+//   pos=bl|br|tl|tr      corner for the entry card (default bl)
+//   playpos=bl|br|tl|tr  corner for the "now playing" bonus card (default: pos),
+//                        so it can sit clear of the slot's own controls
+//   sound=1              static/channel-click sound on the reveal (OBS audio)
+//   demo=1               loop a fake giveaway, for positioning it in OBS
 
 const WRAP_MS = 12000;
 
@@ -121,16 +127,26 @@ const DEMO_NAMES = [
   'sofa_king', 'GRAINFILTER', 'nightowl_88', 'ch3_static', 'Snackrifice',
   'TubeAmp', 'dialtone_dee',
 ];
-const DEMO = { entryEvery: 800, openMs: 11000 };
+const DEMO = { entryEvery: 800, openMs: 11000, buy: 100 };
 DEMO.rollAt = DEMO.openMs + 1800;
 DEMO.msgAt = DEMO.rollAt + REVEAL_MS + 2600;
-DEMO.confirmAt = DEMO.msgAt + 2200;
-DEMO.endAt = DEMO.confirmAt + 3500;
+DEMO.confirmAt = DEMO.msgAt + 2200; // bonus buy: straight to 'playing'
+DEMO.slotAt = DEMO.confirmAt + LOCK_HOLD_MS + 2500;
+DEMO.payoutAt = DEMO.slotAt + 5000;
+DEMO.endAt = DEMO.payoutAt + 5000;
 DEMO.cycleMs = DEMO.endAt + 7000;
+const DEMO_SLOT = {
+  slotName: 'Gates of Olympus',
+  provider: 'Pragmatic Play',
+  slotImage: 'https://cdn.rainbet.com/slots/Gates%20of%20Olympusssa.png',
+};
 
 function demoSnapshot(now, startedAt) {
   const elapsed = (now - startedAt) % DEMO.cycleMs;
   const cycleStart = now - elapsed;
+  // Alternate a bust and a hit so both payout looks get shown.
+  const cycle = Math.floor((now - startedAt) / DEMO.cycleMs);
+  const payoutAmount = cycle % 2 === 0 ? 43.2 : 187.4;
   const count = Math.min(DEMO_NAMES.length, Math.floor(elapsed / DEMO.entryEvery) + 1);
   const entries = DEMO_NAMES.slice(0, count)
     .map((name, i) => ({
@@ -145,13 +161,24 @@ function demoSnapshot(now, startedAt) {
   const winnerEntry = { ...(entries.find((e) => e.id === 'demo-5') || entries[0]) };
   let status = 'open';
   if (elapsed >= DEMO.endAt) status = 'rolled';
+  else if (elapsed >= DEMO.confirmAt) status = 'playing';
   else if (elapsed >= DEMO.rollAt) status = 'rolling';
   else if (elapsed >= DEMO.openMs) status = 'closed';
-  const picked = status === 'rolling' || status === 'rolled';
+  const picked = status !== 'open' && status !== 'closed';
+  const slot = elapsed >= DEMO.slotAt ? DEMO_SLOT : {};
+  const paid = elapsed >= DEMO.payoutAt;
+  const confirmedWinner = {
+    ...winnerEntry,
+    buyAmount: DEMO.buy,
+    ...slot,
+    payout: paid ? payoutAmount : null,
+  };
   const giveaway = {
     id: 'demo',
+    kind: 'bonus',
+    buyAmount: DEMO.buy,
     title: 'Demo giveaway',
-    prize: 'Hades II · Steam key',
+    prize: `${formatMoney(DEMO.buy)} bonus buy`,
     keyword: 'tunedin',
     status,
     entryCount: count,
@@ -162,8 +189,17 @@ function demoSnapshot(now, startedAt) {
     winner: picked ? winnerEntry : null,
     winnerTwitchId: picked ? winnerEntry.twitchId : null,
     rolledAt: picked ? cycleStart + DEMO.rollAt : null,
-    winners: elapsed >= DEMO.confirmAt ? [winnerEntry] : [],
+    winners: elapsed >= DEMO.confirmAt ? [confirmedWinner] : [],
     endedAt: status === 'rolled' ? cycleStart + DEMO.endAt : null,
+    playing:
+      status === 'playing'
+        ? {
+            ...confirmedWinner,
+            payoutAt: paid ? cycleStart + DEMO.payoutAt : null,
+            startedAt: cycleStart + DEMO.confirmAt,
+            fromConfirm: true,
+          }
+        : null,
   };
   const firstMessage =
     status === 'rolling' && elapsed >= DEMO.msgAt
@@ -394,7 +430,7 @@ function ClaimClock({ giveaway, reveal, firstMessage }) {
   );
 }
 
-function RevealStage({ giveaway, entries, firstMessage, sound }) {
+function RevealStage({ giveaway, entries, firstMessage, sound, holding = false }) {
   const reveal = useRevealState(giveaway);
   const winners = giveaway.winners || [];
   const confirmed = winners.some((w) => w.twitchId === giveaway.winnerTwitchId);
@@ -461,7 +497,17 @@ function RevealStage({ giveaway, entries, firstMessage, sound }) {
                 {(w.weight || 1) > 1 ? `${w.weight} tickets in the hat` : '1 ticket in the hat'}
               </p>
             </div>
-            <ClaimClock giveaway={giveaway} reveal={reveal} firstMessage={firstMessage} />
+            {holding ? (
+              // Confirmed bonus buy: cue the hand-off to the corner card.
+              <p
+                className="gvo-motion px-5 py-2.5 border-2 border-emerald-signal/50 bg-zinc-broadcast/85 font-mono font-bold uppercase tracking-eyebrow-md text-sm text-emerald-signal"
+                style={{ animation: 'gvo-rise 0.35s ease-out both' }}
+              >
+                Up next: their {giveaway.prize}
+              </p>
+            ) : (
+              <ClaimClock giveaway={giveaway} reveal={reveal} firstMessage={firstMessage} />
+            )}
           </>
         ) : (
           <p
@@ -476,10 +522,126 @@ function RevealStage({ giveaway, entries, firstMessage, sound }) {
   );
 }
 
+// ─── Now playing (bonus buy on stream) ──────────────────────────────────────
+
+const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
+
+function SlotArt({ src, className }) {
+  if (!src) {
+    return (
+      <span
+        aria-hidden="true"
+        className={`${className} inline-flex items-center justify-center bg-zinc-elevated border border-white/10 font-mono font-black text-white/30 text-2xl`}
+      >
+        ?
+      </span>
+    );
+  }
+  return <img src={src} alt="" className={`${className} object-cover border border-white/15`} />;
+}
+
+// Small corner card while the winner's bonus is played, so the slot itself
+// stays on screen. Counts the payout up when it's logged.
+function NowPlayingCard({ giveaway, position }) {
+  const p = giveaway.playing;
+  const buy = p.buyAmount ?? giveaway.buyAmount ?? null;
+  const payoutAt = tsMillis(p.payoutAt);
+  const counting = p.payout != null && payoutAt != null && Date.now() - payoutAt < PAYOUT_COUNT_MS + 100;
+  const now = useClock({ fast: counting, active: counting });
+  const t = counting ? Math.min(1, Math.max(0, (now - payoutAt) / PAYOUT_COUNT_MS)) : 1;
+  const shownPayout = p.payout != null ? p.payout * easeOutCubic(t) : null;
+  const multi = p.payout != null ? formatMulti(p.payout, buy) : null;
+  const hit = p.payout != null && buy != null && p.payout >= buy;
+  const winners = giveaway.winners || [];
+  const target = Number(giveaway.targetWinners) || 1;
+  const winnerNo = winners.findIndex((w) => w.twitchId === p.twitchId) + 1;
+
+  return (
+    <section
+      key={p.twitchId}
+      className={`gvo-motion fixed ${position} w-[26rem] max-w-[calc(100vw-4rem)] bg-zinc-broadcast/[0.93] border border-white/12 shadow-[0_24px_60px_rgba(0,0,0,0.55)] overflow-hidden`}
+      style={{ animation: 'gvo-rise 0.4s ease-out both' }}
+    >
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0" style={{ backgroundImage: SCANLINES_SOFT }} />
+
+      <div className="relative flex items-center gap-3 px-5 py-2.5 border-b border-white/10 font-mono font-bold uppercase tracking-eyebrow-md text-[0.6875rem]">
+        <span className="relative flex w-2 h-2">
+          <span className="absolute inset-0 rounded-full bg-orange-admin motion-safe:animate-ping opacity-60" />
+          <span className="relative w-2 h-2 rounded-full bg-orange-admin" />
+        </span>
+        <span className="text-orange-admin">Giveaway bonus</span>
+        <span className="text-white/30">CH 07</span>
+        {target > 1 && winnerNo > 0 && (
+          <span className="ml-auto text-white/45">
+            {winnerNo} of {target}
+          </span>
+        )}
+      </div>
+
+      <div className="relative px-5 pt-4 pb-3 flex gap-4 items-center">
+        <SlotArt src={p.slotImage} className="w-[4.5rem] h-[4.5rem] flex-shrink-0" />
+        <div className="min-w-0">
+          <p className="font-mono font-bold uppercase tracking-eyebrow-md text-[0.625rem] text-white/45">
+            Now playing
+          </p>
+          {p.slotName ? (
+            <p className="font-black text-white-body text-xl leading-tight truncate">{p.slotName}</p>
+          ) : (
+            <p
+              className="gvo-motion font-black text-white/60 text-xl leading-tight"
+              style={{ animation: 'gvo-blink 1.2s steps(1) infinite' }}
+            >
+              Picking a slot…
+            </p>
+          )}
+          {p.provider && <p className="text-xs text-white/45 truncate">{p.provider}</p>}
+        </div>
+      </div>
+
+      <div className="relative px-5 pb-3 flex items-center gap-2.5">
+        <GiveawayAvatar entry={p} className="w-7 h-7 text-xs" ringClass="border-emerald-signal/60" />
+        <span className="font-bold text-white-body truncate">{p.displayName || p.twitchName}</span>
+        <span className="ml-auto font-mono text-xs text-white/50 whitespace-nowrap">
+          {buy != null ? `${formatMoney(buy)} buy` : giveaway.prize}
+        </span>
+      </div>
+
+      <div className="relative px-5 py-3 border-t border-white/10 flex items-center gap-3">
+        {shownPayout == null ? (
+          <span className="font-mono font-bold uppercase tracking-eyebrow-md text-xs text-white/45">
+            Payout pending
+          </span>
+        ) : (
+          <>
+            <span className="font-mono font-bold uppercase tracking-eyebrow-md text-xs text-white/55">Paid</span>
+            <span
+              className={`font-mono font-black text-3xl tabular-nums leading-none ${hit ? 'text-emerald-signal' : 'text-white-body'}`}
+            >
+              {formatMoney(Math.round(shownPayout * 100) / 100)}
+            </span>
+            {multi && t >= 1 && (
+              <span
+                className={`gvo-motion ml-auto px-2 py-1 border-2 font-mono font-black text-lg tabular-nums ${
+                  hit ? 'border-emerald-signal text-emerald-signal' : 'border-orange-admin/70 text-orange-admin'
+                }`}
+                style={{ animation: 'gvo-stamp 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.3) both' }}
+              >
+                {multi}
+              </span>
+            )}
+          </>
+        )}
+      </div>
+    </section>
+  );
+}
+
 // ─── Wrap-up (just ended) ───────────────────────────────────────────────────
 
 function WrapCard({ giveaway }) {
   const winners = giveaway.winners || [];
+  const paid = winners.filter((w) => w.payout != null);
+  const total = paid.reduce((a, w) => a + Number(w.payout), 0);
   return (
     // Centered by the outer flex row: the rise animation owns `transform`,
     // so a translate-x centering would be overwritten.
@@ -491,7 +653,12 @@ function WrapCard({ giveaway }) {
         <p className="font-mono font-bold uppercase tracking-eyebrow-lg text-xs text-emerald-signal mb-1">
           That&apos;s a wrap
         </p>
-        <p className="font-black text-white-body text-2xl leading-tight mb-4 truncate">{giveaway.prize}</p>
+        <p className="font-black text-white-body text-2xl leading-tight mb-4 truncate">
+          {giveaway.prize}
+          {paid.length > 1 && (
+            <span className="ml-2 font-mono text-base text-emerald-signal">· {formatMoney(total)} paid out</span>
+          )}
+        </p>
         <ul className="flex flex-wrap gap-3">
           {winners.map((w, i) => (
             <li key={`${w.twitchId}-${i}`} className="inline-flex items-center gap-2 pr-3 border border-white/10 bg-zinc-card/80">
@@ -500,6 +667,12 @@ function WrapCard({ giveaway }) {
                 {winners.length > 1 && <span className="font-mono text-emerald-signal/70 mr-1">#{i + 1}</span>}
                 {w.displayName || w.twitchName}
               </span>
+              {w.payout != null && (
+                <span className="font-mono text-sm text-emerald-signal tabular-nums">
+                  {formatMoney(w.payout)}
+                  {w.slotName && <span className="text-white/40"> · {w.slotName}</span>}
+                </span>
+              )}
             </li>
           ))}
         </ul>
@@ -515,6 +688,7 @@ export default function GiveawayOverlay() {
   const params = useMemo(() => new URLSearchParams(search), [search]);
   const demo = params.get('demo') === '1';
   const position = POSITION[params.get('pos')] || POSITION.bl;
+  const playPosition = POSITION[params.get('playpos')] || position;
   const sound = useOverlaySound(params.get('sound') === '1');
 
   const live = useGiveawayFeed({ enabled: !demo });
@@ -541,12 +715,36 @@ export default function GiveawayOverlay() {
   // Re-render once the wrap window passes so the card clears itself.
   useClock({ intervalMs: 1000, active: wrapping });
 
+  // A bonus-buy winner just confirmed: keep the big screen up with the
+  // "Locked in" stamp for a beat, fade it, then hand off to the corner card.
+  const playing = giveaway?.status === 'playing' ? giveaway.playing : null;
+  const playStartedAt = tsMillis(playing?.startedAt);
+  const holding =
+    !!playing?.fromConfirm &&
+    playing.twitchId === giveaway.winnerTwitchId &&
+    playStartedAt != null &&
+    Date.now() - playStartedAt < LOCK_HOLD_MS;
+  useClock({ intervalMs: 100, active: holding });
+  const fading = holding && Date.now() - playStartedAt > LOCK_HOLD_MS - 450;
+
   let body = null;
   if (giveaway) {
-    if (giveaway.status === 'rolling' && giveaway.winner) {
+    if ((giveaway.status === 'rolling' && giveaway.winner) || holding) {
+      // Same element for rolling and the post-confirm hold, so confirming
+      // doesn't remount the screen and replay its intro.
       body = (
-        <RevealStage giveaway={giveaway} entries={entries} firstMessage={firstMessage} sound={sound} />
+        <div style={{ opacity: fading ? 0 : 1, transition: 'opacity 0.45s ease-in' }}>
+          <RevealStage
+            giveaway={giveaway}
+            entries={entries}
+            firstMessage={holding ? null : firstMessage}
+            sound={sound}
+            holding={holding}
+          />
+        </div>
       );
+    } else if (playing) {
+      body = <NowPlayingCard giveaway={giveaway} position={playPosition} />;
     } else if (['open', 'closed', 'rolling'].includes(giveaway.status)) {
       body = <EntryCard giveaway={giveaway} entries={entries} position={position} />;
     } else if (wrapping) {

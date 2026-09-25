@@ -26,8 +26,11 @@ async function tryAnnounce(text) {
 // Admin giveaway lifecycle endpoint. POST { action, ...payload }.
 //
 // Actions:
-//   create   { prize, keyword, title?, weights, durationSec?, autoRoll?,
-//              targetWinners?, requireFollow?, announce* / *Message }
+//   create   { kind, buyAmount | prize, keyword, title?, weights, durationSec?,
+//              autoRoll?, targetWinners?, requireFollow?, announce* / *Message }
+//            kind 'bonus': each winner gets a bonus buy worth `buyAmount`,
+//            played on stream; the actual win is logged with `payout`.
+//            kind 'item': a plain prize (keys, merch), no play step.
 //            durationSec > 0 sets `closesAt`; EventSub ignores entries after
 //            it even if nobody closes the giveaway. The admin page closes it
 //            (and rolls, with autoRoll) when the clock runs out.
@@ -44,10 +47,20 @@ async function tryAnnounce(text) {
 //                                            reveal has played; posting at pick
 //                                            time spoiled the reveal, since chat
 //                                            runs seconds ahead of the video.
-//   confirm  { id, prizeNote? }           -> create redemption, append to winners[];
-//                                            giveaway stays 'rolling' so the
-//                                            operator can roll another, go back,
-//                                            or end
+//   confirm  { id, prizeNote? }           -> create redemption, append to winners[].
+//                                            Bonus buys go straight to 'playing'
+//                                            for that winner; plain prizes stay
+//                                            'rolling' so the operator can roll
+//                                            another, go back, or end
+//   play     { id, twitchId? }            -> status='playing' for a confirmed
+//                                            winner (default: the current pick).
+//                                            The overlay drops the big reveal for
+//                                            a corner card so the slot is visible
+//   setSlot  { id, twitchId?, slotName, slotImage?, provider? }
+//                                         -> record which slot they're playing
+//   payout   { id, twitchId?, amount }    -> log what the bonus actually paid.
+//                                            Works on any confirmed winner, also
+//                                            after the giveaway ended (fixes)
 //   back     { id }                       -> leave the winner window without
 //                                            ending: status returns to open/closed,
 //                                            an unconfirmed pick is dropped
@@ -55,8 +68,10 @@ async function tryAnnounce(text) {
 //
 // A giveaway can name several winners. Every confirmed winner is appended to
 // `winners[]` and excluded from later draws, alongside `skippedIds`. `winner`
-// / `winnerTwitchId` always describe the CURRENT pick on screen; after `end`
-// they settle on the last confirmed winner so past lists keep working.
+// / `winnerTwitchId` always describe the latest pick; after `end` they settle
+// on the last confirmed winner so past lists keep working. `playing` holds the
+// winner whose bonus is on stream, separate from the pick, so playing an
+// earlier winner never re-triggers the pick's chat announcement.
 
 function sanitizeWeights(w = {}) {
   const num = (v, dflt) => {
@@ -76,6 +91,72 @@ function clampInt(value, min, max, dflt) {
   const n = Math.floor(Number(value));
   if (!Number.isFinite(n)) return dflt;
   return Math.min(max, Math.max(min, n));
+}
+
+function parseAmount(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0 || n > 10_000_000) return null;
+  return Math.round(n * 100) / 100;
+}
+
+function formatMoney(value) {
+  const n = Number(value) || 0;
+  const cents = Math.round(n * 100) % 100 !== 0;
+  return `$${n.toLocaleString('en-US', {
+    minimumFractionDigits: cents ? 2 : 0,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+function formatMulti(payout, buy) {
+  if (!(Number(buy) > 0)) return '';
+  const m = Number(payout) / Number(buy);
+  return `${m.toFixed(m < 10 ? 2 : m < 100 ? 1 : 0)}x`;
+}
+
+// Only accept slot art from a plain https URL; it is rendered on the overlay.
+function cleanImage(url) {
+  const s = String(url || '').trim();
+  return /^https:\/\/[^\s"'<>]{1,500}$/.test(s) ? s : null;
+}
+
+function cleanText(value, max) {
+  const s = String(value || '').trim().slice(0, max);
+  return s || null;
+}
+
+// The `playing` block for a confirmed winner. Slot/payout carry over when
+// replaying someone whose bonus was already partly logged.
+function playingFor(winner, { fromConfirm = false } = {}) {
+  return {
+    twitchId: winner.twitchId,
+    displayName: winner.displayName || null,
+    twitchName: winner.twitchName || null,
+    profileImageUrl: winner.profileImageUrl || null,
+    slotName: winner.slotName || null,
+    slotImage: winner.slotImage || null,
+    provider: winner.provider || null,
+    payout: winner.payout ?? null,
+    payoutAt: null,
+    startedAt: FieldValue.serverTimestamp(),
+    fromConfirm,
+  };
+}
+
+// Patch one confirmed winner inside winners[] (arrays can't be updated in
+// place, so read-modify-write in a transaction). `extra` lands on the doc.
+async function patchWinner(ref, twitchId, patch, extra = () => ({})) {
+  return adminDb.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    const g = snap.data();
+    const winners = [...(g.winners || [])];
+    const i = winners.findIndex((w) => w.twitchId === twitchId);
+    if (i === -1) return null;
+    const before = winners[i];
+    winners[i] = { ...before, ...patch };
+    tx.update(ref, { winners, ...extra(g) });
+    return { giveaway: g, before, winner: winners[i], index: i };
+  });
 }
 
 // Claim a one-shot field inside a transaction so two admin tabs cannot both
@@ -157,7 +238,15 @@ export default async function handler(req, res) {
 
   try {
     if (action === 'create') {
-      const prize = String(payload.prize || '').trim();
+      const kind = payload.kind === 'bonus' ? 'bonus' : 'item';
+      const buyAmount = kind === 'bonus' ? parseAmount(payload.buyAmount) : null;
+      if (kind === 'bonus' && !(buyAmount > 0)) {
+        return res.status(400).json({ error: 'bonus buy value required' });
+      }
+      const prize =
+        kind === 'bonus'
+          ? `${formatMoney(buyAmount)} bonus buy`
+          : String(payload.prize || '').trim();
       const keyword = normalizeKeyword(payload.keyword);
       if (!prize || !keyword) {
         return res.status(400).json({ error: 'prize and keyword required' });
@@ -176,6 +265,8 @@ export default async function handler(req, res) {
       const closesAt = durationSec > 0 ? new Date(Date.now() + durationSec * 1000) : null;
       const now = FieldValue.serverTimestamp();
       const ref = await adminDb.collection('giveaways').add({
+        kind,
+        buyAmount,
         title,
         prize,
         keyword,
@@ -193,6 +284,9 @@ export default async function handler(req, res) {
         lastCallAt: null,
         targetWinners: clampInt(payload.targetWinners, 1, 20, 1),
         announcedPick: null,
+        announcePayout: kind === 'bonus' && payload.announcePayout !== false,
+        payoutMessage: cleanText(payload.payoutMessage, 400),
+        playing: null,
         status: 'open',
         entryCount: 0,
         totalWeight: 0,
@@ -255,7 +349,13 @@ export default async function handler(req, res) {
     }
 
     if (action === 'announce') {
-      if (giveaway.status !== 'rolling' || !giveaway.winner || !giveaway.winnerTwitchId) {
+      // 'playing' too: a bonus-buy winner confirmed before the announce timer
+      // fired has already moved on to playing their bonus.
+      if (
+        !['rolling', 'playing'].includes(giveaway.status) ||
+        !giveaway.winner ||
+        !giveaway.winnerTwitchId
+      ) {
         return res.status(400).json({ error: 'NOT_ROLLING' });
       }
       const rolledAtMs = giveaway.rolledAt?.toMillis ? giveaway.rolledAt.toMillis() : null;
@@ -287,10 +387,11 @@ export default async function handler(req, res) {
     }
 
     if (action === 'roll') {
-      // Rollable from open/closed, or from the winner window once the pick on
-      // screen has been confirmed. That is "roll another" for a second prize.
+      // Rollable from open/closed, from a bonus being played, or from the
+      // winner window once the pick on screen has been confirmed. That is
+      // "roll another" for the next prize.
       const rollable =
-        ['open', 'closed'].includes(giveaway.status) ||
+        ['open', 'closed', 'playing'].includes(giveaway.status) ||
         (giveaway.status === 'rolling' && currentPickConfirmed(giveaway));
       if (!rollable) {
         return res.status(400).json({ error: 'NOT_ROLLABLE' });
@@ -304,6 +405,7 @@ export default async function handler(req, res) {
         winnerTwitchId: winner.id,
         rolledAt: FieldValue.serverTimestamp(),
         announcedPick: null,
+        playing: null,
       });
       // Chat hears about the winner later, from `announce`, once the reveal
       // has played on stream.
@@ -408,31 +510,122 @@ export default async function handler(req, res) {
         createdAt: now,
         fulfilledAt: null,
       });
-      // Confirming does not end the giveaway. The pick is written down, the
-      // window stays up, and the operator decides what comes next: roll
-      // another for a second prize, go back to entries, or end it.
+      // Confirming does not end the giveaway. The pick is written down and
+      // the operator decides what comes next. A bonus buy moves straight on
+      // to playing it; a plain prize keeps the winner window up to roll
+      // another, go back to entries, or end.
       const record = {
         ...trimEntry(winner),
         twitchId: giveaway.winnerTwitchId,
         redemptionId: redemptionRef.id,
         prizeNote: payload.prizeNote || null,
         confirmedAt: new Date().toISOString(),
+        buyAmount: giveaway.kind === 'bonus' ? giveaway.buyAmount ?? null : null,
       };
-      await ref.update({
+      const update = {
         winners: FieldValue.arrayUnion(record),
         confirmedAt: now,
         confirmedBy: admin.email,
         redemptionId: redemptionRef.id,
-      });
+      };
+      if (giveaway.kind === 'bonus') {
+        update.status = 'playing';
+        update.playing = playingFor(record, { fromConfirm: true });
+      }
+      await ref.update(update);
       // No chat announce here. The winner was announced after the reveal.
       return res.status(200).json({ ok: true, redemptionId: redemptionRef.id });
+    }
+
+    if (action === 'play') {
+      if (!['open', 'closed', 'rolling', 'playing'].includes(giveaway.status)) {
+        return res.status(400).json({ error: 'NOT_LIVE' });
+      }
+      const twitchId = payload.twitchId || giveaway.winnerTwitchId;
+      const winner = (giveaway.winners || []).find((w) => w.twitchId === twitchId);
+      if (!winner) return res.status(400).json({ error: 'NOT_A_WINNER' });
+      await ref.update({ status: 'playing', playing: playingFor(winner) });
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === 'setSlot') {
+      const twitchId = payload.twitchId || giveaway.playing?.twitchId;
+      const slot = {
+        slotName: cleanText(payload.slotName, 120),
+        slotImage: cleanImage(payload.slotImage),
+        provider: cleanText(payload.provider, 80),
+      };
+      const result = await patchWinner(ref, twitchId, slot, (g) =>
+        g.status === 'playing' && g.playing?.twitchId === twitchId
+          ? {
+              'playing.slotName': slot.slotName,
+              'playing.slotImage': slot.slotImage,
+              'playing.provider': slot.provider,
+            }
+          : {}
+      );
+      if (!result) return res.status(400).json({ error: 'NOT_A_WINNER' });
+      return res.status(200).json({ ok: true });
+    }
+
+    if (action === 'payout') {
+      const twitchId = payload.twitchId || giveaway.playing?.twitchId;
+      const amount = parseAmount(payload.amount);
+      if (amount == null) return res.status(400).json({ error: 'BAD_AMOUNT' });
+      const result = await patchWinner(
+        ref,
+        twitchId,
+        { payout: amount, payoutAt: new Date().toISOString() },
+        (g) =>
+          g.status === 'playing' && g.playing?.twitchId === twitchId
+            ? { 'playing.payout': amount, 'playing.payoutAt': FieldValue.serverTimestamp() }
+            : {}
+      );
+      if (!result) return res.status(400).json({ error: 'NOT_A_WINNER' });
+      const { giveaway: g, before, winner } = result;
+      const buy = winner.buyAmount ?? g.buyAmount ?? null;
+
+      // The redemption is what gets paid out, so it carries the real number.
+      if (winner.redemptionId) {
+        const parts = [g.prize];
+        if (winner.slotName) parts.push(winner.slotName);
+        parts.push(`paid ${formatMoney(amount)}`);
+        await adminDb
+          .collection('redemptions')
+          .doc(winner.redemptionId)
+          .update({
+            itemName: parts.join(' · '),
+            payout: amount,
+            buyAmount: buy,
+            slotName: winner.slotName || null,
+          })
+          .catch((err) => console.error('redemption payout update failed', err));
+      }
+
+      // Chat hears the first logged payout; corrections stay quiet.
+      let announce = { posted: false, reason: 'disabled' };
+      if (before.payout == null && g.announcePayout && g.payoutMessage) {
+        announce = await tryAnnounce(
+          fillTemplate(g.payoutMessage, {
+            winner: winner.displayName || winner.twitchName,
+            payout: formatMoney(amount),
+            buy: buy != null ? formatMoney(buy) : '',
+            multi: formatMulti(amount, buy),
+            slot: winner.slotName || 'their slot',
+            prize: g.prize,
+            title: g.title,
+          })
+        );
+      }
+      return res.status(200).json({ ok: true, announce });
     }
 
     if (action === 'back') {
       // Leave the winner window without ending anything. Entries resume if
       // they were open before the roll. An unconfirmed pick is simply dropped;
-      // Skip is the explicit way to exclude someone who went silent.
-      if (giveaway.status !== 'rolling') {
+      // Skip is the explicit way to exclude someone who went silent. From
+      // 'playing' it just takes the bonus card off the overlay.
+      if (!['rolling', 'playing'].includes(giveaway.status)) {
         return res.status(400).json({ error: 'NOT_ROLLING' });
       }
       await clearWinnerStream(ref);
@@ -442,12 +635,13 @@ export default async function handler(req, res) {
         winnerTwitchId: null,
         rolledAt: null,
         announcedPick: null,
+        playing: null,
       });
       return res.status(200).json({ ok: true });
     }
 
     if (action === 'end') {
-      if (!['open', 'closed', 'rolling'].includes(giveaway.status)) {
+      if (!['open', 'closed', 'rolling', 'playing'].includes(giveaway.status)) {
         return res.status(400).json({ error: 'NOT_LIVE' });
       }
       const now = FieldValue.serverTimestamp();
@@ -465,9 +659,10 @@ export default async function handler(req, res) {
         winnerTwitchId: settled
           ? settled.twitchId || giveaway.winnerTwitchId
           : null,
+        playing: null,
       };
       if (!giveaway.confirmedAt) update.confirmedAt = now;
-      if (giveaway.status === 'rolling') await clearWinnerStream(ref);
+      if (['rolling', 'playing'].includes(giveaway.status)) await clearWinnerStream(ref);
       await ref.update(update);
       return res.status(200).json({ ok: true, winners: (giveaway.winners || []).length });
     }

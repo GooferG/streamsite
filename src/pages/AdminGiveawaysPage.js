@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   collection,
   onSnapshot,
@@ -30,6 +30,9 @@ import {
   RotateCcw,
   MessageSquare,
   TriangleAlert,
+  Play,
+  Minus,
+  Pencil,
 } from 'lucide-react';
 import { db } from '../config/firebase';
 import { authedFetch } from '../utils/authedFetch';
@@ -43,16 +46,29 @@ import {
   LAST_CALL_SECONDS,
   REVEAL_MS,
   WINNER_COUNT_OPTIONS,
+  bonusPrize,
   defaultTitle,
   formFromGiveaway,
   formatClock,
+  formatMoney,
+  formatMulti,
+  isBonusGiveaway,
   keywordWarning,
   normalizeKeyword,
+  parseMoney,
   pickKey,
   rulesSummary,
   suggestKeyword,
   tsMillis,
 } from '../utils/giveaway';
+
+// The slot database is ~2 MB; only load it once a bonus is being played.
+const SlotAutocomplete = lazy(() => import('../components/SlotAutocomplete'));
+
+const PRIZE_KIND_OPTIONS = [
+  { label: 'Bonus buy', value: 'bonus' },
+  { label: 'Other prize', value: 'item' },
+];
 
 const inputCls =
   'w-full bg-zinc-broadcast/60 border border-white/10 px-3 py-2.5 text-sm text-white-body placeholder:text-white/25 focus:border-orange-admin/70 focus:outline-none transition-colors duration-150';
@@ -297,7 +313,8 @@ function OverlayLink() {
         </div>
       </div>
       <p className="mt-2 text-[0.625rem] tracking-eyebrow text-white/35 font-mono">
-        OBS browser source, 1920×1080. Add ?sound=1 for reveal sound, ?pos=br|tl|tr to move the card.
+        OBS browser source, 1920×1080. Add ?sound=1 for reveal sound, ?pos=br|tl|tr to move the entry
+        card, ?playpos=… for the bonus card shown while you play the slot.
       </p>
     </div>
   );
@@ -322,15 +339,21 @@ function NewGiveawayForm({ seed, chat, onClose, onCreated }) {
   const titlePlaceholder = useMemo(() => defaultTitle(), []);
   const chatDown = chat.status !== 'enabled' && chat.status !== 'loading';
 
+  const bonus = form.kind === 'bonus';
+  const buyValue = parseMoney(form.buyAmount);
+
   const submit = async (e) => {
     e.preventDefault();
     setError(null);
-    if (!form.prize.trim()) return setError('What are you giving away?');
+    if (bonus && !(buyValue > 0)) return setError("What's the bonus buy worth?");
+    if (!bonus && !form.prize.trim()) return setError('What are you giving away?');
     if (!normalizeKeyword(form.keyword)) return setError('Pick a chat keyword.');
     setSaving(true);
     try {
       const { ok, data } = await postAction('create', {
         ...form,
+        buyAmount: bonus ? buyValue : null,
+        prize: bonus ? bonusPrize(buyValue) : form.prize.trim(),
         title: form.title.trim() || titlePlaceholder,
       });
       if (!ok) {
@@ -413,18 +436,49 @@ function NewGiveawayForm({ seed, chat, onClose, onCreated }) {
             </div>
           )}
 
-          <label className="block">
-            <span className={labelCls}>
+          <div>
+            <p className={labelCls}>
               <span className="text-orange-admin tabular-nums">01</span> Prize <span className="text-emerald-signal">*</span>
-            </span>
-            <input
-              autoFocus
-              value={form.prize}
-              onChange={(e) => set({ prize: e.target.value })}
-              placeholder="Hades II · Steam key"
-              className={`${inputCls} text-base font-bold`}
+            </p>
+            <Chips
+              label="Prize type"
+              options={PRIZE_KIND_OPTIONS}
+              value={form.kind}
+              onChange={(v) => set({ kind: v })}
             />
-          </label>
+            {bonus ? (
+              <>
+                <div className="mt-2 flex">
+                  <span className="px-3 py-2.5 border border-r-0 border-white/10 bg-zinc-broadcast/80 font-mono font-bold text-white/55">
+                    $
+                  </span>
+                  <input
+                    key="buy"
+                    autoFocus
+                    inputMode="decimal"
+                    value={form.buyAmount}
+                    onChange={(e) => set({ buyAmount: e.target.value })}
+                    placeholder="100"
+                    aria-label="Bonus buy value"
+                    className={`${inputCls} text-base font-bold font-mono`}
+                  />
+                </div>
+                <p className="mt-1.5 text-[0.6875rem] text-white/40 font-mono">
+                  Each winner gets a bonus buy worth this. You log what it actually paid after playing it.
+                </p>
+              </>
+            ) : (
+              <input
+                key="prize"
+                autoFocus
+                value={form.prize}
+                onChange={(e) => set({ prize: e.target.value })}
+                placeholder="Hades II · Steam key"
+                aria-label="Prize"
+                className={`mt-2 ${inputCls} text-base font-bold`}
+              />
+            )}
+          </div>
 
           <div>
             <label htmlFor="gw-keyword" className={labelCls}>
@@ -560,7 +614,10 @@ function NewGiveawayForm({ seed, chat, onClose, onCreated }) {
                 <div className="space-y-3">
                   <p className={`${labelCls} mb-0`}>
                     Chat messages
-                    <span className="text-white/30 normal-case font-normal"> · {'{keyword} {prize} {title} {winner}'}</span>
+                    <span className="text-white/30 normal-case font-normal">
+                      {' '}· {'{keyword} {prize} {title} {winner}'}
+                      {bonus && ' {payout} {multi} {slot}'}
+                    </span>
                   </p>
                   {[
                     ['announceStart', 'startMessage', 'When it starts'],
@@ -568,6 +625,7 @@ function NewGiveawayForm({ seed, chat, onClose, onCreated }) {
                       ? [['announceLastCall', 'lastCallMessage', `Last call (${LAST_CALL_SECONDS}s left)`]]
                       : []),
                     ['announceWinner', 'winnerMessage', 'Winner, after the reveal'],
+                    ...(bonus ? [['announcePayout', 'payoutMessage', 'Payout, once you log it']] : []),
                   ].map(([flag, field, label]) => (
                     <div key={field} className="border border-white/10 bg-zinc-broadcast/40 p-3 space-y-2">
                       <label className="flex items-center gap-2 cursor-pointer">
@@ -673,20 +731,24 @@ function ClaimTimer({ giveaway, firstMessageAt }) {
 }
 
 // Posts the winner in chat once the reveal has played on stream, then shows
-// where that stands. Retry appears if Twitch refused the message.
+// where that stands. Retry appears if Twitch refused the message. Runs at page
+// level, not inside the winner window: a bonus-buy winner confirmed quickly
+// moves to 'playing' and closes that window before the timer fires.
 function useWinnerAnnounce(giveaway) {
   const key = pickKey(giveaway);
-  const rolledAtMs = tsMillis(giveaway.rolledAt);
-  const enabled = giveaway.announceWinner !== false && !!giveaway.winnerMessage;
-  const posted = !!key && giveaway.announcedPick === key;
+  const rolledAtMs = tsMillis(giveaway?.rolledAt);
+  const enabled = !!giveaway && giveaway.announceWinner !== false && !!giveaway.winnerMessage;
+  const posted = !!key && giveaway?.announcedPick === key;
+  const id = giveaway?.id;
+  const winnerTwitchId = giveaway?.winnerTwitchId;
   const [state, setState] = useState({ key: null, posting: false, error: null });
 
   const post = useCallback(async () => {
     setState({ key, posting: true, error: null });
     try {
       const { ok, status, data } = await postAction('announce', {
-        id: giveaway.id,
-        winnerTwitchId: giveaway.winnerTwitchId,
+        id,
+        winnerTwitchId,
         rolledAtMs,
       });
       if (status === 409) return setState({ key, posting: false, error: null }); // pick moved on
@@ -699,7 +761,7 @@ function useWinnerAnnounce(giveaway) {
     } catch {
       setState({ key, posting: false, error: 'Network error' });
     }
-  }, [key, giveaway.id, giveaway.winnerTwitchId, rolledAtMs]);
+  }, [key, id, winnerTwitchId, rolledAtMs]);
 
   // One timer per pick. A reroll or skip changes the key and cancels it.
   const postRef = useRef(post);
@@ -760,13 +822,13 @@ function ChatAnnounceStatus({ announce }) {
   );
 }
 
-function WinnerModal({ giveaway }) {
+function WinnerModal({ giveaway, announce }) {
   // 'reroll' | 'skip' | 'confirm' | 'roll' | 'back' | 'end'
   const [busy, setBusy] = useState(null);
   const [messages, setMessages] = useState([]);
   const [prizeNote, setPrizeNote] = useState('');
   const [error, setError] = useState(null);
-  const announce = useWinnerAnnounce(giveaway);
+  const bonus = isBonusGiveaway(giveaway);
 
   useEffect(() => {
     if (!giveaway?.id) return undefined;
@@ -1030,7 +1092,7 @@ function WinnerModal({ giveaway }) {
               >
                 <Check size={13} aria-hidden="true" />
                 <span className={btnLabel}>
-                  {busy === 'confirm' ? 'Confirming…' : 'Confirm winner'}
+                  {busy === 'confirm' ? 'Confirming…' : bonus ? 'Confirm · play their bonus' : 'Confirm winner'}
                   <Kbd>Enter</Kbd>
                 </span>
               </button>
@@ -1102,6 +1164,446 @@ function WinnerModal({ giveaway }) {
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── Now playing (bonus buy) ────────────────────────────────────────────────
+
+function MoneyInput({ id, value, onChange, autoFocus, label }) {
+  return (
+    <div className="flex flex-1 min-w-0">
+      <span className="px-3 py-2.5 border border-r-0 border-white/10 bg-zinc-broadcast/80 font-mono font-bold text-white/55">
+        $
+      </span>
+      <input
+        id={id}
+        autoFocus={autoFocus}
+        inputMode="decimal"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="0.00"
+        aria-label={label}
+        className={`${inputCls} font-mono font-bold text-base`}
+      />
+    </div>
+  );
+}
+
+// Docked and non-blocking: you're on the casino tab playing their slot and
+// come back here to set the slot and log what it paid. The overlay shows a
+// small corner card the whole time instead of the full-screen reveal.
+function PlayPanel({ giveaway, announce }) {
+  const p = giveaway.playing;
+  const buy = p.buyAmount ?? giveaway.buyAmount ?? null;
+  const [collapsed, setCollapsed] = useState(false);
+  const [slot, setSlot] = useState(p.slotName || '');
+  const [amount, setAmount] = useState(p.payout != null ? String(p.payout) : '');
+  const [editing, setEditing] = useState(p.payout == null);
+  const [busy, setBusy] = useState(null);
+  const [error, setError] = useState(null);
+  const [messages, setMessages] = useState([]);
+
+  // Their chat, so a "can you do Gates?" doesn't get missed.
+  useEffect(() => {
+    const q = query(
+      collection(db, 'giveaways', giveaway.id, 'winner_messages'),
+      orderBy('createdAt', 'desc'),
+      fLimit(4)
+    );
+    return onSnapshot(q, (snap) =>
+      setMessages(snap.docs.map((d) => ({ id: d.id, ...d.data() })).reverse())
+    );
+  }, [giveaway.id]);
+  const login = (p.twitchName || '').toLowerCase();
+  const theirMessages = messages.filter((m) => !login || !m.chatterLogin || m.chatterLogin === login);
+
+  const run = async (action, body = {}) => {
+    setBusy(action);
+    setError(null);
+    try {
+      const { ok, status, data } = await postAction(action, {
+        id: giveaway.id,
+        twitchId: p.twitchId,
+        ...body,
+      });
+      if (!ok) {
+        setError(data.error === 'NO_ENTRIES' ? 'Nobody left to draw.' : `Action failed: ${data.error || status}`);
+        return null;
+      }
+      return data;
+    } catch {
+      setError('Network error.');
+      return null;
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const saveSlot = (s) =>
+    run('setSlot', {
+      slotName: s.name,
+      // Rainbet art URLs contain spaces.
+      slotImage: s.thumbnail ? encodeURI(s.thumbnail) : null,
+      provider: s.provider || null,
+    });
+
+  const logPayout = async () => {
+    const value = parseMoney(amount);
+    if (value == null) return setError('Enter what the bonus paid.');
+    // A typed-but-unsaved slot name still belongs in the payout message.
+    if (slot.trim() && slot.trim() !== (p.slotName || '')) await saveSlot({ name: slot.trim() });
+    const data = await run('payout', { amount: value });
+    if (!data) return;
+    setEditing(false);
+    const a = data.announce;
+    if (a && a.posted === false && !QUIET_ANNOUNCE.includes(a.reason)) {
+      setError(`Logged, but the chat post failed: ${a.reason}`);
+    }
+  };
+
+  const winners = giveaway.winners || [];
+  const target = Number(giveaway.targetWinners) || 1;
+  const needMore = winners.length < target;
+  const winnerNo = winners.findIndex((w) => w.twitchId === p.twitchId) + 1;
+  const logged = p.payout != null;
+  const hit = logged && buy != null && p.payout >= buy;
+  const typedMulti = formatMulti(parseMoney(amount), buy);
+  const slotSaved = !!p.slotName && slot.trim() === p.slotName;
+  const name = p.displayName || p.twitchName;
+
+  const btnGhost =
+    'inline-flex items-center gap-1.5 px-3 py-2 border border-white/15 text-white/70 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-40';
+  const btnPrimary =
+    'inline-flex items-center gap-1.5 px-3.5 py-2 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-50';
+  const btnLabel = 'text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono';
+
+  return (
+    <aside
+      aria-label="Now playing"
+      className="fixed bottom-4 right-4 z-40 w-[25rem] max-w-[calc(100vw-2rem)] max-h-[calc(100vh-2rem)] overflow-y-auto border border-orange-admin/50 bg-zinc-card shadow-[0_20px_60px_rgba(0,0,0,0.6)]"
+    >
+      <div className="flex items-center gap-2 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
+        <span className="relative flex w-1.5 h-1.5 flex-shrink-0">
+          <span className="absolute inset-0 rounded-full bg-orange-admin motion-safe:animate-ping opacity-60" />
+          <span className="relative w-1.5 h-1.5 rounded-full bg-orange-admin" />
+        </span>
+        <span className="text-orange-admin whitespace-nowrap">Now playing</span>
+        <span className="text-white/40 truncate">
+          {name}
+          {target > 1 && winnerNo > 0 && ` · ${winnerNo} of ${target}`}
+        </span>
+        <button
+          type="button"
+          onClick={() => setCollapsed((c) => !c)}
+          aria-label={collapsed ? 'Expand panel' : 'Collapse panel'}
+          aria-expanded={!collapsed}
+          className="ml-auto p-1 border border-white/10 text-white/55 hover:text-white-body hover:border-white/25"
+        >
+          {collapsed ? <ChevronDown size={12} className="rotate-180" aria-hidden="true" /> : <Minus size={12} aria-hidden="true" />}
+        </button>
+      </div>
+
+      {collapsed ? (
+        <p className="px-4 py-2.5 text-xs text-white/60 font-mono truncate">
+          {p.slotName || 'No slot yet'} · {logged ? `paid ${formatMoney(p.payout)}` : 'payout pending'}
+        </p>
+      ) : (
+        <div className="px-4 py-4 space-y-4">
+          <div className="flex items-center gap-3">
+            {p.profileImageUrl ? (
+              <img src={p.profileImageUrl} alt="" className="w-10 h-10 rounded-full border border-emerald-signal/50" />
+            ) : (
+              <span
+                aria-hidden="true"
+                className="w-10 h-10 rounded-full border border-emerald-signal/50 bg-zinc-broadcast/60 inline-flex items-center justify-center font-mono font-black text-white/60"
+              >
+                {(name || '?').charAt(0).toUpperCase()}
+              </span>
+            )}
+            <div className="min-w-0">
+              <p className="font-black text-white-body text-lg leading-tight truncate">{name}</p>
+              <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/45 font-mono">
+                {buy != null ? `${formatMoney(buy)} bonus buy` : giveaway.prize}
+              </p>
+            </div>
+          </div>
+
+          {theirMessages.length > 0 && (
+            <div className="border border-white/10 bg-zinc-broadcast/40 px-3 py-2 space-y-1">
+              {theirMessages.map((m) => (
+                <p key={m.id} className="text-sm text-white-body leading-snug">
+                  <span className="text-orange-admin font-bold">{m.twitchName || m.chatterLogin}:</span> {m.text}
+                </p>
+              ))}
+            </div>
+          )}
+
+          {announce?.enabled && !announce.posted && <ChatAnnounceStatus announce={announce} />}
+
+          <div>
+            <p className={labelCls}>
+              Slot
+              {slotSaved && <span className="text-emerald-signal normal-case tracking-normal"> · on the overlay</span>}
+            </p>
+            <div className="flex gap-2">
+              <div className="flex-1 min-w-0">
+                <Suspense fallback={<input disabled placeholder="Loading slots…" className={inputCls} />}>
+                  <SlotAutocomplete
+                    value={slot}
+                    onChange={setSlot}
+                    onSelect={saveSlot}
+                    placeholder="Search slots…"
+                    aria-label="Slot"
+                    className={inputCls}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && slot.trim()) {
+                        e.preventDefault();
+                        saveSlot({ name: slot.trim() });
+                      }
+                    }}
+                  />
+                </Suspense>
+              </div>
+              {!slotSaved && slot.trim() && (
+                <button type="button" onClick={() => saveSlot({ name: slot.trim() })} disabled={!!busy} className={btnGhost}>
+                  <span className={btnLabel}>{busy === 'setSlot' ? 'Saving…' : 'Set'}</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="gw-payout" className={labelCls}>
+              What it paid
+            </label>
+            {editing ? (
+              <>
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    logPayout();
+                  }}
+                  className="flex gap-2"
+                >
+                  <MoneyInput id="gw-payout" value={amount} onChange={setAmount} label="Payout" />
+                  <button
+                    type="submit"
+                    disabled={!!busy}
+                    className="inline-flex items-center gap-1.5 px-3.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-50"
+                  >
+                    <Check size={13} aria-hidden="true" />
+                    <span className={btnLabel}>{busy === 'payout' ? 'Logging…' : 'Log payout'}</span>
+                  </button>
+                </form>
+                {typedMulti && (
+                  <p className="mt-1.5 text-[0.6875rem] text-white/45 font-mono">{typedMulti} of the buy</p>
+                )}
+              </>
+            ) : (
+              <div
+                className={`flex items-center gap-3 px-3 py-2.5 border ${
+                  hit ? 'border-emerald-signal/40 bg-emerald-signal/5' : 'border-orange-admin/40 bg-orange-admin/5'
+                }`}
+              >
+                <span className="font-mono font-black text-xl text-white-body tabular-nums">{formatMoney(p.payout)}</span>
+                <span className={`font-mono font-bold ${hit ? 'text-emerald-signal' : 'text-orange-admin'}`}>
+                  {formatMulti(p.payout, buy)}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setEditing(true)}
+                  className="ml-auto inline-flex items-center gap-1 px-2 py-1 border border-white/15 text-white/60 hover:text-white-body"
+                >
+                  <Pencil size={11} aria-hidden="true" />
+                  <span className={btnLabel}>Edit</span>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {error && (
+            <p role="alert" className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
+              {error}
+            </p>
+          )}
+
+          <div className="pt-3 border-t border-white/8 space-y-2">
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={() => run('back')} disabled={!!busy} className={btnGhost}>
+                <ArrowLeft size={12} aria-hidden="true" />
+                <span className={btnLabel}>{busy === 'back' ? 'Going back…' : 'Entries'}</span>
+              </button>
+              {needMore ? (
+                <>
+                  <button type="button" onClick={() => run('end')} disabled={!!busy} className={btnGhost}>
+                    <Flag size={12} aria-hidden="true" />
+                    <span className={btnLabel}>{busy === 'end' ? 'Ending…' : 'End early'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => run('roll')}
+                    disabled={!!busy}
+                    className={`ml-auto ${logged ? btnPrimary : btnGhost}`}
+                  >
+                    <Gift size={12} aria-hidden="true" />
+                    <span className={btnLabel}>
+                      {busy === 'roll' ? 'Rolling…' : `Roll #${winners.length + 1} of ${target}`}
+                    </span>
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button type="button" onClick={() => run('roll')} disabled={!!busy} className={btnGhost}>
+                    <Gift size={12} aria-hidden="true" />
+                    <span className={btnLabel}>{busy === 'roll' ? 'Rolling…' : 'Bonus winner'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => run('end')}
+                    disabled={!!busy}
+                    className={`ml-auto ${logged ? btnPrimary : btnGhost}`}
+                  >
+                    <Flag size={12} aria-hidden="true" />
+                    <span className={btnLabel}>{busy === 'end' ? 'Ending…' : 'Wrap it up'}</span>
+                  </button>
+                </>
+              )}
+            </div>
+            {!logged && (
+              <p className="text-[0.625rem] text-white/35 font-mono">
+                Log the payout first, or move on and log it later from the winners list.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+    </aside>
+  );
+}
+
+// One confirmed bonus-buy winner in the detail view: slot, payout, and the
+// controls to put their bonus on stream or fix a payout after the fact.
+function WinnerLine({ giveaway, winner, index, canPlay }) {
+  const [editing, setEditing] = useState(false);
+  const [amount, setAmount] = useState(winner.payout != null ? String(winner.payout) : '');
+  const [busy, setBusy] = useState(null);
+  const [error, setError] = useState(null);
+  const buy = winner.buyAmount ?? giveaway.buyAmount ?? null;
+  const onStream = giveaway.status === 'playing' && giveaway.playing?.twitchId === winner.twitchId;
+  const hit = winner.payout != null && buy != null && winner.payout >= buy;
+
+  const send = async (action, body = {}) => {
+    setBusy(action);
+    setError(null);
+    try {
+      const { ok, status, data } = await postAction(action, {
+        id: giveaway.id,
+        twitchId: winner.twitchId,
+        ...body,
+      });
+      if (!ok) setError(data.error || `Failed (${status})`);
+      return ok;
+    } catch {
+      setError('Network error.');
+      return false;
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const save = async (e) => {
+    e.preventDefault();
+    const value = parseMoney(amount);
+    if (value == null) return setError('Enter an amount.');
+    if (await send('payout', { amount: value })) setEditing(false);
+  };
+
+  return (
+    <li className="px-3 py-2.5 border-t border-white/8 first:border-t-0">
+      <div className="flex items-center gap-3 flex-wrap">
+        {winner.profileImageUrl ? (
+          <img src={winner.profileImageUrl} alt="" className="w-7 h-7 rounded-full border border-emerald-signal/40" />
+        ) : (
+          <span
+            aria-hidden="true"
+            className="w-7 h-7 rounded-full border border-emerald-signal/40 bg-zinc-card text-[0.625rem] font-mono font-bold text-white/55 flex items-center justify-center"
+          >
+            {(winner.displayName || winner.twitchName || '?').charAt(0).toUpperCase()}
+          </span>
+        )}
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-bold text-white-body truncate">
+            <span className="font-mono text-emerald-signal/70 mr-1.5">#{index + 1}</span>
+            {winner.displayName || winner.twitchName}
+            {winner.slotName && <span className="text-white/45 font-normal"> · {winner.slotName}</span>}
+          </p>
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono">
+            {winner.payout != null ? (
+              <span className={hit ? 'text-emerald-signal' : 'text-orange-admin'}>
+                Paid {formatMoney(winner.payout)} · {formatMulti(winner.payout, buy)}
+              </span>
+            ) : (
+              <span className="text-white/40">Not played yet</span>
+            )}
+          </p>
+        </div>
+        {onStream ? (
+          <span className="px-2 py-1 border border-orange-admin/50 text-orange-admin text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+            On stream
+          </span>
+        ) : (
+          canPlay && (
+            <button
+              type="button"
+              onClick={() => send('play')}
+              disabled={!!busy}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1.5 border border-orange-admin/50 text-orange-admin hover:bg-orange-admin/10 transition-colors duration-150 disabled:opacity-40"
+            >
+              <Play size={11} aria-hidden="true" />
+              <span className="text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+                {busy === 'play' ? 'Starting…' : 'Play'}
+              </span>
+            </button>
+          )
+        )}
+        {!editing && (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 border border-white/15 text-white/60 hover:text-white-body transition-colors duration-150"
+          >
+            <Pencil size={11} aria-hidden="true" />
+            <span className="text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+              {winner.payout != null ? 'Edit' : 'Log payout'}
+            </span>
+          </button>
+        )}
+      </div>
+      {editing && (
+        <form onSubmit={save} className="mt-2 flex gap-2">
+          <MoneyInput value={amount} onChange={setAmount} autoFocus label={`Payout for ${winner.displayName || winner.twitchName}`} />
+          <button
+            type="submit"
+            disabled={!!busy}
+            className="px-3 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono disabled:opacity-50"
+          >
+            {busy === 'payout' ? 'Saving…' : 'Save'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setEditing(false)}
+            className="px-3 border border-white/10 text-white/60 hover:text-white-body text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono"
+          >
+            Cancel
+          </button>
+        </form>
+      )}
+      {error && (
+        <p role="alert" className="mt-1.5 text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
+          {error}
+        </p>
+      )}
+    </li>
   );
 }
 
@@ -1198,6 +1700,12 @@ function ClosesIn({ giveaway }) {
 
 // ─── List + detail ──────────────────────────────────────────────────────────
 
+// Sum of logged payouts, or null when nothing has been logged yet.
+function paidTotal(giveaway) {
+  const paid = (giveaway.winners || []).filter((w) => w.payout != null);
+  return paid.length ? paid.reduce((a, w) => a + Number(w.payout), 0) : null;
+}
+
 function GiveawayRow({ giveaway, onOpen, onRunAgain }) {
   const ended = giveaway.status === 'rolled';
   return (
@@ -1211,7 +1719,7 @@ function GiveawayRow({ giveaway, onOpen, onRunAgain }) {
           className={`inline-flex items-center gap-1.5 px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow-md uppercase border font-mono ${
             giveaway.status === 'open'
               ? 'text-emerald-signal border-emerald-signal/40'
-              : giveaway.status === 'rolling'
+              : giveaway.status === 'rolling' || giveaway.status === 'playing'
                 ? 'text-orange-admin border-orange-admin/40'
                 : giveaway.status === 'rolled'
                   ? 'text-white/65 border-white/20'
@@ -1235,6 +1743,9 @@ function GiveawayRow({ giveaway, onOpen, onRunAgain }) {
               {' '}
               · {giveaway.winners.length} winner{giveaway.winners.length === 1 ? '' : 's'}
             </span>
+          )}
+          {paidTotal(giveaway) != null && (
+            <span className="text-emerald-signal/70"> · {formatMoney(paidTotal(giveaway))} paid</span>
           )}
         </span>
         <ChevronRight size={14} className="text-white/30" aria-hidden="true" />
@@ -1315,8 +1826,10 @@ function GiveawayDetail({ giveaway, onBack, onRunAgain }) {
     }
   };
 
-  const isLive = giveaway.status === 'open' || giveaway.status === 'rolling';
+  const isLive = ['open', 'rolling', 'playing'].includes(giveaway.status);
   const ended = giveaway.status === 'rolled';
+  const bonus = isBonusGiveaway(giveaway);
+  const paid = paidTotal(giveaway);
 
   return (
     <div className="space-y-5">
@@ -1365,8 +1878,8 @@ function GiveawayDetail({ giveaway, onBack, onRunAgain }) {
               {target > 1 && <span className="text-white/40"> · {target} winners</span>}
             </p>
 
-            {/* Keyword pill */}
-            {isLive && (
+            {/* Keyword pill, only while entries are actually accepted */}
+            {giveaway.status === 'open' && (
               <div className="mt-5 inline-flex items-baseline gap-3 px-4 py-3 border-2 border-emerald-signal/50 bg-emerald-signal/5">
                 <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal/80 font-mono">
                   Type in chat
@@ -1492,6 +2005,13 @@ function GiveawayDetail({ giveaway, onBack, onRunAgain }) {
           </button>
         )}
 
+        {giveaway.status === 'playing' && (
+          <span className="inline-flex items-center gap-2 px-3 py-2 border border-orange-admin/40 bg-orange-admin/5 text-orange-admin text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
+            <Play size={11} aria-hidden="true" />
+            Bonus on stream · panel bottom right
+          </span>
+        )}
+
         <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/30 font-mono ml-1">
           · created {formatTs(giveaway.createdAt)}
         </span>
@@ -1540,7 +2060,21 @@ function GiveawayDetail({ giveaway, onBack, onRunAgain }) {
             <Trophy size={11} aria-hidden="true" />
             {isLive ? 'Confirmed so far' : 'Winners'} · {winners.length}
             {target > 1 && ` of ${target}`}
+            {paid != null && <span className="text-white/50"> · {formatMoney(paid)} paid out</span>}
           </p>
+          {bonus ? (
+            <ul className="border border-white/10 bg-zinc-broadcast/30">
+              {winners.map((x, i) => (
+                <WinnerLine
+                  key={`${x.twitchId || x.twitchName}-${i}`}
+                  giveaway={giveaway}
+                  winner={x}
+                  index={i}
+                  canPlay={['open', 'closed', 'playing'].includes(giveaway.status)}
+                />
+              ))}
+            </ul>
+          ) : (
           <ul className="flex flex-wrap gap-2">
             {winners.map((x, i) => (
               <li
@@ -1561,6 +2095,7 @@ function GiveawayDetail({ giveaway, onBack, onRunAgain }) {
               </li>
             ))}
           </ul>
+          )}
         </div>
       )}
 
@@ -1617,7 +2152,7 @@ export default function AdminGiveawaysPage() {
   useEffect(() => {
     if (!loaded || autoOpened.current) return;
     autoOpened.current = true;
-    const live = list.find((g) => ['open', 'closed', 'rolling'].includes(g.status));
+    const live = list.find((g) => ['open', 'closed', 'rolling', 'playing'].includes(g.status));
     if (live) setSelectedId((cur) => cur || live.id);
   }, [loaded, list]);
 
@@ -1626,9 +2161,23 @@ export default function AdminGiveawaysPage() {
   const selected = useMemo(() => list.find((g) => g.id === selectedId) || null, [list, selectedId]);
   // Auto-open the winner modal whenever any giveaway is 'rolling'.
   const activeRolling = useMemo(() => list.find((g) => g.status === 'rolling') || null, [list]);
+  // Dock the play panel whenever a bonus buy is on stream.
+  const activePlaying = useMemo(
+    () => list.find((g) => g.status === 'playing' && g.playing) || null,
+    [list]
+  );
+  // The pick whose winner chat message may still be pending.
+  const currentPick = useMemo(
+    () =>
+      list.find(
+        (g) => ['rolling', 'playing'].includes(g.status) && g.winnerTwitchId && g.rolledAt
+      ) || null,
+    [list]
+  );
+  const announce = useWinnerAnnounce(currentPick);
 
   const grouped = useMemo(() => {
-    const open = list.filter((g) => g.status === 'open' || g.status === 'rolling');
+    const open = list.filter((g) => ['open', 'rolling', 'playing'].includes(g.status));
     const closed = list.filter((g) => g.status === 'closed');
     const past = list.filter((g) => g.status === 'rolled');
     return { open, closed, past };
@@ -1752,7 +2301,16 @@ export default function AdminGiveawaysPage() {
           }}
         />
       )}
-      {activeRolling && <WinnerModal key={activeRolling.id} giveaway={activeRolling} />}
+      {activeRolling && (
+        <WinnerModal key={activeRolling.id} giveaway={activeRolling} announce={announce} />
+      )}
+      {activePlaying && !activeRolling && (
+        <PlayPanel
+          key={`${activePlaying.id}:${activePlaying.playing.twitchId}`}
+          giveaway={activePlaying}
+          announce={currentPick?.id === activePlaying.id ? announce : null}
+        />
+      )}
       {warning && (
         <div role="status" className="fixed bottom-6 right-6 z-50 max-w-sm border border-orange-admin/60 bg-zinc-card/95 backdrop-blur px-4 py-3 shadow-lg">
           <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-orange-admin mb-1 font-mono">

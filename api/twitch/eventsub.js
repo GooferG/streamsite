@@ -14,7 +14,8 @@ import { messageHasKeyword } from '../_lib/giveawayKeyword.js';
 //   - notification: process the event
 //
 // For `channel.chat.message`:
-//   1. If giveaway in 'rolling' state and message is from the rolled winner,
+//   1. If giveaway in 'rolling' state and message is from the rolled winner
+//      (or 'playing' and from the winner whose bonus is on stream),
 //      write to giveaways/{id}/winner_messages.
 //   2. For each `open` giveaway where the keyword appears in the message as a
 //      whole word, write entry to giveaways/{id}/entries/{twitchId}
@@ -151,7 +152,7 @@ async function handleChatMessage(event) {
   // bail early if no giveaway is active.
   const activeSnap = await adminDb
     .collection('giveaways')
-    .where('status', 'in', ['open', 'rolling'])
+    .where('status', 'in', ['open', 'rolling', 'playing'])
     .get();
   if (activeSnap.empty) return { processed: false, reason: 'no_active' };
 
@@ -168,8 +169,12 @@ async function handleChatMessage(event) {
     const g = gdoc.data();
 
     // 1. If this giveaway is rolling and the message is from the rolled
-    //    winner, stream their messages into the modal.
-    if (g.status === 'rolling' && g.winnerTwitchId === chatterId) {
+    //    winner, stream their messages into the modal. Keep streaming while
+    //    their bonus is played, so the operator sees which slot they asked for.
+    const onScreen =
+      (g.status === 'rolling' && g.winnerTwitchId === chatterId) ||
+      (g.status === 'playing' && g.playing?.twitchId === chatterId);
+    if (onScreen) {
       await gdoc.ref.collection('winner_messages').add({
         text,
         twitchName: chatterName,

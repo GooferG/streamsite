@@ -20,6 +20,13 @@ export const SURF_FRAMES = 22;
 // The channel the surf lands on. Giveaway is channel 07 in the site nav.
 export const WINNER_CHANNEL = 7;
 
+// After a bonus-buy winner is confirmed the overlay holds the "Locked in"
+// moment this long, then shrinks to the corner "now playing" card so the
+// slot stays visible.
+export const LOCK_HOLD_MS = 3500;
+// Payout count-up on the overlay.
+export const PAYOUT_COUNT_MS = 1400;
+
 export const LAST_CALL_SECONDS = 30;
 // Auto-roll only fires when the admin page sees the timer run out live. A page
 // opened long after the fact should not suddenly roll a winner.
@@ -39,6 +46,47 @@ export const DEFAULT_WINNER_MSG =
   '🎉 @{winner} has been picked for {prize}! Reply in chat to claim.';
 export const DEFAULT_LAST_CALL_MSG =
   '⏳ 30 seconds left. Type "{keyword}" in chat to get in on {prize}.';
+export const DEFAULT_PAYOUT_MSG =
+  '💸 @{winner} bonus on {slot} paid {payout} ({multi}). GG';
+
+// ─── Money ──────────────────────────────────────────────────────────────────
+
+export const CURRENCY = '$';
+
+export function parseMoney(value) {
+  if (value == null || value === '') return null;
+  const n = Number(String(value).replace(/[^0-9.]/g, ''));
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : null;
+}
+
+// $100, $43.20, $1,250 — cents only when there are cents.
+export function formatMoney(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return `${CURRENCY}0`;
+  const cents = Math.round(n * 100) % 100 !== 0;
+  return `${CURRENCY}${n.toLocaleString('en-US', {
+    minimumFractionDigits: cents ? 2 : 0,
+    maximumFractionDigits: 2,
+  })}`;
+}
+
+// Payout as a multiple of the buy: 0.43x, 12.5x, 250x.
+export function formatMulti(payout, buy) {
+  const p = Number(payout);
+  const b = Number(buy);
+  if (!Number.isFinite(p) || !Number.isFinite(b) || b <= 0) return null;
+  const m = p / b;
+  const digits = m < 10 ? 2 : m < 100 ? 1 : 0;
+  return `${m.toFixed(digits)}x`;
+}
+
+export function bonusPrize(amount) {
+  return `${formatMoney(amount)} bonus buy`;
+}
+
+export function isBonusGiveaway(giveaway) {
+  return giveaway?.kind === 'bonus';
+}
 
 // Channel-flavored keywords that nobody types by accident. Swap in real
 // channel in-jokes whenever.
@@ -198,6 +246,8 @@ export function buildSurfFrames({ winner, pool = [], seedKey = '', frames = SURF
 // carry over; with `copyPrize` its prize/title/keyword do too (Run it again).
 export function formFromGiveaway(from, { copyPrize = false } = {}) {
   const base = {
+    kind: 'bonus',
+    buyAmount: '',
     title: '',
     prize: '',
     keyword: suggestKeyword(from?.keyword),
@@ -212,9 +262,15 @@ export function formFromGiveaway(from, { copyPrize = false } = {}) {
     winnerMessage: DEFAULT_WINNER_MSG,
     announceLastCall: true,
     lastCallMessage: DEFAULT_LAST_CALL_MSG,
+    announcePayout: true,
+    payoutMessage: DEFAULT_PAYOUT_MSG,
   };
   if (!from) return base;
   const rules = {
+    // Giveaways from before prize types existed were all plain prizes.
+    kind: from.kind === 'bonus' ? 'bonus' : 'item',
+    announcePayout: from.announcePayout !== false,
+    payoutMessage: from.payoutMessage || base.payoutMessage,
     weights: { ...base.weights, ...(from.weights || {}) },
     requireFollow: from.requireFollow !== false,
     announceStart: from.announceStart !== false,
@@ -231,7 +287,8 @@ export function formFromGiveaway(from, { copyPrize = false } = {}) {
     ...base,
     ...rules,
     title: from.title || '',
-    prize: from.prize || '',
+    prize: from.kind === 'bonus' ? '' : from.prize || '',
+    buyAmount: from.kind === 'bonus' && from.buyAmount != null ? String(from.buyAmount) : '',
     keyword: from.keyword || base.keyword,
     targetWinners: Number(from.targetWinners) || 1,
   };
@@ -251,6 +308,7 @@ export function rulesSummary(form) {
   if (form.announceStart) chat.push('start');
   if (form.durationSec > 0 && form.announceLastCall) chat.push('last call');
   if (form.announceWinner) chat.push('winner');
+  if (form.kind === 'bonus' && form.announcePayout) chat.push('payout');
   parts.push(chat.length ? `chat: ${chat.join(', ')}` : 'chat quiet');
   return parts.join(' · ');
 }

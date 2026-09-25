@@ -7,7 +7,7 @@ import { useUserDoc } from '../hooks/useUserDoc';
 import { useClock } from '../hooks/useClock';
 import GiveawayEntriesGrid from '../components/GiveawayEntriesGrid';
 import RevealScreen, { CrtStyles, useRevealState } from '../components/giveaway/RevealScreen';
-import { formatClock, tsMillis } from '../utils/giveaway';
+import { formatClock, formatMoney, formatMulti, tsMillis } from '../utils/giveaway';
 
 function formatTs(ts) {
   if (!ts) return '—';
@@ -79,6 +79,40 @@ function PublicReveal({ giveaway, reveal }) {
   );
 }
 
+// A bonus-buy winner's bonus being played on stream.
+function PublicNowPlaying({ giveaway }) {
+  const p = giveaway.playing;
+  const buy = p.buyAmount ?? giveaway.buyAmount ?? null;
+  const hit = p.payout != null && buy != null && p.payout >= buy;
+  const name = p.displayName || p.twitchName;
+  return (
+    <div className="mt-5 flex items-center gap-4 px-4 py-3 border border-orange-admin/40 bg-orange-admin/[0.05]">
+      {p.slotImage && (
+        <img src={p.slotImage} alt="" className="w-14 h-14 object-cover border border-white/15 flex-shrink-0" />
+      )}
+      <div className="min-w-0">
+        <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-orange-admin font-mono">
+          Playing {name}&apos;s bonus
+        </p>
+        <p className="text-lg font-black text-white-body truncate">{p.slotName || 'Picking a slot…'}</p>
+        <p className="text-sm text-white/55">
+          {p.payout != null ? (
+            <>
+              Paid{' '}
+              <span className={`font-mono font-bold ${hit ? 'text-emerald-signal' : 'text-white-body'}`}>
+                {formatMoney(p.payout)}
+              </span>
+              {formatMulti(p.payout, buy) && <span className="text-white/40"> · {formatMulti(p.payout, buy)}</span>}
+            </>
+          ) : (
+            `${buy != null ? `${formatMoney(buy)} buy` : giveaway.prize}, payout pending`
+          )}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export default function GiveawayPage() {
   const { twitchUser, loginWithTwitch } = useTwitchAuth();
   const { user } = useUserDoc();
@@ -90,7 +124,7 @@ export default function GiveawayPage() {
   useEffect(() => {
     const q = query(
       collection(db, 'giveaways'),
-      where('status', 'in', ['open', 'closed', 'rolling']),
+      where('status', 'in', ['open', 'closed', 'rolling', 'playing']),
       orderBy('createdAt', 'desc'),
       fLimit(1)
     );
@@ -120,6 +154,7 @@ export default function GiveawayPage() {
       : null;
   const entriesOpen = active?.status === 'open' && !timeUp;
   const rolling = active?.status === 'rolling' && !!active?.winner;
+  const playing = active?.status === 'playing' && !!active?.playing;
   const bonuses = bonusList(active?.weights);
   const siteBonus = !!(active?.weights?.registered || active?.weights?.discord);
 
@@ -167,7 +202,13 @@ export default function GiveawayPage() {
               <div className="relative flex items-center gap-2 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono">
                 <Megaphone size={11} className="text-emerald-signal" aria-hidden="true" />
                 <span className="text-emerald-signal">
-                  {rolling ? 'Rolling now' : entriesOpen ? 'Live giveaway' : 'Entries closed'}
+                  {rolling
+                    ? 'Rolling now'
+                    : playing
+                      ? 'Bonus on stream'
+                      : entriesOpen
+                        ? 'Live giveaway'
+                        : 'Entries closed'}
                 </span>
                 <span className="ml-auto text-white/40 tabular-nums">
                   {String(active.entryCount ?? 0).padStart(4, '0')} entries
@@ -216,12 +257,13 @@ export default function GiveawayPage() {
                       +1 ticket each for {bonuses.join(', ')}
                     </p>
                   )}
-                  {!entriesOpen && !rolling && (
+                  {!entriesOpen && !rolling && !playing && (
                     <p className="mt-4 text-sm text-orange-admin">
                       Entries are closed. The winner gets picked on stream.
                     </p>
                   )}
                   {rolling && <PublicReveal giveaway={active} reveal={reveal} />}
+                  {playing && <PublicNowPlaying giveaway={active} />}
 
                   {!entriesOpen ? null : !twitchUser ? (
                     siteBonus && (
@@ -319,10 +361,18 @@ export default function GiveawayPage() {
                       <p className="font-bold text-white-body text-sm truncate">
                         <span className="text-emerald-signal">{w.displayName || w.twitchName}</span>{' '}
                         <span className="text-white/45 font-normal">won</span>{' '}
-                        {g.prize}
+                        {w.payout != null ? (
+                          <>
+                            {formatMoney(w.payout)}
+                            {w.slotName && <span className="text-white/45 font-normal"> on {w.slotName}</span>}
+                          </>
+                        ) : (
+                          g.prize
+                        )}
                       </p>
                       <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono">
                         {formatTs(g.confirmedAt)}
+                        {w.payout != null && <span> · {g.prize}</span>}
                         {rows.length > 1 && <span className="text-white/25"> · {i + 1}/{rows.length}</span>}
                       </p>
                     </div>

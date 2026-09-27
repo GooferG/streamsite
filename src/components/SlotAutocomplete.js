@@ -1,13 +1,6 @@
 import { useState, useEffect, useRef, useId, forwardRef, useImperativeHandle } from 'react';
 import { Dice6 } from 'lucide-react';
-import rawSlots from '../data/slots';
-
-const ALL_SLOTS = rawSlots.map((g) => ({
-  id: g.id,
-  name: g.name,
-  provider: g.provider,
-  thumbnail: g.image,
-}));
+import useSlotCatalog from '../hooks/useSlotCatalog';
 
 const SlotAutocomplete = forwardRef(function SlotAutocomplete(
   { value, onChange, onSelect, placeholder, className, onKeyDown, autoFocus, 'aria-label': ariaLabel },
@@ -23,6 +16,7 @@ const SlotAutocomplete = forwardRef(function SlotAutocomplete(
   const inputRef = useRef(null);
   const listRef = useRef(null);
   const listId = useId();
+  const { slots } = useSlotCatalog();
   useImperativeHandle(ref, () => ({
     focus: () => inputRef.current && inputRef.current.focus(),
   }));
@@ -35,13 +29,13 @@ const SlotAutocomplete = forwardRef(function SlotAutocomplete(
       return;
     }
     const q = value.toLowerCase();
-    const matches = ALL_SLOTS
+    const matches = slots
       .filter((s) => s.name.toLowerCase().includes(q))
       .slice(0, 8);
     setSuggestions(matches);
     setOpen(matches.length > 0);
     setActiveIndex(-1); // reset highlight whenever the query changes
-  }, [value, focused]);
+  }, [value, focused, slots]);
 
   // Keep the highlighted row scrolled into view.
   useEffect(() => {

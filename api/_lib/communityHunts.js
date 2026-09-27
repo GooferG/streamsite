@@ -99,6 +99,13 @@ export async function getCurrentHunt() {
   return latest || null;
 }
 
+// The whole Rainbet slot catalogue (not per-community; communityhunts re-syncs
+// it nightly and sends it with public caching). One response, ~7.6k rows.
+export async function getSlotCatalog() {
+  const body = await chGet('/slots');
+  return body && Array.isArray(body.data) ? body.data : [];
+}
+
 const round2 = (n) => Math.round(n * 100) / 100;
 
 export function toRoundSnapshot(hunt, now = new Date()) {

@@ -39,6 +39,7 @@ import { authedFetch } from '../utils/authedFetch';
 import GiveawayEntriesGrid from '../components/GiveawayEntriesGrid';
 import { useRevealState } from '../components/giveaway/RevealScreen';
 import { useClock } from '../hooks/useClock';
+import { toImageUrl } from '../utils/slotImage';
 import {
   AUTO_ROLL_GRACE_MS,
   CHAT_ANNOUNCE_DELAY_MS,
@@ -62,7 +63,7 @@ import {
   tsMillis,
 } from '../utils/giveaway';
 
-// The slot database is ~2 MB; only load it once a bonus is being played.
+// Slot search pulls the slot catalogue on first use; only load it once a bonus is being played.
 const SlotAutocomplete = lazy(() => import('../components/SlotAutocomplete'));
 
 const PRIZE_KIND_OPTIONS = [
@@ -1242,8 +1243,9 @@ function PlayPanel({ giveaway, announce }) {
   const saveSlot = (s) =>
     run('setSlot', {
       slotName: s.name,
-      // Rainbet art URLs contain spaces.
-      slotImage: s.thumbnail ? encodeURI(s.thumbnail) : null,
+      // Catalogue art arrives already percent-encoded; toImageUrl is idempotent
+      // (encodeURI would double-encode %26 into %2526 and break the overlay).
+      slotImage: toImageUrl(s.thumbnail),
       provider: s.provider || null,
     });
 

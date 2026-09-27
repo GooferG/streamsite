@@ -1,10 +1,7 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 // Dev-only secrets — read from env (.env.local), no longer committed. Set
-// SLOTSLAUNCH_API_KEY and COMMUNITYHUNTS_API_KEY in .env.local for local API mirrors.
-const SLOTS_API_KEY  = process.env.SLOTSLAUNCH_API_KEY || '';
-const SLOTS_BASE_URL = 'https://slotslaunch.com/api';
-const SLOTS_ORIGIN   = 'goofer.tv';
+// COMMUNITYHUNTS_API_KEY in .env.local for the local API mirrors.
 
 // communityhunts.gg dev mirror (see api/communityhunts.js). Reads the same
 // server-only COMMUNITYHUNTS_* vars from .env.local.
@@ -30,11 +27,11 @@ async function chDevGet(path) {
 const DEPLOYED_API_TARGET =
   process.env.API_PROXY_TARGET || 'https://goofer.tv';
 
-if (!SLOTS_API_KEY || !process.env.COMMUNITYHUNTS_API_KEY) {
+if (!process.env.COMMUNITYHUNTS_API_KEY) {
   // eslint-disable-next-line no-console
   console.warn(
-    '[setupProxy] SLOTSLAUNCH_API_KEY / COMMUNITYHUNTS_API_KEY not set in .env.local — ' +
-      '/api/slots and /api/communityhunts dev mirrors will fail until they are.'
+    '[setupProxy] COMMUNITYHUNTS_API_KEY not set in .env.local — ' +
+      '/api/communityhunts and /api/slots dev mirrors will fail until it is.'
   );
 }
 
@@ -100,23 +97,14 @@ module.exports = function (app) {
     }
   });
 
-  // Dev handler for /api/slots (mirrors the Vercel function)
-  app.get('/api/slots', async (req, res) => {
-    const { path, ...rest } = req.query;
-    const allowed = ['games', 'providers', 'types', 'themes'];
-    if (!path || !allowed.includes(path)) {
-      return res.status(400).json({ error: 'Invalid path' });
-    }
+  // Dev handler for /api/slots (mirrors the Vercel function): the
+  // communityhunts.gg slot catalogue.
+  app.get('/api/slots', async (_req, res) => {
     try {
-      const upstreamParams = new URLSearchParams({ token: SLOTS_API_KEY, ...rest }).toString();
-      const upstreamUrl = `${SLOTS_BASE_URL}/${path}?${upstreamParams}`;
-      const upstream = await fetch(upstreamUrl, {
-        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'Origin': SLOTS_ORIGIN },
-      });
-      const data = await upstream.json();
-      res.status(upstream.status).json(data);
+      const body = await chDevGet('/slots');
+      res.status(200).json({ slots: body.data || [] });
     } catch (e) {
-      res.status(500).json({ error: 'Proxy error' });
+      res.status(502).json({ error: 'UPSTREAM_UNAVAILABLE' });
     }
   });
 

@@ -9,39 +9,26 @@ import {
   X,
   Zap,
   Layers,
-  TrendingUp,
   ImageOff,
 } from 'lucide-react';
-import rawSlots from '../data/slots';
+import useSlotCatalog from '../hooks/useSlotCatalog';
+import { providersFrom } from '../utils/slotCatalog';
 
-// Normalise local DB entries to the same shape the UI expects
-const ALL_SLOTS = rawSlots.map((g) => ({
-  id: g.id,
-  slug: String(g.id),
-  name: g.name,
-  providerName: g.provider || null,
-  providerSlug: g.provider
-    ? g.provider.toLowerCase().replace(/[^a-z0-9]/g, '-')
-    : 'unknown',
-  thumbnail: g.image,
-  rtp: g.rtp ?? null,
-  volatility: g.volatility ?? null,
-  bonusBuy: Boolean(g.bonusBuy),
-  megaways: Boolean(g.megaways),
-  progressive: Boolean(g.progressive),
-}));
+function formatMaxWin(x) {
+  return `${Math.round(x).toLocaleString('en-US')}x`;
+}
 
-const ALL_PROVIDERS = Array.from(
-  new Map(
-    ALL_SLOTS
-      // Backfilled slots have no provider — keep them out of the provider filter.
-      .filter((g) => g.providerName)
-      .map((g) => [
-        g.providerSlug,
-        { name: g.providerName, slug: g.providerSlug, thumbnail: null },
-      ])
-  ).values()
-).sort((a, b) => a.name.localeCompare(b.name));
+// Loading / offline line shown in place of results while the catalogue loads.
+function CatalogStatus({ loading, error }) {
+  if (!loading && !error) return null;
+  return (
+    <div className="text-center py-16 border border-white/8 bg-zinc-card/30 font-mono">
+      <p className="text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase text-white/65">
+        {error ? 'Slot list is offline, try again in a bit.' : 'Acquiring slot list…'}
+      </p>
+    </div>
+  );
+}
 
 // ─── Mono badge primitives ───────────────────────────────────────────────────
 function MonoBadge({ children, tone = 'neutral' }) {
@@ -201,26 +188,26 @@ function SlotSearch() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterBonusBuy, setFilterBonusBuy] = useState(false);
   const [filterMegaways, setFilterMegaways] = useState(false);
-  const [filterProgressive, setFilterProgressive] = useState(false);
   const [volatility, setVolatility] = useState('all');
   const [selectedProviders, setSelectedProviders] = useState([]);
   const [providerDropdownOpen, setProviderDropdownOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(24);
   const dropdownRef = useRef(null);
   const PER_PAGE = 24;
+  const { slots, loading, error } = useSlotCatalog();
+  const providers = useMemo(() => providersFrom(slots), [slots]);
 
   const filteredGames = useMemo(() => {
     const term = searchTerm.toLowerCase();
-    return ALL_SLOTS.filter((g) => {
+    return slots.filter((g) => {
       if (
         term &&
         !g.name.toLowerCase().includes(term) &&
-        !(g.providerName || '').toLowerCase().includes(term)
+        !(g.provider || '').toLowerCase().includes(term)
       )
         return false;
       if (filterBonusBuy && !g.bonusBuy) return false;
       if (filterMegaways && !g.megaways) return false;
-      if (filterProgressive && !g.progressive) return false;
       if (volatility !== 'all' && g.volatility !== volatility) return false;
       if (
         selectedProviders.length > 0 &&
@@ -229,14 +216,7 @@ function SlotSearch() {
         return false;
       return true;
     });
-  }, [
-    searchTerm,
-    filterBonusBuy,
-    filterMegaways,
-    filterProgressive,
-    volatility,
-    selectedProviders,
-  ]);
+  }, [slots, searchTerm, filterBonusBuy, filterMegaways, volatility, selectedProviders]);
 
   const prevFiltered = useRef(filteredGames);
   if (prevFiltered.current !== filteredGames) {
@@ -264,7 +244,6 @@ function SlotSearch() {
   const activeFilters = [
     filterBonusBuy,
     filterMegaways,
-    filterProgressive,
     volatility !== 'all',
     selectedProviders.length > 0,
   ].filter(Boolean).length;
@@ -325,7 +304,7 @@ function SlotSearch() {
                   Clear selection
                 </button>
               )}
-              {ALL_PROVIDERS.map((p) => (
+              {providers.map((p) => (
                 <label
                   key={p.slug}
                   className="flex items-center gap-3 px-3 py-2 hover:bg-zinc-card/60 cursor-pointer"
@@ -359,13 +338,6 @@ function SlotSearch() {
             icon: Layers,
             active: filterMegaways,
             toggle: () => setFilterMegaways((v) => !v),
-            tone: 'purple',
-          },
-          {
-            label: 'Progressive',
-            icon: TrendingUp,
-            active: filterProgressive,
-            toggle: () => setFilterProgressive((v) => !v),
             tone: 'purple',
           },
         ].map((f) => {
@@ -431,7 +403,6 @@ function SlotSearch() {
               onClick={() => {
                 setFilterBonusBuy(false);
                 setFilterMegaways(false);
-                setFilterProgressive(false);
                 setVolatility('all');
                 setSelectedProviders([]);
                 setSearchTerm('');
@@ -470,7 +441,7 @@ function SlotSearch() {
                       {game.name}
                     </p>
                     <p className="text-[0.625rem] tracking-eyebrow-sm uppercase text-white/65 truncate mt-0.5 font-mono">
-                      {game.providerName}
+                      {game.provider}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-1">
@@ -488,10 +459,8 @@ function SlotSearch() {
                         <Layers size={9} aria-hidden="true" /> MW
                       </MonoBadge>
                     )}
-                    {game.progressive && (
-                      <MonoBadge tone="yellow">
-                        <TrendingUp size={9} aria-hidden="true" /> PROG
-                      </MonoBadge>
+                    {game.maxWin != null && (
+                      <MonoBadge tone="yellow">{formatMaxWin(game.maxWin)}</MonoBadge>
                     )}
                   </div>
                 </div>
@@ -501,8 +470,10 @@ function SlotSearch() {
         </div>
       )}
 
+      <CatalogStatus loading={loading} error={error} />
+
       {/* Empty state */}
-      {filteredGames.length === 0 && (
+      {!loading && !error && filteredGames.length === 0 && (
         <div className="text-center py-16 border border-white/8 bg-zinc-card/30 font-mono">
           <p className="text-[0.6875rem] font-bold tracking-eyebrow-lg uppercase text-white/65 mb-2">
             No signal
@@ -552,15 +523,17 @@ function SlotRandomizer() {
   const ITEM_HEIGHT = 120;
   const CYCLES = 5;
   const SPIN_MS = 4200;
+  const { slots, loading, error } = useSlotCatalog();
+  const providers = useMemo(() => providersFrom(slots), [slots]);
 
   const candidates = useMemo(() => {
-    return ALL_SLOTS.filter((g) => {
+    return slots.filter((g) => {
       if (excludedProviders.has(g.providerSlug)) return false;
       if (filterBonusBuyOnly && !g.bonusBuy) return false;
       if (filterMegawaysOnly && !g.megaways) return false;
       return true;
     });
-  }, [excludedProviders, filterBonusBuyOnly, filterMegawaysOnly]);
+  }, [slots, excludedProviders, filterBonusBuyOnly, filterMegawaysOnly]);
 
   const toggleProvider = useCallback((slug) => {
     setExcludedProviders((prev) => {
@@ -750,10 +723,14 @@ function SlotRandomizer() {
                 {candidates.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-[360px] text-white/60 gap-2 font-mono">
                     <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/65">
-                      No signal
+                      {loading ? 'Acquiring slot list…' : error ? 'Slot list is offline' : 'No signal'}
                     </span>
                     <span className="text-sm text-white/75">
-                      Adjust filters to acquire candidates.
+                      {loading
+                        ? 'Tuning in.'
+                        : error
+                          ? 'Try again in a bit.'
+                          : 'Adjust filters to acquire candidates.'}
                     </span>
                   </div>
                 ) : (
@@ -773,7 +750,7 @@ function SlotRandomizer() {
                           {game.name}
                         </p>
                         <p className="text-[0.625rem] tracking-eyebrow-sm uppercase text-white/65 truncate mt-0.5 font-mono">
-                          {game.providerName}
+                          {game.provider}
                         </p>
                         <div className="flex gap-2 mt-1 flex-wrap text-[0.625rem] font-bold tracking-eyebrow-sm uppercase font-mono">
                           {game.rtp != null && (
@@ -888,7 +865,7 @@ function SlotRandomizer() {
                   {selectedGame.name}
                 </h3>
                 <p className="text-[0.625rem] tracking-eyebrow uppercase text-white/70 mt-1.5 font-mono">
-                  {selectedGame.providerName}
+                  {selectedGame.provider}
                 </p>
 
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-4">
@@ -959,7 +936,7 @@ function SlotRandomizer() {
         </p>
 
         <div className="max-h-[500px] overflow-y-auto">
-          {ALL_PROVIDERS.map((p) => {
+          {providers.map((p) => {
             const excluded = excludedProviders.has(p.slug);
             return (
               <label

@@ -77,6 +77,7 @@ Follows the `api/bonus-hunts.js` pattern it replaces: CORS headers, `OPTIONS`, G
 
 **Sections, top to bottom:**
 
+
 1. **Prediction round block, carried over from BonusHunts.js:** `usePredictionRound`, `PredictionModeBanner`, and the open/locked/settled arrangements of `PredictionSlip`, `PredictionNumberLine`, `PredictionWall` and `PredictionWinnersReveal`. Only the payout-only changes from section 3 apply.
 2. **Round suggestions block, carried over unchanged:** `SuggestionSubmit` + `SuggestionList` when the round accepts suggestions.
 3. **Current hunt card** (`components/hunts/CurrentHuntCard.js`): the live hunt, flagged LIVE, if one is running. Otherwise the most recent hunt, labelled with its end date.
@@ -90,6 +91,7 @@ Follows the `api/bonus-hunts.js` pattern it replaces: CORS headers, `OPTIONS`, G
 **Data hook:** `src/hooks/useCommunityHunts.js` fetches `/api/communityhunts?view=overview` on mount, then every 60s while mounted and the document is visible. It returns `{ live, recent, loading, error }`.
 
 **States:**
+
 - Loading: skeletons for the card and list.
 - Error or 503: hide the card and list; the promo band and prediction blocks still render.
 - No hunts: promo band only.
@@ -97,6 +99,7 @@ Follows the `api/bonus-hunts.js` pattern it replaces: CORS headers, `OPTIONS`, G
 **Formatting:** money uses `Intl.NumberFormat` with the hunt's `currency` code (ARS, CAD, …). The hunt type label comes from communityhunts' public labels: `community` → "Community", `solo` → "Solo", and so on.
 
 **Wiring:**
+
 - `src/data/gambaTools.js`: replace the `hunt-tracker` and `bonus-hunts` entries with `{ id: 'hunts', label: 'Hunts' }`.
 - `src/App.js`: replace the `hunt`, `bonus-hunts` and `hunt-tracker` child routes of `/gamba` with `hunts`.
 - `GambaPage.js`: renders `HuntsPage` for `hunts` and drops the `HuntTracker` lazy import.
@@ -149,6 +152,7 @@ Follows the `api/bonus-hunts.js` pattern it replaces: CORS headers, `OPTIONS`, G
 The file list was computed from the import graph: roots plus everything that becomes orphaned, plus tests whose subject is deleted. `PredictionSlip`, `PredictionWall`, `PredictionNumberLine`, `PredictionWinnersReveal` and `SuggestionSubmit` show up as orphaned only because `BonusHunts.js` imports them. **They are kept** and move to `HuntsPage.js`.
 
 **Delete (src):**
+
 - **Components:** `HuntTracker`, `HuntHistory`, `HuntLinkControls`, `HuntStartScreen`, `HuntTour`, `SuggestionsPanel`, `SuggestionBoard`, `CappedScroll`, `Modal`, `ScatterPill`, `StatCell`, and the whole `components/hunt/` folder with its tests.
 - **Hooks:** `useHuntStore`, `useFirstVisit`.
 - **Pages:** `BonusHunts`, `LiveHuntPage`, `HuntSuggestPage`, `AdminCommunityHuntsPage`.
@@ -156,6 +160,7 @@ The file list was computed from the import graph: roots plus everything that bec
 - **Tests:** `__tests__` for `HuntTour`, `StatCell`, `SuggestionBoard`, `useFirstVisit`, `HuntSuggestPage`, `scatterTier`, `suggestionBoard`, `livePreviewFormat`, `ogCardProps`.
 
 **Delete (api):**
+
 - `bonus-hunts.js`, `live-preview.js`, `_lib/livePreviewFormat.js`
 - `admin/community-hunts.js`
 - `hunt-suggest/*` (board, info, manage, preview, submit)
@@ -164,6 +169,7 @@ The file list was computed from the import graph: roots plus everything that bec
 - `me/slot-profile.js`, `me/payout-profile.js`
 
 **Edit:**
+
 - `App.js`: remove the `/live/:shareId`, `/hunt-suggest/:linkId` and `/admin/community-hunts` routes and their lazy imports.
 - `AdminLayout.js` + `AdminHubPage.js`: remove the Community Hunts entries.
 - `MyAccountPage.js`: remove `SlotProfileCard` and `PayoutProfileCard`. They only fed the tracker's roster search.

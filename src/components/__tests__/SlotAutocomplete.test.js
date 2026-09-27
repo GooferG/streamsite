@@ -17,8 +17,8 @@ beforeEach(() => {
   __resetSlotCatalogForTests();
 });
 
-// Review Focus 1: the selected slot carries the unencoded thumbnail.
-test('suggests fetched slots and selects one with display provider and unencoded art', async () => {
+// Review fix: the selected slot carries the thumbnail exactly as upstream sent it.
+test('suggests fetched slots and selects one with display provider and upstream art', async () => {
   global.fetch = jest.fn(() =>
     Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve({ slots: ROWS }) })
   );
@@ -35,7 +35,7 @@ test('suggests fetched slots and selects one with display provider and unencoded
     expect.objectContaining({
       name: 'Gates of Olympus',
       provider: 'Pragmatic Play',
-      thumbnail: 'https://cdn.rainbet.com/slots/Gates of Olympus.png',
+      thumbnail: 'https://cdn.rainbet.com/slots/Gates%20of%20Olympus.png',
     })
   );
   expect(input.value).toBe('Gates of Olympus');

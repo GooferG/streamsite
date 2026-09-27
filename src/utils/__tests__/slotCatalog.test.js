@@ -3,7 +3,6 @@ import {
   providerDisplayName,
   volatilityBucket,
   isMegaways,
-  decodeThumb,
   normalizeSlot,
   normalizeCatalog,
   providersFrom,
@@ -45,15 +44,6 @@ test('megaways is detected from the name', () => {
   expect(isMegaways('Gates of Olympus')).toBe(false);
 });
 
-// Review Focus 1 + 2: pre-encoded thumbs come back unencoded; bad escapes don't throw.
-test('decodeThumb unencodes, and keeps a malformed URL as-is', () => {
-  expect(decodeThumb('https://cdn.rainbet.com/slots/1%20Reel%20-%20Aztec%20Spell.png'))
-    .toBe('https://cdn.rainbet.com/slots/1 Reel - Aztec Spell.png');
-  expect(decodeThumb('https://cdn.rainbet.com/slots/bad%E0%A4%A.png'))
-    .toBe('https://cdn.rainbet.com/slots/bad%E0%A4%A.png');
-  expect(decodeThumb(null)).toBeNull();
-});
-
 test('normalizeSlot maps a catalogue row to the UI shape', () => {
   expect(
     normalizeSlot({
@@ -68,7 +58,7 @@ test('normalizeSlot maps a catalogue row to the UI shape', () => {
     name: 'Bonanza Megaways',
     provider: 'Big Time Gaming',
     providerSlug: 'big-time-gaming',
-    thumbnail: 'https://cdn.rainbet.com/slots/Bonanza Megaways.png',
+    thumbnail: 'https://cdn.rainbet.com/slots/Bonanza%20Megaways.png',
     rtp: 96,
     volatility: 'high',
     bonusBuy: false,

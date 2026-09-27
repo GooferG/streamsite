@@ -186,4 +186,7 @@ The slotslaunch `/api/slots` handler, `SLOTS_API_KEY`, `SLOTS_BASE_URL` and `SLO
 
 ## Addendum (implementation)
 
-- **Thumbnails are decoded.** 3,701 of 7,625 live catalogue thumbnails arrive percent-encoded (`%20`). `AdminGiveawaysPage.saveSlot` calls `encodeURI(thumbnail)`, which would turn them into `%2520` and break the giveaway overlay art. So `normalizeSlot` returns `decodeThumb(row.thumb)`, the unencoded form the old static list used. A malformed escape keeps the raw string.
+- **Thumbnails pass through as sent; `saveSlot` uses `toImageUrl`.** 3,701 of 7,625 live catalogue thumbnails are percent-encoded (`%20`), and 209 also carry reserved escapes (`%26`, `%2C`, `%3F`, `%3D`, `%24`). `AdminGiveawaysPage.saveSlot` used to call `encodeURI(thumbnail)`, which double-encodes (`%2526`) and breaks the giveaway overlay art. Decoding can't fix `%3F`, since a raw `?` starts a query string.
+  - So `normalizeSlot` keeps `row.thumb` as-is (a valid `<img src>`).
+  - `saveSlot` stores `toImageUrl(thumbnail)` (`src/utils/slotImage.js`, `new URL(u).href`). It is idempotent on encoded URLs and still encodes raw spaces.
+  - This changes `saveSlot`, which the spec had frozen, to preserve the behavior the freeze protected. Verified live: all 7,625 thumbs round-trip unchanged.

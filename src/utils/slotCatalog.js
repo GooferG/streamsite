@@ -76,18 +76,6 @@ export function isMegaways(name) {
   return /megaways/i.test(String(name || ''));
 }
 
-// communityhunts sends Rainbet art URLs percent-encoded ("1%20Reel…").
-// Consumers (AdminGiveawaysPage.saveSlot) encodeURI() the thumbnail, so hand
-// them the unencoded form, like the old static list. Malformed escapes stay raw.
-export function decodeThumb(url) {
-  if (!url) return null;
-  try {
-    return decodeURI(url);
-  } catch {
-    return url;
-  }
-}
-
 const finiteOrNull = (n) => (typeof n === 'number' && Number.isFinite(n) ? n : null);
 
 export function normalizeSlot(row) {
@@ -98,7 +86,10 @@ export function normalizeSlot(row) {
     name: row.name,
     provider: providerDisplayName(row.provider),
     providerSlug: canonicalProvider(row.provider),
-    thumbnail: decodeThumb(row.thumb),
+    // Passed through as sent: communityhunts art URLs are already percent-encoded
+    // and valid as <img src>. Store them via toImageUrl (utils/slotImage), never
+    // encodeURI, which double-encodes %26.
+    thumbnail: row.thumb || null,
     rtp: finiteOrNull(row.rtp),
     volatility: volatilityBucket(row.volatility),
     bonusBuy: row.bonusBuy === true,

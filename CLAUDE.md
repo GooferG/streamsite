@@ -39,7 +39,7 @@ All files are Vercel function handlers (`export default async function handler(r
 - `twitch-token.js` — client-credentials token for public Twitch reads.
 - `twitch-auth.js` — OAuth code exchange + mints Firebase custom token. Requires `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` (newlines as `\n` in env, code unescapes).
 - `communityhunts.js` — public read endpoint for the Hunts tab (`?view=overview` → `{ live, recent }`, `?view=hunt&id=` → `{ hunt }`), 30s in-memory cache + CDN `s-maxage`, stale-on-error. All communityhunts.gg access goes through `api/_lib/communityHunts.js`.
-- `slots.js` — the slot catalogue for Slot Picker and `SlotAutocomplete`, re-served from communityhunts.gg `/slots` (Rainbet list, re-synced nightly): 6h in-memory cache + CDN `s-maxage` of a day, stale-on-error. The client normalizes rows in `src/utils/slotCatalog.js` (provider display names, volatility buckets, Megaways by name, unencoded thumbnails) and loads them once per session via `src/hooks/useSlotCatalog.js`.
+- `slots.js` — the slot catalogue for Slot Picker and `SlotAutocomplete`, re-served from communityhunts.gg `/slots` (Rainbet list, re-synced nightly): 6h in-memory cache + CDN `s-maxage` of a day, stale-on-error. The client normalizes rows in `src/utils/slotCatalog.js` (provider display names, volatility buckets, Megaways by name; thumbnails pass through already percent-encoded — store them via `toImageUrl` in `src/utils/slotImage.js`, never `encodeURI`, which double-encodes `%26`) and loads them once per session via `src/hooks/useSlotCatalog.js`.
 - `game-cover.js`, `steam-games.js`, `steam-library.js` — IGDB / Steam Web API proxies.
 
 ### Dev vs prod proxying

@@ -8,13 +8,10 @@ import {
 } from 'firebase/firestore';
 import { Pin } from 'lucide-react';
 import { db } from '../config/firebase';
+import { formatMoney } from '../utils/money';
+import { roundCurrency } from '../utils/predictionRound';
 
 const MAX_CARDS = 80;
-
-function formatCurrency(val) {
-  if (val == null || !Number.isFinite(Number(val))) return '—';
-  return `$${Number(val).toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
-}
 
 // Deterministic rotation per twitchId so the same person always sits at the
 // same angle on the wall.
@@ -44,8 +41,7 @@ function colorAccentFor(id) {
 function Card({ entry, round, dim, winnerInfo }) {
   const rotation = rotationFor(entry.twitchId);
   const paper = colorAccentFor(entry.twitchId);
-  const showPayout = round.kinds?.payout && typeof entry.payoutGuess === 'number';
-  const showSlot = round.kinds?.topSlot && entry.topSlotGuess;
+  const showPayout = typeof entry.payoutGuess === 'number';
 
   return (
     <div
@@ -89,15 +85,7 @@ function Card({ entry, round, dim, winnerInfo }) {
             className="text-3xl font-black leading-none text-zinc-900 tabular-nums"
             style={{ fontFamily: '"Caveat", "Patrick Hand", cursive' }}
           >
-            {formatCurrency(entry.payoutGuess)}
-          </p>
-        )}
-        {showSlot && (
-          <p
-            className="mt-1.5 text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-zinc-700/80 font-mono truncate"
-            title={entry.topSlotGuess}
-          >
-            ◇ {entry.topSlotGuess}
+            {formatMoney(entry.payoutGuess, roundCurrency(round), { decimals: 0 })}
           </p>
         )}
 
@@ -126,7 +114,7 @@ export default function PredictionWall({ round }) {
   useEffect(() => {
     if (!round?.id) return undefined;
     const q = query(
-      collection(db, 'prediction_rounds', round.id, 'entries'),
+      collection(db, 'hunts', round.id, 'entries'),
       orderBy('submittedAt', 'asc'),
       fLimit(MAX_CARDS + 1)
     );

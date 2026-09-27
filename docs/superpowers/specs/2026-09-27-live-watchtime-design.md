@@ -33,7 +33,7 @@ logged in on the site, and matches them by lowercased login rather than id.
 ## Decisions
 
 | Question | Decision |
-|---|---|
+| --- | --- |
 | What counts as hanging out | Presence (in the chat viewer list) earns a base rate; chatting in the same window earns a bonus on top |
 | Chatters who never logged in on the site | Track them by Twitch id, bank their tickets, pay out on first login |
 | Scheduler | Native Vercel cron, `*/5 * * * *` |
@@ -46,7 +46,7 @@ logged in on the site, and matches them by lowercased login rather than id.
 Configured by env, read at payout time:
 
 | Env var | Default | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `WATCHTIME_TICKETS_PER_WINDOW` | `1` | Tickets per 5-minute window present |
 | `WATCHTIME_CHAT_BONUS` | `1` | Extra tickets for a window in which the viewer chatted |
 | `WATCHTIME_EXCLUDE_LOGINS` | empty | Comma-separated extra logins to ignore (added to the built-in bot list) |
@@ -79,8 +79,10 @@ One document per Twitch stream (`streamId` is the `id` from Helix
       login: 'someviewer',
       present: 31,       // windows present
       chat: 12,          // windows with at least one message
-      paidTickets: 36,   // tickets already paid out from this session
-      paidPresent: 24,   // present windows already converted to minutes
+      paidTickets: 36,   // tickets already paid out (account or bank)
+      paidPresent: 24,   // present windows already paid out as minutes
+      ledgerTickets: 20, // part of paidTickets that went to the account
+      ledgerMinutes: 60, // minutes paid to the account (not the bank)
     },
   },
 }
@@ -115,11 +117,13 @@ Tickets earned by a chatter who has no `users` doc yet. Server-only.
   longer written or initialized; existing values are left in place.
 - `ticket_ledger` gains two reasons:
   - `watchtime`: doc id `watch_{streamId}_{twitchId}`, one per viewer per
-    stream. `delta` is set to the session's cumulative `paidTickets` for that
-    viewer, and `minutes` and `note` ("Watched 1h 35m") are refreshed at each
-    payout. `createdAt` is written only on the first payout so the line keeps
-    its place in the `orderBy('createdAt')` history. `updatedAt` changes each
-    payout.
+    stream. `delta` is set to the viewer's `ledgerTickets` for the session
+    (tickets paid to the account, excluding anything that went to the bank
+    before they signed up), and `minutes` and `note` ("Watched 1h 35m") come
+    from `ledgerMinutes`. `createdAt` is written only on the first payout to
+    the account (`ledgerTickets` and `ledgerMinutes` both 0 beforehand), so
+    the line keeps its place in the `orderBy('createdAt')` history.
+    `updatedAt` changes each payout.
   - `watchtime_banked`: one line when banked tickets are claimed at login
     ("Watch time before you signed up: 8h 50m").
 
@@ -174,26 +178,33 @@ when unset, timing-safe compare.
    - If `shouldSettle(completed)`, run a payout for this session.
 5. Respond `{ ok, live, window, viewers, settled }` for logs.
 
-### Payout (`settleSession` in the tick file, or `api/_lib/watchtimeSettle.js` if it grows)
+### Firestore I/O (`api/_lib/watchtimeStore.js`)
 
-1. Read the session doc. Collect viewers where `owedFor` is non-zero.
-2. `getAll()` on `users/{id}` for those viewers to see who has an account.
-3. Write in batches of at most 200 viewers (at most 2 ops per viewer plus one
-   session update per batch, under the 500-op limit). Each batch is atomic
-   and contains, for each viewer:
-   - **Has a user doc**: increment `tickets`, `totalEarned`, `watchMinutes`;
-     `set(merge)` the ledger line `watch_{streamId}_{id}`, including
-     `createdAt` only when the viewer's `paidTickets` and `paidPresent` were
-     both 0 before this payout.
-   - **No user doc**: `set(merge)` `watch_bank/{id}` with incremented
-     `tickets` and `minutes`, and `login`.
-   - Session update: `viewers.{id}.paidTickets` and
-     `viewers.{id}.paidPresent` set to their new totals.
-4. Set `lastSettledAt` (and `status: 'closed'`, `closedAt` on a final payout).
+`markChatted`, `takeChatMarkers`, `deleteRefs`, `openSessionIds`,
+`creditSession`, `settleSession`, `claimWatchBank`. All decisions are made by
+the pure functions in `watchtime.js`; this file only reads and writes.
 
-Because the `paid*` counters commit in the same batch as the credit, a crash
-between batches never pays twice or loses tickets. The next payout picks up
-whatever is still owed.
+### Payout (`settleSession`)
+
+1. Read the session doc once to get the viewer ids.
+2. For each chunk of at most 200 viewer ids, run a **transaction** that:
+   - re-reads the session doc and `getAll()`s `users/{id}` for the chunk;
+   - computes the plan with `planSettlement` (pure);
+   - for each viewer owed something:
+     - **Has a user doc**: increment `tickets`, `totalEarned`,
+       `watchMinutes`; `set(merge)` the ledger line `watch_{streamId}_{id}`.
+     - **No user doc**: `set(merge)` `watch_bank/{id}` with incremented
+       `tickets` and `minutes`, and `login`;
+   - writes the updated `viewers` map (new `paid*` / `ledger*` counters).
+
+   At most 2 writes per viewer plus 1 session write, under the 500-write
+   transaction limit.
+3. Set `lastSettledAt` (and `status: 'closed'`, `closedAt` on a final payout).
+
+A transaction per chunk, not a plain batch, is what makes duplicate cron fires
+safe: two concurrent payouts serialize, and the second sees the first's
+`paid*` counters and owes nothing. A crash between chunks never pays twice or
+loses tickets; the next payout picks up whatever is still owed.
 
 ### `api/twitch/eventsub.js` (chat marker)
 
@@ -255,6 +266,10 @@ login.
 - `firestore.rules`: explicit `allow read, write: if false` blocks for
   `watch_sessions`, `watch_chat` and `watch_bank` (they are already denied by
   default; the explicit blocks document intent, matching `secrets`).
+- `firestore.indexes.json`: field overrides with `"indexes": []` for
+  `watch_sessions.viewers` and `watch_chat.chatters`, so rewriting those maps
+  does not index every nested field (and the 40k index-entries-per-doc limit
+  never comes into play). Deploying rules and indexes needs the user's go-ahead.
 - `.env.example`: drop `WATCHTIME_TICKET_AWARD`, add the three new vars.
 - `scripts/get-broadcaster-refresh-token.mjs`: update the comment that says
   `moderator:read:chatters` is for `award-watchtime`.
@@ -266,7 +281,7 @@ login.
 4-hour stream, 100 in chat, 30 active chatters, 48 ticks:
 
 | Source | Writes | Reads |
-|---|---|---|
+| --- | --- | --- |
 | Session transaction per tick | 48 | 48 |
 | Chat markers (worst case: every active chatter, every window) | ≤ 1,440 | 1 per message |
 | Chat marker sweep | ≤ 48 deletes | ≤ 48 |
@@ -282,7 +297,7 @@ example, relying on idempotent writes instead of a dedupe doc).
 ## Failure modes
 
 | Failure | Result |
-|---|---|
+| --- | --- |
 | Helix, token refresh or chatter fetch fails | Tick logs and returns 500, writes nothing. That window is lost for everyone (5 min). |
 | Cron fires twice for one window | Second transaction sees `lastWindow >= completed`, no-op. |
 | Cron skips a tick | That window is lost; the next tick credits only its own window. |

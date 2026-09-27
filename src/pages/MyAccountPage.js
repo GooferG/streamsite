@@ -140,6 +140,7 @@ function SuggestionRecord({ user }) {
 
 const REASON_LABELS = {
   watchtime: 'Watch time',
+  watchtime_banked: 'Banked watch time',
   daily: 'Daily claim',
   admin_grant: 'Granted',
   discord_link: 'Discord linked',
@@ -362,6 +363,10 @@ export default function MyAccountPage() {
                 <span>
                   Spent <span className="text-orange-admin/80 tabular-nums">{user?.totalSpent ?? 0}</span>
                 </span>
+                <span>
+                  Hung out{' '}
+                  <span className="text-white/70 tabular-nums">{formatMinutes(user?.watchMinutes)}</span>
+                </span>
               </div>
             </div>
             <button
@@ -403,7 +408,10 @@ export default function MyAccountPage() {
               <span className="text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono w-24 flex-shrink-0">
                 Watch
               </span>
-              <span>Hang out in chat while the stream is live — tickets drop daily during the stream.</span>
+              <span>
+                Every 5 minutes you're in chat while the stream is live earns 1 ticket, 2 if you
+                chatted. Paid out every 30 minutes.
+              </span>
             </li>
             <li className="flex items-baseline gap-2">
               <span className="text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono w-24 flex-shrink-0">

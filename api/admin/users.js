@@ -30,7 +30,7 @@ function shapeUser(doc) {
     totalEarned: d.totalEarned || 0,
     totalSpent: d.totalSpent || 0,
     lastDailyClaimAt: d.lastDailyClaimAt || null,
-    lastWatchTimeAwardAt: d.lastWatchTimeAwardAt || null,
+    watchMinutes: d.watchMinutes || 0,
     discordId: d.discordId || null,
     discordUsername: d.discordUsername || null,
     discordVerifiedAt: d.discordVerifiedAt || null,

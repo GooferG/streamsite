@@ -109,7 +109,7 @@ const RESET_SCOPES = [
     key: 'tickets',
     label: 'Tickets (balances + ledger)',
     detail:
-      'Resets every user’s tickets, totalEarned, totalSpent, lastDailyClaimAt. Wipes the full ticket_ledger. User identity (Twitch/Discord links) is preserved.',
+      'Resets every user’s tickets, totalEarned, totalSpent, lastDailyClaimAt, watchMinutes. Wipes the full ticket_ledger and all watch-time sessions and banked tickets. User identity (Twitch/Discord links) is preserved.',
   },
   {
     key: 'hunts',

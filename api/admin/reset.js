@@ -11,6 +11,9 @@ import { applyCors, requireOwner } from '../_lib/verifyAuth.js';
 //  - User identity (twitchName, displayName, discord links, etc.) is preserved
 //    by the "tickets" scope — only ticket-economy fields are zeroed.
 //  - Ledger is always wiped alongside ticket balances (they're meant to mirror).
+//  - The tickets scope also wipes watch-time state (watch_sessions,
+//    watch_chat, watch_bank) and zeroes watchMinutes, so nothing banked or
+//    half-paid survives a reset.
 //  - Writes an audit row to reset_log/{auto-id} on every successful run.
 
 const BATCH = 400; // < 500 Firestore batch limit, with headroom
@@ -64,6 +67,7 @@ async function resetUserTicketFields() {
         totalEarned: 0,
         totalSpent: 0,
         lastDailyClaimAt: null,
+        watchMinutes: 0,
         updatedAt: FieldValue.serverTimestamp(),
       });
     });
@@ -107,6 +111,7 @@ export default async function handler(req, res) {
     redemptions: 0,
     usersReset: 0,
     ledger: 0,
+    watch: 0,
     hunts: 0,
     huntSubs: 0,
     eventsubCache: 0,
@@ -127,6 +132,10 @@ export default async function handler(req, res) {
     if (want.tickets) {
       deleted.usersReset = await resetUserTicketFields();
       deleted.ledger = await deleteCollection(adminDb.collection('ticket_ledger'));
+      deleted.watch =
+        (await deleteCollection(adminDb.collection('watch_sessions'))) +
+        (await deleteCollection(adminDb.collection('watch_chat'))) +
+        (await deleteCollection(adminDb.collection('watch_bank')));
     }
     if (want.hunts) {
       const r = await deleteWithSubcollections(

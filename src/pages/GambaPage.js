@@ -1,18 +1,17 @@
 import { useEffect, useRef, useState, lazy, Suspense } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { ChevronDown, X, LayoutGrid } from 'lucide-react';
-import BonusHuntsPage from './BonusHunts';
+import HuntsPage from './HuntsPage';
 import Leaderboard from '../components/Leaderboard';
 import GambaHub from '../components/GambaHub';
 import { GAMBA_TOOLS } from '../data/gambaTools';
 import useTuningPhrase, { TUNING_PHRASES } from '../hooks/useTuningPhrase';
 
 // Code-split the two tools that pull in the slot DB (~874KB via ../data/slots).
-// SlotPicker imports it directly; HuntTracker reaches it through SlotAutocomplete.
+// SlotPicker imports it directly; BonusBattle reaches it through SlotAutocomplete.
 // Both must be lazy or the data stays in the main bundle. The data now lives in
 // its own chunk and only downloads when one of these tools is opened.
 const SlotPicker = lazy(() => import('../components/SlotPicker'));
-const HuntTracker = lazy(() => import('../components/HuntTracker'));
 const BonusBattle = lazy(() => import('../components/BonusBattle'));
 
 // Shared on-brand fallback while a tool chunk loads. Opens on the tool's own
@@ -334,12 +333,7 @@ export default function GambaPage() {
             {/* Tool surface */}
             <div className="mt-4">
               {activeTool === 'leaderboard' && <Leaderboard />}
-              {activeTool === 'bonus-hunts' && <BonusHuntsPage />}
-              {activeTool === 'hunt-tracker' && (
-                <Suspense fallback={<ToolLoading label="Loading hunt tracker…" />}>
-                  <HuntTracker />
-                </Suspense>
-              )}
+              {activeTool === 'hunts' && <HuntsPage />}
               {activeTool === 'bonus-battle' && (
                 <Suspense fallback={<ToolLoading label="Loading bonus battle…" />}>
                   <BonusBattle />

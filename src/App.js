@@ -281,9 +281,7 @@ function StreamingSiteContent() {
             <Route path="leaderboard" element={null} />
             <Route path="wheel" element={null} />
             <Route path="equity" element={null} />
-            <Route path="hunt" element={null} />
-            <Route path="bonus-hunts" element={null} />
-            <Route path="hunt-tracker" element={null} />
+            <Route path="hunts" element={null} />
             <Route path="bonus-battle" element={null} />
           </Route>
           <Route path="/gaming" element={<GamingPage />} />

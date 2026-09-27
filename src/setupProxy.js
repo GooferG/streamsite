@@ -1,8 +1,7 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 // Dev-only secrets — read from env (.env.local), no longer committed. Set
-// BONUSHUNT_API_KEY / SLOTSLAUNCH_API_KEY in .env.local for local API mirrors.
-const BONUS_HUNT_API_KEY = process.env.BONUSHUNT_API_KEY || '';
+// SLOTSLAUNCH_API_KEY and COMMUNITYHUNTS_API_KEY in .env.local for local API mirrors.
 const SLOTS_API_KEY  = process.env.SLOTSLAUNCH_API_KEY || '';
 const SLOTS_BASE_URL = 'https://slotslaunch.com/api';
 const SLOTS_ORIGIN   = 'goofer.tv';
@@ -32,46 +31,15 @@ async function chDevGet(path) {
 const HUNT_SUGGEST_TARGET =
   process.env.HUNT_SUGGEST_PROXY_TARGET || 'https://goofer.tv';
 
-if (!BONUS_HUNT_API_KEY || !SLOTS_API_KEY) {
+if (!SLOTS_API_KEY || !process.env.COMMUNITYHUNTS_API_KEY) {
   // eslint-disable-next-line no-console
   console.warn(
-    '[setupProxy] BONUSHUNT_API_KEY / SLOTSLAUNCH_API_KEY not set in .env.local — ' +
-      '/api/bonus-hunts and /api/slots dev mirrors will fail until they are.'
+    '[setupProxy] SLOTSLAUNCH_API_KEY / COMMUNITYHUNTS_API_KEY not set in .env.local — ' +
+      '/api/slots and /api/communityhunts dev mirrors will fail until they are.'
   );
 }
 
 module.exports = function (app) {
-  // Dev proxy for direct /api/public calls
-  app.use(
-    '/api/public',
-    createProxyMiddleware({
-      target: 'https://bonushunt.gg',
-      changeOrigin: true,
-      secure: true,
-      xfwd: false,
-      on: {
-        proxyReq: (proxyReq) => {
-          proxyReq.setHeader('Authorization', `Bearer ${BONUS_HUNT_API_KEY}`);
-        },
-      },
-    })
-  );
-
-  // Dev handler for /api/bonus-hunts (mirrors the Vercel function)
-  app.get('/api/bonus-hunts', async (req, res) => {
-    const { path } = req.query;
-    if (!path) return res.status(400).json({ error: 'Missing path param' });
-    try {
-      const upstream = await fetch(`https://bonushunt.gg/api/public/${path}`, {
-        headers: { Authorization: `Bearer ${BONUS_HUNT_API_KEY}` },
-      });
-      const data = await upstream.json();
-      res.status(upstream.status).json(data);
-    } catch (e) {
-      res.status(500).json({ error: 'Proxy error' });
-    }
-  });
-
   // Dev handler for /api/communityhunts (mirrors the Vercel function).
   app.get('/api/communityhunts', async (req, res) => {
     const { view, id } = req.query;

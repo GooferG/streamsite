@@ -1,9 +1,6 @@
 import { Trophy, Ticket } from 'lucide-react';
-
-function formatCurrency(val) {
-  if (val == null || !Number.isFinite(Number(val))) return '—';
-  return `$${Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
+import { formatMoney } from '../utils/money';
+import { roundCurrency } from '../utils/predictionRound';
 
 const PLACE_LABEL = { 1: '1ST', 2: '2ND', 3: '3RD' };
 const PLACE_COLOR = {
@@ -40,11 +37,14 @@ function WinnerCard({ winner, round }) {
             {winner.displayName || winner.twitchName}
           </p>
           <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/55 font-mono mt-0.5 truncate">
-            {round.kinds.payout && typeof winner.payoutGuess === 'number'
-              ? <>guess {formatCurrency(winner.payoutGuess)}{typeof winner.diff === 'number' ? ` · off by ${formatCurrency(winner.diff)}` : ''}</>
-              : winner.topSlotGuess
-                ? `picked ${winner.topSlotGuess}`
-                : null}
+            {typeof winner.payoutGuess === 'number' ? (
+              <>
+                guess {formatMoney(winner.payoutGuess, roundCurrency(round))}
+                {typeof winner.diff === 'number'
+                  ? ` · off by ${formatMoney(winner.diff, roundCurrency(round))}`
+                  : ''}
+              </>
+            ) : null}
           </p>
         </div>
       </div>
@@ -86,8 +86,7 @@ export default function PredictionWinnersReveal({ round }) {
           <span>Winners</span>
         </span>
         <span className="text-white/40 tabular-nums">
-          actual {round.actual?.payout != null ? formatCurrency(round.actual.payout) : '—'}
-          {round.actual?.topSlotName ? ` · ${round.actual.topSlotName}` : ''}
+          actual {formatMoney(round.actual?.payout, roundCurrency(round))}
         </span>
       </div>
       <div className="grid gap-4 sm:grid-cols-3">

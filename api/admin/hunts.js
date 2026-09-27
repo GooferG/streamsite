@@ -1,47 +1,19 @@
 import { adminDb, FieldValue } from '../_lib/firebaseAdmin.js';
 import { applyCors, requireAdmin } from '../_lib/verifyAuth.js';
+import {
+  getCurrentHunt,
+  getHunt,
+  toRoundSnapshot,
+  huntResult,
+  CommunityHuntsError,
+} from '../_lib/communityHunts.js';
+import { pickWinners } from '../_lib/predictions.js';
 
-// Admin hunt lifecycle. A "hunt" can have prediction and/or suggestion
-// features enabled. Predictions follow the same lifecycle as the old
-// prediction_rounds collection (open -> locked -> settled).
+// Admin prediction-round lifecycle. A round can have payout predictions and/or
+// slot suggestions enabled. Predictions go open -> locked -> settled. Rounds
+// snapshot GooferG's current communityhunts.gg hunt (or take a manual cost).
 //
 // POST { action, ...payload }
-
-const BONUSHUNT_API = 'https://bonushunt.gg/api/public';
-const BONUSHUNT_KEY = process.env.BONUSHUNT_API_KEY;
-
-async function fetchCurrentHunt() {
-  const r = await fetch(`${BONUSHUNT_API}/hunts`, {
-    headers: { Authorization: `Bearer ${BONUSHUNT_KEY}` },
-  });
-  if (!r.ok) throw new Error(`BONUSHUNT_${r.status}`);
-  const data = await r.json();
-  const list = Array.isArray(data) ? data : data.hunts ?? data.data ?? [];
-  list.sort(
-    (a, b) =>
-      new Date(b.created_at ?? b.createdAt ?? 0) -
-      new Date(a.created_at ?? a.createdAt ?? 0)
-  );
-  return list[0] || null;
-}
-
-function snapshotHunt(hunt) {
-  if (!hunt) return null;
-  const bonuses = hunt.bonuses ?? [];
-  return {
-    huntId: hunt.id ?? null,
-    huntName: hunt.title ?? null,
-    casino: hunt.casino ?? null,
-    totalCost: Number(hunt.startCost ?? 0),
-    slots: bonuses.map((b) => ({
-      name: b.slotName ?? `Bonus ${b.id ?? '?'}`,
-      cost: Number(b.betSize ?? 0),
-      imageUrl: b.slotImage ?? null,
-      provider: b.provider ?? null,
-    })),
-    snapshotAt: new Date().toISOString(),
-  };
-}
 
 function sanitizeTier(tier) {
   if (!tier) return null;
@@ -72,67 +44,6 @@ function sanitizeRewards(input) {
   return { type, tiers };
 }
 
-function pickWinners(entries, round) {
-  const kinds = round.kinds || {};
-  const actual = round.actual || {};
-  const tierPlaces = (round.rewards?.tiers || [])
-    .map((t) => t.place)
-    .sort((a, b) => a - b);
-
-  const enriched = entries.map((e) => {
-    let payoutDiff = null;
-    if (kinds.payout && typeof actual.payout === 'number' && typeof e.payoutGuess === 'number') {
-      payoutDiff = Math.abs(e.payoutGuess - actual.payout);
-    }
-    const topSlotMatch =
-      kinds.topSlot && actual.topSlotName && e.topSlotGuess
-        ? e.topSlotGuess.toLowerCase() === String(actual.topSlotName).toLowerCase()
-        : null;
-    return { ...e, payoutDiff, topSlotMatch };
-  });
-
-  const tieBreak = (a, b) => {
-    const aMs = a.submittedAt?.toMillis ? a.submittedAt.toMillis() : 0;
-    const bMs = b.submittedAt?.toMillis ? b.submittedAt.toMillis() : 0;
-    return aMs - bMs;
-  };
-
-  let ranked;
-  if (kinds.payout && kinds.topSlot) {
-    ranked = [...enriched].sort((a, b) => {
-      const matchOrder = (b.topSlotMatch ? 1 : 0) - (a.topSlotMatch ? 1 : 0);
-      if (matchOrder !== 0) return matchOrder;
-      const ad = a.payoutDiff ?? Infinity;
-      const bd = b.payoutDiff ?? Infinity;
-      if (ad !== bd) return ad - bd;
-      return tieBreak(a, b);
-    });
-  } else if (kinds.payout) {
-    ranked = [...enriched].sort((a, b) => {
-      const ad = a.payoutDiff ?? Infinity;
-      const bd = b.payoutDiff ?? Infinity;
-      if (ad !== bd) return ad - bd;
-      return tieBreak(a, b);
-    });
-  } else if (kinds.topSlot) {
-    ranked = [...enriched].sort((a, b) => {
-      const matchOrder = (b.topSlotMatch ? 1 : 0) - (a.topSlotMatch ? 1 : 0);
-      if (matchOrder !== 0) return matchOrder;
-      return tieBreak(a, b);
-    });
-  } else {
-    ranked = [];
-  }
-
-  const viable = ranked.filter((e) => {
-    if (kinds.payout && typeof e.payoutDiff === 'number') return true;
-    if (kinds.topSlot && e.topSlotMatch) return true;
-    return false;
-  });
-
-  return tierPlaces.map((place, i) => viable[i] || null);
-}
-
 export default async function handler(req, res) {
   applyCors(res);
   if (req.method === 'OPTIONS') return res.status(200).end();
@@ -145,9 +56,9 @@ export default async function handler(req, res) {
 
   try {
     if (action === 'preview_hunt') {
-      const hunt = await fetchCurrentHunt();
+      const hunt = await getCurrentHunt();
       if (!hunt) return res.status(404).json({ error: 'NO_CURRENT_HUNT' });
-      return res.status(200).json({ ok: true, snapshot: snapshotHunt(hunt) });
+      return res.status(200).json({ ok: true, snapshot: toRoundSnapshot(hunt) });
     }
 
     if (action === 'create') {
@@ -161,16 +72,6 @@ export default async function handler(req, res) {
         return res.status(400).json({ error: 'enable predictions or suggestions' });
       }
 
-      const kinds = acceptPredictions
-        ? {
-            payout: !!payload.kinds?.payout,
-            topSlot: !!payload.kinds?.topSlot,
-          }
-        : { payout: false, topSlot: false };
-      if (acceptPredictions && !kinds.payout && !kinds.topSlot) {
-        return res.status(400).json({ error: 'at least one prediction kind required' });
-      }
-
       const suggestionCapRaw = Number(payload.suggestionCap);
       const suggestionCap = acceptSuggestions
         ? (Number.isInteger(suggestionCapRaw) && suggestionCapRaw >= 1
@@ -178,24 +79,15 @@ export default async function handler(req, res) {
             : 3)
         : 0;
 
-      const source = payload.source === 'manual' ? 'manual' : 'bonushunt';
+      const source = payload.source === 'manual' ? 'manual' : 'communityhunts';
       let bonusHuntSnapshot = null;
-      let manualSlots = null;
       let manualTotalCost = null;
 
-      if (source === 'bonushunt') {
-        const hunt = await fetchCurrentHunt();
+      if (source === 'communityhunts') {
+        const hunt = await getCurrentHunt();
         if (!hunt) return res.status(400).json({ error: 'NO_CURRENT_HUNT' });
-        bonusHuntSnapshot = snapshotHunt(hunt);
+        bonusHuntSnapshot = toRoundSnapshot(hunt);
       } else {
-        const rawSlots = String(payload.manualSlots || '')
-          .split('\n')
-          .map((s) => s.trim())
-          .filter(Boolean);
-        if (kinds.topSlot && rawSlots.length === 0) {
-          return res.status(400).json({ error: 'manual slots required when topSlot is enabled' });
-        }
-        manualSlots = rawSlots;
         manualTotalCost =
           payload.manualTotalCost === '' || payload.manualTotalCost == null
             ? null
@@ -215,10 +107,8 @@ export default async function handler(req, res) {
         // Source data
         source,
         bonusHuntSnapshot,
-        manualSlots,
         manualTotalCost,
         // Prediction config
-        kinds,
         rewards,
         // Prediction lifecycle state
         status: 'open',
@@ -244,6 +134,15 @@ export default async function handler(req, res) {
     if (!snap.exists) return res.status(404).json({ error: 'NOT_FOUND' });
     const round = snap.data();
 
+    if (action === 'hunt_result') {
+      const huntId = round.bonusHuntSnapshot && round.bonusHuntSnapshot.huntId;
+      if (round.source !== 'communityhunts' || !huntId) {
+        return res.status(400).json({ error: 'NOT_COMMUNITYHUNTS_ROUND' });
+      }
+      const hunt = await getHunt(huntId);
+      return res.status(200).json({ ok: true, result: huntResult(hunt) });
+    }
+
     if (action === 'lock') {
       if (!round.acceptPredictions) {
         return res.status(400).json({ error: 'PREDICTIONS_DISABLED' });
@@ -266,25 +165,15 @@ export default async function handler(req, res) {
       if (!['open', 'locked'].includes(round.status)) {
         return res.status(400).json({ error: 'NOT_SETTLEABLE' });
       }
-      const actualPayout = round.kinds.payout ? Number(payload.actualPayout) : null;
-      const actualTopSlot = round.kinds.topSlot
-        ? String(payload.actualTopSlotName || '').trim() || null
-        : null;
-      if (round.kinds.payout && !Number.isFinite(actualPayout)) {
+      const actualPayout = Number(payload.actualPayout);
+      if (payload.actualPayout === '' || payload.actualPayout == null || !Number.isFinite(actualPayout)) {
         return res.status(400).json({ error: 'actualPayout required' });
-      }
-      if (round.kinds.topSlot && !actualTopSlot) {
-        return res.status(400).json({ error: 'actualTopSlotName required' });
       }
 
       const entriesSnap = await ref.collection('entries').get();
       const entries = entriesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
 
-      const updatedRound = {
-        ...round,
-        actual: { payout: actualPayout, topSlotName: actualTopSlot },
-      };
-      const placements = pickWinners(entries, updatedRound);
+      const placements = pickWinners(entries, { ...round, actual: { payout: actualPayout } });
 
       const winners = [];
       const now = FieldValue.serverTimestamp();
@@ -303,12 +192,10 @@ export default async function handler(req, res) {
           displayName: e.displayName,
           profileImageUrl: e.profileImageUrl || null,
           payoutGuess: typeof e.payoutGuess === 'number' ? e.payoutGuess : null,
-          topSlotGuess: e.topSlotGuess || null,
           diff:
             typeof e.payoutDiff === 'number' && Number.isFinite(e.payoutDiff)
               ? e.payoutDiff
               : null,
-          topSlotMatch: e.topSlotMatch === true,
           prize: { tickets: tier?.tickets || null, cashLabel: tier?.cashLabel || null },
           redemptionId: null,
         };
@@ -355,7 +242,7 @@ export default async function handler(req, res) {
       }
 
       batch.update(ref, {
-        actual: { payout: actualPayout, topSlotName: actualTopSlot },
+        actual: { payout: actualPayout },
         winners,
         status: 'settled',
         settledAt: now,
@@ -385,6 +272,12 @@ export default async function handler(req, res) {
 
     return res.status(400).json({ error: 'UNKNOWN_ACTION' });
   } catch (err) {
+    if (err instanceof CommunityHuntsError) {
+      const notFound = err.status === 404;
+      return res
+        .status(notFound ? 404 : 502)
+        .json({ error: notFound ? 'HUNT_NOT_FOUND' : 'COMMUNITYHUNTS_UNAVAILABLE', detail: err.code });
+    }
     console.error('hunts admin error', err);
     return res.status(500).json({ error: 'INTERNAL', detail: err.message });
   }

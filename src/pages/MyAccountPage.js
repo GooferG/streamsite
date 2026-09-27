@@ -18,14 +18,11 @@ import {
   Link2,
   CheckCircle2,
   ListChecks,
-  ListPlus,
-  Wallet,
 } from 'lucide-react';
 import { db } from '../config/firebase';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 import { useUserDoc } from '../hooks/useUserDoc';
 import { authedFetch } from '../utils/authedFetch';
-import SlotAutocomplete from '../components/SlotAutocomplete';
 
 const DISCORD_CLIENT_ID = process.env.REACT_APP_DISCORD_CLIENT_ID;
 const DISCORD_REDIRECT_URI =
@@ -135,197 +132,6 @@ function SuggestionRecord({ user }) {
             </p>
           </div>
         ))}
-      </div>
-    </div>
-  );
-}
-
-const MAX_SLOTS = 6;
-
-function SlotProfileCard({ user }) {
-  const initialSlots = Array.isArray(user?.slotProfile?.defaultSlots)
-    ? user.slotProfile.defaultSlots
-    : [];
-  const initialDiscoverable = user?.slotProfile?.discoverable === true;
-
-  const [slots, setSlots] = useState(() => {
-    const padded = [...initialSlots];
-    while (padded.length < MAX_SLOTS) padded.push('');
-    return padded.slice(0, MAX_SLOTS);
-  });
-  const [discoverable, setDiscoverable] = useState(initialDiscoverable);
-  const [saving, setSaving] = useState(false);
-  const [savedAt, setSavedAt] = useState(0);
-  const [error, setError] = useState(null);
-
-  function setSlot(i, val) {
-    setSlots((arr) => arr.map((s, idx) => (idx === i ? val : s)));
-  }
-
-  async function save() {
-    setSaving(true);
-    setError(null);
-    const defaultSlots = slots.map((s) => s.trim()).filter(Boolean);
-    try {
-      const res = await authedFetch('/api/me/slot-profile', {
-        method: 'POST',
-        body: JSON.stringify({ defaultSlots, discoverable }),
-      });
-      if (!res.ok) {
-        setError('Could not save. Try again.');
-      } else {
-        setSavedAt(Date.now());
-      }
-    } catch {
-      setError('Network error.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const inputCls =
-    'w-full bg-zinc-broadcast/60 border border-white/10 px-3 py-2.5 text-sm text-white-body placeholder:text-white/40 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';
-
-  return (
-    <div className="border border-white/8 bg-zinc-card/30">
-      <div className="px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
-        <span className="inline-flex items-center gap-2 text-emerald-signal">
-          <ListPlus size={11} aria-hidden="true" />
-          <span>Default slots</span>
-        </span>
-      </div>
-      <div className="px-5 py-5 space-y-4">
-        <p className="text-sm text-white/65">
-          Save your go-to slots. When a host runs a bonus hunt, they can drop
-          these into their list for you — even while you're away.
-        </p>
-
-        <div className="space-y-2">
-          {slots.map((s, i) => (
-            <SlotAutocomplete
-              key={i}
-              value={s}
-              onChange={(v) => setSlot(i, v)}
-              placeholder={`Slot ${i + 1}`}
-              className={inputCls}
-            />
-          ))}
-        </div>
-
-        <label className="flex items-center gap-2.5 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            checked={discoverable}
-            onChange={(e) => setDiscoverable(e.target.checked)}
-            className="w-4 h-4 accent-emerald-signal"
-          />
-          <span className="text-sm text-white/75">
-            Let hunt hosts add my slots
-          </span>
-        </label>
-
-        {error && (
-          <p className="text-red-destructive text-sm">{error}</p>
-        )}
-
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={save}
-            disabled={saving}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-40"
-          >
-            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-              {saving ? 'Saving…' : 'Save defaults'}
-            </span>
-          </button>
-          {savedAt > 0 && !saving && !error && (
-            <span className="inline-flex items-center gap-1.5 text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-              <CheckCircle2 size={12} aria-hidden="true" /> Saved
-            </span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PayoutProfileCard({ user }) {
-  const initial = user?.payoutProfile?.rainbetUsername || '';
-  const [rainbet, setRainbet] = useState(initial);
-  const [saving, setSaving] = useState(false);
-  const [savedAt, setSavedAt] = useState(0);
-  const [error, setError] = useState(null);
-
-  async function save() {
-    setSaving(true);
-    setError(null);
-    const rainbetUsername = rainbet.trim();
-    try {
-      const res = await authedFetch('/api/me/payout-profile', {
-        method: 'POST',
-        body: JSON.stringify({ rainbetUsername }),
-      });
-      if (!res.ok) {
-        setError('Could not save. Try again.');
-      } else {
-        setSavedAt(Date.now());
-      }
-    } catch {
-      setError('Network error.');
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  const inputCls =
-    'w-full bg-zinc-broadcast/60 border border-white/10 px-3 py-2.5 text-sm text-white-body placeholder:text-white/40 focus:border-emerald-signal/70 focus:outline-none transition-colors duration-150';
-
-  return (
-    <div className="border border-white/8 bg-zinc-card/30">
-      <div className="px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
-        <span className="inline-flex items-center gap-2 text-emerald-signal">
-          <Wallet size={11} aria-hidden="true" />
-          <span>Rainbet payout</span>
-        </span>
-      </div>
-      <div className="px-5 py-5 space-y-4">
-        <p className="text-sm text-white/65">
-          Save your Rainbet username so the host knows where to send your cut
-          when a hunt pays out.
-        </p>
-
-        <input
-          type="text"
-          value={rainbet}
-          onChange={(e) => setRainbet(e.target.value)}
-          placeholder="Rainbet username"
-          maxLength={50}
-          autoComplete="off"
-          autoCapitalize="off"
-          spellCheck={false}
-          className={inputCls}
-        />
-
-        {error && <p className="text-red-destructive text-sm">{error}</p>}
-
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={save}
-            disabled={saving}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-40"
-          >
-            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-              {saving ? 'Saving…' : 'Save Rainbet'}
-            </span>
-          </button>
-          {savedAt > 0 && !saving && !error && (
-            <span className="inline-flex items-center gap-1.5 text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-              <CheckCircle2 size={12} aria-hidden="true" /> Saved
-            </span>
-          )}
-        </div>
       </div>
     </div>
   );
@@ -549,13 +355,6 @@ export default function MyAccountPage() {
         </div>
 
         <SuggestionRecord user={user} />
-
-        {/* key re-inits the card's local state once the user doc streams in
-            (useUserDoc is async; the card derives initial values from `user`). */}
-        <SlotProfileCard key={user?.slotProfile ? 'loaded' : 'empty'} user={user} />
-
-        {/* key re-inits the card's local state once the user doc streams in. */}
-        <PayoutProfileCard key={user?.payoutProfile ? 'payout-loaded' : 'payout-empty'} user={user} />
 
         {/* Earn methods info */}
         <div className="border border-white/8 bg-zinc-card/30">

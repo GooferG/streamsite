@@ -1,55 +1,64 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
 
 // Dev-only secrets — read from env (.env.local), no longer committed. Set
-// BONUSHUNT_API_KEY / SLOTSLAUNCH_API_KEY in .env.local for local API mirrors.
-const BONUS_HUNT_API_KEY = process.env.BONUSHUNT_API_KEY || '';
+// SLOTSLAUNCH_API_KEY and COMMUNITYHUNTS_API_KEY in .env.local for local API mirrors.
 const SLOTS_API_KEY  = process.env.SLOTSLAUNCH_API_KEY || '';
 const SLOTS_BASE_URL = 'https://slotslaunch.com/api';
 const SLOTS_ORIGIN   = 'goofer.tv';
 
-// Hunt-suggest endpoints need Firebase admin, which can't run in the CRA dev
-// server. Mirror them by proxying to the deployed functions so the local UI
-// can be exercised end-to-end. Override with HUNT_SUGGEST_PROXY_TARGET.
-const HUNT_SUGGEST_TARGET =
-  process.env.HUNT_SUGGEST_PROXY_TARGET || 'https://goofer.tv';
+// communityhunts.gg dev mirror (see api/communityhunts.js). Reads the same
+// server-only COMMUNITYHUNTS_* vars from .env.local.
+const CH_BASE = (
+  process.env.COMMUNITYHUNTS_API_URL || 'https://api.communityhunts.gg/api/public/v1'
+).replace(/\/+$/, '');
+const CH_OWNER = process.env.COMMUNITYHUNTS_OWNER_ID || 'usr_IT8I88O03xF3QHqHzqme95';
 
-if (!BONUS_HUNT_API_KEY || !SLOTS_API_KEY) {
+async function chDevGet(path) {
+  const upstream = await fetch(`${CH_BASE}${path}`, {
+    headers: { Authorization: `Bearer ${process.env.COMMUNITYHUNTS_API_KEY || ''}` },
+  });
+  if (!upstream.ok) {
+    const err = new Error(`communityhunts ${upstream.status}`);
+    err.status = upstream.status;
+    throw err;
+  }
+  return upstream.json();
+}
+
+// /api/me/* (daily claim) needs Firebase admin, which can't run in the CRA dev
+// server. Proxy it to the deployed functions. Override with API_PROXY_TARGET.
+const DEPLOYED_API_TARGET =
+  process.env.API_PROXY_TARGET || 'https://goofer.tv';
+
+if (!SLOTS_API_KEY || !process.env.COMMUNITYHUNTS_API_KEY) {
   // eslint-disable-next-line no-console
   console.warn(
-    '[setupProxy] BONUSHUNT_API_KEY / SLOTSLAUNCH_API_KEY not set in .env.local — ' +
-      '/api/bonus-hunts and /api/slots dev mirrors will fail until they are.'
+    '[setupProxy] SLOTSLAUNCH_API_KEY / COMMUNITYHUNTS_API_KEY not set in .env.local — ' +
+      '/api/slots and /api/communityhunts dev mirrors will fail until they are.'
   );
 }
 
 module.exports = function (app) {
-  // Dev proxy for direct /api/public calls
-  app.use(
-    '/api/public',
-    createProxyMiddleware({
-      target: 'https://bonushunt.gg',
-      changeOrigin: true,
-      secure: true,
-      xfwd: false,
-      on: {
-        proxyReq: (proxyReq) => {
-          proxyReq.setHeader('Authorization', `Bearer ${BONUS_HUNT_API_KEY}`);
-        },
-      },
-    })
-  );
-
-  // Dev handler for /api/bonus-hunts (mirrors the Vercel function)
-  app.get('/api/bonus-hunts', async (req, res) => {
-    const { path } = req.query;
-    if (!path) return res.status(400).json({ error: 'Missing path param' });
+  // Dev handler for /api/communityhunts (mirrors the Vercel function).
+  app.get('/api/communityhunts', async (req, res) => {
+    const { view, id } = req.query;
     try {
-      const upstream = await fetch(`https://bonushunt.gg/api/public/${path}`, {
-        headers: { Authorization: `Bearer ${BONUS_HUNT_API_KEY}` },
-      });
-      const data = await upstream.json();
-      res.status(upstream.status).json(data);
+      if (view === 'overview') {
+        const [live, recent] = await Promise.all([
+          chDevGet(`/hunts?status=live&ownerId=${CH_OWNER}&view=full&limit=1`),
+          chDevGet(`/hunts?ownerId=${CH_OWNER}&view=summary&limit=10`),
+        ]);
+        return res.status(200).json({ live: live.data[0] || null, recent: recent.data });
+      }
+      if (view === 'hunt' && /^[A-Za-z0-9_-]{1,64}$/.test(String(id || ''))) {
+        const hunt = await chDevGet(`/hunts/${id}`);
+        return res.status(200).json({ hunt: hunt.data });
+      }
+      return res.status(400).json({ error: 'INVALID_VIEW' });
     } catch (e) {
-      res.status(500).json({ error: 'Proxy error' });
+      return res
+        .status(e.status === 404 ? 404 : 502)
+        .json({ error: e.status === 404 ? 'NOT_FOUND' : 'UPSTREAM_UNAVAILABLE' });
     }
   });
 
@@ -111,37 +120,14 @@ module.exports = function (app) {
     }
   });
 
-  // Hunt-suggest endpoints (info/manage/submit) run on Firebase admin and can't
-  // execute in the CRA dev server — proxy them to the deployed functions so the
-  // suggestion-intake UI works under `npm start`.
-  app.use(
-    '/api/hunt-suggest',
-    createProxyMiddleware({
-      target: HUNT_SUGGEST_TARGET,
-      changeOrigin: true,
-      secure: true,
-      pathRewrite: { '^/api/hunt-suggest': '/api/hunt-suggest' },
-    })
-  );
-
-  // /api/me/* and /api/roster/* also need Firebase admin — proxy them to the
-  // deployed functions so the slot-profile + roster UI work under `npm start`.
+  // /api/me/* needs Firebase admin — proxy to the deployed functions.
   app.use(
     '/api/me',
     createProxyMiddleware({
-      target: HUNT_SUGGEST_TARGET,
+      target: DEPLOYED_API_TARGET,
       changeOrigin: true,
       secure: true,
       pathRewrite: { '^/api/me': '/api/me' },
-    })
-  );
-  app.use(
-    '/api/roster',
-    createProxyMiddleware({
-      target: HUNT_SUGGEST_TARGET,
-      changeOrigin: true,
-      secure: true,
-      pathRewrite: { '^/api/roster': '/api/roster' },
     })
   );
 };

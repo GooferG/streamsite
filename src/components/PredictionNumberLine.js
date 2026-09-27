@@ -6,34 +6,31 @@ import {
   query,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
-
-function fmt(val) {
-  if (val == null || !Number.isFinite(Number(val))) return '—';
-  if (val >= 1000) return `$${Math.round(val / 100) / 10}k`;
-  return `$${Math.round(val)}`;
-}
+import { formatMoneyCompact } from '../utils/money';
+import { roundCurrency } from '../utils/predictionRound';
 
 /**
  * A thin horizontal axis showing all viewers' payout guesses as ticks.
- * Only renders when round.kinds.payout is on and at least 2 entries exist.
+ * Only renders when the round accepts predictions and at least 2 entries exist.
  */
 export default function PredictionNumberLine({ round }) {
+  const fmt = (val) => formatMoneyCompact(val, roundCurrency(round));
   const [entries, setEntries] = useState([]);
 
   useEffect(() => {
-    if (!round?.id || !round?.kinds?.payout) return undefined;
+    if (!round?.id || !round?.acceptPredictions) return undefined;
     const q = query(
-      collection(db, 'prediction_rounds', round.id, 'entries'),
+      collection(db, 'hunts', round.id, 'entries'),
       orderBy('submittedAt', 'asc')
     );
     const unsub = onSnapshot(q, (snap) => {
       setEntries(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
     return unsub;
-  }, [round?.id, round?.kinds?.payout]);
+  }, [round?.id, round?.acceptPredictions]);
 
   const { min, max, ticks, actualPct } = useMemo(() => {
-    if (!round?.kinds?.payout || entries.length === 0) {
+    if (!round?.acceptPredictions || entries.length === 0) {
       return { min: 0, max: 0, ticks: [], actualPct: null };
     }
     const guesses = entries
@@ -73,7 +70,7 @@ export default function PredictionNumberLine({ round }) {
     return m;
   }, [round]);
 
-  if (!round?.kinds?.payout || ticks.length < 2) return null;
+  if (!round?.acceptPredictions || ticks.length < 2) return null;
 
   return (
     <div className="border border-white/10 bg-zinc-card/30 px-4 sm:px-6 py-4">

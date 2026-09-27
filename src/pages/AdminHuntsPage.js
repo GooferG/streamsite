@@ -21,6 +21,9 @@ import {
 import { db } from '../config/firebase';
 import { authedFetch } from '../utils/authedFetch';
 import SuggestionList from '../components/SuggestionList';
+import { formatMoney } from '../utils/money';
+import { roundCurrency } from '../utils/predictionRound';
+import { formatHuntDate } from '../utils/huntFormat';
 
 const inputCls =
   'w-full bg-zinc-broadcast/60 border border-white/10 px-3 py-2.5 text-sm text-white-body placeholder:text-white/25 focus:border-orange-admin/70 focus:outline-none transition-colors duration-150';
@@ -36,20 +39,13 @@ function formatTs(ts) {
   });
 }
 
-function formatCurrency(val) {
-  if (val == null || !Number.isFinite(Number(val))) return '—';
-  return `$${Number(val).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-}
-
 const DEFAULT_FORM = () => ({
   title: '',
   contextNote: '',
   acceptPredictions: true,
   acceptSuggestions: false,
   suggestionCap: 3,
-  kinds: { payout: true, topSlot: false },
-  source: 'bonushunt',
-  manualSlots: '',
+  source: 'communityhunts',
   manualTotalCost: '',
   rewards: {
     type: 'tickets',
@@ -60,7 +56,7 @@ const DEFAULT_FORM = () => ({
   },
 });
 
-function NewRoundModal({ onClose, onCreated }) {
+export function NewRoundModal({ onClose, onCreated }) {
   const [form, setForm] = useState(DEFAULT_FORM());
   const [preview, setPreview] = useState(null);
   const [previewing, setPreviewing] = useState(false);
@@ -104,7 +100,7 @@ function NewRoundModal({ onClose, onCreated }) {
   };
 
   useEffect(() => {
-    if (form.source === 'bonushunt' && !preview && !previewing) fetchPreview();
+    if (form.source === 'communityhunts' && !preview && !previewing) fetchPreview();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.source]);
 
@@ -114,9 +110,6 @@ function NewRoundModal({ onClose, onCreated }) {
     if (!form.title.trim()) return setError('Title required');
     if (!form.acceptPredictions && !form.acceptSuggestions) {
       return setError('Enable predictions or suggestions');
-    }
-    if (form.acceptPredictions && !form.kinds.payout && !form.kinds.topSlot) {
-      return setError('At least one prediction kind');
     }
     const rewards = {
       type: form.rewards.type,
@@ -144,9 +137,7 @@ function NewRoundModal({ onClose, onCreated }) {
           acceptPredictions: form.acceptPredictions,
           acceptSuggestions: form.acceptSuggestions,
           suggestionCap: form.acceptSuggestions ? form.suggestionCap : 0,
-          kinds: form.kinds,
           source: form.source,
-          manualSlots: form.source === 'manual' ? form.manualSlots : null,
           manualTotalCost: form.source === 'manual' ? form.manualTotalCost : null,
           rewards: form.acceptPredictions ? rewards : { type: 'tickets', tiers: [] },
         }),
@@ -208,7 +199,7 @@ function NewRoundModal({ onClose, onCreated }) {
               <span className="text-orange-admin tabular-nums">03</span> Source
             </p>
             <div className="flex gap-2">
-              {['bonushunt', 'manual'].map((s) => (
+              {['communityhunts', 'manual'].map((s) => (
                 <button
                   key={s}
                   type="button"
@@ -219,11 +210,11 @@ function NewRoundModal({ onClose, onCreated }) {
                       : 'border-white/15 text-white/55 hover:text-white-body hover:border-white/30'
                   }`}
                 >
-                  {s === 'bonushunt' ? 'bonushunt.gg snapshot' : 'Manual entry'}
+                  {s === 'communityhunts' ? 'communityhunts.gg snapshot' : 'Manual entry'}
                 </button>
               ))}
             </div>
-            {form.source === 'bonushunt' && (
+            {form.source === 'communityhunts' && (
               <div className="mt-2 border border-white/10 bg-zinc-broadcast/40 px-3 py-2.5">
                 {previewing ? (
                   <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">
@@ -231,15 +222,27 @@ function NewRoundModal({ onClose, onCreated }) {
                   </p>
                 ) : previewError ? (
                   <p className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
-                    {previewError}
+                    {{
+                      NO_CURRENT_HUNT: 'No communityhunts.gg hunt found yet.',
+                      COMMUNITYHUNTS_UNAVAILABLE: 'communityhunts.gg is unavailable. Try refresh or use manual entry.',
+                    }[previewError] || previewError}
                   </p>
                 ) : preview ? (
                   <div className="flex items-center justify-between gap-3 flex-wrap text-[0.6875rem] font-mono">
                     <div className="min-w-0 flex-1">
-                      <p className="font-bold text-white-body truncate">{preview.huntName || 'Untitled hunt'}</p>
-                      <p className="text-white/45 tracking-eyebrow-md uppercase mt-0.5">
-                        {preview.casino || '—'} · cost {formatCurrency(preview.totalCost)} · {preview.slots?.length || 0} slots
+                      <p className="font-bold text-white-body truncate">
+                        {preview.status === 'live'
+                          ? 'Your live communityhunts.gg hunt'
+                          : 'Your latest communityhunts.gg hunt (not live)'}
                       </p>
+                      <p className="text-white/45 tracking-eyebrow-md uppercase mt-0.5">
+                        {preview.status === 'live' ? 'Live' : `Ended ${formatHuntDate(preview.endedAt)}`} · {preview.currency || '—'} · cost {formatMoney(preview.totalCost, preview.currency)} · {preview.bonusCount} bonuses
+                      </p>
+                      {preview.status !== 'live' && (
+                        <p className="text-orange-admin normal-case mt-1">
+                          Start the hunt on communityhunts.gg and hit refresh, or this round will track the old one.
+                        </p>
+                      )}
                     </div>
                     <button
                       type="button"
@@ -261,14 +264,6 @@ function NewRoundModal({ onClose, onCreated }) {
                   </span>
                   <input value={form.manualTotalCost} onChange={(e) => set('manualTotalCost', e.target.value)} className={inputCls} type="number" min="0" step="0.01" placeholder="0.00" />
                 </label>
-                {form.kinds.topSlot && (
-                  <label className="block">
-                    <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
-                      Slot list <span className="text-white/30 normal-case font-normal">· one per line</span>
-                    </span>
-                    <textarea value={form.manualSlots} onChange={(e) => set('manualSlots', e.target.value)} className={inputCls} rows={5} placeholder={'Gates of Olympus\nSugar Rush\nBonanza Billion'} />
-                  </label>
-                )}
               </div>
             )}
           </div>
@@ -331,44 +326,11 @@ function NewRoundModal({ onClose, onCreated }) {
             </div>
           </div>
 
-          {/* Kinds (only if predictions enabled) */}
-          {form.acceptPredictions && (
-            <div>
-              <p className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
-                <span className="text-orange-admin tabular-nums">05</span> Prediction kinds
-              </p>
-              <div className="flex gap-2 flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => set('kinds.payout', !form.kinds.payout)}
-                  className={`px-3 py-2 border text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors duration-150 ${
-                    form.kinds.payout
-                      ? 'border-emerald-signal/50 bg-emerald-signal/10 text-emerald-signal'
-                      : 'border-white/15 text-white/55 hover:text-white-body'
-                  }`}
-                >
-                  Final payout
-                </button>
-                <button
-                  type="button"
-                  onClick={() => set('kinds.topSlot', !form.kinds.topSlot)}
-                  className={`px-3 py-2 border text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono transition-colors duration-150 ${
-                    form.kinds.topSlot
-                      ? 'border-emerald-signal/50 bg-emerald-signal/10 text-emerald-signal'
-                      : 'border-white/15 text-white/55 hover:text-white-body'
-                  }`}
-                >
-                  Top slot
-                </button>
-              </div>
-            </div>
-          )}
-
           {/* Rewards (only if predictions enabled) */}
           {form.acceptPredictions && (
           <div>
             <p className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
-              <span className="text-orange-admin tabular-nums">06</span> Rewards
+              <span className="text-orange-admin tabular-nums">05</span> Rewards
             </p>
             <div className="flex gap-2 mb-3">
               {['tickets', 'cash', 'both'].map((t) => (
@@ -476,36 +438,59 @@ function NewRoundModal({ onClose, onCreated }) {
   );
 }
 
-function SettleModal({ round, onClose, onSettled }) {
+export function SettleModal({ round, onClose, onSettled }) {
   const [actualPayout, setActualPayout] = useState('');
-  const [actualTopSlot, setActualTopSlot] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [filling, setFilling] = useState(false);
+  const [liveWarning, setLiveWarning] = useState(false);
+  const [staleWarning, setStaleWarning] = useState(false);
   const [error, setError] = useState(null);
+  const currency = roundCurrency(round);
+  const canFill = round.source === 'communityhunts' && !!round.bonusHuntSnapshot?.huntId;
 
-  const slots =
-    round.source === 'bonushunt'
-      ? round.bonusHuntSnapshot?.slots || []
-      : (round.manualSlots || []).map((name) => ({ name }));
+  const fillFromHunt = async () => {
+    setFilling(true);
+    setError(null);
+    try {
+      const res = await authedFetch('/api/admin/hunts', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'hunt_result', id: round.id }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(
+          {
+            HUNT_NOT_FOUND: 'Hunt not found on communityhunts.gg. Enter the payout by hand.',
+            COMMUNITYHUNTS_UNAVAILABLE: 'communityhunts.gg is unavailable. Enter the payout by hand.',
+          }[data.error] || data.error || 'Failed'
+        );
+      } else {
+        setActualPayout(String(data.result.payout));
+        setLiveWarning(data.result.ended === false);
+        // A round opened while nothing was live snapshots the previous hunt;
+        // its payout would settle the wrong hunt.
+        const createdMs = round.createdAt?.toMillis ? round.createdAt.toMillis() : null;
+        const endedMs = data.result.endedAt ? Date.parse(data.result.endedAt) : NaN;
+        setStaleWarning(createdMs != null && Number.isFinite(endedMs) && endedMs < createdMs);
+      }
+    } catch (e) {
+      setError('Network error');
+    } finally {
+      setFilling(false);
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
     setError(null);
-    if (round.kinds.payout && !Number.isFinite(Number(actualPayout))) {
+    if (actualPayout === '' || !Number.isFinite(Number(actualPayout))) {
       return setError('Actual payout required');
-    }
-    if (round.kinds.topSlot && !actualTopSlot) {
-      return setError('Actual top slot required');
     }
     setSubmitting(true);
     try {
       const res = await authedFetch('/api/admin/hunts', {
         method: 'POST',
-        body: JSON.stringify({
-          action: 'settle',
-          id: round.id,
-          actualPayout: round.kinds.payout ? Number(actualPayout) : null,
-          actualTopSlotName: round.kinds.topSlot ? actualTopSlot : null,
-        }),
+        body: JSON.stringify({ action: 'settle', id: round.id, actualPayout: Number(actualPayout) }),
       });
       const data = await res.json();
       if (!res.ok) setError(data.error || 'Failed');
@@ -525,32 +510,53 @@ function SettleModal({ round, onClose, onSettled }) {
             <Trophy size={11} aria-hidden="true" />
             Settle round
           </span>
-          <button type="button" onClick={onClose} className="p-1 border border-white/10 text-white/55 hover:text-white-body hover:border-white/25">
+          <button type="button" onClick={onClose} aria-label="Close" className="p-1 border border-white/10 text-white/55 hover:text-white-body hover:border-white/25">
             <X size={12} aria-hidden="true" />
           </button>
         </div>
         <div className="px-5 py-5 space-y-4">
-          {round.kinds.payout && (
-            <label className="block">
-              <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
-                Actual final payout <span className="text-emerald-signal">*</span>
-              </span>
-              <input type="number" min="0" step="0.01" value={actualPayout} onChange={(e) => setActualPayout(e.target.value)} className={inputCls} placeholder="0.00" />
-            </label>
-          )}
-          {round.kinds.topSlot && (
-            <label className="block">
-              <span className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono">
-                Actual top slot <span className="text-emerald-signal">*</span>
-              </span>
-              <select value={actualTopSlot} onChange={(e) => setActualTopSlot(e.target.value)} className={inputCls}>
-                <option value="">— select —</option>
-                {slots.map((s) => (
-                  <option key={s.name} value={s.name}>{s.name}</option>
-                ))}
-              </select>
-            </label>
-          )}
+          <div>
+            <div className="flex items-center justify-between gap-3 mb-1.5">
+              <label htmlFor="settle-actual-payout" className="block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 font-mono">
+                Actual final payout{currency ? ` (${currency})` : ''} <span className="text-emerald-signal">*</span>
+              </label>
+              {canFill && (
+                <button
+                  type="button"
+                  onClick={fillFromHunt}
+                  disabled={filling}
+                  className="inline-flex items-center gap-1.5 px-2 py-1 border border-white/15 text-white/65 hover:text-white-body hover:border-white/30 disabled:opacity-50"
+                >
+                  <RefreshCcw size={11} aria-hidden="true" className={filling ? 'animate-spin' : ''} />
+                  <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Fill from hunt</span>
+                </button>
+              )}
+            </div>
+            <input
+              id="settle-actual-payout"
+              type="number"
+              min="0"
+              step="0.01"
+              value={actualPayout}
+              onChange={(e) => {
+                setActualPayout(e.target.value);
+                setLiveWarning(false);
+                setStaleWarning(false);
+              }}
+              className={inputCls}
+              placeholder="0.00"
+            />
+            {liveWarning && (
+              <p className="mt-1.5 text-[0.6875rem] font-bold tracking-eyebrow uppercase text-orange-admin font-mono">
+                Hunt is still live. The payout may change.
+              </p>
+            )}
+            {staleWarning && (
+              <p className="mt-1.5 text-[0.6875rem] font-bold tracking-eyebrow uppercase text-orange-admin font-mono">
+                This hunt ended before this round opened. Make sure it is the right hunt before settling.
+              </p>
+            )}
+          </div>
           {error && <p className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">{error}</p>}
         </div>
         <div className="flex gap-2 px-5 pb-5">
@@ -583,9 +589,7 @@ function RoundRow({ round, onOpen }) {
         <p className="font-bold text-white-body text-sm truncate">{round.title}</p>
         <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5">
           {[
-            round.acceptPredictions && (round.kinds?.payout || round.kinds?.topSlot)
-              ? `PREDICT (${[round.kinds?.payout && 'payout', round.kinds?.topSlot && 'top-slot'].filter(Boolean).join('+')})`
-              : null,
+            round.acceptPredictions && 'PREDICT',
             round.acceptSuggestions && `SUGGEST`,
           ].filter(Boolean).join(' + ')} · {round.source} · {formatTs(round.createdAt)}
         </p>

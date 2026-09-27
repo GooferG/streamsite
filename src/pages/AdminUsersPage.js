@@ -299,9 +299,6 @@ function UserDetail({ twitchId }) {
                 </span>
                 <span className="text-[0.625rem] font-mono text-white/55 tabular-nums">
                   {p.payoutGuess !== null && `$${p.payoutGuess}`}
-                  {p.topSlotGuess && (
-                    <span className="ml-2 text-white/40">{p.topSlotGuess}</span>
-                  )}
                 </span>
                 <span className="text-[0.625rem] font-mono text-white/40 hidden sm:inline">
                   {formatTs(p.lastEditAt || p.submittedAt)}

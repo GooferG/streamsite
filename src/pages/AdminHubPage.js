@@ -8,7 +8,6 @@ import {
   Ticket,
   Gift,
   TrendingUp,
-  Megaphone,
   ChevronRight,
   AlertTriangle,
   X,
@@ -74,15 +73,7 @@ const HUB_CARDS = [
     code: 'PRD',
     title: 'Predictions',
     description:
-      'Run prediction rounds with viewer guesses and/or slot suggestions. Snapshot from bonushunt.gg, settle winners, manage the suggestion queue.',
-  },
-  {
-    to: '/admin/community-hunts',
-    icon: Megaphone,
-    code: 'CHT',
-    title: 'Community Hunts',
-    description:
-      "Dashboard of viewers' bonus-hunt tracker sessions. See live hunts in progress and completed history with stats, biggest wins, and slot-caller leaderboards.",
+      'Run prediction rounds on the final payout, with optional slot suggestions. Snapshot your communityhunts.gg hunt, settle winners, manage the suggestion queue.',
   },
   {
     to: '/admin/users',

@@ -5,8 +5,7 @@ import { GAMBA_TOOLS } from '../data/gambaTools';
 // Keyed by GAMBA_TOOLS id; unknown ids fall back to a generic line.
 const TOOL_BLURBS = {
   leaderboard: "See who's climbing the monthly standings.",
-  'hunt-tracker': 'Follow the bonus hunt live, bonus by bonus.',
-  'bonus-hunts': 'Browse past hunts and how they paid out.',
+  hunts: 'Every hunt on communityhunts.gg, live and logged.',
   'bonus-battle': 'Pit two bonuses against each other.',
   wheel: 'Spin up a random slot to play next.',
   suggest: 'Drop a slot for the next hunt.',

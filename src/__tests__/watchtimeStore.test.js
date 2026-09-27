@@ -115,6 +115,7 @@ const fresh = (overrides = {}) => ({
   chat: 0,
   paidTickets: 0,
   paidPresent: 0,
+  paidChat: 0,
   ledgerTickets: 0,
   ledgerMinutes: 0,
   ...overrides,
@@ -245,6 +246,7 @@ describe('settleSession', () => {
     expect(viewersWrite[2].viewers['1']).toMatchObject({
       paidTickets: 8,
       paidPresent: 6,
+      paidChat: 2,
       ledgerTickets: 8,
       ledgerMinutes: 30,
     });
@@ -270,6 +272,7 @@ describe('settleSession', () => {
           chat: 2,
           paidTickets: 8,
           paidPresent: 6,
+          paidChat: 2,
           ledgerTickets: 8,
           ledgerMinutes: 30,
         }),
@@ -295,6 +298,17 @@ describe('settleSession', () => {
         { lastSettledAt: 'SERVER_TS', status: 'closed', closedAt: 'SERVER_TS' },
       ],
     ]);
+  });
+
+  test('pays at most 100 viewers per transaction, so a commit stays under the write limit', async () => {
+    const viewers = {};
+    for (let i = 0; i < 150; i++) viewers[String(i)] = fresh({ login: `v${i}`, present: 1 });
+    mockDocs.set('watch_sessions/s1', { status: 'open', viewers });
+    expect(await settleSession('s1', RATES)).toEqual({ accounts: 0, banked: 150 });
+    const viewerWrites = mockWrites.filter(
+      (w) => w[0] === 'update' && w[1] === 'watch_sessions/s1' && w[2].viewers
+    );
+    expect(viewerWrites).toHaveLength(2);
   });
 
   test('a missing session is a no-op', async () => {

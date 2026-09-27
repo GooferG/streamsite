@@ -168,6 +168,19 @@ test('a restarted stream closes the old session and keeps the current one open',
   expect(store.creditSession).toHaveBeenCalledWith('stream-2', expect.any(Object));
 });
 
+test('a stale session whose payout keeps failing does not stop live crediting', async () => {
+  at(QUIET_TICK);
+  twitchSays({ live: 'stream-2', chatters: [{ user_id: '8', user_login: 'viewer' }] });
+  store.openSessionIds.mockResolvedValue(['stream-1']);
+  store.settleSession.mockRejectedValue(new Error('poison session'));
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+  const res = mockRes();
+  await handler(req(), res);
+  expect(res.statusCode).toBe(200);
+  expect(store.creditSession).toHaveBeenCalledWith('stream-2', expect.any(Object));
+  expect(res.body).toMatchObject({ closed: 0 });
+});
+
 test('follows chatter pagination', async () => {
   at(QUIET_TICK);
   twitch.helix.mockImplementation(async (method, path) => {

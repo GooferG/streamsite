@@ -11,9 +11,10 @@ import { windowId, applyWindow, planSettlement, formatDuration } from './watchti
 const CHAT = 'watch_chat';
 const SESSIONS = 'watch_sessions';
 const BANK = 'watch_bank';
-// Viewers per payout transaction: at most 2 writes each plus 1 session write,
-// under Firestore's 500-write transaction limit.
-const SETTLE_CHUNK = 200;
+// Viewers per payout transaction: at most 2 writes each plus 1 session write.
+// Kept at 100 so the commit stays under Firestore's 500-write limit even when
+// each increment/serverTimestamp transform counts as an extra write.
+const SETTLE_CHUNK = 100;
 const DELETE_CHUNK = 400;
 
 // Record that a viewer chatted in the current window. Reads first so a

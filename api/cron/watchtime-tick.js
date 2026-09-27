@@ -85,15 +85,23 @@ export default async function handler(req, res) {
 
     const markers = await takeChatMarkers(current, completed);
 
-    // Sessions left open by an ended or restarted stream get their final payout.
+    // Sessions left open by an ended or restarted stream get their final
+    // payout. Each is isolated: one that keeps failing stays open for the next
+    // tick instead of stopping the live stream from earning.
     const stale = (await openSessionIds()).filter((id) => !stream || id !== stream.id);
+    let closed = 0;
     for (const id of stale) {
-      await settleSession(id, rates, { close: true });
+      try {
+        await settleSession(id, rates, { close: true });
+        closed += 1;
+      } catch (err) {
+        console.error('watchtime-tick: final payout failed', id, err);
+      }
     }
 
     if (!stream) {
       await deleteRefs(markers.refs);
-      return res.status(200).json({ ok: true, live: false, window: completed, closed: stale.length });
+      return res.status(200).json({ ok: true, live: false, window: completed, closed });
     }
 
     const exclusion = exclusionFromEnv(process.env);
@@ -114,7 +122,7 @@ export default async function handler(req, res) {
       chatted: chatted.size,
       credited,
       settled,
-      closed: stale.length,
+      closed,
     });
   } catch (err) {
     console.error('watchtime-tick error', err);

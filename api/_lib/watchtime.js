@@ -87,6 +87,7 @@ function emptyViewer() {
     chat: 0,
     paidTickets: 0,
     paidPresent: 0,
+    paidChat: 0,
     ledgerTickets: 0,
     ledgerMinutes: 0,
   };
@@ -137,15 +138,13 @@ export function formatWatchNote(minutes) {
   return `Watched ${formatDuration(minutes)}`;
 }
 
-// What a viewer is still owed: tickets from their counters at the current
-// rates minus what was already paid, and present windows not yet paid out as
-// minutes. Floored at 0 so a rate lowered mid-stream never claws back.
+// What a viewer is still owed: only windows not yet paid out, priced at the
+// current rates. Paid windows keep the price they were paid at, so a rate
+// changed mid-stream never reprices (or claws back) earlier payouts.
 export function owedFor(viewer, rates) {
-  const earned = viewer.present * rates.perWindow + viewer.chat * rates.chatBonus;
-  return {
-    tickets: Math.max(0, earned - (viewer.paidTickets || 0)),
-    windows: Math.max(0, viewer.present - (viewer.paidPresent || 0)),
-  };
+  const windows = Math.max(0, viewer.present - (viewer.paidPresent || 0));
+  const chatWindows = Math.max(0, viewer.chat - (viewer.paidChat || 0));
+  return { tickets: windows * rates.perWindow + chatWindows * rates.chatBonus, windows };
 }
 
 // Decide one payout for the viewers in `ids`. `hasAccount` holds the ids that
@@ -163,10 +162,13 @@ export function planSettlement(viewers, ids, hasAccount, rates) {
     const owed = owedFor(v, rates);
     if (owed.tickets === 0 && owed.windows === 0) return;
     const minutes = owed.windows * WINDOW_MINUTES;
+    // Every window counted so far is paid now, so the paid counters catch up
+    // to the live ones.
     const paid = {
       ...v,
       paidTickets: (v.paidTickets || 0) + owed.tickets,
-      paidPresent: (v.paidPresent || 0) + owed.windows,
+      paidPresent: v.present,
+      paidChat: v.chat,
     };
     if (hasAccount.has(id)) {
       const ledgerTickets = v.ledgerTickets || 0;

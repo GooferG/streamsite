@@ -81,6 +81,7 @@ One document per Twitch stream (`streamId` is the `id` from Helix
       chat: 12,          // windows with at least one message
       paidTickets: 36,   // tickets already paid out (account or bank)
       paidPresent: 24,   // present windows already paid out as minutes
+      paidChat: 12,      // chat windows already paid out
       ledgerTickets: 20, // part of paidTickets that went to the account
       ledgerMinutes: 60, // minutes paid to the account (not the bank)
     },
@@ -148,8 +149,9 @@ fire late by up to a minute without changing which window is credited.
   present even if the chatter list has not caught up yet. Chat bonus only
   applies to viewers who chatted. New viewers start with all counters at 0.
 - `owedFor(viewer, rates)`: returns
-  `{ tickets: present × perWindow + chat × chatBonus − paidTickets, windows: present − paidPresent }`,
-  each floored at 0.
+  `{ tickets: (present − paidPresent) × perWindow + (chat − paidChat) × chatBonus, windows: present − paidPresent }`,
+  with both window differences floored at 0. Only unpaid windows are priced,
+  so paid windows keep the rate they were paid at.
 - `formatWatchNote(minutes)`: `"Watched 1h 35m"`.
 - `shouldSettle(completedWindow)`: `(completedWindow + 1) % 6 === 0`, i.e. a
   payout at every :00 and :30 UTC boundary.
@@ -187,7 +189,7 @@ the pure functions in `watchtime.js`; this file only reads and writes.
 ### Payout (`settleSession`)
 
 1. Read the session doc once to get the viewer ids.
-2. For each chunk of at most 200 viewer ids, run a **transaction** that:
+2. For each chunk of at most 100 viewer ids, run a **transaction** that:
    - re-reads the session doc and `getAll()`s `users/{id}` for the chunk;
    - computes the plan with `planSettlement` (pure);
    - for each viewer owed something:
@@ -197,8 +199,9 @@ the pure functions in `watchtime.js`; this file only reads and writes.
        `tickets` and `minutes`, and `login`;
    - writes the updated `viewers` map (new `paid*` / `ledger*` counters).
 
-   At most 2 writes per viewer plus 1 session write, under the 500-write
-   transaction limit.
+   At most 2 writes per viewer plus 1 session write. 100 keeps the commit
+   under the 500-write limit even if each increment/serverTimestamp transform
+   counts as an extra write.
 3. Set `lastSettledAt` (and `status: 'closed'`, `closedAt` on a final payout).
 
 A transaction per chunk, not a plain batch, is what makes duplicate cron fires

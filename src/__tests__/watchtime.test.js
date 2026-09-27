@@ -21,6 +21,7 @@ const viewer = (overrides = {}) => ({
   chat: 0,
   paidTickets: 0,
   paidPresent: 0,
+  paidChat: 0,
   ledgerTickets: 0,
   ledgerMinutes: 0,
   ...overrides,
@@ -190,17 +191,17 @@ describe('owedFor', () => {
   });
 
   test('later payouts owe only the unpaid part', () => {
-    const v = viewer({ present: 6, chat: 2, paidTickets: 5, paidPresent: 3 });
+    const v = viewer({ present: 6, chat: 2, paidTickets: 5, paidPresent: 3, paidChat: 2 });
     expect(owedFor(v, RATES)).toEqual({ tickets: 3, windows: 3 });
   });
 
   test('nothing new owes nothing', () => {
-    const v = viewer({ present: 6, chat: 2, paidTickets: 8, paidPresent: 6 });
+    const v = viewer({ present: 6, chat: 2, paidTickets: 8, paidPresent: 6, paidChat: 2 });
     expect(owedFor(v, RATES)).toEqual({ tickets: 0, windows: 0 });
   });
 
   test('a rate lowered mid-stream never owes negative tickets', () => {
-    const v = viewer({ present: 6, chat: 2, paidTickets: 8, paidPresent: 6 });
+    const v = viewer({ present: 6, chat: 2, paidTickets: 8, paidPresent: 6, paidChat: 2 });
     expect(owedFor(v, { perWindow: 0, chatBonus: 0 })).toEqual({ tickets: 0, windows: 0 });
   });
 
@@ -209,6 +210,19 @@ describe('owedFor', () => {
       tickets: 11,
       windows: 4,
     });
+  });
+
+  test('a rate change mid-stream only reprices windows not yet paid', () => {
+    // 6 present windows already paid at perWindow 2 (12 tickets), 6 more unpaid.
+    const v = viewer({ present: 12, paidTickets: 12, paidPresent: 6 });
+    expect(owedFor(v, { perWindow: 1, chatBonus: 1 })).toEqual({ tickets: 6, windows: 6 });
+    expect(owedFor(v, { perWindow: 3, chatBonus: 1 })).toEqual({ tickets: 18, windows: 6 });
+  });
+
+  test('the chat bonus is repriced the same way', () => {
+    // 2 present + 2 chat windows paid at 2/2 (8 tickets); 2 + 2 more unpaid at 1/1.
+    const v = viewer({ present: 4, chat: 4, paidTickets: 8, paidPresent: 2, paidChat: 2 });
+    expect(owedFor(v, { perWindow: 1, chatBonus: 1 })).toEqual({ tickets: 4, windows: 2 });
   });
 });
 
@@ -228,6 +242,7 @@ describe('planSettlement', () => {
     expect(plan.viewers['1']).toMatchObject({
       paidTickets: 8,
       paidPresent: 6,
+      paidChat: 2,
       ledgerTickets: 8,
       ledgerMinutes: 30,
     });
@@ -240,6 +255,7 @@ describe('planSettlement', () => {
         chat: 2,
         paidTickets: 8,
         paidPresent: 6,
+        paidChat: 2,
         ledgerTickets: 8,
         ledgerMinutes: 30,
       }),
@@ -270,7 +286,7 @@ describe('planSettlement', () => {
 
   test('banked earlier, then signed up mid-stream: ledger line starts fresh and excludes the banked part', () => {
     const viewers = {
-      '3': viewer({ present: 12, chat: 2, paidTickets: 8, paidPresent: 6 }),
+      '3': viewer({ present: 12, chat: 2, paidTickets: 8, paidPresent: 6, paidChat: 2 }),
     };
     const plan = planSettlement(viewers, ['3'], new Set(['3']), RATES);
     expect(plan.accountCredits).toEqual([

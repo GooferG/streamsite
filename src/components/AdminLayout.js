@@ -9,7 +9,6 @@ import {
   Ticket,
   Gift,
   TrendingUp,
-  Megaphone,
   Users,
   ShieldCheck,
   ChevronLeft,
@@ -29,7 +28,6 @@ const NAV_ITEMS = [
   { to: '/admin/tickets', label: 'Tickets', code: 'TKT', icon: Ticket },
   { to: '/admin/giveaways', label: 'Giveaways', code: 'GVW', icon: Gift },
   { to: '/admin/hunts', label: 'Predictions', code: 'PRD', icon: TrendingUp },
-  { to: '/admin/community-hunts', label: 'Community Hunts', code: 'CHT', icon: Megaphone },
   { to: '/admin/users', label: 'Users', code: 'USR', icon: Users },
   { to: '/admin/moderators', label: 'Moderators', code: 'MOD', icon: ShieldCheck, ownerOnly: true },
 ];

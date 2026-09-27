@@ -25,11 +25,10 @@ async function chDevGet(path) {
   return upstream.json();
 }
 
-// Hunt-suggest endpoints need Firebase admin, which can't run in the CRA dev
-// server. Mirror them by proxying to the deployed functions so the local UI
-// can be exercised end-to-end. Override with HUNT_SUGGEST_PROXY_TARGET.
-const HUNT_SUGGEST_TARGET =
-  process.env.HUNT_SUGGEST_PROXY_TARGET || 'https://goofer.tv';
+// /api/me/* (daily claim) needs Firebase admin, which can't run in the CRA dev
+// server. Proxy it to the deployed functions. Override with API_PROXY_TARGET.
+const DEPLOYED_API_TARGET =
+  process.env.API_PROXY_TARGET || 'https://goofer.tv';
 
 if (!SLOTS_API_KEY || !process.env.COMMUNITYHUNTS_API_KEY) {
   // eslint-disable-next-line no-console
@@ -121,37 +120,14 @@ module.exports = function (app) {
     }
   });
 
-  // Hunt-suggest endpoints (info/manage/submit) run on Firebase admin and can't
-  // execute in the CRA dev server — proxy them to the deployed functions so the
-  // suggestion-intake UI works under `npm start`.
-  app.use(
-    '/api/hunt-suggest',
-    createProxyMiddleware({
-      target: HUNT_SUGGEST_TARGET,
-      changeOrigin: true,
-      secure: true,
-      pathRewrite: { '^/api/hunt-suggest': '/api/hunt-suggest' },
-    })
-  );
-
-  // /api/me/* and /api/roster/* also need Firebase admin — proxy them to the
-  // deployed functions so the slot-profile + roster UI work under `npm start`.
+  // /api/me/* needs Firebase admin — proxy to the deployed functions.
   app.use(
     '/api/me',
     createProxyMiddleware({
-      target: HUNT_SUGGEST_TARGET,
+      target: DEPLOYED_API_TARGET,
       changeOrigin: true,
       secure: true,
       pathRewrite: { '^/api/me': '/api/me' },
-    })
-  );
-  app.use(
-    '/api/roster',
-    createProxyMiddleware({
-      target: HUNT_SUGGEST_TARGET,
-      changeOrigin: true,
-      secure: true,
-      pathRewrite: { '^/api/roster': '/api/roster' },
     })
   );
 };

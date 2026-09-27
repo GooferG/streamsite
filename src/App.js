@@ -33,9 +33,8 @@ import {
   markSessionPlayed,
 } from './utils/introMode';
 
-// Lazy-loaded so they don't bloat the main bundle. HuntSuggestPage pulls the
-// full slot catalog; admin pages are gated to staff. Secondary public pages
-// split per route. HomePage + GambaPage stay eager (landing paint / GambaPage
+// Lazy-loaded so they don't bloat the main bundle. Admin pages are gated to
+// staff. Secondary public pages split per route. HomePage + GambaPage stay eager (landing paint / GambaPage
 // already code-splits its own heavy children). TVStaticIntro is eager too: it
 // is a few KB of raw WebGL and has to cover the very first paint.
 const SchedulePage = lazy(() => import('./pages/SchedulePage'));
@@ -52,7 +51,6 @@ const AdminRedemptionsPage = lazy(() => import('./pages/AdminRedemptionsPage'));
 const AdminTicketsPage = lazy(() => import('./pages/AdminTicketsPage'));
 const AdminGiveawaysPage = lazy(() => import('./pages/AdminGiveawaysPage'));
 const AdminHuntsPage = lazy(() => import('./pages/AdminHuntsPage'));
-const AdminCommunityHuntsPage = lazy(() => import('./pages/AdminCommunityHuntsPage'));
 const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
 const AdminModeratorsPage = lazy(() => import('./pages/AdminModeratorsPage'));
 const StorePage = lazy(() => import('./pages/StorePage'));
@@ -64,9 +62,7 @@ const SuggestPage = lazy(() => import('./pages/SuggestPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const SuggestOverlay = lazy(() => import('./pages/SuggestOverlay'));
 const GiveawayOverlay = lazy(() => import('./pages/GiveawayOverlay'));
-const LiveHuntPage = lazy(() => import('./pages/LiveHuntPage'));
 const BattlePage = lazy(() => import('./pages/BattlePage'));
-const HuntSuggestPage = lazy(() => import('./pages/HuntSuggestPage'));
 
 // Product/overlay routes render without the brand chrome (footer, brand body
 // class). Everything else is a public brand page.
@@ -294,7 +290,6 @@ function StreamingSiteContent() {
             <Route path="tickets" element={<AdminTicketsPage />} />
             <Route path="giveaways" element={<AdminGiveawaysPage />} />
             <Route path="hunts" element={<AdminHuntsPage />} />
-            <Route path="community-hunts" element={<AdminCommunityHuntsPage />} />
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="moderators" element={<AdminModeratorsPage />} />
           </Route>
@@ -306,9 +301,7 @@ function StreamingSiteContent() {
           <Route path="/twitch-callback" element={<TwitchCallbackPage />} />
           <Route path="/discord-callback" element={<DiscordCallbackPage />} />
           <Route path="/suggest-overlay" element={<SuggestOverlay />} />
-          <Route path="/live/:shareId" element={<LiveHuntPage />} />
           <Route path="/battle/:ownerId" element={<BattlePage />} />
-          <Route path="/hunt-suggest/:linkId" element={<HuntSuggestPage />} />
         </Routes>
         </Suspense>
         </ErrorBoundary>

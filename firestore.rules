@@ -53,20 +53,10 @@ service cloud.firestore {
     // --- store / tickets / giveaways (Phase 1+) ---
 
     // Users — owner can read their own doc, staff can read all.
-    // The user doc itself is server-only; viewer-owned hunt subcollections
-    // below are client-writable by the owner (self-gated, like suggestions).
+    // The user doc itself is server-only.
     match /users/{uid} {
       allow read: if isSelf(uid) || isStaff();
       allow write: if false;
-
-      // Bonus tracker — single in-progress hunt.
-      match /active_hunt/{docId} {
-        allow read, write: if isSelf(uid) || isStaff();
-      }
-      // Bonus tracker — completed hunts (track record).
-      match /hunts/{huntId} {
-        allow read, write: if isSelf(uid) || isStaff();
-      }
     }
 
     // Store catalog — public read, owner-only write through server endpoint.
@@ -145,26 +135,6 @@ service cloud.firestore {
         allow read: if true;
         allow write: if false;
       }
-    }
-
-    // Suggestion intake links. Holds a salted password hash for the public
-    // suggestion-submission form, so it must never be client-readable. All
-    // access goes through server endpoints (/api/hunt-suggest/*) which validate
-    // the password and write into the owner's active_hunt with admin creds.
-    match /suggestion_intakes/{linkId} {
-      allow read, write: if false;
-    }
-
-    // Live-shared bonus hunt snapshots. The unguessable shareId is the access
-    // capability, so reads are fully public (spectators, no login). Writes are
-    // owner-only: a signed-in user may create/update/delete only a doc whose
-    // ownerTwitchId matches their uid (= their Twitch id for viewer logins).
-    match /shared_hunts/{shareId} {
-      allow read: if true;
-      allow create, update: if isSignedIn()
-        && request.resource.data.ownerTwitchId == request.auth.uid;
-      allow delete: if isSignedIn()
-        && resource.data.ownerTwitchId == request.auth.uid;
     }
 
     // Bonus Battle: public read so spectators can watch; only the owner (by

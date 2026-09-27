@@ -67,6 +67,31 @@ test('upstream failure with no cache returns 502', async () => {
   expect(res.body).toEqual({ error: 'UPSTREAM_UNAVAILABLE' });
 });
 
+// Review fix: an empty 200 (mid-resync, shape change) must not replace the good
+// copy or get CDN-cached for a day.
+test('an empty upstream catalogue falls back to stale, or 502 without cache', async () => {
+  global.fetch.mockResolvedValueOnce(upstream(200, { data: [] }));
+  const cold = mockRes();
+  await handler(req(), cold);
+  expect(cold.statusCode).toBe(502);
+  expect(cold.body).toEqual({ error: 'UPSTREAM_UNAVAILABLE' });
+
+  const realNow = Date.now;
+  global.fetch.mockResolvedValueOnce(upstream(200, { data: ROWS }));
+  await handler(req(), mockRes());
+  Date.now = () => realNow() + 7 * 60 * 60 * 1000;
+  try {
+    global.fetch.mockResolvedValueOnce(upstream(200, { data: [] }));
+    const res = mockRes();
+    await handler(req(), res);
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['X-Cache']).toBe('STALE');
+    expect(res.body.slots).toHaveLength(2);
+  } finally {
+    Date.now = realNow;
+  }
+});
+
 // Review Focus 4.
 test('serves the stale copy when upstream fails after expiry', async () => {
   const realNow = Date.now;

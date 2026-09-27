@@ -35,7 +35,11 @@ export default async function handler(req, res) {
   }
 
   try {
-    const data = { slots: await getSlotCatalog() };
+    const slots = await getSlotCatalog();
+    // An empty catalogue is an upstream glitch (mid-resync, shape change), not
+    // real data: never let it replace the good copy or sit on the CDN for a day.
+    if (!slots.length) throw new Error('EMPTY_CATALOG');
+    const data = { slots };
     cache = { data, expiresAt: Date.now() + CACHE_TTL_MS };
     res.setHeader('X-Cache', 'MISS');
     res.setHeader('Cache-Control', CACHE_CONTROL);

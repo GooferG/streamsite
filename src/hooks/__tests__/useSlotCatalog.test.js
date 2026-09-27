@@ -49,6 +49,19 @@ test('a later mount reuses the loaded catalogue without refetching', async () =>
   expect(global.fetch).toHaveBeenCalledTimes(1);
 });
 
+// Review fix: an empty catalogue is an outage, not "no slots match".
+test('an empty catalogue is treated as an error and retried on remount', async () => {
+  global.fetch = jest.fn().mockReturnValueOnce(ok({ slots: [] })).mockReturnValueOnce(ok({ slots: ROWS }));
+  let first;
+  const { unmount } = render(<Probe onState={(s) => { first = s; }} />);
+  await waitFor(() => expect(first.error).toBeTruthy());
+  unmount();
+  let second;
+  render(<Probe onState={(s) => { second = s; }} />);
+  await waitFor(() => expect(second.slots).toHaveLength(2));
+  expect(global.fetch).toHaveBeenCalledTimes(2);
+});
+
 // Review Focus 3: a failed load reports an error and the next mount retries.
 test('a failed load sets error, and a remount retries', async () => {
   global.fetch = jest.fn().mockReturnValueOnce(fail()).mockReturnValueOnce(ok({ slots: ROWS }));

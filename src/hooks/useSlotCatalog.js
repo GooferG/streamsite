@@ -16,6 +16,9 @@ function loadCatalog() {
         if (!res.ok || !body || !Array.isArray(body.slots)) {
           throw new Error((body && body.error) || `HTTP ${res.status}`);
         }
+        // Empty means the catalogue is down, not that no slots exist: show the
+        // offline line and let the next mount retry.
+        if (body.slots.length === 0) throw new Error('EMPTY_CATALOG');
         catalogCache = normalizeCatalog(body.slots);
         return catalogCache;
       })

@@ -72,7 +72,11 @@ test('overview returns trimmed live + recent and caches for 30s', async () => {
 });
 
 test('hunt view returns one trimmed hunt; upstream 404 becomes 404', async () => {
-  global.fetch.mockResolvedValueOnce(upstream(200, { data: LIVE }));
+  const GONE = { ...SUMMARY, id: 'gone' };
+  global.fetch
+    .mockResolvedValueOnce(upstream(200, { data: [LIVE] }))
+    .mockResolvedValueOnce(upstream(200, { data: [GONE] }))
+    .mockResolvedValueOnce(upstream(200, { data: LIVE }));
   const ok = mockRes();
   await handler(req({ view: 'hunt', id: 'live1' }), ok);
   expect(ok.body.hunt.id).toBe('live1');
@@ -82,6 +86,24 @@ test('hunt view returns one trimmed hunt; upstream 404 becomes 404', async () =>
   await handler(req({ view: 'hunt', id: 'gone' }), missing);
   expect(missing.statusCode).toBe(404);
   expect(missing.body).toEqual({ error: 'NOT_FOUND' });
+});
+
+// Review fix: arbitrary ids must not cost upstream reads on the shared Bean
+// key (rate-limit drain) or proxy other owners' hunts.
+test('hunt view refuses ids outside the owner overview without an upstream hunt read', async () => {
+  global.fetch
+    .mockResolvedValueOnce(upstream(200, { data: [] }))
+    .mockResolvedValueOnce(upstream(200, { data: [SUMMARY] }));
+  const res = mockRes();
+  await handler(req({ view: 'hunt', id: 'someoneElse1' }), res);
+  expect(res.statusCode).toBe(404);
+  expect(res.body).toEqual({ error: 'NOT_FOUND' });
+  const urls = global.fetch.mock.calls.map((c) => c[0]);
+  expect(urls.some((u) => u.includes('/hunts/someoneElse1'))).toBe(false);
+
+  // A second stranger id reuses the cached overview: still no upstream read.
+  await handler(req({ view: 'hunt', id: 'someoneElse2' }), mockRes());
+  expect(global.fetch).toHaveBeenCalledTimes(2);
 });
 
 // Review Focus 4: upstream down with an empty cache → fast 502 JSON.

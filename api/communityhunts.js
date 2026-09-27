@@ -33,6 +33,26 @@ async function load(view, id) {
   return { hunt: trimHunt(await getHunt(id)) };
 }
 
+// view=hunt only serves GooferG's own hunts: ids from the (cached) overview.
+// Anything else 404s without an upstream read, so random ids can't drain the
+// Bean community's shared rate limit or proxy other owners' hunts.
+async function ownerHuntIds() {
+  const entry = cache.get('overview');
+  let data = entry && entry.data;
+  if (!entry || Date.now() >= entry.expiresAt) {
+    try {
+      data = await load('overview');
+      cache.set('overview', { data, expiresAt: Date.now() + CACHE_TTL_MS });
+    } catch (err) {
+      if (!data) throw err; // no stale overview to fall back on
+    }
+  }
+  const ids = new Set();
+  if (data.live && data.live.id) ids.add(data.live.id);
+  for (const h of data.recent || []) if (h && h.id) ids.add(h.id);
+  return ids;
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -62,6 +82,9 @@ export default async function handler(req, res) {
   }
 
   try {
+    if (view === 'hunt' && !(await ownerHuntIds()).has(id)) {
+      return res.status(404).json({ error: 'NOT_FOUND' });
+    }
     const data = await load(view, id);
     cache.set(key, { data, expiresAt: Date.now() + CACHE_TTL_MS });
     res.setHeader('X-Cache', 'MISS');

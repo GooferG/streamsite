@@ -74,7 +74,7 @@ const HUB_CARDS = [
     code: 'PRD',
     title: 'Predictions',
     description:
-      'Run prediction rounds with viewer guesses and/or slot suggestions. Snapshot from bonushunt.gg, settle winners, manage the suggestion queue.',
+      'Run prediction rounds on the final payout, with optional slot suggestions. Snapshot your communityhunts.gg hunt, settle winners, manage the suggestion queue.',
   },
   {
     to: '/admin/community-hunts',

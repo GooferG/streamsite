@@ -1,5 +1,5 @@
 import { adminDb, FieldValue } from './firebaseAdmin.js';
-import { windowId, applyWindow, planSettlement } from './watchtime.js';
+import { windowId, applyWindow, planSettlement, formatDuration } from './watchtime.js';
 
 // Firestore I/O for live watch time. Every decision is made by the pure
 // functions in ./watchtime.js; this file only reads and writes.
@@ -160,4 +160,36 @@ export async function settleSession(streamId, rates, { close = false } = {}) {
   }
   await ref.update(done);
   return { accounts, banked };
+}
+
+// Move tickets banked before the viewer had an account into their balance.
+// Runs on every login (api/twitch-auth.js), which also picks up anything a
+// payout banked while their first login was in flight.
+export async function claimWatchBank(twitchId) {
+  const bankRef = adminDb.collection(BANK).doc(twitchId);
+  const userRef = adminDb.collection('users').doc(twitchId);
+  return adminDb.runTransaction(async (tx) => {
+    const [bank, user] = await tx.getAll(bankRef, userRef);
+    if (!bank.exists || !user.exists) return null;
+    const tickets = Math.max(0, Math.floor(Number(bank.data().tickets) || 0));
+    const minutes = Math.max(0, Math.floor(Number(bank.data().minutes) || 0));
+    tx.delete(bankRef);
+    if (tickets === 0 && minutes === 0) return null;
+    const now = FieldValue.serverTimestamp();
+    tx.update(userRef, {
+      tickets: FieldValue.increment(tickets),
+      totalEarned: FieldValue.increment(tickets),
+      watchMinutes: FieldValue.increment(minutes),
+      updatedAt: now,
+    });
+    tx.set(adminDb.collection('ticket_ledger').doc(), {
+      userId: twitchId,
+      delta: tickets,
+      reason: 'watchtime_banked',
+      minutes,
+      note: `Watch time before you signed up: ${formatDuration(minutes)}`,
+      createdAt: now,
+    });
+    return { tickets, minutes };
+  });
 }

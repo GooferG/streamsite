@@ -54,12 +54,12 @@ export function TwitchAuthProvider({ children }) {
       body: JSON.stringify({ code, redirect_uri: REDIRECT_URI }),
     });
     if (!res.ok) throw new Error('Auth failed');
-    const { firebaseToken, twitchId, displayName, profileImageUrl } = await res.json();
+    const { firebaseToken, twitchId, displayName, profileImageUrl, banked } = await res.json();
     await signInWithCustomToken(auth, firebaseToken);
     const profile = { twitchId, displayName, profileImageUrl };
     setTwitchUser(profile);
     localStorage.setItem('twitch_user', JSON.stringify(profile));
-    return profile;
+    return { ...profile, banked: banked || null };
   };
 
   const logout = async () => {

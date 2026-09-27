@@ -68,6 +68,7 @@ import {
   openSessionIds,
   creditSession,
   settleSession,
+  claimWatchBank,
 } from '../../api/_lib/watchtimeStore';
 import { WINDOW_MS, windowId } from '../../api/_lib/watchtime';
 
@@ -299,5 +300,54 @@ describe('settleSession', () => {
   test('a missing session is a no-op', async () => {
     expect(await settleSession('nope', RATES, { close: true })).toEqual({ accounts: 0, banked: 0 });
     expect(mockWrites).toEqual([]);
+  });
+});
+
+describe('claimWatchBank', () => {
+  test('moves banked tickets into the balance with a ledger line, then deletes the bank', async () => {
+    mockDocs.set('watch_bank/1', { login: 'newbie', tickets: 212, minutes: 530 });
+    mockDocs.set('users/1', { tickets: 0 });
+
+    expect(await claimWatchBank('1')).toEqual({ tickets: 212, minutes: 530 });
+
+    expect(mockWrites).toContainEqual([
+      'update',
+      'users/1',
+      {
+        tickets: { increment: 212 },
+        totalEarned: { increment: 212 },
+        watchMinutes: { increment: 530 },
+        updatedAt: 'SERVER_TS',
+      },
+    ]);
+    const ledger = mockWrites.find((w) => w[0] === 'set' && w[1].startsWith('ticket_ledger/'));
+    expect(ledger[2]).toEqual({
+      userId: '1',
+      delta: 212,
+      reason: 'watchtime_banked',
+      minutes: 530,
+      note: 'Watch time before you signed up: 8h 50m',
+      createdAt: 'SERVER_TS',
+    });
+    expect(mockWrites).toContainEqual(['delete', 'watch_bank/1']);
+  });
+
+  test('no bank: nothing to claim', async () => {
+    mockDocs.set('users/1', { tickets: 0 });
+    expect(await claimWatchBank('1')).toBeNull();
+    expect(mockWrites).toEqual([]);
+  });
+
+  test('no user doc yet: leaves the bank for a later login', async () => {
+    mockDocs.set('watch_bank/1', { tickets: 10, minutes: 25 });
+    expect(await claimWatchBank('1')).toBeNull();
+    expect(mockWrites).toEqual([]);
+  });
+
+  test('an empty bank is cleaned up without a ledger line', async () => {
+    mockDocs.set('watch_bank/1', { tickets: 0, minutes: 0 });
+    mockDocs.set('users/1', { tickets: 0 });
+    expect(await claimWatchBank('1')).toBeNull();
+    expect(mockWrites).toEqual([['delete', 'watch_bank/1']]);
   });
 });

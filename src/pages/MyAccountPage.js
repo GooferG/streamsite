@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   ListChecks,
 } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { db } from '../config/firebase';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 import { useUserDoc } from '../hooks/useUserDoc';
@@ -157,6 +158,15 @@ function formatTs(ts) {
   });
 }
 
+function formatMinutes(total) {
+  const minutes = Math.max(0, Math.floor(Number(total) || 0));
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h && m) return `${h}h ${m}m`;
+  if (h) return `${h}h`;
+  return `${m}m`;
+}
+
 function useCountdown(targetMs) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
@@ -176,6 +186,15 @@ function useCountdown(targetMs) {
 export default function MyAccountPage() {
   const { twitchUser, loginWithTwitch } = useTwitchAuth();
   const { user } = useUserDoc();
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Watch time banked before signup arrives once, via router state from the
+  // Twitch callback. Keep it for this visit, then clear the state so a
+  // refresh does not show it again.
+  const [banked] = useState(() => location.state?.banked || null);
+  useEffect(() => {
+    if (location.state?.banked) navigate(location.pathname, { replace: true, state: null });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [ledger, setLedger] = useState([]);
   const [redemptions, setRedemptions] = useState([]);
   const [claiming, setClaiming] = useState(false);
@@ -301,6 +320,21 @@ export default function MyAccountPage() {
             <span className="block text-emerald-signal">account.</span>
           </h1>
         </header>
+
+        {banked?.tickets > 0 && (
+          <div
+            role="status"
+            className="border border-emerald-signal/30 bg-emerald-signal/5 px-5 py-4 flex items-start gap-3"
+          >
+            <Clock size={16} className="text-emerald-signal mt-0.5 flex-shrink-0" aria-hidden="true" />
+            <p className="text-sm text-white/80">
+              You had{' '}
+              <span className="font-bold text-emerald-signal tabular-nums">{banked.tickets}</span>{' '}
+              tickets waiting from {formatMinutes(banked.minutes)} of watch time. They're in your
+              balance now.
+            </p>
+          </div>
+        )}
 
         {/* Balance card */}
         <div className="border border-white/8 bg-zinc-card/30">

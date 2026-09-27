@@ -124,6 +124,41 @@ module.exports = {
           '0%': { opacity: '0', transform: 'scale(0.96) translateY(8px)' },
           '100%': { opacity: '1', transform: 'scale(1) translateY(0)' },
         },
+        'fade-in': {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        // TV intro (TVStaticIntro). crt-static jumps the noise tile (second
+        // background layer) around so one tile reads as live static.
+        'crt-static': {
+          '0%, 100%': { backgroundPosition: '0 0, 0 0' },
+          '12.5%': { backgroundPosition: '0 0, -37px 61px' },
+          '25%': { backgroundPosition: '0 0, 83px -29px' },
+          '37.5%': { backgroundPosition: '0 0, -52px -91px' },
+          '50%': { backgroundPosition: '0 0, 11px 47px' },
+          '62.5%': { backgroundPosition: '0 0, 97px 13px' },
+          '75%': { backgroundPosition: '0 0, -71px 38px' },
+          '87.5%': { backgroundPosition: '0 0, 29px -64px' },
+        },
+        'crt-led': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.45' },
+        },
+        'crt-blink': {
+          '0%, 49%': { opacity: '1' },
+          '50%, 100%': { opacity: '0' },
+        },
+        'crt-roll': {
+          '0%': { transform: 'translateY(-20vh)' },
+          '100%': { transform: 'translateY(110vh)' },
+        },
+        // Vertical hold settling as the page resolves under the static.
+        'signal-lock': {
+          '0%': { transform: 'translateY(-14px)' },
+          '30%': { transform: 'translateY(6px)' },
+          '55%': { transform: 'translateY(-2px)' },
+          '100%': { transform: 'translateY(0)' },
+        },
       },
       animation: {
         'slow-zoom': 'slow-zoom 18s ease-in-out infinite',
@@ -134,6 +169,12 @@ module.exports = {
         'nn-grid': 'nn-grid 1.6s linear infinite',
         'nn-flicker': 'nn-flicker 6s steps(50) infinite',
         'modal-in': 'modal-in 0.2s ease-out',
+        'fade-in': 'fade-in 0.2s ease-out',
+        'crt-static': 'crt-static 0.2s steps(1) infinite',
+        'crt-led': 'crt-led 2.4s ease-in-out infinite',
+        'crt-blink': 'crt-blink 1.1s steps(1) infinite',
+        'crt-roll': 'crt-roll 0.7s ease-in-out both',
+        'signal-lock': 'signal-lock 0.7s cubic-bezier(0.2, 0.7, 0.3, 1)',
       },
     },
   },

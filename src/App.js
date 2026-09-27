@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import {
   Routes,
   Route,
@@ -11,6 +11,7 @@ import GrainOverlay from './components/GrainOverlay';
 import LiveIndicator from './components/LiveIndicator';
 import AdminLayout from './components/AdminLayout';
 import ErrorBoundary from './components/ErrorBoundary';
+import TVStaticIntro from './components/TVStaticIntro';
 import HomePage from './pages/HomePage';
 import GambaPage from './pages/GambaPage';
 import { AuthProvider } from './contexts/AuthContext';
@@ -25,13 +26,18 @@ import {
   getTwitchFollowers,
   getGameNames,
 } from './utils/twitchApi';
+import {
+  introModeFor,
+  readIntroFlags,
+  markPowered,
+  markSessionPlayed,
+} from './utils/introMode';
 
-// Lazy-loaded so they don't bloat the main bundle. TVStaticIntro pulls in
-// three.js + postprocessing (~145KB gzip) for a one-time intro most visitors
-// skip; HuntSuggestPage pulls the full slot catalog; admin pages are gated to
-// staff. Secondary public pages split per route. HomePage + GambaPage stay
-// eager (landing paint / GambaPage already code-splits its own heavy children).
-const TVStaticIntro = lazy(() => import('./components/TVStaticIntro'));
+// Lazy-loaded so they don't bloat the main bundle. HuntSuggestPage pulls the
+// full slot catalog; admin pages are gated to staff. Secondary public pages
+// split per route. HomePage + GambaPage stay eager (landing paint / GambaPage
+// already code-splits its own heavy children). TVStaticIntro is eager too: it
+// is a few KB of raw WebGL and has to cover the very first paint.
 const SchedulePage = lazy(() => import('./pages/SchedulePage'));
 const VodsPage = lazy(() => import('./pages/VodsPage'));
 const AboutPage = lazy(() => import('./pages/AboutPage'));
@@ -82,10 +88,21 @@ function StreamingSiteContent() {
   const [clips, setClips] = useState([]);
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showTVIntro, setShowTVIntro] = useState(() => {
-    if (typeof window === 'undefined') return false;
-    return !window.sessionStorage.getItem('tvIntroPlayed');
+  // Decided once per page load; see utils/introMode for the rules.
+  const [intro] = useState(() => {
+    const reduced =
+      !!window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const mode = introModeFor({
+      pathname: location.pathname,
+      isBrandRoute: !PRODUCT_PREFIXES.some((p) => location.pathname.startsWith(p)),
+      reducedMotion: reduced,
+      ...readIntroFlags(),
+    });
+    return { mode, reduced };
   });
+  const [showTVIntro, setShowTVIntro] = useState(intro.mode !== 'none');
+  const [signalLocking, setSignalLocking] = useState(false);
 
   // Derive current page id from URL for nav highlighting
   const currentPage = location.pathname.split('/').filter(Boolean)[0] || 'home';
@@ -149,15 +166,18 @@ function StreamingSiteContent() {
     }
   }, [showTVIntro]);
 
-  const handleIntroComplete = () => {
-    setShowTVIntro(false);
+  // Page fades in under the static as the signal locks, not after it's gone.
+  const handleIntroReveal = useCallback(() => {
     setIsVisible(true);
-    try {
-      window.sessionStorage.setItem('tvIntroPlayed', '1');
-    } catch {
-      // sessionStorage may be unavailable (private mode, etc.)
-    }
-  };
+    setSignalLocking(true);
+  }, []);
+
+  const handleIntroComplete = useCallback(() => {
+    setShowTVIntro(false);
+    setSignalLocking(false);
+    setIsVisible(true);
+    markSessionPlayed();
+  }, []);
 
   const isBrandRoute = !PRODUCT_PREFIXES.some((p) =>
     location.pathname.startsWith(p)
@@ -200,9 +220,13 @@ function StreamingSiteContent() {
   return (
     <div className="min-h-screen bg-zinc-broadcast text-white-body">
       {showTVIntro && (
-        <Suspense fallback={null}>
-          <TVStaticIntro onComplete={handleIntroComplete} />
-        </Suspense>
+        <TVStaticIntro
+          mode={intro.mode}
+          reduced={intro.reduced}
+          onPowerOn={markPowered}
+          onReveal={handleIntroReveal}
+          onComplete={handleIntroComplete}
+        />
       )}
 
       <GrainOverlay />
@@ -215,7 +239,7 @@ function StreamingSiteContent() {
       <LiveIndicator isLive={isLive} streamData={streamData} />
 
       <main
-        className={`transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
+        className={`transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'} ${signalLocking ? 'motion-safe:animate-signal-lock' : ''}`}
       >
         <ErrorBoundary key={location.pathname}>
         <Suspense

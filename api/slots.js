@@ -1,68 +1,51 @@
-const API_KEY  = process.env.SLOTSLAUNCH_API_KEY;
-const BASE_URL = 'https://slotslaunch.com/api';
-const ORIGIN   = 'goofer.tv'; // domain registered in your SlotsLaunch account
+import { getSlotCatalog } from './_lib/communityHunts.js';
 
-// In-memory cache keyed by path + query string
-const cache = {};
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour — games don't change often
+// Slot catalogue for Slot Picker and the slot search box, re-served from the
+// communityhunts.gg /slots endpoint (the Rainbet list, re-synced nightly).
+// The rows change at most daily, so cache hard: 6h in memory per instance,
+// a day on the CDN, and serve the last good copy if communityhunts is down.
+//
+// GET /api/slots -> { slots: Row[] }
 
-const ALLOWED_PATHS = ['games', 'providers', 'types', 'themes'];
+const CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+const CACHE_CONTROL = 'public, s-maxage=86400, stale-while-revalidate=604800';
+
+let cache = null; // { data, expiresAt }; expired entries stay as the stale fallback
+
+export function __resetCacheForTests() {
+  cache = null;
+}
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-  if (req.method !== 'GET')
-    return res.status(405).json({ error: 'Method not allowed' });
-
-  const { path, ...rest } = req.query;
-  if (!path || !ALLOWED_PATHS.includes(path)) {
-    return res
-      .status(400)
-      .json({ error: `Invalid path. Use: ${ALLOWED_PATHS.join(', ')}` });
+  if (!process.env.COMMUNITYHUNTS_API_KEY) {
+    console.error('slots: COMMUNITYHUNTS_API_KEY is not set.');
+    return res.status(503).json({ error: 'NOT_CONFIGURED' });
   }
 
-  // Token goes as a query param, all other params pass through
-  const upstreamParams = new URLSearchParams({ token: API_KEY, ...rest }).toString();
-  const upstreamUrl = `${BASE_URL}/${path}?${upstreamParams}`;
-  const cacheKey = path + '|' + upstreamParams;
-
-  // Serve from cache if still fresh
-  const cached = cache[cacheKey];
-  if (cached && Date.now() < cached.expiresAt) {
+  if (cache && Date.now() < cache.expiresAt) {
     res.setHeader('X-Cache', 'HIT');
-    return res.status(200).json(cached.data);
+    res.setHeader('Cache-Control', CACHE_CONTROL);
+    return res.status(200).json(cache.data);
   }
 
   try {
-    const upstream = await fetch(upstreamUrl, {
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-        'Origin': ORIGIN,
-      },
-    });
-
-    const data = await upstream.json();
-
-    if (upstream.ok) {
-      cache[cacheKey] = { data, expiresAt: Date.now() + CACHE_TTL_MS };
-    }
-
+    const data = { slots: await getSlotCatalog() };
+    cache = { data, expiresAt: Date.now() + CACHE_TTL_MS };
     res.setHeader('X-Cache', 'MISS');
-    return res.status(upstream.status).json(data);
-  } catch (error) {
-    console.error('slots proxy error:', error);
-    // Return stale cache on network failure rather than hard error
-    if (cached) {
+    res.setHeader('Cache-Control', CACHE_CONTROL);
+    return res.status(200).json(data);
+  } catch (err) {
+    if (cache) {
       res.setHeader('X-Cache', 'STALE');
-      return res.status(200).json(cached.data);
+      return res.status(200).json(cache.data);
     }
-    return res.status(500).json({ error: 'Proxy error' });
+    console.error('slots proxy error:', (err && err.code) || (err && err.message));
+    return res.status(502).json({ error: 'UPSTREAM_UNAVAILABLE' });
   }
 }

@@ -142,19 +142,24 @@ function DayCell({ day, index, onOpen }) {
 
 function DayEditorModal({ draft, dayLabel, onField, onClose }) {
   const panelRef = React.useRef(null);
+  // onClose is a fresh closure every parent render (it captures the draft).
+  // Read it through a ref so the mount-only effect below never re-runs —
+  // re-running it would yank focus to the panel on every keystroke.
+  const onCloseRef = React.useRef(onClose);
+  onCloseRef.current = onClose;
 
   React.useEffect(() => {
     const prevActive = document.activeElement;
     panelRef.current?.focus();
     const onKey = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') onCloseRef.current();
     };
     document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('keydown', onKey);
       if (prevActive instanceof HTMLElement) prevActive.focus();
     };
-  }, [onClose]);
+  }, []);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6">

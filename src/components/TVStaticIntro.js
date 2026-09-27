@@ -1,298 +1,302 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { createCrt } from '../utils/crtBoot';
+import { playPowerOn } from '../utils/crtAudio';
 import {
-  Scene,
-  OrthographicCamera,
-  WebGLRenderer,
-  PlaneGeometry,
-  Mesh,
-  ShaderMaterial,
-  Vector2,
-  Color,
-} from 'three';
-import {
-  EffectComposer,
-  RenderPass,
-  EffectPass,
-  GlitchEffect,
-  ChromaticAberrationEffect,
-  NoiseEffect,
-  ScanlineEffect,
-  VignetteEffect,
-  BloomEffect,
-  BlendFunction,
-} from 'postprocessing';
+  BOOT_MS,
+  LOCK_MS,
+  GATE_MS,
+  FLIP_STATIC_MS,
+  FLIP_LOCK_MS,
+  REDUCED_FADE_MS,
+  HISS,
+  gateFrame,
+} from '../utils/crtTimeline';
 
-const DURATION_MS = 1400;
+// First-load TV intro (mode picked by utils/introMode).
+//  gate: black tube on standby until the viewer presses anywhere, then the
+//        power-on (dot -> line -> static, with sound) and signal lock.
+//  flip: a short burst of CSS static, then signal lock. No press, no sound.
+// onReveal fires as the signal starts locking so the page fades in under the
+// static; onComplete fires when the overlay can unmount.
 
-// Phase-driven envelope for the CRT boot sequence.
-// t in [0,1]. Returns intensity multipliers for each effect.
-function envelope(t) {
-  const dotFlash = t < 0.08 ? 1 - t / 0.08 : 0;
-  const lineStretch = t < 0.18 ? Math.min(1, t / 0.12) : Math.max(0, 1 - (t - 0.18) / 0.1);
-  const staticBurst =
-    t < 0.32 ? 0 : t < 0.78 ? 1 : Math.max(0, 1 - (t - 0.78) / 0.18);
-  const settle = t > 0.85 ? Math.min(1, (t - 0.85) / 0.15) : 0;
-  const opacity = t > 0.9 ? Math.max(0, 1 - (t - 0.9) / 0.1) : 1;
+const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Fn', 'OS']);
 
-  return { dotFlash, lineStretch, staticBurst, settle, opacity };
+const SCANLINES =
+  'repeating-linear-gradient(0deg, rgba(0,0,0,0.35) 0px, rgba(0,0,0,0.35) 1px, transparent 1px, transparent 3px)';
+const VIGNETTE = 'inset 0 0 22vmin 4vmin rgba(0,0,0,0.75)';
+const TILE_PX = 256; // drawn at 2x with pixelated scaling: 2px grains, 512px repeat
+
+// Speckle tile, white with brightness as alpha, so fading static lingers
+// over the page as speckle instead of a grey haze. Made once.
+let noiseTile;
+function getNoiseTile() {
+  if (noiseTile !== undefined) return noiseTile;
+  noiseTile = null;
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = TILE_PX;
+    canvas.height = TILE_PX;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      const img = ctx.createImageData(TILE_PX, TILE_PX);
+      const d = img.data;
+      for (let i = 0; i < d.length; i += 4) {
+        d[i] = 235;
+        d[i + 1] = 242;
+        d[i + 2] = 255;
+        d[i + 3] = Math.random() < 0.45 ? Math.random() * 60 : 120 + Math.random() * 135;
+      }
+      ctx.putImageData(img, 0, 0);
+      noiseTile = canvas.toDataURL();
+    }
+  } catch {
+    noiseTile = null;
+  }
+  return noiseTile;
 }
 
-export default function TVStaticIntro({ onComplete }) {
-  const mountRef = useRef(null);
-  const [reduced, setReduced] = useState(false);
+function Standby({ onPress, fading }) {
+  return (
+    <button
+      type="button"
+      autoFocus={!fading}
+      onClick={onPress}
+      disabled={fading}
+      aria-label="Turn on the channel"
+      className="group absolute inset-0 block w-full h-full cursor-pointer bg-[#050505] focus:outline-none"
+    >
+      {/* Tube glass: a faint reflection up top, dark corners. */}
+      <span
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          background:
+            'radial-gradient(ellipse 60% 45% at 28% 18%, rgba(255,255,255,0.045), transparent 70%), radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.75) 100%)',
+        }}
+      />
+      <span
+        aria-hidden="true"
+        className="absolute inset-0"
+        style={{
+          backgroundImage:
+            'repeating-linear-gradient(0deg, rgba(255,255,255,0.025) 0px, rgba(255,255,255,0.025) 1px, transparent 1px, transparent 3px)',
+        }}
+      />
 
-  useEffect(() => {
-    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReduced(mq.matches);
+      <span
+        aria-hidden="true"
+        className="absolute top-6 left-6 sm:top-10 sm:left-10 font-mono text-xs sm:text-sm font-bold tracking-eyebrow uppercase text-white/55"
+      >
+        CH 03
+      </span>
+
+      <span
+        aria-hidden="true"
+        className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center"
+      >
+        <span
+          className="relative font-mono text-3xl sm:text-5xl font-bold tracking-eyebrow uppercase text-white/85"
+          style={{ textShadow: '0 0 14px rgba(255,255,255,0.28)' }}
+        >
+          {/* Outside the flow so PWR stays centered while the cursor blinks. */}
+          <span className="absolute right-full mr-3 sm:mr-4 motion-safe:animate-crt-blink">▸</span>
+          PWR
+        </span>
+        <span className="mt-5 font-mono text-[0.6875rem] sm:text-xs tracking-eyebrow-sm text-white/45 group-focus-visible:text-white/80 transition-colors duration-150">
+          press anywhere to turn it on
+        </span>
+      </span>
+
+      <span
+        aria-hidden="true"
+        className="absolute bottom-6 right-6 sm:bottom-10 sm:right-10 flex items-center gap-2.5"
+      >
+        <span className="font-mono text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/30">
+          Standby
+        </span>
+        <span
+          className="block w-2 h-2 rounded-full bg-red-500 motion-safe:animate-crt-led"
+          style={{
+            boxShadow: '0 0 6px 1px rgba(239,68,68,0.7), 0 0 18px 4px rgba(239,68,68,0.25)',
+          }}
+        />
+      </span>
+    </button>
+  );
+}
+
+export default function TVStaticIntro({ mode, reduced = false, onPowerOn, onReveal, onComplete }) {
+  const [phase, setPhase] = useState(mode === 'gate' ? 'standby' : 'boot');
+  const [hasCrt, setHasCrt] = useState(false);
+  const [tile] = useState(getNoiseTile);
+  const mountRef = useRef(null);
+  const crtRef = useRef(null);
+  const pressedRef = useRef(false);
+  const timersRef = useRef([]);
+  const rafRef = useRef(0);
+
+  // Callbacks via ref: App re-renders when Twitch data lands, and a new
+  // function identity must never restart the sequence.
+  const cbs = useRef({});
+  cbs.current = { onPowerOn, onReveal, onComplete };
+
+  const later = useCallback((ms, fn) => {
+    timersRef.current.push(setTimeout(fn, ms));
+  }, []);
+  const reveal = useCallback(() => {
+    setPhase('lock');
+    cbs.current.onReveal?.();
+  }, []);
+  const finish = useCallback(() => {
+    cbs.current.onComplete?.();
   }, []);
 
+  useEffect(
+    () => () => {
+      timersRef.current.forEach(clearTimeout);
+      timersRef.current = [];
+      cancelAnimationFrame(rafRef.current);
+    },
+    []
+  );
+
+  // Flip runs on its own.
   useEffect(() => {
+    if (mode !== 'flip') return undefined;
+    const t1 = setTimeout(reveal, FLIP_STATIC_MS);
+    const t2 = setTimeout(finish, FLIP_STATIC_MS + FLIP_LOCK_MS);
+    return () => {
+      clearTimeout(t1);
+      clearTimeout(t2);
+    };
+  }, [mode, reveal, finish]);
+
+  // Gate: build the renderer while on standby so the press starts instantly.
+  useEffect(() => {
+    if (mode !== 'gate' || reduced || !mountRef.current) return undefined;
+    const crt = createCrt(mountRef.current);
+    crtRef.current = crt;
+    setHasCrt(!!crt);
+    if (!crt) return undefined;
+    const onResize = () => crt.resize();
+    window.addEventListener('resize', onResize);
+    return () => {
+      window.removeEventListener('resize', onResize);
+      cancelAnimationFrame(rafRef.current);
+      crt.dispose();
+      crtRef.current = null;
+    };
+  }, [mode, reduced]);
+
+  const press = useCallback(() => {
+    if (pressedRef.current) return;
+    pressedRef.current = true;
+    cbs.current.onPowerOn?.();
+    playPowerOn(reduced ? {} : { hiss: HISS });
+
     if (reduced) {
-      const t = setTimeout(() => onComplete?.(), 250);
-      return () => clearTimeout(t);
+      reveal();
+      later(REDUCED_FADE_MS, finish);
+      return;
     }
 
-    const mount = mountRef.current;
-    if (!mount) return;
+    setPhase('boot');
+    later(BOOT_MS, reveal);
+    later(GATE_MS, finish);
 
-    let raf = 0;
-    let disposed = false;
+    const crt = crtRef.current;
+    if (!crt) return;
     const start = performance.now();
-
-    // --- Renderer + scene ---
-    const renderer = new WebGLRenderer({
-      antialias: false,
-      powerPreference: 'high-performance',
-      alpha: true,
-    });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.setClearColor(new Color(0x000000), 1);
-    mount.appendChild(renderer.domElement);
-    renderer.domElement.style.cssText =
-      'position:absolute;inset:0;width:100%;height:100%;display:block;';
-
-    const scene = new Scene();
-    const camera = new OrthographicCamera(-1, 1, 1, -1, 0, 1);
-
-    // Fullscreen quad with a custom "CRT boot" shader: pinch dot -> horizontal line -> noisy field.
-    const bootMaterial = new ShaderMaterial({
-      uniforms: {
-        uTime: { value: 0 },
-        uResolution: {
-          value: new Vector2(window.innerWidth, window.innerHeight),
-        },
-        uDotFlash: { value: 0 },
-        uLineStretch: { value: 0 },
-        uStaticBurst: { value: 0 },
-        uSettle: { value: 0 },
-      },
-      vertexShader: /* glsl */ `
-        varying vec2 vUv;
-        void main() {
-          vUv = uv;
-          gl_Position = vec4(position, 1.0);
-        }
-      `,
-      fragmentShader: /* glsl */ `
-        precision highp float;
-        varying vec2 vUv;
-        uniform float uTime;
-        uniform vec2 uResolution;
-        uniform float uDotFlash;
-        uniform float uLineStretch;
-        uniform float uStaticBurst;
-        uniform float uSettle;
-
-        // Hash noise
-        float hash(vec2 p) {
-          p = fract(p * vec2(123.34, 456.21));
-          p += dot(p, p + 45.32);
-          return fract(p.x * p.y);
-        }
-
-        void main() {
-          vec2 uv = vUv;
-          vec2 centered = uv - 0.5;
-          float aspect = uResolution.x / uResolution.y;
-          centered.x *= aspect;
-
-          float dist = length(centered);
-
-          // 1) Pinch dot: tight bright circle that bleeds out
-          float dot = uDotFlash * smoothstep(0.06, 0.0, dist) * 4.0;
-
-          // 2) Horizontal line stretch (degauss line)
-          float lineY = abs(centered.y);
-          float lineX = abs(centered.x);
-          float lineMask = smoothstep(0.004, 0.0, lineY) * smoothstep(0.6, 0.0, lineX);
-          float line = uLineStretch * lineMask * 3.0;
-
-          // 3) Static noise field
-          float n = hash(uv * uResolution.xy * 0.5 + uTime * 60.0);
-          // Add horizontal roll bar
-          float roll = sin(uv.y * 30.0 + uTime * 4.0) * 0.5 + 0.5;
-          roll = pow(roll, 8.0) * 0.4;
-          float staticField = (n * 0.85 + roll) * uStaticBurst;
-
-          // 4) Settled image: dark with faint signal
-          float settled = uSettle * (0.02 + n * 0.04);
-
-          float lum = dot + line + staticField + settled;
-
-          // Tint static slightly cool, settled signal warm-neutral
-          vec3 staticTint = vec3(0.92, 0.95, 1.0);
-          vec3 lineTint = vec3(1.0, 0.98, 0.9);
-          vec3 col = mix(staticTint, lineTint, uLineStretch) * lum;
-
-          // RGB phosphor cell stripe (subtle)
-          float stripe = mod(gl_FragCoord.x, 3.0);
-          if (stripe < 1.0) col *= vec3(1.05, 0.95, 0.95);
-          else if (stripe < 2.0) col *= vec3(0.95, 1.05, 0.95);
-          else col *= vec3(0.95, 0.95, 1.05);
-
-          gl_FragColor = vec4(col, 1.0);
-        }
-      `,
-    });
-
-    const quad = new Mesh(new PlaneGeometry(2, 2), bootMaterial);
-    scene.add(quad);
-
-    // --- Effect composer ---
-    const composer = new EffectComposer(renderer);
-    composer.addPass(new RenderPass(scene, camera));
-
-    const chromatic = new ChromaticAberrationEffect({
-      offset: new Vector2(0.006, 0.0),
-      radialModulation: true,
-      modulationOffset: 0.3,
-    });
-
-    const noise = new NoiseEffect({
-      blendFunction: BlendFunction.SCREEN,
-      premultiply: true,
-    });
-    noise.blendMode.opacity.value = 0.35;
-
-    const scanline = new ScanlineEffect({
-      density: 1.5,
-      blendFunction: BlendFunction.OVERLAY,
-    });
-    scanline.blendMode.opacity.value = 0.5;
-
-    const glitch = new GlitchEffect({
-      delay: new Vector2(0.15, 0.4),
-      duration: new Vector2(0.1, 0.25),
-      strength: new Vector2(0.4, 0.8),
-      ratio: 0.5,
-      columns: 0.02,
-    });
-
-    const bloom = new BloomEffect({
-      intensity: 1.4,
-      luminanceThreshold: 0.4,
-      luminanceSmoothing: 0.3,
-      mipmapBlur: true,
-    });
-
-    const vignette = new VignetteEffect({
-      offset: 0.25,
-      darkness: 0.85,
-    });
-
-    composer.addPass(new EffectPass(camera, chromatic, noise, scanline, bloom));
-    composer.addPass(new EffectPass(camera, glitch, vignette));
-
-    // --- Resize ---
-    const onResize = () => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      renderer.setSize(w, h);
-      composer.setSize(w, h);
-      bootMaterial.uniforms.uResolution.value.set(w, h);
-    };
-    window.addEventListener('resize', onResize);
-
-    // E: Warm-up render. Forces shader compile + GPU upload now so phase 1
-    // doesn't stall. Render with zeroed uniforms (invisible black frame).
-    bootMaterial.uniforms.uDotFlash.value = 0;
-    bootMaterial.uniforms.uLineStretch.value = 0;
-    bootMaterial.uniforms.uStaticBurst.value = 0;
-    bootMaterial.uniforms.uSettle.value = 0;
-    composer.render();
-
-    // --- Animate ---
     const tick = (now) => {
-      if (disposed) return;
-      const elapsed = now - start;
-      const t = Math.min(1, elapsed / DURATION_MS);
-      const env = envelope(t);
-
-      bootMaterial.uniforms.uTime.value = elapsed / 1000;
-      bootMaterial.uniforms.uDotFlash.value = env.dotFlash;
-      bootMaterial.uniforms.uLineStretch.value = env.lineStretch;
-      bootMaterial.uniforms.uStaticBurst.value = env.staticBurst;
-      bootMaterial.uniforms.uSettle.value = env.settle;
-
-      // Drive effect intensities by phase
-      const chromaAmount = 0.012 * env.staticBurst + 0.003;
-      chromatic.offset.set(chromaAmount, chromaAmount * 0.3);
-
-      noise.blendMode.opacity.value = 0.55 * env.staticBurst + 0.05;
-      scanline.blendMode.opacity.value = 0.2 + 0.4 * (1 - env.settle);
-      bloom.intensity = 1.2 + env.dotFlash * 3.0 + env.lineStretch * 1.5;
-      glitch.minStrength = 0.0;
-      glitch.maxStrength = env.staticBurst * 0.9;
-
-      // Mount-level fade at the very end
-      mount.style.opacity = String(env.opacity);
-
-      composer.render();
-
-      if (t >= 1) {
-        onComplete?.();
-        return;
-      }
-      raf = requestAnimationFrame(tick);
+      const ms = now - start;
+      crt.render(ms, gateFrame(ms));
+      if (ms < GATE_MS) rafRef.current = requestAnimationFrame(tick);
     };
-    raf = requestAnimationFrame(tick);
+    rafRef.current = requestAnimationFrame(tick);
+  }, [reduced, reveal, finish, later]);
 
+  // Any key powers on (not modifier shortcuts, so devtools etc. still work).
+  useEffect(() => {
+    if (phase !== 'standby') return undefined;
+    const onKey = (e) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || MODIFIER_KEYS.has(e.key)) return;
+      if (e.key === 'Tab') e.preventDefault();
+      press();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [phase, press]);
+
+  // No scrolling the invisible page while the tube covers it.
+  const covering = phase === 'standby' || phase === 'boot';
+  useEffect(() => {
+    if (!covering) return undefined;
+    const root = document.documentElement;
+    const prev = root.style.overflow;
+    root.style.overflow = 'hidden';
     return () => {
-      disposed = true;
-      cancelAnimationFrame(raf);
-      window.removeEventListener('resize', onResize);
-      composer.dispose();
-      bootMaterial.dispose();
-      quad.geometry.dispose();
-      renderer.dispose();
-      if (renderer.domElement.parentNode === mount) {
-        mount.removeChild(renderer.domElement);
-      }
+      root.style.overflow = prev;
     };
-  }, [reduced, onComplete]);
+  }, [covering]);
+
+  const locking = phase === 'lock';
+  const lockMs = mode === 'flip' ? FLIP_LOCK_MS : LOCK_MS;
+  const cssStatic =
+    !reduced && (mode === 'flip' || (phase !== 'standby' && !hasCrt));
 
   return (
     <div
-      ref={mountRef}
-      className="fixed inset-0 z-[9999] bg-black pointer-events-none overflow-hidden"
-      aria-hidden="true"
+      className="fixed inset-0 z-[9999] overflow-hidden"
+      style={{
+        pointerEvents: locking ? 'none' : 'auto',
+        opacity: locking && reduced ? 0 : 1,
+        transition: reduced ? `opacity ${REDUCED_FADE_MS}ms ease-out` : undefined,
+      }}
     >
-      {/* D: instant CSS first-frame so user sees something <16ms.
-          WebGL canvas mounts on top once shader compiles. */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundColor: '#000',
-          backgroundImage: `repeating-linear-gradient(
-            0deg,
-            rgba(255,255,255,0.04) 0px,
-            rgba(255,255,255,0.04) 1px,
-            transparent 1px,
-            transparent 3px
-          )`,
-        }}
-      />
+      {/* WebGL canvas mounts here (gate only). */}
+      <div ref={mountRef} className="absolute inset-0" aria-hidden="true" />
+
+      {cssStatic && (
+        <>
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 bg-black"
+            style={{
+              opacity: locking ? 0 : 1,
+              transition: `opacity ${Math.round(lockMs * 0.6)}ms ease-out`,
+            }}
+          />
+          <div
+            aria-hidden="true"
+            className="absolute inset-0 motion-safe:animate-crt-static"
+            style={{
+              // crt-static moves the second layer (the tile) only.
+              backgroundImage: tile ? `${SCANLINES}, url(${tile})` : SCANLINES,
+              backgroundSize: tile ? `100% 3px, ${TILE_PX * 2}px ${TILE_PX * 2}px` : '100% 3px',
+              // Inset shadow paints above the backgrounds: tube vignette.
+              boxShadow: VIGNETTE,
+              imageRendering: 'pixelated',
+              opacity: locking ? 0 : 1,
+              transition: `opacity ${lockMs}ms ease-in`,
+            }}
+          />
+          {locking && (
+            <div
+              aria-hidden="true"
+              className="absolute inset-x-0 top-0 h-[18vh] motion-safe:animate-crt-roll"
+              style={{
+                animationDuration: `${lockMs}ms`,
+                background:
+                  'linear-gradient(to bottom, transparent, rgba(230,240,255,0.14), transparent)',
+              }}
+            />
+          )}
+        </>
+      )}
+
+      {mode === 'gate' && (phase === 'standby' || reduced) && (
+        <Standby onPress={press} fading={phase !== 'standby'} />
+      )}
     </div>
   );
 }

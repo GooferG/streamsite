@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 
 const SEEN_KEY = 'gg_welcome_seen';
+// Beat after the TV intro's signal lock, so the card follows the reveal
+// instead of landing on top of it.
+const SIGN_ON_DELAY_MS = 400;
 
 function alreadySeen() {
   try {
@@ -22,9 +25,11 @@ export default function WelcomeSignOn({ introDone }) {
   const [open, setOpen] = useState(false);
   const cardRef = useRef(null);
 
-  // Show once the intro is done, if not seen before.
+  // Show shortly after the intro is done, if not seen before.
   useEffect(() => {
-    if (introDone && !alreadySeen()) setOpen(true);
+    if (!introDone || alreadySeen()) return undefined;
+    const t = setTimeout(() => setOpen(true), SIGN_ON_DELAY_MS);
+    return () => clearTimeout(t);
   }, [introDone]);
 
   // Focus the card and wire Esc-to-dismiss while open.
@@ -60,7 +65,7 @@ export default function WelcomeSignOn({ introDone }) {
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-center justify-center px-4 bg-zinc-broadcast/70 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center px-4 bg-zinc-broadcast/70 backdrop-blur-sm motion-safe:animate-fade-in"
       onClick={dismiss}
     >
       <div
@@ -70,7 +75,7 @@ export default function WelcomeSignOn({ introDone }) {
         aria-label="First time on the channel"
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-md bg-zinc-card border border-emerald-signal/40 rounded-lg p-6 sm:p-8 focus:outline-none"
+        className="relative w-full max-w-md bg-zinc-card border border-emerald-signal/40 rounded-lg p-6 sm:p-8 focus:outline-none motion-safe:animate-modal-in"
       >
         <div
           className="pointer-events-none absolute inset-0 opacity-[0.05] mix-blend-screen motion-reduce:hidden rounded-lg"

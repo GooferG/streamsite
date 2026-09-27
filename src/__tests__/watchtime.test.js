@@ -9,6 +9,10 @@ import {
   withoutExcluded,
   creditWindow,
   applyWindow,
+  formatDuration,
+  formatWatchNote,
+  owedFor,
+  planSettlement,
 } from '../../api/_lib/watchtime';
 
 const viewer = (overrides = {}) => ({
@@ -165,5 +169,139 @@ describe('applyWindow', () => {
     const session = { lastWindow: 10, viewers: {} };
     expect(applyWindow(session, { completed: 10, present, chatted })).toBeNull();
     expect(applyWindow(session, { completed: 9, present, chatted })).toBeNull();
+  });
+});
+
+const RATES = { perWindow: 1, chatBonus: 1 };
+
+describe('formatDuration / formatWatchNote', () => {
+  test('minutes, hours, and both', () => {
+    expect(formatDuration(0)).toBe('0m');
+    expect(formatDuration(5)).toBe('5m');
+    expect(formatDuration(60)).toBe('1h');
+    expect(formatDuration(95)).toBe('1h 35m');
+    expect(formatWatchNote(95)).toBe('Watched 1h 35m');
+  });
+});
+
+describe('owedFor', () => {
+  test('first payout owes everything earned', () => {
+    expect(owedFor(viewer({ present: 6, chat: 2 }), RATES)).toEqual({ tickets: 8, windows: 6 });
+  });
+
+  test('later payouts owe only the unpaid part', () => {
+    const v = viewer({ present: 6, chat: 2, paidTickets: 5, paidPresent: 3 });
+    expect(owedFor(v, RATES)).toEqual({ tickets: 3, windows: 3 });
+  });
+
+  test('nothing new owes nothing', () => {
+    const v = viewer({ present: 6, chat: 2, paidTickets: 8, paidPresent: 6 });
+    expect(owedFor(v, RATES)).toEqual({ tickets: 0, windows: 0 });
+  });
+
+  test('a rate lowered mid-stream never owes negative tickets', () => {
+    const v = viewer({ present: 6, chat: 2, paidTickets: 8, paidPresent: 6 });
+    expect(owedFor(v, { perWindow: 0, chatBonus: 0 })).toEqual({ tickets: 0, windows: 0 });
+  });
+
+  test('custom rates', () => {
+    expect(owedFor(viewer({ present: 4, chat: 1 }), { perWindow: 2, chatBonus: 3 })).toEqual({
+      tickets: 11,
+      windows: 4,
+    });
+  });
+});
+
+describe('planSettlement', () => {
+  test('first payout to an account: tickets, minutes, and a new ledger line', () => {
+    const viewers = { '1': viewer({ login: 'member', present: 6, chat: 2 }) };
+    const plan = planSettlement(viewers, ['1'], new Set(['1']), RATES);
+    expect(plan.accountCredits).toEqual([
+      {
+        id: '1',
+        tickets: 8,
+        minutes: 30,
+        ledger: { delta: 8, minutes: 30, note: 'Watched 30m', first: true },
+      },
+    ]);
+    expect(plan.bankCredits).toEqual([]);
+    expect(plan.viewers['1']).toMatchObject({
+      paidTickets: 8,
+      paidPresent: 6,
+      ledgerTickets: 8,
+      ledgerMinutes: 30,
+    });
+  });
+
+  test('second payout in the same stream grows the same ledger line', () => {
+    const viewers = {
+      '1': viewer({
+        present: 12,
+        chat: 2,
+        paidTickets: 8,
+        paidPresent: 6,
+        ledgerTickets: 8,
+        ledgerMinutes: 30,
+      }),
+    };
+    const plan = planSettlement(viewers, ['1'], new Set(['1']), RATES);
+    expect(plan.accountCredits).toEqual([
+      {
+        id: '1',
+        tickets: 6,
+        minutes: 30,
+        ledger: { delta: 14, minutes: 60, note: 'Watched 1h', first: false },
+      },
+    ]);
+  });
+
+  test('no account: tickets go to the bank and no ledger fields change', () => {
+    const viewers = { '2': viewer({ login: 'lurker', present: 3 }) };
+    const plan = planSettlement(viewers, ['2'], new Set(), RATES);
+    expect(plan.accountCredits).toEqual([]);
+    expect(plan.bankCredits).toEqual([{ id: '2', login: 'lurker', tickets: 3, minutes: 15 }]);
+    expect(plan.viewers['2']).toMatchObject({
+      paidTickets: 3,
+      paidPresent: 3,
+      ledgerTickets: 0,
+      ledgerMinutes: 0,
+    });
+  });
+
+  test('banked earlier, then signed up mid-stream: ledger line starts fresh and excludes the banked part', () => {
+    const viewers = {
+      '3': viewer({ present: 12, chat: 2, paidTickets: 8, paidPresent: 6 }),
+    };
+    const plan = planSettlement(viewers, ['3'], new Set(['3']), RATES);
+    expect(plan.accountCredits).toEqual([
+      {
+        id: '3',
+        tickets: 6,
+        minutes: 30,
+        ledger: { delta: 6, minutes: 30, note: 'Watched 30m', first: true },
+      },
+    ]);
+  });
+
+  test('nothing owed produces no credits and leaves the viewer as is', () => {
+    const viewers = {
+      '4': viewer({ present: 2, paidTickets: 2, paidPresent: 2, ledgerTickets: 2, ledgerMinutes: 10 }),
+    };
+    const plan = planSettlement(viewers, ['4'], new Set(['4']), RATES);
+    expect(plan.accountCredits).toEqual([]);
+    expect(plan.bankCredits).toEqual([]);
+    expect(plan.viewers['4']).toEqual(viewers['4']);
+  });
+
+  test('only the given ids are settled; unknown ids are ignored; input is not mutated', () => {
+    const viewers = {
+      '5': viewer({ present: 1 }),
+      '6': viewer({ present: 1 }),
+    };
+    const snapshot = JSON.stringify(viewers);
+    const plan = planSettlement(viewers, ['5', 'missing'], new Set(['5', '6']), RATES);
+    expect(plan.accountCredits.map((c) => c.id)).toEqual(['5']);
+    expect(plan.viewers['6']).toEqual(viewers['6']);
+    expect(JSON.stringify(viewers)).toBe(snapshot);
   });
 });

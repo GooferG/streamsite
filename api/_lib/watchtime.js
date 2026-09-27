@@ -123,3 +123,71 @@ export function applyWindow(session, { completed, present, chatted }) {
     viewers: creditWindow((session && session.viewers) || {}, { present, chatted }),
   };
 }
+
+export function formatDuration(minutes) {
+  const total = Math.max(0, Math.floor(Number(minutes) || 0));
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  if (h && m) return `${h}h ${m}m`;
+  if (h) return `${h}h`;
+  return `${m}m`;
+}
+
+export function formatWatchNote(minutes) {
+  return `Watched ${formatDuration(minutes)}`;
+}
+
+// What a viewer is still owed: tickets from their counters at the current
+// rates minus what was already paid, and present windows not yet paid out as
+// minutes. Floored at 0 so a rate lowered mid-stream never claws back.
+export function owedFor(viewer, rates) {
+  const earned = viewer.present * rates.perWindow + viewer.chat * rates.chatBonus;
+  return {
+    tickets: Math.max(0, earned - (viewer.paidTickets || 0)),
+    windows: Math.max(0, viewer.present - (viewer.paidPresent || 0)),
+  };
+}
+
+// Decide one payout for the viewers in `ids`. `hasAccount` holds the ids that
+// have a users/{id} doc. Account holders get tickets plus a per-stream ledger
+// line built from ledgerTickets/ledgerMinutes (what went to the account, not
+// the bank). Everyone else is banked until they log in. Returns the updated
+// viewers map so the caller can write it in the same transaction.
+export function planSettlement(viewers, ids, hasAccount, rates) {
+  const next = { ...viewers };
+  const accountCredits = [];
+  const bankCredits = [];
+  ids.forEach((id) => {
+    const v = viewers[id];
+    if (!v) return;
+    const owed = owedFor(v, rates);
+    if (owed.tickets === 0 && owed.windows === 0) return;
+    const minutes = owed.windows * WINDOW_MINUTES;
+    const paid = {
+      ...v,
+      paidTickets: (v.paidTickets || 0) + owed.tickets,
+      paidPresent: (v.paidPresent || 0) + owed.windows,
+    };
+    if (hasAccount.has(id)) {
+      const ledgerTickets = v.ledgerTickets || 0;
+      const ledgerMinutes = v.ledgerMinutes || 0;
+      paid.ledgerTickets = ledgerTickets + owed.tickets;
+      paid.ledgerMinutes = ledgerMinutes + minutes;
+      accountCredits.push({
+        id,
+        tickets: owed.tickets,
+        minutes,
+        ledger: {
+          delta: paid.ledgerTickets,
+          minutes: paid.ledgerMinutes,
+          note: formatWatchNote(paid.ledgerMinutes),
+          first: ledgerTickets === 0 && ledgerMinutes === 0,
+        },
+      });
+    } else {
+      bankCredits.push({ id, login: v.login || null, tickets: owed.tickets, minutes });
+    }
+    next[id] = paid;
+  });
+  return { viewers: next, accountCredits, bankCredits };
+}

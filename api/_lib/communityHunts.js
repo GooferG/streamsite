@@ -108,6 +108,11 @@ export function toRoundSnapshot(hunt, now = new Date()) {
     totalCost: Number(hunt.pot) || 0,
     currency: hunt.currency ?? null,
     bonusCount: Number(hunt.bonusCount) || 0,
+    // Status + times let the admin see (and settle-time checks catch) a round
+    // that snapshotted an already-ended hunt because nothing was live.
+    status: hunt.status ?? null,
+    startedAt: hunt.startedAt ?? null,
+    endedAt: hunt.endedAt ?? null,
     snapshotAt: now.toISOString(),
   };
 }
@@ -118,6 +123,7 @@ export function huntResult(hunt) {
     currency: (hunt && hunt.currency) ?? null,
     status: (hunt && hunt.status) ?? null,
     ended: !hunt || hunt.status !== 'live',
+    endedAt: (hunt && hunt.endedAt) ?? null,
   };
 }
 

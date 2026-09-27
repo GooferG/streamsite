@@ -23,6 +23,7 @@ import { authedFetch } from '../utils/authedFetch';
 import SuggestionList from '../components/SuggestionList';
 import { formatMoney } from '../utils/money';
 import { roundCurrency } from '../utils/predictionRound';
+import { formatHuntDate } from '../utils/huntFormat';
 
 const inputCls =
   'w-full bg-zinc-broadcast/60 border border-white/10 px-3 py-2.5 text-sm text-white-body placeholder:text-white/25 focus:border-orange-admin/70 focus:outline-none transition-colors duration-150';
@@ -55,7 +56,7 @@ const DEFAULT_FORM = () => ({
   },
 });
 
-function NewRoundModal({ onClose, onCreated }) {
+export function NewRoundModal({ onClose, onCreated }) {
   const [form, setForm] = useState(DEFAULT_FORM());
   const [preview, setPreview] = useState(null);
   const [previewing, setPreviewing] = useState(false);
@@ -229,10 +230,19 @@ function NewRoundModal({ onClose, onCreated }) {
                 ) : preview ? (
                   <div className="flex items-center justify-between gap-3 flex-wrap text-[0.6875rem] font-mono">
                     <div className="min-w-0 flex-1">
-                      <p className="font-bold text-white-body truncate">Your current communityhunts.gg hunt</p>
-                      <p className="text-white/45 tracking-eyebrow-md uppercase mt-0.5">
-                        {preview.currency || '—'} · cost {formatMoney(preview.totalCost, preview.currency)} · {preview.bonusCount} bonuses
+                      <p className="font-bold text-white-body truncate">
+                        {preview.status === 'live'
+                          ? 'Your live communityhunts.gg hunt'
+                          : 'Your latest communityhunts.gg hunt (not live)'}
                       </p>
+                      <p className="text-white/45 tracking-eyebrow-md uppercase mt-0.5">
+                        {preview.status === 'live' ? 'Live' : `Ended ${formatHuntDate(preview.endedAt)}`} · {preview.currency || '—'} · cost {formatMoney(preview.totalCost, preview.currency)} · {preview.bonusCount} bonuses
+                      </p>
+                      {preview.status !== 'live' && (
+                        <p className="text-orange-admin normal-case mt-1">
+                          Start the hunt on communityhunts.gg and hit refresh, or this round will track the old one.
+                        </p>
+                      )}
                     </div>
                     <button
                       type="button"
@@ -433,6 +443,7 @@ export function SettleModal({ round, onClose, onSettled }) {
   const [submitting, setSubmitting] = useState(false);
   const [filling, setFilling] = useState(false);
   const [liveWarning, setLiveWarning] = useState(false);
+  const [staleWarning, setStaleWarning] = useState(false);
   const [error, setError] = useState(null);
   const currency = roundCurrency(round);
   const canFill = round.source === 'communityhunts' && !!round.bonusHuntSnapshot?.huntId;
@@ -456,6 +467,11 @@ export function SettleModal({ round, onClose, onSettled }) {
       } else {
         setActualPayout(String(data.result.payout));
         setLiveWarning(data.result.ended === false);
+        // A round opened while nothing was live snapshots the previous hunt;
+        // its payout would settle the wrong hunt.
+        const createdMs = round.createdAt?.toMillis ? round.createdAt.toMillis() : null;
+        const endedMs = data.result.endedAt ? Date.parse(data.result.endedAt) : NaN;
+        setStaleWarning(createdMs != null && Number.isFinite(endedMs) && endedMs < createdMs);
       }
     } catch (e) {
       setError('Network error');
@@ -525,6 +541,7 @@ export function SettleModal({ round, onClose, onSettled }) {
               onChange={(e) => {
                 setActualPayout(e.target.value);
                 setLiveWarning(false);
+                setStaleWarning(false);
               }}
               className={inputCls}
               placeholder="0.00"
@@ -532,6 +549,11 @@ export function SettleModal({ round, onClose, onSettled }) {
             {liveWarning && (
               <p className="mt-1.5 text-[0.6875rem] font-bold tracking-eyebrow uppercase text-orange-admin font-mono">
                 Hunt is still live. The payout may change.
+              </p>
+            )}
+            {staleWarning && (
+              <p className="mt-1.5 text-[0.6875rem] font-bold tracking-eyebrow uppercase text-orange-admin font-mono">
+                This hunt ended before this round opened. Make sure it is the right hunt before settling.
               </p>
             )}
           </div>

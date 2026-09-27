@@ -129,6 +129,9 @@ test('toRoundSnapshot maps pot/currency/bonusCount', () => {
     totalCost: 76344.23,
     currency: 'ARS',
     bonusCount: 33,
+    status: 'archived',
+    startedAt: '2026-09-26T20:29:31.749Z',
+    endedAt: '2026-09-26T22:19:56.312Z',
     snapshotAt: '2026-09-27T10:00:00.000Z',
   });
   expect(toRoundSnapshot(null)).toBeNull();
@@ -136,12 +139,14 @@ test('toRoundSnapshot maps pot/currency/bonusCount', () => {
 });
 
 test('huntResult flags live hunts as not ended and rounds the payout', () => {
-  expect(huntResult({ ...SUMMARY, status: 'live', totalWon: 10.005 })).toEqual({
+  expect(huntResult({ ...SUMMARY, status: 'live', endedAt: null, totalWon: 10.005 })).toEqual({
     payout: 10.01,
     currency: 'ARS',
     status: 'live',
     ended: false,
+    endedAt: null,
   });
+  expect(huntResult(SUMMARY).endedAt).toBe('2026-09-26T22:19:56.312Z');
   expect(huntResult(SUMMARY).ended).toBe(true);
   expect(huntResult({ ...SUMMARY, status: 'ended' }).ended).toBe(true);
 });

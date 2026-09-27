@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { SettleModal } from '../AdminHuntsPage';
+import { SettleModal, NewRoundModal } from '../AdminHuntsPage';
 import { authedFetch } from '../../utils/authedFetch';
 
 jest.mock('../../config/firebase', () => ({ db: {} }));
@@ -58,4 +58,52 @@ test('settling with an empty payout is blocked', () => {
 test('manual rounds have no Fill from hunt button', () => {
   render(<SettleModal round={{ ...ROUND, source: 'manual', bonusHuntSnapshot: null }} onClose={() => {}} onSettled={() => {}} />);
   expect(screen.queryByRole('button', { name: /fill from hunt/i })).toBeNull();
+});
+
+// Review fix: a round created while no hunt was live snapshots the previous,
+// already-ended hunt. Settling must not silently fill that hunt's payout.
+test('Fill from hunt warns when the hunt ended before the round opened', async () => {
+  authedFetch.mockReturnValue(
+    reply(true, { ok: true, result: { payout: 57686.03, ended: true, endedAt: '2026-09-26T22:19:56.312Z' } })
+  );
+  const round = { ...ROUND, createdAt: { toMillis: () => Date.parse('2026-09-27T10:00:00.000Z') } };
+  render(<SettleModal round={round} onClose={() => {}} onSettled={() => {}} />);
+  fireEvent.click(screen.getByRole('button', { name: /fill from hunt/i }));
+  await waitFor(() => expect(screen.getByText(/ended before this round opened/i)).toBeTruthy());
+});
+
+test('Fill from hunt does not warn when the hunt ended after the round opened', async () => {
+  authedFetch.mockReturnValue(
+    reply(true, { ok: true, result: { payout: 1318.8, ended: true, endedAt: '2026-09-27T12:00:00.000Z' } })
+  );
+  const round = { ...ROUND, createdAt: { toMillis: () => Date.parse('2026-09-27T10:00:00.000Z') } };
+  render(<SettleModal round={round} onClose={() => {}} onSettled={() => {}} />);
+  fireEvent.click(screen.getByRole('button', { name: /fill from hunt/i }));
+  const input = screen.getByLabelText(/actual final payout/i);
+  await waitFor(() => expect(input.value).toBe('1318.8'));
+  expect(screen.queryByText(/ended before this round opened/i)).toBeNull();
+});
+
+test('create preview labels a hunt that is not live', async () => {
+  authedFetch.mockReturnValue(
+    reply(true, {
+      ok: true,
+      snapshot: { huntId: 'h1', totalCost: 76344.23, currency: 'ARS', bonusCount: 33, status: 'archived', endedAt: '2026-09-26T22:19:56.312Z' },
+    })
+  );
+  render(<NewRoundModal onClose={() => {}} onCreated={() => {}} />);
+  await waitFor(() => expect(screen.getByText(/not live/i)).toBeTruthy());
+  expect(screen.getByText(/ended sep 26, 2026/i)).toBeTruthy();
+});
+
+test('create preview marks a live hunt as live', async () => {
+  authedFetch.mockReturnValue(
+    reply(true, {
+      ok: true,
+      snapshot: { huntId: 'h2', totalCost: 500, currency: 'CAD', bonusCount: 4, status: 'live', endedAt: null },
+    })
+  );
+  render(<NewRoundModal onClose={() => {}} onCreated={() => {}} />);
+  await waitFor(() => expect(screen.getByText(/your live communityhunts\.gg hunt/i)).toBeTruthy());
+  expect(screen.queryByText(/not live/i)).toBeNull();
 });

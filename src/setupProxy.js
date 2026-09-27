@@ -7,6 +7,25 @@ const SLOTS_API_KEY  = process.env.SLOTSLAUNCH_API_KEY || '';
 const SLOTS_BASE_URL = 'https://slotslaunch.com/api';
 const SLOTS_ORIGIN   = 'goofer.tv';
 
+// communityhunts.gg dev mirror (see api/communityhunts.js). Reads the same
+// server-only COMMUNITYHUNTS_* vars from .env.local.
+const CH_BASE = (
+  process.env.COMMUNITYHUNTS_API_URL || 'https://api.communityhunts.gg/api/public/v1'
+).replace(/\/+$/, '');
+const CH_OWNER = process.env.COMMUNITYHUNTS_OWNER_ID || 'usr_IT8I88O03xF3QHqHzqme95';
+
+async function chDevGet(path) {
+  const upstream = await fetch(`${CH_BASE}${path}`, {
+    headers: { Authorization: `Bearer ${process.env.COMMUNITYHUNTS_API_KEY || ''}` },
+  });
+  if (!upstream.ok) {
+    const err = new Error(`communityhunts ${upstream.status}`);
+    err.status = upstream.status;
+    throw err;
+  }
+  return upstream.json();
+}
+
 // Hunt-suggest endpoints need Firebase admin, which can't run in the CRA dev
 // server. Mirror them by proxying to the deployed functions so the local UI
 // can be exercised end-to-end. Override with HUNT_SUGGEST_PROXY_TARGET.
@@ -50,6 +69,29 @@ module.exports = function (app) {
       res.status(upstream.status).json(data);
     } catch (e) {
       res.status(500).json({ error: 'Proxy error' });
+    }
+  });
+
+  // Dev handler for /api/communityhunts (mirrors the Vercel function).
+  app.get('/api/communityhunts', async (req, res) => {
+    const { view, id } = req.query;
+    try {
+      if (view === 'overview') {
+        const [live, recent] = await Promise.all([
+          chDevGet(`/hunts?status=live&ownerId=${CH_OWNER}&view=full&limit=1`),
+          chDevGet(`/hunts?ownerId=${CH_OWNER}&view=summary&limit=10`),
+        ]);
+        return res.status(200).json({ live: live.data[0] || null, recent: recent.data });
+      }
+      if (view === 'hunt' && /^[A-Za-z0-9_-]{1,64}$/.test(String(id || ''))) {
+        const hunt = await chDevGet(`/hunts/${id}`);
+        return res.status(200).json({ hunt: hunt.data });
+      }
+      return res.status(400).json({ error: 'INVALID_VIEW' });
+    } catch (e) {
+      return res
+        .status(e.status === 404 ? 404 : 502)
+        .json({ error: e.status === 404 ? 'NOT_FOUND' : 'UPSTREAM_UNAVAILABLE' });
     }
   });
 

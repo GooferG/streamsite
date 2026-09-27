@@ -19,6 +19,7 @@ import {
   CheckCircle2,
   ListChecks,
 } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { db } from '../config/firebase';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 import { useUserDoc } from '../hooks/useUserDoc';
@@ -139,6 +140,7 @@ function SuggestionRecord({ user }) {
 
 const REASON_LABELS = {
   watchtime: 'Watch time',
+  watchtime_banked: 'Banked watch time',
   daily: 'Daily claim',
   admin_grant: 'Granted',
   discord_link: 'Discord linked',
@@ -155,6 +157,15 @@ function formatTs(ts) {
     hour: '2-digit',
     minute: '2-digit',
   });
+}
+
+function formatMinutes(total) {
+  const minutes = Math.max(0, Math.floor(Number(total) || 0));
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h && m) return `${h}h ${m}m`;
+  if (h) return `${h}h`;
+  return `${m}m`;
 }
 
 function useCountdown(targetMs) {
@@ -176,6 +187,15 @@ function useCountdown(targetMs) {
 export default function MyAccountPage() {
   const { twitchUser, loginWithTwitch } = useTwitchAuth();
   const { user } = useUserDoc();
+  const location = useLocation();
+  const navigate = useNavigate();
+  // Watch time banked before signup arrives once, via router state from the
+  // Twitch callback. Keep it for this visit, then clear the state so a
+  // refresh does not show it again.
+  const [banked] = useState(() => location.state?.banked || null);
+  useEffect(() => {
+    if (location.state?.banked) navigate(location.pathname, { replace: true, state: null });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [ledger, setLedger] = useState([]);
   const [redemptions, setRedemptions] = useState([]);
   const [claiming, setClaiming] = useState(false);
@@ -302,6 +322,21 @@ export default function MyAccountPage() {
           </h1>
         </header>
 
+        {banked?.tickets > 0 && (
+          <div
+            role="status"
+            className="border border-emerald-signal/30 bg-emerald-signal/5 px-5 py-4 flex items-start gap-3"
+          >
+            <Clock size={16} className="text-emerald-signal mt-0.5 flex-shrink-0" aria-hidden="true" />
+            <p className="text-sm text-white/80">
+              You had{' '}
+              <span className="font-bold text-emerald-signal tabular-nums">{banked.tickets}</span>{' '}
+              tickets waiting from {formatMinutes(banked.minutes)} of watch time. They're in your
+              balance now.
+            </p>
+          </div>
+        )}
+
         {/* Balance card */}
         <div className="border border-white/8 bg-zinc-card/30">
           <div className="px-4 py-2.5 border-b border-white/8 flex items-center gap-2 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
@@ -327,6 +362,10 @@ export default function MyAccountPage() {
                 </span>
                 <span>
                   Spent <span className="text-orange-admin/80 tabular-nums">{user?.totalSpent ?? 0}</span>
+                </span>
+                <span>
+                  Hung out{' '}
+                  <span className="text-white/70 tabular-nums">{formatMinutes(user?.watchMinutes)}</span>
                 </span>
               </div>
             </div>
@@ -369,7 +408,10 @@ export default function MyAccountPage() {
               <span className="text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono w-24 flex-shrink-0">
                 Watch
               </span>
-              <span>Hang out in chat while the stream is live — tickets drop daily during the stream.</span>
+              <span>
+                Every 5 minutes you're in chat while the stream is live earns 1 ticket, 2 if you
+                chatted. Paid out every 30 minutes.
+              </span>
             </li>
             <li className="flex items-baseline gap-2">
               <span className="text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono w-24 flex-shrink-0">

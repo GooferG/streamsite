@@ -24,6 +24,7 @@ function formatTs(ts) {
 
 const REASON_LABELS = {
   watchtime: 'Watch time',
+  watchtime_banked: 'Banked watch',
   daily: 'Daily',
   admin_grant: 'Granted',
   discord_link: 'Discord',

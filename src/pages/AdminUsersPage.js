@@ -11,6 +11,7 @@ import {
   Inbox,
   ListOrdered,
   Calendar,
+  Clock,
   Hash,
 } from 'lucide-react';
 import { authedFetch } from '../utils/authedFetch';
@@ -211,10 +212,15 @@ function UserDetail({ twitchId }) {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <StatTile icon={Ticket} label="Balance" value={user.tickets} />
         <StatTile icon={Ticket} label="Earned" value={user.totalEarned} />
         <StatTile icon={Ticket} label="Spent" value={user.totalSpent} />
+        <StatTile
+          icon={Clock}
+          label="Watched"
+          value={`${((user.watchMinutes || 0) / 60).toFixed(1)}h`}
+        />
         <StatTile icon={Calendar} label="Joined" value={formatDate(user.createdAt)} />
       </div>
 

@@ -201,8 +201,10 @@ export default function StorePage() {
           </h1>
 
           <p className="mt-4 text-sm text-white/60 leading-relaxed max-w-lg">
-            Earn tickets by watching streams, claiming daily drops, and joining
-            the Discord. Then spend them on cosmetics and on-stream perks below.
+            Earn tickets by hanging out in chat while the stream is live (the
+            longer you stay, the more you earn), claiming daily drops, and
+            joining the Discord. Then spend them on cosmetics and on-stream perks
+            below.
           </p>
         </header>
 

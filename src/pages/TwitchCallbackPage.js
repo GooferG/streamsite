@@ -21,7 +21,12 @@ export default function TwitchCallbackPage() {
       return;
     }
     signInWithTwitchCode(code)
-      .then(() => navigate('/me', { replace: true }))
+      .then((result) =>
+        navigate('/me', {
+          replace: true,
+          state: result?.banked ? { banked: result.banked } : null,
+        })
+      )
       .catch((err) => {
         console.error('Twitch login error:', err);
         setError(`Login failed: ${err?.message || 'Unknown error'}. Check console for details.`);

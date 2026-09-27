@@ -79,6 +79,16 @@
       "indexes": [
         { "order": "ASCENDING", "queryScope": "COLLECTION_GROUP" }
       ]
+    },
+    {
+      "collectionGroup": "watch_sessions",
+      "fieldPath": "viewers",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "watch_chat",
+      "fieldPath": "chatters",
+      "indexes": []
     }
   ]
 }

@@ -84,6 +84,18 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // Live watch time — sessions, per-window chat markers and banked tickets
+    // for viewers without an account. Server-only (api/_lib/watchtimeStore.js).
+    match /watch_sessions/{id} {
+      allow read, write: if false;
+    }
+    match /watch_chat/{id} {
+      allow read, write: if false;
+    }
+    match /watch_bank/{id} {
+      allow read, write: if false;
+    }
+
     // Moderator allowlist — staff can read (so the admin shell can verify
     // the signed-in user is a mod). All writes server-only via
     // /api/admin/moderators (owner-gated).

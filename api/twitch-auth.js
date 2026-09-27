@@ -1,4 +1,5 @@
 import { adminAuth, adminDb, FieldValue } from './_lib/firebaseAdmin.js';
+import { claimWatchBank } from './_lib/watchtimeStore.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -54,7 +55,7 @@ export default async function handler(req, res) {
       totalEarned: 0,
       totalSpent: 0,
       lastDailyClaimAt: null,
-      lastWatchTimeAwardAt: null,
+      watchMinutes: 0,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
     });
@@ -66,6 +67,14 @@ export default async function handler(req, res) {
       profileImageUrl: twitchUser.profile_image_url || null,
       updatedAt: FieldValue.serverTimestamp(),
     });
+  }
+
+  // Watch time earned before they had an account. Never block login on it.
+  let banked = null;
+  try {
+    banked = await claimWatchBank(twitchUser.id);
+  } catch (err) {
+    console.error('watch bank claim failed', twitchUser.id, err);
   }
 
   const firebaseToken = await adminAuth.createCustomToken(twitchUser.id, {
@@ -80,5 +89,6 @@ export default async function handler(req, res) {
     twitchLogin: twitchUser.login,
     displayName: twitchUser.display_name,
     profileImageUrl: twitchUser.profile_image_url,
+    banked,
   });
 }

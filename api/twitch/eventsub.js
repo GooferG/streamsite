@@ -2,6 +2,7 @@ import crypto from 'node:crypto';
 import { adminDb, FieldValue } from '../_lib/firebaseAdmin.js';
 import { getBroadcasterAccessToken, helix } from '../_lib/twitchBroadcasterToken.js';
 import { messageHasKeyword } from '../_lib/giveawayKeyword.js';
+import { markChatted } from '../_lib/watchtimeStore.js';
 
 // Twitch EventSub webhook receiver.
 //
@@ -14,6 +15,8 @@ import { messageHasKeyword } from '../_lib/giveawayKeyword.js';
 //   - notification: process the event
 //
 // For `channel.chat.message`:
+//   0. Mark the chatter in watch_chat/{windowId} so the watch-time tick can
+//      pay the chat bonus (api/cron/watchtime-tick.js).
 //   1. If giveaway in 'rolling' state and message is from the rolled winner
 //      (or 'playing' and from the winner whose bonus is on stream),
 //      write to giveaways/{id}/winner_messages.
@@ -146,6 +149,16 @@ async function handleChatMessage(event) {
   const text = extractMessageText(event);
   if (!chatterId || !text) return { processed: false };
   if (isHostAccount(event)) return { processed: false, reason: 'host_account' };
+
+  // Watch time: note that this viewer chatted in the current 5-minute window.
+  // A failure only costs that window's chat bonus, so it never blocks
+  // giveaway entry.
+  try {
+    await markChatted(chatterId, chatterLogin);
+  } catch (err) {
+    console.warn('markChatted failed', chatterId, err.message);
+  }
+
   const chatRoles = rolesFromBadges(event.badges);
 
   // Pull only what we need. Most messages are not for active giveaways, so

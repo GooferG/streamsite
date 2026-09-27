@@ -1,32 +1,15 @@
-import { useState } from 'react';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { formatMoney } from '../../utils/money';
 import { huntTypeLabel, profitLoss, formatHuntDate } from '../../utils/huntFormat';
 import ProfitBadge from './ProfitBadge';
-import BonusReel from './BonusReel';
+import HuntBonuses from './HuntBonuses';
+import useHuntDetail from './useHuntDetail';
 
 function HuntRow({ hunt, index }) {
-  const [open, setOpen] = useState(false);
-  const [detail, setDetail] = useState(null);
-  const [loadError, setLoadError] = useState(null);
+  const { open, toggle, detail, loadError } = useHuntDetail(hunt.id);
   const currency = hunt.currency || null;
   const pot = Number(hunt.pot) > 0 ? hunt.pot : null;
   const tape = String(index + 1).padStart(3, '0');
-
-  const toggle = async () => {
-    const next = !open;
-    setOpen(next);
-    if (!next || detail) return;
-    setLoadError(null);
-    try {
-      const res = await fetch(`/api/communityhunts?view=hunt&id=${encodeURIComponent(hunt.id)}`);
-      const data = await res.json().catch(() => null);
-      if (!res.ok || !data || !data.hunt) throw new Error('Failed');
-      setDetail(data.hunt);
-    } catch {
-      setLoadError('Could not load this hunt’s bonuses.');
-    }
-  };
 
   return (
     <div className={`border bg-zinc-card/40 transition-colors duration-200 ${open ? 'border-emerald-signal/30' : 'border-white/8 hover:border-emerald-signal/25'}`}>
@@ -62,13 +45,7 @@ function HuntRow({ hunt, index }) {
       </button>
       {open && (
         <div className="border-t border-white/8 px-4 sm:px-5 pb-5 pt-4">
-          {loadError ? (
-            <p className="text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive/80 font-mono">{loadError}</p>
-          ) : detail ? (
-            <BonusReel bonuses={detail.bonuses} currency={currency} />
-          ) : (
-            <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 font-mono">Loading bonuses…</p>
-          )}
+          <HuntBonuses detail={detail} loadError={loadError} currency={currency} />
         </div>
       )}
     </div>

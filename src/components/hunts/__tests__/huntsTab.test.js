@@ -42,6 +42,19 @@ test('CurrentHuntCard shows the latest hunt without a reel', () => {
   expect(screen.getByText('-CA$1,784.82')).toBeTruthy();
 });
 
+// Review fix: off-stream, the latest hunt sits in the card (and is filtered
+// out of the archive), so the card itself must open its bonuses.
+test('CurrentHuntCard for a finished hunt expands to load its bonuses', async () => {
+  global.fetch = jest.fn(() =>
+    Promise.resolve({ ok: true, json: () => Promise.resolve({ hunt: { ...ARCHIVED, bonuses: LIVE.bonuses } }) })
+  );
+  render(<CurrentHuntCard hunt={ARCHIVED} isLive={false} />);
+  expect(screen.queryByText('Pug Life')).toBeNull();
+  fireEvent.click(screen.getByRole('button', { name: /show bonuses/i }));
+  await waitFor(() => expect(screen.getByText('Pug Life')).toBeTruthy());
+  expect(global.fetch).toHaveBeenCalledWith('/api/communityhunts?view=hunt&id=h1');
+});
+
 // Review Focus 1: potless hunt.
 test('CurrentHuntCard renders a potless hunt without NaN', () => {
   const { container } = render(

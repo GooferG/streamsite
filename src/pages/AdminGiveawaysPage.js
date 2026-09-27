@@ -62,7 +62,7 @@ import {
   tsMillis,
 } from '../utils/giveaway';
 
-// The slot database is ~2 MB; only load it once a bonus is being played.
+// Slot search pulls the slot catalogue on first use; only load it once a bonus is being played.
 const SlotAutocomplete = lazy(() => import('../components/SlotAutocomplete'));
 
 const PRIZE_KIND_OPTIONS = [

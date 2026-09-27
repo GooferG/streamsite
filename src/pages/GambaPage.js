@@ -7,10 +7,8 @@ import GambaHub from '../components/GambaHub';
 import { GAMBA_TOOLS } from '../data/gambaTools';
 import useTuningPhrase, { TUNING_PHRASES } from '../hooks/useTuningPhrase';
 
-// Code-split the two tools that pull in the slot DB (~874KB via ../data/slots).
-// SlotPicker imports it directly; BonusBattle reaches it through SlotAutocomplete.
-// Both must be lazy or the data stays in the main bundle. The data now lives in
-// its own chunk and only downloads when one of these tools is opened.
+// Code-split the heavier tools so they only download when opened. The slot
+// catalogue itself is fetched from /api/slots on first use (useSlotCatalog).
 const SlotPicker = lazy(() => import('../components/SlotPicker'));
 const BonusBattle = lazy(() => import('../components/BonusBattle'));
 

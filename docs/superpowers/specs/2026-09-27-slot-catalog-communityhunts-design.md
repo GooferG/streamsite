@@ -183,3 +183,7 @@ The slotslaunch `/api/slots` handler, `SLOTS_API_KEY`, `SLOTS_BASE_URL` and `SLO
 ## Rollout
 
 `COMMUNITYHUNTS_API_KEY` is already set in Vercel. After merge, `SLOTSLAUNCH_API_KEY` can be removed from Vercel. No Firestore changes.
+
+## Addendum (implementation)
+
+- **Thumbnails are decoded.** 3,701 of 7,625 live catalogue thumbnails arrive percent-encoded (`%20`). `AdminGiveawaysPage.saveSlot` calls `encodeURI(thumbnail)`, which would turn them into `%2520` and break the giveaway overlay art. So `normalizeSlot` returns `decodeThumb(row.thumb)`, the unencoded form the old static list used. A malformed escape keeps the raw string.

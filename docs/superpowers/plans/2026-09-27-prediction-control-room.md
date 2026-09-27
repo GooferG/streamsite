@@ -2052,7 +2052,7 @@ git branch --show-current | grep -qx feat/prediction-control-room && git add src
 
 **Files:**
 - Modify:
-  - `firestore.rules` (the `hunts/{id}` entries block, lines 130-133)
+  - `firestore.rules` (the `hunts/{id}` entries block, lines 142-145)
   - `src/utils/predictionRound.js`
   - `src/components/PredictionWall.js`
   - `src/components/PredictionNumberLine.js`
@@ -2309,7 +2309,7 @@ with
       }
 ```
 
-Make sure you edit the block under `match /hunts/{id}` (around line 127), not an `entries` block of another collection.
+Make sure you edit the block under `match /hunts/{id}` (around line 139), not an `entries` block of another collection.
 
 - [ ] **Step 7: Run tests to verify they pass**
 

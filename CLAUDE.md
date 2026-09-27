@@ -8,7 +8,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Commands
 
-- `npm start` — dev server on `localhost:3000` with proxy (`src/setupProxy.js`) for `/api/public` (bonushunt.gg) and dev mirrors of `/api/bonus-hunts` and `/api/slots`. Vercel serverless functions in `/api` only run in production unless you use `vercel dev`.
+- `npm start` — dev server on `localhost:3000` with proxy (`src/setupProxy.js`) providing dev mirrors of `/api/communityhunts`, `/api/leaderboard`, `/api/btc` and `/api/slots`, and forwarding `/api/me/*` to the deployed functions. Vercel serverless functions in `/api` only run in production unless you use `vercel dev`.
 - `npm run build` — production build to `build/`.
 - `npm test` — Jest watch mode (react-scripts). Single test: `npm test -- --testPathPattern=Foo` or `--watchAll=false` for one-shot run. A few unit tests live under `src/**/__tests__/` (leaderboard format/mock data, `useCountdown`, `useLeaderboardData`); not wired into CI.
 - Env: copy `.env.example` to `.env.local`. `REACT_APP_*` vars exposed to client (Firebase config, Twitch client id); non-prefixed vars (`TWITCH_CLIENT_SECRET`, `STEAM_API_KEY`, `FIREBASE_PRIVATE_KEY`, etc.) are server-only and consumed by `/api/*` functions.
@@ -38,13 +38,13 @@ All files are Vercel function handlers (`export default async function handler(r
 
 - `twitch-token.js` — client-credentials token for public Twitch reads.
 - `twitch-auth.js` — OAuth code exchange + mints Firebase custom token. Requires `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY` (newlines as `\n` in env, code unescapes).
-- `bonus-hunts.js` — proxies `bonushunt.gg/api/public/*`, with 5-min in-memory cache and stale-on-error fallback. **API key is hardcoded in the file** (same key also appears in `src/setupProxy.js` for dev). Treat as known secret in repo when handling.
+- `communityhunts.js` — public read endpoint for the Hunts tab (`?view=overview` → `{ live, recent }`, `?view=hunt&id=` → `{ hunt }`), 30s in-memory cache + CDN `s-maxage`, stale-on-error. All communityhunts.gg access goes through `api/_lib/communityHunts.js`.
 - `slots.js` — proxies slotslaunch.com with allowlisted path param (`games|providers|types|themes`).
 - `game-cover.js`, `steam-games.js`, `steam-library.js` — IGDB / Steam Web API proxies.
 
 ### Dev vs prod proxying
 
-- `src/setupProxy.js` only runs under `npm start`. It mirrors the production Vercel handlers for `/api/bonus-hunts` and `/api/slots` and adds a raw `/api/public` proxy for legacy direct calls. Keep this file in sync when changing the matching `/api/*.js` function signature.
+- `src/setupProxy.js` only runs under `npm start`. It mirrors the production Vercel handlers for `/api/communityhunts`, `/api/leaderboard`, `/api/btc` and `/api/slots`, and proxies `/api/me/*` to the deployed site (`API_PROXY_TARGET`). Keep it in sync when changing the matching `/api/*.js` function.
 
 ### Twitch data flow
 
@@ -64,7 +64,8 @@ All files are Vercel function handlers (`export default async function handler(r
 
 ## Gotchas
 
-- Third-party API keys (BonusHunt, SlotsLaunch) and Twitch secrets now live in env only — `BONUSHUNT_API_KEY`, `SLOTSLAUNCH_API_KEY`, `TWITCH_CLIENT_SECRET`. Set them in Vercel (prod) and `.env.local` (for `vercel dev`). The proxies fail closed when unset. Optional `TWITCH_BOT_ID` + `TWITCH_BOT_REFRESH_TOKEN` make chat announcements post as a bot account (`api/_lib/twitchChat.js`); without them they post as the broadcaster. EventSub never enters the broadcaster or bot into a giveaway. The previously-committed keys are dead (rotated) but remain in git history.
+- Third-party API keys (communityhunts.gg, SlotsLaunch) and Twitch secrets now live in env only — `COMMUNITYHUNTS_API_KEY`, `SLOTSLAUNCH_API_KEY`, `TWITCH_CLIENT_SECRET`. Set them in Vercel (prod) and `.env.local` (for `vercel dev`). The proxies fail closed when unset. Optional `TWITCH_BOT_ID` + `TWITCH_BOT_REFRESH_TOKEN` make chat announcements post as a bot account (`api/_lib/twitchChat.js`); without them they post as the broadcaster. EventSub never enters the broadcaster or bot into a giveaway. The previously-committed keys are dead (rotated) but remain in git history.
+- Hunts + predictions run on communityhunts.gg (bonushunt.gg is gone). `COMMUNITYHUNTS_API_KEY` is the **Bean community** key (partner plan, read scope). communityhunts issues one key per community, so regenerating it breaks beantwitch.com, and both sites share Bean's 300 reads/min, which is why the server caches 30s and the tab polls 60s. GooferG's hunts are filtered by owner id (`COMMUNITYHUNTS_OWNER_ID`, default `usr_IT8I88O03xF3QHqHzqme95`). Prediction rounds (`hunts/{id}`, entries under `hunts/{id}/entries`) are payout-only: `source: 'communityhunts'|'manual'`, snapshot `{ huntId, totalCost, currency, bonusCount }`, and the admin settle modal's "Fill from hunt" reads the final `totalWon`. The old viewer Hunt Tracker, `/live/*` and `/hunt-suggest/*` share pages were removed.
 - Leaderboard (`/gamba/leaderboard`, home callout) is live, not mock: `api/leaderboard.js` proxies the bean site's public tRPC read `leaderBoard.getLatest` (Rainbet code BEAN board, recounted upstream every 15 min; host via optional `BEAN_SITE_URL`, default `https://www.beantwitch.com`). `src/utils/beanLeaderboard.js` maps bean's `Leaderboard` shape onto our theme player shape — handles arrive pre-masked, never re-mask. `useLeaderboardData({ mock: true })` keeps the deterministic demo data for tests/layout work.
 - Giveaways: `/giveaway-overlay` is an OBS browser source rendered outside the app shell (`AppShell` in `App.js`, no nav/intro/polling; `?demo=1` loops fake data, `?sound=1`, `?pos=bl|br|tl|tr`). Every screen times the winner reveal off `rolledAt` (`src/utils/giveaway.js`), so the admin page posts the winner chat message via the `announce` action only after `CHAT_ANNOUNCE_DELAY_MS`; posting at pick time spoils the reveal because chat runs ahead of the stream. The entry timer (`closesAt`) is enforced by EventSub, but closing, last call and auto-roll are driven by the open admin page. Keyword matching is whole-word (`api/_lib/giveawayKeyword.js`). Prize `kind` is `'bonus'` (bonus buy worth `buyAmount`; confirm moves status to `'playing'`, the overlay holds the "Locked in" screen `LOCK_HOLD_MS` then shows a corner "now playing" card, and the `payout` action logs the real win onto `winners[i]` and its redemption) or `'item'` (plain prize, no play step). `playing` is separate from `winner`/`winnerTwitchId` so playing an earlier winner never re-fires the pick's chat announce; that announce timer lives at page level in `AdminGiveawaysPage` for the same reason.
 - `FIREBASE_SETUP.md` step 9's "Update Your App.js" snippet is stale — the app already uses react-router routes for `/admin`, not the `setPage` state pattern shown there.

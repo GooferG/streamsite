@@ -196,3 +196,9 @@ Existing Firestore data under removed paths is left in place, and the removed ru
 1. Add `COMMUNITYHUNTS_API_KEY` (and optionally `COMMUNITYHUNTS_OWNER_ID`) to Vercel before merging.
 2. Merge the PR, then deploy Firestore rules: `firebase deploy --only firestore:rules --project goofer-website`.
 3. After the deploy is verified, remove `BONUSHUNT_API_KEY` from Vercel.
+
+## Addendum (implementation)
+
+- **Entry path fix:** `PredictionSlip`, `PredictionWall` and `PredictionNumberLine` read entries from a legacy `prediction_rounds/{id}/entries` path that had no Firestore rule, while the server writes `hunts/{id}/entries`. All three now read `hunts/{id}/entries`.
+- **`profitLoss` is client-side** (`src/utils/huntFormat.js`), not in `api/_lib/communityHunts.js`. The `npm start` dev mirror returns raw communityhunts shapes, and CRA can't import from `api/`, so the tab computes P/L itself from `pot`/`totalWon`.
+- **Settling** now rejects an empty payout. It previously coerced `''` to `0`.

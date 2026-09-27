@@ -113,7 +113,6 @@ async function getUserDetail(twitchId) {
         id: doc.id,
         huntId: parent.id,
         payoutGuess: data.payoutGuess ?? null,
-        topSlotGuess: data.topSlotGuess ?? null,
         editCount: data.editCount ?? 0,
         submittedAt: data.submittedAt,
         lastEditAt: data.lastEditAt,

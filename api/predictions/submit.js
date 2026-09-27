@@ -12,7 +12,7 @@ export default async function handler(req, res) {
   if (!decoded) return;
   const twitchId = decoded.uid;
 
-  const { roundId, payoutGuess, topSlotGuess } = req.body || {};
+  const { roundId, payoutGuess } = req.body || {};
   if (!roundId || typeof roundId !== 'string') {
     return res.status(400).json({ error: 'Missing roundId' });
   }
@@ -33,32 +33,9 @@ export default async function handler(req, res) {
       if (!round.acceptPredictions) throw new Error('PREDICTIONS_DISABLED');
       if (round.status !== 'open') throw new Error('NOT_OPEN');
 
-      const { kinds } = round;
-
-      // Validate guesses.
-      let normalizedPayout = null;
-      if (kinds.payout) {
-        const n = Number(payoutGuess);
-        if (!Number.isFinite(n) || n < 0) throw new Error('INVALID_PAYOUT');
-        normalizedPayout = Math.round(n * 100) / 100; // 2-decimal precision
-      }
-
-      let normalizedSlot = null;
-      if (kinds.topSlot) {
-        if (!topSlotGuess || typeof topSlotGuess !== 'string') {
-          throw new Error('INVALID_SLOT');
-        }
-        const allowedSlots = (
-          round.source === 'bonushunt'
-            ? round.bonusHuntSnapshot?.slots?.map((s) => s.name) || []
-            : round.manualSlots || []
-        );
-        const match = allowedSlots.find(
-          (s) => s.toLowerCase() === topSlotGuess.toLowerCase()
-        );
-        if (!match) throw new Error('SLOT_NOT_IN_LIST');
-        normalizedSlot = match; // store canonical casing from list
-      }
+      const n = Number(payoutGuess);
+      if (!Number.isFinite(n) || n < 0) throw new Error('INVALID_PAYOUT');
+      const normalizedPayout = Math.round(n * 100) / 100; // 2-decimal precision
 
       // Rate limit: 30s since lastEditAt if entry exists.
       const now = Date.now();
@@ -77,7 +54,6 @@ export default async function handler(req, res) {
       if (entrySnap.exists) {
         tx.update(entryRef, {
           payoutGuess: normalizedPayout,
-          topSlotGuess: normalizedSlot,
           twitchName: user?.twitchName || entrySnap.data().twitchName,
           displayName: user?.displayName || entrySnap.data().displayName,
           profileImageUrl: user?.profileImageUrl ?? entrySnap.data().profileImageUrl ?? null,
@@ -91,7 +67,6 @@ export default async function handler(req, res) {
           displayName: user?.displayName || decoded.twitchName || null,
           profileImageUrl: user?.profileImageUrl || decoded.profileImageUrl || null,
           payoutGuess: normalizedPayout,
-          topSlotGuess: normalizedSlot,
           submittedAt: ts,
           lastEditAt: ts,
           editCount: 1,
@@ -109,8 +84,6 @@ export default async function handler(req, res) {
     if (code === 'NOT_OPEN') return res.status(400).json({ error: 'NOT_OPEN' });
     if (code === 'PREDICTIONS_DISABLED') return res.status(400).json({ error: 'PREDICTIONS_DISABLED' });
     if (code === 'INVALID_PAYOUT') return res.status(400).json({ error: 'INVALID_PAYOUT' });
-    if (code === 'INVALID_SLOT') return res.status(400).json({ error: 'INVALID_SLOT' });
-    if (code === 'SLOT_NOT_IN_LIST') return res.status(400).json({ error: 'SLOT_NOT_IN_LIST' });
     if (code?.startsWith('COOLDOWN:')) {
       const sec = Number(code.split(':')[1]);
       return res.status(429).json({ error: 'COOLDOWN', retryAfter: sec });

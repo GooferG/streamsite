@@ -1,4 +1,4 @@
-import { pickWinners } from '../../api/_lib/predictions';
+import { pickWinners, buildWinners } from '../../api/_lib/predictions';
 
 const ts = (ms) => ({ toMillis: () => ms });
 const round = (payout, places = [1, 2]) => ({
@@ -18,7 +18,16 @@ test('closest payout guess wins, in tier order', () => {
   expect(second.twitchId).toBe('a');
 });
 
-test('a tie goes to the earlier submission', () => {
+test('a tie goes to whoever settled on their final guess first', () => {
+  const entries = [
+    // Submitted first but edited last: loses the tie.
+    { twitchId: 'editor', payoutGuess: 1100, submittedAt: ts(1), lastEditAt: ts(30) },
+    { twitchId: 'steady', payoutGuess: 900, submittedAt: ts(10), lastEditAt: ts(10) },
+  ];
+  expect(pickWinners(entries, round(1000))[0].twitchId).toBe('steady');
+});
+
+test('without lastEditAt a tie falls back to submittedAt', () => {
   const entries = [
     { twitchId: 'late', payoutGuess: 1100, submittedAt: ts(20) },
     { twitchId: 'early', payoutGuess: 900, submittedAt: ts(10) },
@@ -41,4 +50,48 @@ test('entries without a numeric guess are excluded; short lists pad with null', 
 test('no actual payout means no winners', () => {
   const entries = [{ twitchId: 'a', payoutGuess: 1, submittedAt: ts(1) }];
   expect(pickWinners(entries, { actual: {}, rewards: { tiers: [{ place: 1 }] } })).toEqual([null]);
+});
+
+test('buildWinners attaches each tier prize in place order', () => {
+  const r = {
+    rewards: {
+      tiers: [
+        { place: 2, tickets: 50, prize: null },
+        { place: 1, tickets: 100, prize: { kind: 'cash', amount: 10 } },
+      ],
+    },
+  };
+  const entries = [
+    { twitchId: 'a', displayName: 'A', payoutGuess: 990, submittedAt: ts(1) },
+    { twitchId: 'b', displayName: 'B', payoutGuess: 1500, submittedAt: ts(2) },
+  ];
+  const [first, second] = buildWinners(entries, r, 1000);
+  expect(first).toMatchObject({
+    place: 1,
+    twitchId: 'a',
+    displayName: 'A',
+    payoutGuess: 990,
+    diff: 10,
+    prize: { tickets: 100, kind: 'cash', amount: 10, label: '$10' },
+    redemptionId: null,
+  });
+  expect(second).toMatchObject({
+    place: 2,
+    twitchId: 'b',
+    prize: { tickets: 50, kind: null, amount: null, label: null },
+  });
+});
+
+test('buildWinners keeps a legacy cashLabel prize and pads empty places', () => {
+  const r = {
+    rewards: {
+      tiers: [
+        { place: 1, tickets: 0, cashLabel: '$25 PayPal' },
+        { place: 2, tickets: 5 },
+      ],
+    },
+  };
+  const out = buildWinners([{ twitchId: 'a', payoutGuess: 1, submittedAt: ts(1) }], r, 1);
+  expect(out[0].prize).toEqual({ tickets: 0, kind: 'cash', amount: null, label: '$25 PayPal' });
+  expect(out[1]).toBeNull();
 });

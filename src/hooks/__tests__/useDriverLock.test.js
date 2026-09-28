@@ -10,13 +10,19 @@ function createFakeLocks() {
     if (!holder && queue.length) grant(queue.shift());
   };
   function grant(req) {
+    // A real lock manager grants asynchronously: mark the holder immediately
+    // (so `held`/`queued` reflect it right away) but invoke the callback on
+    // a later microtask, so a request can still be disposed of before its
+    // callback ever runs.
     holder = req;
-    Promise.resolve(req.cb()).then(() => {
-      if (holder === req) {
-        holder = null;
-        req.resolve();
-        next();
-      }
+    queueMicrotask(() => {
+      Promise.resolve(req.cb()).then(() => {
+        if (holder === req) {
+          holder = null;
+          req.resolve();
+          next();
+        }
+      });
     });
   }
   return {
@@ -75,7 +81,8 @@ async function flush() {
 
 test('the only tab drives', async () => {
   const locks = createFakeLocks();
-  const { result } = renderHook(() => useDriverLock(true, { locks, doc: fakeDoc() }));
+  const doc = fakeDoc();
+  const { result } = renderHook(() => useDriverLock(true, { locks, doc }));
   await flush();
   expect(result.current.isDriver).toBe(true);
   expect(locks.held).toBe(true);
@@ -83,9 +90,11 @@ test('the only tab drives', async () => {
 
 test('a hidden second tab waits, then takes over when the first goes away', async () => {
   const locks = createFakeLocks();
-  const view = renderHook(() => useDriverLock(true, { locks, doc: fakeDoc('visible') }));
+  const docA = fakeDoc('visible');
+  const docB = fakeDoc('hidden');
+  const view = renderHook(() => useDriverLock(true, { locks, doc: docA }));
   await flush();
-  const utils = renderHook(() => useDriverLock(true, { locks, doc: fakeDoc('hidden') }));
+  const utils = renderHook(() => useDriverLock(true, { locks, doc: docB }));
   await flush();
   expect(view.result.current.isDriver).toBe(true);
   expect(utils.result.current.isDriver).toBe(false);
@@ -128,11 +137,50 @@ test('disabled never drives and holds nothing', async () => {
 // A grant that lands for a disposed effect must be handed straight back.
 test('unmounting releases the lock at once, even right after mounting', async () => {
   const locks = createFakeLocks();
-  const { unmount } = renderHook(() => useDriverLock(true, { locks, doc: fakeDoc() }));
+  const docA = fakeDoc();
+  const { unmount } = renderHook(() => useDriverLock(true, { locks, doc: docA }));
   unmount();
   await flush();
   expect(locks.held).toBe(false);
-  const view = renderHook(() => useDriverLock(true, { locks, doc: fakeDoc() }));
+  const docB = fakeDoc();
+  const view = renderHook(() => useDriverLock(true, { locks, doc: docB }));
   await flush();
   expect(view.result.current.isDriver).toBe(true);
+});
+
+// Review Focus 3 (queued case): the fake grants asynchronously, like a real
+// lock manager, so a tab can be disposed of before its grant callback ever
+// runs even while another tab is already queued behind it. That stale grant
+// must be handed straight back (useDriverLock.js's
+// `if (disposed || mine !== gen) return undefined`) so the queued tab is
+// freed to take over, instead of the lock getting stuck on a dead requester.
+test('a tab that unmounts before its grant callback runs hands off to a tab queued behind it', async () => {
+  const locks = createFakeLocks();
+  const docA = fakeDoc('visible');
+  const docB = fakeDoc('hidden');
+  const view = renderHook(() => useDriverLock(true, { locks, doc: docA }));
+  const utils = renderHook(() => useDriverLock(true, { locks, doc: docB }));
+  // Neither grant callback has run yet -- both are deferred microtasks --
+  // but the fake already reflects who holds the slot and who is queued.
+  expect(locks.held).toBe(true);
+  expect(locks.queued).toBe(1);
+  view.unmount();
+  await flush();
+  expect(utils.result.current.isDriver).toBe(true);
+  expect(view.result.current.isDriver).toBe(false);
+});
+
+test('a persistent Web Locks failure falls back to every tab driving, without looping', async () => {
+  const warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+  const request = jest.fn(() =>
+    Promise.reject(Object.assign(new Error('opaque origin'), { name: 'SecurityError' })),
+  );
+  const locks = { request };
+  const doc = fakeDoc();
+  const { result } = renderHook(() => useDriverLock(true, { locks, doc }));
+  await flush();
+  expect(result.current.isDriver).toBe(true);
+  expect(request).toHaveBeenCalledTimes(1);
+  expect(warn).toHaveBeenCalledTimes(1);
+  warn.mockRestore();
 });

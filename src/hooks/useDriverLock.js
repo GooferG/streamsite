@@ -16,16 +16,25 @@ const defaultDoc = () => (typeof document !== 'undefined' ? document : undefined
 export function useDriverLock(enabled, { locks = defaultLocks(), doc = defaultDoc() } = {}) {
   const supported = !!(locks && typeof locks.request === 'function');
   const [held, setHeld] = useState(false);
+  // Set when a Web Locks request rejects with something other than our own
+  // abort (e.g. a SecurityError on an opaque origin, or an InvalidStateError
+  // on a document that's no longer fully active). Retrying that forever would
+  // loop through promise callbacks and peg the tab, so we stop trying and
+  // drive unconditionally for the rest of this effect's life instead.
+  const [fallback, setFallback] = useState(false);
 
   useEffect(() => {
     if (!enabled || !supported) {
       setHeld(false);
+      setFallback(false);
       return undefined;
     }
     let disposed = false;
+    let failed = false;
     let gen = 0;
     let release = null; // resolves the promise that holds the lock
     let controller = null; // aborts a queued (not yet granted) request
+    setFallback(false);
 
     const acquire = (steal) => {
       const mine = (gen += 1);
@@ -41,17 +50,29 @@ export function useDriverLock(enabled, { locks = defaultLocks(), doc = defaultDo
             release = resolve;
           });
         })
-        .catch(() => {
-          // Aborted by us (ignored below), or stolen by another tab.
+        .catch((err) => {
           if (disposed || mine !== gen) return;
           release = null;
           setHeld(false);
-          acquire(false);
+          if (err && err.name === 'AbortError') {
+            // Stolen by another tab (or a queued request we aborted
+            // ourselves, which never reaches here since its `mine` is
+            // already stale by the time we abort it). Re-queue.
+            acquire(false);
+            return;
+          }
+          // Something is actually wrong with Web Locks, not a steal.
+          // Retrying would loop forever, so fall back to "every tab
+          // drives" for the rest of this effect's life.
+          failed = true;
+          // eslint-disable-next-line no-console
+          console.warn('useDriverLock: Web Locks request failed, falling back to unlocked mode', err);
+          setFallback(true);
         });
     };
 
     const takeOver = () => {
-      if (disposed || release || !doc || doc.visibilityState !== 'visible') return;
+      if (disposed || failed || release || !doc || doc.visibilityState !== 'visible') return;
       const queued = controller;
       acquire(true); // bumps gen first, so the aborted request is ignored
       queued?.abort();
@@ -70,5 +91,5 @@ export function useDriverLock(enabled, { locks = defaultLocks(), doc = defaultDo
     };
   }, [enabled, supported, locks, doc]);
 
-  return { isDriver: enabled && (supported ? held : true), supported };
+  return { isDriver: enabled && (supported ? fallback || held : true), supported };
 }

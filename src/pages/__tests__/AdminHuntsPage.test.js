@@ -1,5 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { SettleModal } from '../AdminHuntsPage';
+import SettleModal from '../../components/admin/predictions/SettleModal';
 import NewRoundModal from '../../components/admin/predictions/NewRoundModal';
 import { authedFetch } from '../../utils/authedFetch';
 
@@ -19,6 +19,12 @@ const ROUND = {
   source: 'communityhunts',
   acceptPredictions: true,
   bonusHuntSnapshot: { huntId: 'h1', currency: 'CAD', totalCost: 3103.62, bonusCount: 18 },
+  rewards: {
+    tiers: [
+      { place: 1, tickets: 100, prize: { kind: 'cash', amount: 10 } },
+      { place: 2, tickets: 50, prize: null },
+    ],
+  },
 };
 const reply = (ok, body) => Promise.resolve({ ok, json: () => Promise.resolve(body) });
 
@@ -51,7 +57,7 @@ test('Fill from hunt on a missing hunt shows a readable error', async () => {
 // Review Focus 5: an empty payout must not settle at 0.
 test('settling with an empty payout is blocked', () => {
   render(<SettleModal round={ROUND} onClose={() => {}} onSettled={() => {}} />);
-  fireEvent.click(screen.getByRole('button', { name: /reveal winners/i }));
+  fireEvent.click(screen.getByRole('button', { name: /preview winners/i }));
   expect(screen.getByText(/actual payout required/i)).toBeTruthy();
   expect(authedFetch).not.toHaveBeenCalled();
 });
@@ -185,4 +191,72 @@ test('an active round blocks create with a readable error', async () => {
   fireEvent.change(screen.getByPlaceholderText('Friday night bonus hunt'), { target: { value: 'Friday' } });
   fireEvent.click(screen.getByRole('button', { name: /start round/i }));
   expect(await screen.findByText(/settle or delete the current round first/i)).toBeTruthy();
+});
+
+const PREVIEW = {
+  ok: true,
+  actualPayout: 1000,
+  entryCount: 3,
+  placements: [
+    {
+      place: 1,
+      twitchId: 'a',
+      displayName: 'viewerA',
+      payoutGuess: 990,
+      diff: 10,
+      prize: { tickets: 100, kind: 'cash', amount: 10, label: '$10' },
+    },
+    null,
+  ],
+};
+
+async function toPreview(onSettled = () => {}) {
+  render(<SettleModal round={ROUND} onClose={() => {}} onSettled={onSettled} />);
+  fireEvent.change(screen.getByLabelText(/actual final payout/i), { target: { value: '1000' } });
+  fireEvent.click(screen.getByRole('button', { name: /preview winners/i }));
+  await screen.findByText('viewerA');
+}
+
+test('Preview shows who would place before anything is paid', async () => {
+  authedFetch.mockReturnValue(reply(true, PREVIEW));
+  await toPreview();
+  expect(screen.getByText('$10')).toBeTruthy();
+  expect(screen.getByText(/no entry/i)).toBeTruthy();
+  expect(authedFetch).toHaveBeenCalledTimes(1);
+  expect(JSON.parse(authedFetch.mock.calls[0][1].body)).toEqual({
+    action: 'preview_settle',
+    id: 'r1',
+    actualPayout: 1000,
+  });
+});
+
+test('Confirm & pay settles with the previewed payout', async () => {
+  authedFetch
+    .mockReturnValueOnce(reply(true, PREVIEW))
+    .mockReturnValueOnce(reply(true, { ok: true, winners: [] }));
+  const onSettled = jest.fn();
+  await toPreview(onSettled);
+  fireEvent.click(screen.getByRole('button', { name: /confirm & pay/i }));
+  await waitFor(() => expect(onSettled).toHaveBeenCalled());
+  expect(JSON.parse(authedFetch.mock.calls[1][1].body)).toEqual({
+    action: 'settle',
+    id: 'r1',
+    actualPayout: 1000,
+  });
+});
+
+test('Back returns to the payout step and keeps the value', async () => {
+  authedFetch.mockReturnValue(reply(true, PREVIEW));
+  await toPreview();
+  fireEvent.click(screen.getByRole('button', { name: /back/i }));
+  expect(screen.getByLabelText(/actual final payout/i).value).toBe('1000');
+});
+
+test('a round settled elsewhere shows a readable error', async () => {
+  authedFetch
+    .mockReturnValueOnce(reply(true, PREVIEW))
+    .mockReturnValueOnce(reply(false, { error: 'ALREADY_SETTLED' }));
+  await toPreview();
+  fireEvent.click(screen.getByRole('button', { name: /confirm & pay/i }));
+  expect(await screen.findByText(/already settled/i)).toBeTruthy();
 });

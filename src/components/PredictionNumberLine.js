@@ -7,7 +7,8 @@ import {
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { formatMoneyCompact } from '../utils/money';
-import { roundCurrency } from '../utils/predictionRound';
+import { roundCurrency, entriesSealed } from '../utils/predictionRound';
+import { useAuth } from '../contexts/AuthContext';
 
 /**
  * A thin horizontal axis showing all viewers' payout guesses as ticks.
@@ -15,19 +16,26 @@ import { roundCurrency } from '../utils/predictionRound';
  */
 export default function PredictionNumberLine({ round }) {
   const fmt = (val) => formatMoneyCompact(val, roundCurrency(round));
+  const { isStaff } = useAuth();
+  const sealed = entriesSealed(round, isStaff);
   const [entries, setEntries] = useState([]);
 
   useEffect(() => {
-    if (!round?.id || !round?.acceptPredictions) return undefined;
+    setEntries([]);
+    if (!round?.id || !round?.acceptPredictions || sealed) return undefined;
     const q = query(
       collection(db, 'hunts', round.id, 'entries'),
       orderBy('submittedAt', 'asc')
     );
-    const unsub = onSnapshot(q, (snap) => {
-      setEntries(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        setEntries(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      },
+      () => setEntries([])
+    );
     return unsub;
-  }, [round?.id, round?.acceptPredictions]);
+  }, [round?.id, round?.acceptPredictions, sealed]);
 
   const { min, max, ticks, actualPct } = useMemo(() => {
     if (!round?.acceptPredictions || entries.length === 0) {

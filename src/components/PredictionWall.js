@@ -6,10 +6,11 @@ import {
   query,
   limit as fLimit,
 } from 'firebase/firestore';
-import { Pin } from 'lucide-react';
+import { Pin, EyeOff } from 'lucide-react';
 import { db } from '../config/firebase';
 import { formatMoney } from '../utils/money';
-import { roundCurrency } from '../utils/predictionRound';
+import { roundCurrency, entriesSealed } from '../utils/predictionRound';
+import { useAuth } from '../contexts/AuthContext';
 
 const MAX_CARDS = 80;
 
@@ -109,20 +110,30 @@ function Card({ entry, round, dim, winnerInfo }) {
 }
 
 export default function PredictionWall({ round }) {
+  const { isStaff } = useAuth();
+  const sealed = entriesSealed(round, isStaff);
   const [entries, setEntries] = useState([]);
+  const [denied, setDenied] = useState(false);
 
   useEffect(() => {
-    if (!round?.id) return undefined;
+    setEntries([]);
+    setDenied(false);
+    if (!round?.id || sealed) return undefined;
     const q = query(
       collection(db, 'hunts', round.id, 'entries'),
       orderBy('submittedAt', 'asc'),
       fLimit(MAX_CARDS + 1)
     );
-    const unsub = onSnapshot(q, (snap) => {
-      setEntries(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
-    });
+    const unsub = onSnapshot(
+      q,
+      (snap) => {
+        setEntries(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      },
+      // Denied when the round reopened before this listener caught up.
+      () => setDenied(true)
+    );
     return unsub;
-  }, [round?.id]);
+  }, [round?.id, sealed]);
 
   const winnersByTwitchId = useMemo(() => {
     if (round?.status !== 'settled') return {};
@@ -132,6 +143,21 @@ export default function PredictionWall({ round }) {
     });
     return map;
   }, [round]);
+
+  if (sealed || denied) {
+    const count = round?.entryCount ?? 0;
+    return (
+      <div className="border border-dashed border-white/15 bg-zinc-card/20 py-12 text-center">
+        <div className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/15 mb-3 text-white/35">
+          <EyeOff size={14} aria-hidden="true" />
+        </div>
+        <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
+          {count} {count === 1 ? 'guess' : 'guesses'} pinned face down
+        </p>
+        <p className="text-sm text-white/55">Revealed when predictions lock.</p>
+      </div>
+    );
+  }
 
   if (entries.length === 0) {
     return (

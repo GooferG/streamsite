@@ -15,3 +15,9 @@ export function roundTotalCost(round) {
       : round.manualTotalCost;
   return Number(raw) || 0;
 }
+
+// While a round is open only staff (and each viewer, for their own entry) may
+// read its entries (firestore.rules), so viewer pages must not query them.
+export function entriesSealed(round, isStaff) {
+  return !!round && round.status === 'open' && !isStaff;
+}

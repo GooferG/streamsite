@@ -139,8 +139,12 @@ service cloud.firestore {
     match /hunts/{id} {
       allow read: if true;
       allow write: if false;
+      // Guesses stay hidden while the round is open: staff and the entry's
+      // owner (entry id = Twitch id = uid) can read; everyone after lock.
       match /entries/{entryId} {
-        allow read: if true;
+        allow read: if isStaff()
+          || (isSignedIn() && request.auth.uid == entryId)
+          || get(/databases/$(database)/documents/hunts/$(id)).data.status != 'open';
         allow write: if false;
       }
       match /suggestions/{sid} {

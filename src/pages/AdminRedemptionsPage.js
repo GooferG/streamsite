@@ -145,8 +145,13 @@ export default function AdminRedemptionsPage() {
                     </span>
                   </div>
                   <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5">
-                    {r.displayName || r.twitchName || r.userId} · {formatTs(r.createdAt)} ·{' '}
-                    <span className="text-emerald-signal/70">{r.cost}t</span>
+                    {r.displayName || r.twitchName || r.userId} · {formatTs(r.createdAt)}
+                    {r.kind !== 'prediction' && (
+                      <>
+                        {' · '}
+                        <span className="text-emerald-signal/70">{r.cost}t</span>
+                      </>
+                    )}
                   </p>
                   {r.note && (
                     <p className="mt-1.5 text-xs text-white/55 italic">Note: {r.note}</p>

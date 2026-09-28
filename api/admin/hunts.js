@@ -7,41 +7,93 @@ import {
   huntResult,
   CommunityHuntsError,
 } from '../_lib/communityHunts.js';
-import { pickWinners } from '../_lib/predictions.js';
+import { buildWinners } from '../_lib/predictions.js';
+import { sanitizeRewards, placeLabel } from '../_lib/predictionRewards.js';
+import { openedMessage, lockedMessage, resultsMessage } from '../_lib/predictionChat.js';
+import { sendChannelMessage } from '../_lib/twitchChat.js';
 
 // Admin prediction-round lifecycle. A round can have payout predictions and/or
-// slot suggestions enabled. Predictions go open -> locked -> settled. Rounds
-// snapshot GooferG's current communityhunts.gg hunt (or take a manual cost).
+// slot suggestions enabled. Predictions go open -> locked -> settled, and only
+// one prediction round can be open or locked at a time. Rounds snapshot
+// GooferG's current communityhunts.gg hunt (or take a manual cost).
 //
 // POST { action, ...payload }
 
-function sanitizeTier(tier) {
-  if (!tier) return null;
-  const place = Number(tier.place);
-  if (!Number.isInteger(place) || place < 1 || place > 3) return null;
-  const tickets =
-    tier.tickets === '' || tier.tickets == null
-      ? null
-      : Math.max(0, Math.floor(Number(tier.tickets)));
-  const cashLabel =
-    tier.cashLabel && typeof tier.cashLabel === 'string'
-      ? tier.cashLabel.trim().slice(0, 80) || null
-      : null;
-  if (tickets == null && !cashLabel) return null;
-  return { place, tickets, cashLabel };
+// Thrown inside actions (and transactions) to answer with a 4xx code.
+class ActionError extends Error {
+  constructor(status, code) {
+    super(code);
+    this.status = status;
+    this.code = code;
+  }
 }
 
-function sanitizeRewards(input) {
-  const validTypes = ['tickets', 'cash', 'both'];
-  const type = validTypes.includes(input?.type) ? input.type : 'tickets';
-  const tiers = Array.isArray(input?.tiers)
-    ? input.tiers.map(sanitizeTier).filter(Boolean)
-    : [];
-  const places = new Set(tiers.map((t) => t.place));
-  if (!places.has(1)) tiers.push({ place: 1, tickets: 0, cashLabel: null });
-  if (!places.has(2)) tiers.push({ place: 2, tickets: 0, cashLabel: null });
-  tiers.sort((a, b) => a.place - b.place);
-  return { type, tiers };
+function parsePayout(value) {
+  if (value === '' || value == null) return null;
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+}
+
+// Settling (and previewing it) needs a locked round, so no guess can change
+// between the preview and the payout.
+function assertLocked(round) {
+  if (!round.acceptPredictions) throw new ActionError(400, 'PREDICTIONS_DISABLED');
+  // A round can look 'locked' from a stale read while a settle transaction
+  // already committed in between (see F1) — any sign of a past settle counts.
+  if (round.status === 'settled' || round.settledAt || round.actual) {
+    throw new ActionError(400, 'ALREADY_SETTLED');
+  }
+  if (round.status !== 'locked') throw new ActionError(400, 'NOT_LOCKED');
+}
+
+const MESSAGES = { opened: openedMessage, locked: lockedMessage, results: resultsMessage };
+// Round statuses in which each chat line may post (null = any).
+const EVENT_STATUSES = { opened: null, locked: ['locked', 'settled'], results: ['settled'] };
+
+// Posts one chat line per round event. The event is claimed on the round in a
+// transaction before posting, so two callers can't both post; a failed post
+// releases the claim so Retry can post it. A chat failure never throws.
+async function announceEvent(ref, event) {
+  const claim = await adminDb.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new ActionError(404, 'NOT_FOUND');
+    const round = snap.data();
+    if (!round.announce) return { result: { posted: false, reason: 'disabled' } };
+    const allowed = EVENT_STATUSES[event];
+    if (allowed && !allowed.includes(round.status)) throw new ActionError(400, 'WRONG_STATUS');
+    if (round.announced && round.announced[event]) {
+      return { result: { posted: false, reason: 'already' } };
+    }
+    tx.update(ref, { [`announced.${event}`]: FieldValue.serverTimestamp() });
+    return { round };
+  });
+  if (claim.result) return claim.result;
+
+  try {
+    await sendChannelMessage(MESSAGES[event](claim.round));
+    return { posted: true };
+  } catch (err) {
+    console.error('prediction chat announce failed', err);
+    // The release write can itself fail (e.g. the round vanished in between);
+    // that must not mask the original chat error or throw out of this function.
+    try {
+      await ref.update({ [`announced.${event}`]: null });
+    } catch (releaseErr) {
+      console.error('prediction chat claim release failed', releaseErr);
+    }
+    return { posted: false, reason: err.message };
+  }
+}
+
+// create and lock have already written the round; a chat problem must not
+// turn that into an error response.
+async function announceQuietly(ref, event) {
+  try {
+    return await announceEvent(ref, event);
+  } catch (err) {
+    console.error('prediction chat announce failed', err);
+    return { posted: false, reason: err.code || err.message };
+  }
 }
 
 export default async function handler(req, res) {
@@ -95,35 +147,52 @@ export default async function handler(req, res) {
       }
 
       const rewards = sanitizeRewards(payload.rewards);
+      // The chat lines are about guessing, so a suggestion-only round never posts.
+      const announce = acceptPredictions && payload.announce !== false;
       const now = FieldValue.serverTimestamp();
+      const huntsCol = adminDb.collection('hunts');
+      const ref = huntsCol.doc();
 
-      const ref = await adminDb.collection('hunts').add({
-        title,
-        contextNote,
-        // Feature flags
-        acceptPredictions,
-        acceptSuggestions,
-        suggestionCap,
-        // Source data
-        source,
-        bonusHuntSnapshot,
-        manualTotalCost,
-        // Prediction config
-        rewards,
-        // Prediction lifecycle state
-        status: 'open',
-        entryCount: 0,
-        suggestionCount: 0,
-        actual: null,
-        winners: [],
-        // Timestamps
-        openedAt: now,
-        lockedAt: null,
-        settledAt: null,
-        createdAt: now,
-        createdBy: admin.email,
+      await adminDb.runTransaction(async (tx) => {
+        // The viewer page shows only the newest round, so a new round would
+        // hide an active prediction round.
+        const active = await tx.get(huntsCol.where('status', 'in', ['open', 'locked']));
+        if (active.docs.some((d) => d.data().acceptPredictions)) {
+          throw new ActionError(400, 'ROUND_ACTIVE');
+        }
+        tx.set(ref, {
+          title,
+          contextNote,
+          // Feature flags
+          acceptPredictions,
+          acceptSuggestions,
+          suggestionCap,
+          // Source data
+          source,
+          bonusHuntSnapshot,
+          manualTotalCost,
+          // Prediction config
+          rewards,
+          announce,
+          announced: { opened: null, locked: null, results: null },
+          // Prediction lifecycle state
+          status: 'open',
+          entryCount: 0,
+          suggestionCount: 0,
+          actual: null,
+          winners: [],
+          // Timestamps
+          openedAt: now,
+          lockedAt: null,
+          settledAt: null,
+          createdAt: now,
+          createdBy: admin.email,
+        });
       });
-      return res.status(200).json({ ok: true, id: ref.id });
+      const announceResult = announce
+        ? await announceQuietly(ref, 'opened')
+        : { posted: false, reason: 'disabled' };
+      return res.status(200).json({ ok: true, id: ref.id, announce: announceResult });
     }
 
     // All other actions need an existing hunt.
@@ -144,113 +213,136 @@ export default async function handler(req, res) {
     }
 
     if (action === 'lock') {
-      if (!round.acceptPredictions) {
-        return res.status(400).json({ error: 'PREDICTIONS_DISABLED' });
-      }
-      if (round.status !== 'open') return res.status(400).json({ error: 'NOT_OPEN' });
-      await ref.update({ status: 'locked', lockedAt: FieldValue.serverTimestamp() });
-      return res.status(200).json({ ok: true });
+      // Check-and-write in one transaction: a settle can commit between this
+      // handler's initial `ref.get()` (above) and a plain `ref.update()` (see F1).
+      await adminDb.runTransaction(async (tx) => {
+        const fresh = await tx.get(ref);
+        if (!fresh.exists) throw new ActionError(404, 'NOT_FOUND');
+        const current = fresh.data();
+        if (!current.acceptPredictions) throw new ActionError(400, 'PREDICTIONS_DISABLED');
+        if (current.status !== 'open') throw new ActionError(400, 'NOT_OPEN');
+        tx.update(ref, { status: 'locked', lockedAt: FieldValue.serverTimestamp() });
+      });
+      const announce = await announceQuietly(ref, 'locked');
+      return res.status(200).json({ ok: true, announce });
     }
 
     if (action === 'reopen') {
-      if (round.status !== 'locked') return res.status(400).json({ error: 'NOT_LOCKED' });
-      await ref.update({ status: 'open', lockedAt: null });
+      // Same check-and-write-in-a-transaction pattern as lock (F1).
+      await adminDb.runTransaction(async (tx) => {
+        const fresh = await tx.get(ref);
+        if (!fresh.exists) throw new ActionError(404, 'NOT_FOUND');
+        const current = fresh.data();
+        if (current.status !== 'locked' || current.settledAt) {
+          throw new ActionError(400, 'NOT_LOCKED');
+        }
+        // The next lock posts again, with the new guess count.
+        tx.update(ref, { status: 'open', lockedAt: null, 'announced.locked': null });
+      });
       return res.status(200).json({ ok: true });
     }
 
-    if (action === 'settle') {
-      if (!round.acceptPredictions) {
-        return res.status(400).json({ error: 'PREDICTIONS_DISABLED' });
-      }
-      if (!['open', 'locked'].includes(round.status)) {
-        return res.status(400).json({ error: 'NOT_SETTLEABLE' });
-      }
-      const actualPayout = Number(payload.actualPayout);
-      if (payload.actualPayout === '' || payload.actualPayout == null || !Number.isFinite(actualPayout)) {
-        return res.status(400).json({ error: 'actualPayout required' });
-      }
-
+    if (action === 'preview_settle') {
+      assertLocked(round);
+      const actualPayout = parsePayout(payload.actualPayout);
+      if (actualPayout == null) return res.status(400).json({ error: 'actualPayout required' });
       const entriesSnap = await ref.collection('entries').get();
       const entries = entriesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
-
-      const placements = pickWinners(entries, { ...round, actual: { payout: actualPayout } });
-
-      const winners = [];
-      const now = FieldValue.serverTimestamp();
-      const batch = adminDb.batch();
-
-      for (let i = 0; i < placements.length; i++) {
-        const place = round.rewards.tiers[i]?.place ?? i + 1;
-        const tier = round.rewards.tiers[i];
-        const e = placements[i];
-        if (!e) continue;
-
-        const winnerObj = {
-          place,
-          twitchId: e.twitchId,
-          twitchName: e.twitchName,
-          displayName: e.displayName,
-          profileImageUrl: e.profileImageUrl || null,
-          payoutGuess: typeof e.payoutGuess === 'number' ? e.payoutGuess : null,
-          diff:
-            typeof e.payoutDiff === 'number' && Number.isFinite(e.payoutDiff)
-              ? e.payoutDiff
-              : null,
-          prize: { tickets: tier?.tickets || null, cashLabel: tier?.cashLabel || null },
-          redemptionId: null,
-        };
-
-        if (tier?.tickets && tier.tickets > 0) {
-          const userRef = adminDb.collection('users').doc(e.twitchId);
-          batch.update(userRef, {
-            tickets: FieldValue.increment(tier.tickets),
-            totalEarned: FieldValue.increment(tier.tickets),
-            updatedAt: now,
-          });
-          const ledgerRef = adminDb.collection('ticket_ledger').doc();
-          batch.set(ledgerRef, {
-            userId: e.twitchId,
-            delta: tier.tickets,
-            reason: 'prediction',
-            refId: id,
-            note: `Prediction ${place === 1 ? '1st' : place === 2 ? '2nd' : '3rd'} place — ${round.title}`,
-            createdAt: now,
-          });
-        }
-
-        if (tier?.cashLabel) {
-          const redemptionRef = adminDb.collection('redemptions').doc();
-          batch.set(redemptionRef, {
-            userId: e.twitchId,
-            twitchName: e.twitchName || null,
-            displayName: e.displayName || null,
-            profileImageUrl: e.profileImageUrl || null,
-            itemId: id,
-            itemName: `${round.title} · ${place === 1 ? '1st' : place === 2 ? '2nd' : '3rd'} place`,
-            cost: 0,
-            kind: 'prediction',
-            status: 'pending',
-            note: tier.cashLabel,
-            predictionRoundId: id,
-            huntId: id,
-            createdAt: now,
-            fulfilledAt: null,
-          });
-          winnerObj.redemptionId = redemptionRef.id;
-        }
-        winners.push(winnerObj);
-      }
-
-      batch.update(ref, {
-        actual: { payout: actualPayout },
-        winners,
-        status: 'settled',
-        settledAt: now,
-        settledBy: admin.email,
+      return res.status(200).json({
+        ok: true,
+        actualPayout,
+        entryCount: entries.length,
+        placements: buildWinners(entries, round, actualPayout),
       });
+    }
 
-      await batch.commit();
+    if (action === 'settle') {
+      const actualPayout = parsePayout(payload.actualPayout);
+      if (actualPayout == null) return res.status(400).json({ error: 'actualPayout required' });
+
+      // One transaction: a second settle (another tab, a mod) re-reads the
+      // round, finds it settled and pays nothing.
+      const winners = await adminDb.runTransaction(async (tx) => {
+        const fresh = await tx.get(ref);
+        if (!fresh.exists) throw new ActionError(404, 'NOT_FOUND');
+        const current = fresh.data();
+        assertLocked(current);
+        const entriesSnap = await tx.get(ref.collection('entries'));
+        const entries = entriesSnap.docs.map((d) => ({ id: d.id, ...d.data() }));
+        const now = FieldValue.serverTimestamp();
+        const settled = [];
+
+        for (const winner of buildWinners(entries, current, actualPayout)) {
+          if (!winner) continue;
+          const place = placeLabel(winner.place);
+          const { tickets, kind, amount, label } = winner.prize;
+
+          if (tickets > 0) {
+            // set+merge so a missing user doc can't fail the whole settle.
+            tx.set(
+              adminDb.collection('users').doc(winner.twitchId),
+              {
+                tickets: FieldValue.increment(tickets),
+                totalEarned: FieldValue.increment(tickets),
+                updatedAt: now,
+              },
+              { merge: true }
+            );
+            tx.set(adminDb.collection('ticket_ledger').doc(), {
+              userId: winner.twitchId,
+              delta: tickets,
+              reason: 'prediction',
+              refId: id,
+              note: `Prediction ${place} place — ${current.title}`,
+              createdAt: now,
+            });
+          }
+
+          let redemptionId = null;
+          if (label) {
+            const redemptionRef = adminDb.collection('redemptions').doc();
+            redemptionId = redemptionRef.id;
+            tx.set(redemptionRef, {
+              userId: winner.twitchId,
+              twitchName: winner.twitchName,
+              displayName: winner.displayName,
+              profileImageUrl: winner.profileImageUrl,
+              itemId: id,
+              itemName: `${current.title} · ${place} place`,
+              cost: 0,
+              kind: 'prediction',
+              status: 'pending',
+              note: label,
+              prizeKind: kind,
+              prizeAmount: amount,
+              predictionRoundId: id,
+              huntId: id,
+              createdAt: now,
+              fulfilledAt: null,
+            });
+          }
+          settled.push({ ...winner, redemptionId });
+        }
+
+        tx.update(ref, {
+          actual: { payout: actualPayout },
+          winners: settled,
+          status: 'settled',
+          settledAt: now,
+          settledBy: admin.email,
+        });
+        return settled;
+      });
       return res.status(200).json({ ok: true, winners });
+    }
+
+    if (action === 'announce') {
+      const event = payload.event;
+      if (!Object.prototype.hasOwnProperty.call(MESSAGES, event)) {
+        return res.status(400).json({ error: 'INVALID_EVENT' });
+      }
+      const announce = await announceEvent(ref, event);
+      return res.status(200).json({ ok: true, announce });
     }
 
     if (action === 'delete') {
@@ -272,6 +364,9 @@ export default async function handler(req, res) {
 
     return res.status(400).json({ error: 'UNKNOWN_ACTION' });
   } catch (err) {
+    if (err instanceof ActionError) {
+      return res.status(err.status).json({ error: err.code });
+    }
     if (err instanceof CommunityHuntsError) {
       const notFound = err.status === 404;
       return res

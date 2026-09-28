@@ -14,18 +14,18 @@ function toMs(ts) {
 // the reveal (chat runs STREAM_DELAY_MS ahead of the video). The server claims
 // the post, so several open admin tabs still post once. Each round gets one
 // automatic attempt; after that it's Retry.
-export default function useResultsAnnounce(round) {
+export default function useResultsAnnounce(round, { armed = true } = {}) {
   const [state, setState] = useState({ roundId: null, posting: false, error: null });
   const tried = useRef(new Set());
   const id = round ? round.id : null;
   const settledMs = toMs(round && round.settledAt);
-  const armed =
+  const due =
     !!round &&
     round.status === 'settled' &&
     !!round.announce &&
     !(round.announced && round.announced.results) &&
     settledMs != null;
-  const dueAt = armed ? settledMs + STREAM_DELAY_MS : null;
+  const dueAt = due ? settledMs + STREAM_DELAY_MS : null;
 
   const post = useCallback(async () => {
     if (!id) return;
@@ -35,18 +35,19 @@ export default function useResultsAnnounce(round) {
   }, [id]);
 
   useEffect(() => {
-    if (!armed || tried.current.has(id)) return undefined;
+    if (!armed || !due || tried.current.has(id)) return undefined;
     if (Date.now() - settledMs > AUTO_POST_WINDOW_MS) return undefined;
     const t = setTimeout(() => {
       tried.current.add(id);
       post();
     }, Math.max(0, dueAt - Date.now()));
     return () => clearTimeout(t);
-  }, [armed, id, settledMs, dueAt, post]);
+  }, [armed, due, id, settledMs, dueAt, post]);
 
   const mine = state.roundId === id;
   return {
     dueAt,
+    posted: !!(round && round.announced && round.announced.results),
     posting: mine && state.posting,
     error: mine ? state.error : null,
     retry: post,

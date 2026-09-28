@@ -131,3 +131,29 @@ test('ignores giveaways without a timer or not open', async () => {
   await advance(5_000);
   expect(postAction).not.toHaveBeenCalled();
 });
+
+test('does nothing while not armed', async () => {
+  run([giveaway({ closesAt: at(NOW + 1_000) })], { armed: false });
+  await advance(5_000);
+  expect(postAction).not.toHaveBeenCalled();
+});
+
+test('starts driving when armed flips on', async () => {
+  const { rerender } = run([giveaway({ closesAt: at(NOW + 1_000) })], { armed: false });
+  await advance(2_000);
+  expect(postAction).not.toHaveBeenCalled();
+  rerender({ l: [giveaway({ closesAt: at(NOW + 1_000) })], o: { armed: true } });
+  await act(async () => {
+    await flush();
+  });
+  expect(postAction).toHaveBeenCalledWith('close', { id: 'g1' });
+});
+
+test('a lost roll race is not a warning', async () => {
+  postAction.mockImplementation((action) =>
+    action === 'roll' ? Promise.resolve({ ok: false, status: 409, data: { error: 'ROLL_RACE' } }) : ok()
+  );
+  const { onWarn } = run([giveaway({ closesAt: at(NOW + 1_000) })]);
+  await advance(1_000);
+  expect(onWarn).not.toHaveBeenCalled();
+});

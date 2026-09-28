@@ -2,17 +2,18 @@ import { useEffect, useRef } from 'react';
 import { AUTO_ROLL_GRACE_MS, LAST_CALL_SECONDS, tsMillis } from '../../../utils/giveaway';
 import { postAction, QUIET_ANNOUNCE } from './api';
 
-// Runs the entry timer: posts the last call, closes entries at zero, and rolls
-// when the giveaway asked for it. EventSub already refuses late entries on its
-// own, so a missed tick only delays the status flip.
-export default function useGiveawayClock(list, onWarn) {
+// Runs the entry timer (only in the tab that drives, see useDriverLock): posts
+// the last call, closes entries at zero, and rolls when the giveaway asked
+// for it. EventSub already refuses late entries on its own, so a missed tick
+// only delays the status flip.
+export default function useGiveawayClock(list, onWarn, { armed = true } = {}) {
   const listRef = useRef(list);
   listRef.current = list;
   const fired = useRef(new Set());
   const timed = list.some((g) => g.status === 'open' && g.closesAt);
 
   useEffect(() => {
-    if (!timed) return undefined;
+    if (!timed || !armed) return undefined;
     const tick = async () => {
       const now = Date.now();
       for (const g of listRef.current) {
@@ -50,7 +51,10 @@ export default function useGiveawayClock(list, onWarn) {
               onWarn('Time ran out with no entries, so nothing was rolled.');
             } else {
               const rolled = await postAction('roll', { id: g.id }).catch(() => ({ ok: false, data: {} }));
-              if (!rolled.ok) onWarn(`Auto-roll failed: ${rolled.data?.error || 'unknown'}`);
+              // ROLL_RACE: someone rolled it by hand at the same moment. Fine.
+              if (!rolled.ok && rolled.data?.error !== 'ROLL_RACE') {
+                onWarn(`Auto-roll failed: ${rolled.data?.error || 'unknown'}`);
+              }
             }
           }
         }
@@ -59,5 +63,5 @@ export default function useGiveawayClock(list, onWarn) {
     tick();
     const t = setInterval(tick, 1000);
     return () => clearInterval(t);
-  }, [timed, onWarn]);
+  }, [timed, armed, onWarn]);
 }

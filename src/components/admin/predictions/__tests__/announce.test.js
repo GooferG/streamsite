@@ -83,6 +83,25 @@ describe('useResultsAnnounce', () => {
     });
     expect(authedFetch).toHaveBeenCalledTimes(1);
   });
+
+  test('an unarmed tab never posts', () => {
+    const now = Date.now();
+    renderHook(() => useResultsAnnounce(settled(now), { armed: false }));
+    act(() => {
+      jest.advanceTimersByTime(60000);
+    });
+    expect(authedFetch).not.toHaveBeenCalled();
+  });
+
+  test('reports posted from the round doc', () => {
+    const now = Date.now();
+    const { result } = renderHook(() =>
+      useResultsAnnounce(settled(now, { announced: { opened: at(1), locked: at(2), results: at(3) } }), {
+        armed: false,
+      })
+    );
+    expect(result.current.posted).toBe(true);
+  });
 });
 
 describe('ChatStatus', () => {

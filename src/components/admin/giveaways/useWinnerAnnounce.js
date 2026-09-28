@@ -6,7 +6,7 @@ import { postAction, QUIET_ANNOUNCE } from './api';
 // where that stands. Retry appears if Twitch refused the message. Runs above
 // the winner window: a bonus-buy winner confirmed quickly moves to 'playing'
 // and closes that window before the timer fires.
-export default function useWinnerAnnounce(giveaway) {
+export default function useWinnerAnnounce(giveaway, { armed = true } = {}) {
   const key = pickKey(giveaway);
   const rolledAtMs = tsMillis(giveaway?.rolledAt);
   const enabled = !!giveaway && giveaway.announceWinner !== false && !!giveaway.winnerMessage;
@@ -41,13 +41,13 @@ export default function useWinnerAnnounce(giveaway) {
   const alreadyPosted = useRef(posted);
   alreadyPosted.current = posted;
   useEffect(() => {
-    if (!key || !enabled || alreadyPosted.current) return undefined;
+    if (!armed || !key || !enabled || alreadyPosted.current) return undefined;
     const delay = Math.max(0, rolledAtMs + CHAT_ANNOUNCE_DELAY_MS - Date.now());
     const t = setTimeout(() => {
       if (!alreadyPosted.current) postRef.current();
     }, delay);
     return () => clearTimeout(t);
-  }, [key, enabled, rolledAtMs]);
+  }, [armed, key, enabled, rolledAtMs]);
 
   const mine = state.key === key;
   return {

@@ -38,7 +38,11 @@ function parsePayout(value) {
 // between the preview and the payout.
 function assertLocked(round) {
   if (!round.acceptPredictions) throw new ActionError(400, 'PREDICTIONS_DISABLED');
-  if (round.status === 'settled') throw new ActionError(400, 'ALREADY_SETTLED');
+  // A round can look 'locked' from a stale read while a settle transaction
+  // already committed in between (see F1) — any sign of a past settle counts.
+  if (round.status === 'settled' || round.settledAt || round.actual) {
+    throw new ActionError(400, 'ALREADY_SETTLED');
+  }
   if (round.status !== 'locked') throw new ActionError(400, 'NOT_LOCKED');
 }
 
@@ -192,19 +196,32 @@ export default async function handler(req, res) {
     }
 
     if (action === 'lock') {
-      if (!round.acceptPredictions) {
-        return res.status(400).json({ error: 'PREDICTIONS_DISABLED' });
-      }
-      if (round.status !== 'open') return res.status(400).json({ error: 'NOT_OPEN' });
-      await ref.update({ status: 'locked', lockedAt: FieldValue.serverTimestamp() });
+      // Check-and-write in one transaction: a settle can commit between this
+      // handler's initial `ref.get()` (above) and a plain `ref.update()` (see F1).
+      await adminDb.runTransaction(async (tx) => {
+        const fresh = await tx.get(ref);
+        if (!fresh.exists) throw new ActionError(404, 'NOT_FOUND');
+        const current = fresh.data();
+        if (!current.acceptPredictions) throw new ActionError(400, 'PREDICTIONS_DISABLED');
+        if (current.status !== 'open') throw new ActionError(400, 'NOT_OPEN');
+        tx.update(ref, { status: 'locked', lockedAt: FieldValue.serverTimestamp() });
+      });
       const announce = await announceEvent(ref, 'locked');
       return res.status(200).json({ ok: true, announce });
     }
 
     if (action === 'reopen') {
-      if (round.status !== 'locked') return res.status(400).json({ error: 'NOT_LOCKED' });
-      // The next lock posts again, with the new guess count.
-      await ref.update({ status: 'open', lockedAt: null, 'announced.locked': null });
+      // Same check-and-write-in-a-transaction pattern as lock (F1).
+      await adminDb.runTransaction(async (tx) => {
+        const fresh = await tx.get(ref);
+        if (!fresh.exists) throw new ActionError(404, 'NOT_FOUND');
+        const current = fresh.data();
+        if (current.status !== 'locked' || current.settledAt) {
+          throw new ActionError(400, 'NOT_LOCKED');
+        }
+        // The next lock posts again, with the new guess count.
+        tx.update(ref, { status: 'open', lockedAt: null, 'announced.locked': null });
+      });
       return res.status(200).json({ ok: true });
     }
 

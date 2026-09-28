@@ -153,6 +153,25 @@ test('settle rejects an empty payout', async () => {
   expect(__fake.read('hunts/r1').status).toBe('locked');
 });
 
+// Review Focus F1: a settle transaction can land between reopen/lock's read
+// and write. The round already shows a settle (settledAt/actual set) even
+// though status still says 'locked' — settle must refuse and pay nothing.
+test('settle refuses a round already settled behind a stale lock', async () => {
+  seedRound('r1', { status: 'locked', settledAt: ts(1), actual: { payout: 5 } });
+  const res = await call({ action: 'settle', id: 'r1', actualPayout: 1000 });
+  expect(res.statusCode).toBe(400);
+  expect(res.body).toEqual({ error: 'ALREADY_SETTLED' });
+  expect(__fake.paths('ticket_ledger')).toHaveLength(0);
+});
+
+test('reopen refuses a round that has already been settled', async () => {
+  seedRound('r1', { status: 'settled', settledAt: ts(1), actual: { payout: 5 } });
+  const res = await call({ action: 'reopen', id: 'r1' });
+  expect(res.statusCode).toBe(400);
+  expect(res.body).toEqual({ error: 'NOT_LOCKED' });
+  expect(__fake.read('hunts/r1').status).toBe('settled');
+});
+
 // Review Focus 5: a winner without a users doc still gets paid.
 test('settle pays tickets, files the prize and settles; a second settle pays nothing', async () => {
   seedRound('r1');

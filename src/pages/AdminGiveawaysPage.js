@@ -40,9 +40,10 @@ import GiveawayEntriesGrid from '../components/GiveawayEntriesGrid';
 import { useRevealState } from '../components/giveaway/RevealScreen';
 import { useClock } from '../hooks/useClock';
 import { toImageUrl } from '../utils/slotImage';
+import { postAction, QUIET_ANNOUNCE } from '../components/admin/giveaways/api';
+import useGiveawayClock from '../components/admin/giveaways/useGiveawayClock';
+import useWinnerAnnounce from '../components/admin/giveaways/useWinnerAnnounce';
 import {
-  AUTO_ROLL_GRACE_MS,
-  CHAT_ANNOUNCE_DELAY_MS,
   DURATION_OPTIONS,
   LAST_CALL_SECONDS,
   REVEAL_MS,
@@ -57,7 +58,6 @@ import {
   keywordWarning,
   normalizeKeyword,
   parseMoney,
-  pickKey,
   rulesSummary,
   suggestKeyword,
   tsMillis,
@@ -76,18 +76,6 @@ const inputCls =
 
 const labelCls =
   'block text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/55 mb-1.5 font-mono';
-
-// Announce results that are not worth a warning toast.
-const QUIET_ANNOUNCE = ['disabled', 'empty', 'already'];
-
-async function postAction(action, body = {}) {
-  const res = await authedFetch('/api/admin/giveaways', {
-    method: 'POST',
-    body: JSON.stringify({ action, ...body }),
-  });
-  const data = await res.json().catch(() => ({}));
-  return { ok: res.ok, status: res.status, data };
-}
 
 function formatTs(ts) {
   if (!ts) return '—';
@@ -729,64 +717,6 @@ function ClaimTimer({ giveaway, firstMessageAt }) {
       </div>
     </div>
   );
-}
-
-// Posts the winner in chat once the reveal has played on stream, then shows
-// where that stands. Retry appears if Twitch refused the message. Runs at page
-// level, not inside the winner window: a bonus-buy winner confirmed quickly
-// moves to 'playing' and closes that window before the timer fires.
-function useWinnerAnnounce(giveaway) {
-  const key = pickKey(giveaway);
-  const rolledAtMs = tsMillis(giveaway?.rolledAt);
-  const enabled = !!giveaway && giveaway.announceWinner !== false && !!giveaway.winnerMessage;
-  const posted = !!key && giveaway?.announcedPick === key;
-  const id = giveaway?.id;
-  const winnerTwitchId = giveaway?.winnerTwitchId;
-  const [state, setState] = useState({ key: null, posting: false, error: null });
-
-  const post = useCallback(async () => {
-    setState({ key, posting: true, error: null });
-    try {
-      const { ok, status, data } = await postAction('announce', {
-        id,
-        winnerTwitchId,
-        rolledAtMs,
-      });
-      if (status === 409) return setState({ key, posting: false, error: null }); // pick moved on
-      const failed = !ok || (data.announce?.posted === false && !QUIET_ANNOUNCE.includes(data.announce.reason));
-      setState({
-        key,
-        posting: false,
-        error: failed ? data.announce?.reason || data.error || 'unknown' : null,
-      });
-    } catch {
-      setState({ key, posting: false, error: 'Network error' });
-    }
-  }, [key, id, winnerTwitchId, rolledAtMs]);
-
-  // One timer per pick. A reroll or skip changes the key and cancels it.
-  const postRef = useRef(post);
-  postRef.current = post;
-  const alreadyPosted = useRef(posted);
-  alreadyPosted.current = posted;
-  useEffect(() => {
-    if (!key || !enabled || alreadyPosted.current) return undefined;
-    const delay = Math.max(0, rolledAtMs + CHAT_ANNOUNCE_DELAY_MS - Date.now());
-    const t = setTimeout(() => {
-      if (!alreadyPosted.current) postRef.current();
-    }, delay);
-    return () => clearTimeout(t);
-  }, [key, enabled, rolledAtMs]);
-
-  const mine = state.key === key;
-  return {
-    enabled,
-    posted,
-    posting: mine && state.posting,
-    error: mine ? state.error : null,
-    dueAt: rolledAtMs != null ? rolledAtMs + CHAT_ANNOUNCE_DELAY_MS : null,
-    retry: post,
-  };
 }
 
 function ChatAnnounceStatus({ announce }) {
@@ -1630,68 +1560,6 @@ function WinnerLine({ giveaway, winner, index, canPlay }) {
       )}
     </li>
   );
-}
-
-// ─── Timer automation ───────────────────────────────────────────────────────
-
-// Runs the entry timer while this page is open: posts the last call, closes
-// entries at zero, and rolls when the giveaway asked for it. EventSub already
-// refuses late entries on its own, so a closed tab only delays the status flip.
-function useGiveawayClock(list, onWarn) {
-  const listRef = useRef(list);
-  listRef.current = list;
-  const fired = useRef(new Set());
-  const timed = list.some((g) => g.status === 'open' && g.closesAt);
-
-  useEffect(() => {
-    if (!timed) return undefined;
-    const tick = async () => {
-      const now = Date.now();
-      for (const g of listRef.current) {
-        if (g.status !== 'open') continue;
-        const closesAt = tsMillis(g.closesAt);
-        if (!closesAt) continue;
-
-        const lcKey = `lastCall:${g.id}`;
-        if (
-          g.announceLastCall &&
-          !g.lastCallAt &&
-          now >= closesAt - LAST_CALL_SECONDS * 1000 &&
-          now < closesAt - 3000 &&
-          !fired.current.has(lcKey)
-        ) {
-          fired.current.add(lcKey);
-          postAction('lastCall', { id: g.id })
-            .then(({ data }) => {
-              const a = data.announce;
-              if (a && a.posted === false && !QUIET_ANNOUNCE.includes(a.reason)) {
-                onWarn(`Last call didn't post in chat: ${a.reason}`);
-              }
-            })
-            .catch(() => {});
-        }
-
-        const closeKey = `close:${g.id}`;
-        if (now >= closesAt && !fired.current.has(closeKey)) {
-          fired.current.add(closeKey);
-          const closed = await postAction('close', { id: g.id }).catch(() => ({ ok: false }));
-          // Only auto-roll when we watched the clock run out, not when the
-          // page is opened long after the timer ended.
-          if (closed.ok && g.autoRoll && now - closesAt < AUTO_ROLL_GRACE_MS) {
-            if ((g.entryCount ?? 0) === 0) {
-              onWarn('Time ran out with no entries, so nothing was rolled.');
-            } else {
-              const rolled = await postAction('roll', { id: g.id }).catch(() => ({ ok: false, data: {} }));
-              if (!rolled.ok) onWarn(`Auto-roll failed: ${rolled.data?.error || 'unknown'}`);
-            }
-          }
-        }
-      }
-    };
-    tick();
-    const t = setInterval(tick, 1000);
-    return () => clearInterval(t);
-  }, [timed, onWarn]);
 }
 
 function ClosesIn({ giveaway }) {

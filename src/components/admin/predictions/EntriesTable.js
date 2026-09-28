@@ -71,6 +71,19 @@ export default function EntriesTable({ round }) {
                           {placeLabel(places[e.twitchId])}
                         </span>
                       )}
+                      {e.profileImageUrl ? (
+                        <img
+                          src={e.profileImageUrl}
+                          alt=""
+                          loading="lazy"
+                          className="w-5 h-5 rounded-full border border-white/15 flex-shrink-0"
+                        />
+                      ) : (
+                        <span
+                          className="w-5 h-5 rounded-full border border-white/15 flex-shrink-0"
+                          aria-hidden="true"
+                        />
+                      )}
                       <span className="text-white-body truncate">{e.displayName || e.twitchName || e.id}</span>
                     </span>
                   </td>

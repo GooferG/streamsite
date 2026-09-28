@@ -3,6 +3,9 @@
 // path, auto ids, where('==' | 'in'), transactions and batches (writes apply
 // when the callback or commit finishes; a throw discards them), set with
 // merge, dotted update paths, and the serverTimestamp / increment sentinels.
+// Transactions here run sequentially (one at a time, to completion) and do
+// not model concurrent contention — there is no interleaving between two
+// runTransaction calls the way real Firestore can interleave them.
 
 export function createFakeFirestore() {
   let docs = new Map();

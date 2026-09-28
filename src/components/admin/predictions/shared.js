@@ -44,3 +44,11 @@ export async function roundsAction(body) {
     return { ok: false, data: { error: 'Network error' } };
   }
 }
+
+// The error to show for an `announce` reply, or null when the line is posted
+// (or was already posted by another tab).
+export function announceFailure(ok, data) {
+  const result = data && data.announce;
+  if (ok && result && (result.posted || result.reason === 'already')) return null;
+  return (result && result.reason) || (data && data.error) || 'unknown';
+}

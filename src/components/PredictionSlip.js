@@ -6,6 +6,7 @@ import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 import { authedFetch } from '../utils/authedFetch';
 import { formatMoney } from '../utils/money';
 import { roundCurrency, roundTotalCost } from '../utils/predictionRound';
+import { winnerPrizeLabel } from '../utils/predictionRewards';
 
 function fakeSerial(roundId, twitchId) {
   if (!roundId) return '0000-0000';
@@ -306,7 +307,7 @@ export default function PredictionSlip({ round }) {
                 <Ticket size={11} aria-hidden="true" />
                 {yourWinnerEntry.place === 1 ? '1st place' : yourWinnerEntry.place === 2 ? '2nd place' : '3rd place'}
                 {yourWinnerEntry.prize?.tickets ? ` · +${yourWinnerEntry.prize.tickets} tickets` : ''}
-                {yourWinnerEntry.prize?.cashLabel ? ` · ${yourWinnerEntry.prize.cashLabel}` : ''}
+                {winnerPrizeLabel(yourWinnerEntry.prize) ? ` · ${winnerPrizeLabel(yourWinnerEntry.prize)}` : ''}
               </p>
             )}
           </div>

@@ -1,6 +1,7 @@
 import { Trophy, Ticket } from 'lucide-react';
 import { formatMoney } from '../utils/money';
 import { roundCurrency } from '../utils/predictionRound';
+import { winnerPrizeLabel } from '../utils/predictionRewards';
 
 const PLACE_LABEL = { 1: '1ST', 2: '2ND', 3: '3RD' };
 const PLACE_COLOR = {
@@ -55,10 +56,10 @@ function WinnerCard({ winner, round }) {
             +{winner.prize.tickets} tickets
           </span>
         )}
-        {winner.prize?.cashLabel && (
+        {winnerPrizeLabel(winner.prize) && (
           <span className="inline-flex items-center gap-1.5 px-2 py-1 border border-current text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
             <Trophy size={11} aria-hidden="true" />
-            {winner.prize.cashLabel}
+            {winnerPrizeLabel(winner.prize)}
           </span>
         )}
       </div>

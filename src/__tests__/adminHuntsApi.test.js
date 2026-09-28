@@ -306,6 +306,34 @@ test('a failed post releases the claim so a retry posts', async () => {
   expect(sendChannelMessage).toHaveBeenLastCalledWith('Final payout $1,843. No guesses this round.');
 });
 
+// Review Focus F2: a chat problem must never turn an already-written round
+// into a 500 for create/lock.
+test('lock succeeds and reports posted:false when the chat post fails', async () => {
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+  seedRound('r1', { status: 'open', announce: true, entryCount: 5 });
+  sendChannelMessage.mockRejectedValueOnce(new Error('CHAT_DROPPED:spam'));
+  const res = await call({ action: 'lock', id: 'r1' });
+  expect(res.statusCode).toBe(200);
+  expect(__fake.read('hunts/r1').status).toBe('locked');
+  expect(res.body.announce.posted).toBe(false);
+  expect(__fake.read('hunts/r1').announced.locked).toBeNull();
+});
+
+// The claim-release write (after a failed chat post) can itself fail — e.g.
+// the round disappears in between. That must be swallowed too, not bubble up
+// into a 500 for an already-successful lock.
+test('lock survives when the claim-release write also fails', async () => {
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+  seedRound('r1', { status: 'open', announce: true, entryCount: 5 });
+  sendChannelMessage.mockImplementationOnce(async () => {
+    await __fake.db.collection('hunts').doc('r1').delete();
+    throw new Error('CHAT_DROPPED:spam');
+  });
+  const res = await call({ action: 'lock', id: 'r1' });
+  expect(res.statusCode).toBe(200);
+  expect(res.body.announce.posted).toBe(false);
+});
+
 test('announce checks the event and the round status', async () => {
   seedRound('r1', { status: 'locked', announce: true });
   const early = await call({ action: 'announce', id: 'r1', event: 'results' });

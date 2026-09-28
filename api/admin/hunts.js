@@ -74,8 +74,25 @@ async function announceEvent(ref, event) {
     return { posted: true };
   } catch (err) {
     console.error('prediction chat announce failed', err);
-    await ref.update({ [`announced.${event}`]: null });
+    // The release write can itself fail (e.g. the round vanished in between);
+    // that must not mask the original chat error or throw out of this function.
+    try {
+      await ref.update({ [`announced.${event}`]: null });
+    } catch (releaseErr) {
+      console.error('prediction chat claim release failed', releaseErr);
+    }
     return { posted: false, reason: err.message };
+  }
+}
+
+// create and lock have already written the round; a chat problem must not
+// turn that into an error response.
+async function announceQuietly(ref, event) {
+  try {
+    return await announceEvent(ref, event);
+  } catch (err) {
+    console.error('prediction chat announce failed', err);
+    return { posted: false, reason: err.code || err.message };
   }
 }
 
@@ -173,7 +190,7 @@ export default async function handler(req, res) {
         });
       });
       const announceResult = announce
-        ? await announceEvent(ref, 'opened')
+        ? await announceQuietly(ref, 'opened')
         : { posted: false, reason: 'disabled' };
       return res.status(200).json({ ok: true, id: ref.id, announce: announceResult });
     }
@@ -206,7 +223,7 @@ export default async function handler(req, res) {
         if (current.status !== 'open') throw new ActionError(400, 'NOT_OPEN');
         tx.update(ref, { status: 'locked', lockedAt: FieldValue.serverTimestamp() });
       });
-      const announce = await announceEvent(ref, 'locked');
+      const announce = await announceQuietly(ref, 'locked');
       return res.status(200).json({ ok: true, announce });
     }
 

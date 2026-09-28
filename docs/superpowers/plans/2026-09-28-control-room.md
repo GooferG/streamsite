@@ -2603,7 +2603,7 @@ test('clamps a saved position that is off screen', () => {
 
 test('snaps within 24px of a corner, and only then', () => {
   expect(snapToCorner({ x: 880, y: 80 }, size, view)).toEqual({ rect: { x: 884, y: 73 }, corner: 'tr' });
-  expect(snapToCorner({ x: 30, y: 300 }, size, view)).toEqual({ rect: { x: 30, y: 300 }, corner: null });
+  expect(snapToCorner({ x: 30, y: 200 }, size, view)).toEqual({ rect: { x: 30, y: 200 }, corner: null });
 });
 
 test('nearest corner goes by the panel centre', () => {
@@ -3956,7 +3956,7 @@ test('Roll is disabled with nobody entered', () => {
   expect(screen.getByRole('button', { name: /roll/i }).disabled).toBe(true);
 });
 
-test('closed: Roll posts roll; End asks first', async () => {
+test('closed: End asks before ending', async () => {
   show({ ...OPEN, status: 'closed' });
   fireEvent.click(screen.getByRole('button', { name: /end/i }));
   expect(postAction).not.toHaveBeenCalled();

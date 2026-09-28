@@ -137,9 +137,9 @@ These are the only new reads. Firebase is on Spark, so both queries stay narrow.
 
 ### Opening and closing
 
-- **Nav button:** the owner-only `GiveawayShortcut` becomes **Control room** for all staff (`isStaff`, replacing the email check). It keeps the live dot and entry count and toggles the panel instead of navigating to `/admin/giveaways`. The `Operator` badge and the Admin link stay.
+- **Nav button:** the owner-only `GiveawayShortcut` becomes **Control room** for all staff (`isStaff`, replacing the email check). It keeps the live dot and entry count and toggles the panel (open → pill, pill or closed → open) instead of navigating to `/admin/giveaways`. On `/admin/*`, where the panel is hidden, it still navigates to `/admin/giveaways`. The `Operator` badge and the Admin link stay. Mods, who sign in through Twitch, get the button next to their viewer identity.
 - **Hotkey:** `` ` `` toggles between closed or pill and open. It is ignored while focus is in an `input`, `textarea`, `select` or `[contenteditable]`.
-- **Escape** minimizes to the pill. Anything open inside the panel (the winner flow, the new-giveaway form, a modal) handles Escape first.
+- **Escape** minimizes to the pill. It is ignored while focus is in a form field, while a modal dialog (`aria-modal="true"`) is open, while a stage moment plays, and when an inner handler already called `preventDefault()`. The new-giveaway form closes itself on Escape. The inline winner flow does **not** bind Escape to Discard, as `/admin` does, so minimizing can never throw a pick away; Discard stays a button.
 - **×** in the header closes the panel completely, with no pill.
 - **Mobile menu:** gets a "Control room" row for staff that opens the bottom sheet.
 
@@ -153,6 +153,7 @@ These are the only new reads. Firebase is on Spark, so both queries stay narrow.
 | `closed` | Only the nav button | none |
 
 - **Drag:** pointer events on the header (`setPointerCapture`), with no library. The rect is clamped so at least 48px of the header stays inside the viewport.
+- **No resting transform:** the panel is positioned with `left`/`top` (float) or `top`/`right`/`bottom` (dock). It never carries `transform`, `filter`, `backdrop-filter` or `will-change: transform` at rest, because any of these would turn it into the containing block for `position: fixed` descendants, trapping `SettleModal` and `NewRoundModal` inside the panel. Keyframe animations use `animation-fill-mode: backwards` (or none), so nothing persists after they finish, and FLIP uses the Web Animations API without `fill`.
 - **Corner snap:** on release, if the rect is within 24px of a viewport corner, it snaps to that corner with 16px insets.
 - **Dock:** while dragging, if the pointer is within 48px of the right edge, a dashed orange dock outline fades in. Releasing there docks the panel.
 - **Undock:** dragging a docked panel's header more than 64px left undocks it, and the drag continues as a float.
@@ -173,7 +174,7 @@ These are the only new reads. Firebase is on Spark, so both queries stay narrow.
   - Tabs are `role="tablist"`/`tab`, with arrow keys moving between them.
 - **Body:** `#111113`, 12px padding. The primary number uses Source Code Pro 40px amber (`#ffb24d`) with a soft glow; secondary numbers use Anton.
 - **Warnings strip:** sits above the tab body, in red and dismissible. Warnings auto-dismiss after 8s unless they are timer failures, which stay until dismissed.
-- **Auto-focus:** when `cr.giveaway` enters `rolling` with a new `pickKey`, the panel opens (from `pill` or `closed`) and selects the Giveaway tab. If it was `closed`, it returns to `closed` after the pick is confirmed or skipped.
+- **Auto-focus:** when `cr.giveaway` enters `rolling` with a new `pickKey`, the panel opens (from `pill` or `closed`) and selects the Giveaway tab. If the roll opened it, it returns to its earlier state (`closed` or `pill`) once the shown giveaway leaves `rolling`/`playing`, or ends. A skip re-picks, so it keeps the panel open.
 - All UI copy follows PRODUCT.md voice rules: no em dashes, sentence case, plain wording on controls.
 
 ### Giveaway tab
@@ -212,7 +213,7 @@ The winner flow reuses `WinnerModal`'s internals rendered inline, with no modal 
 ### Prediction results
 
 - **Trigger** (`stageTriggers.resultsMoment(prev, next, now)`): `next.status === 'settled'`, the round id differs from the last staged one, and `now - settledAt < 10_000`.
-- **Content:** a title card (`ROUND <n> · RESULTS` in mono eyebrow, the round title in Anton), then `PredictionWinnersReveal` centered at max-width 56rem on the same dark radial backdrop.
+- **Content:** a title card (`PREDICTION RESULTS` in mono eyebrow, the round title in Anton; rounds have no number field), then `PredictionWinnersReveal` centered at max-width 56rem on the same dark radial backdrop.
 - **Length:** about 8s, then the power-off exit.
 - **Timing:** it plays immediately at settle. The results chat line already posts at `settledAt + STREAM_DELAY_MS`, so it lands in step with the delayed video.
 
@@ -237,7 +238,7 @@ The winner flow reuses `WinnerModal`'s internals rendered inline, with no modal 
 | Action request fails | Inline error under the button row (`errorText(code)`), and the button re-enables. A network failure shows "Network error, try again". |
 | Timer action fails (auto-roll, last call not posted) | `pushWarning`; the warning strip shows in the panel and on `/admin/giveaways`, and the pill LED turns red until it is dismissed. The admin page's own bottom-right toast moves to the top of the page, off the `LiveIndicator` spot. |
 | Firestore listener error | The tally row shows `DATA` in red with "Live data lost". The provider resubscribes after 5s, up to 5 attempts, then stops with "Reload to reconnect". |
-| `NOT_AUTHENTICATED` / 401 | The panel body is replaced with "Signed out." and a link to `/admin`. |
+| `NOT_AUTHENTICATED` / 401 / 403 | The failing action shows "Signed out. Sign in again at /admin." under its buttons. (A real sign-out also drops the staff role, which unmounts the panel.) |
 | The user loses staff role | The provider tears down its subscriptions and the lock, and the panel and stage unmount. |
 | The panel or stage throws | Each is wrapped in its own `ErrorBoundary`, so the page on stream keeps rendering. The stage's fallback is `null`. The panel's fallback is a small "Control room crashed. Reopen" pill that remounts it. The timer engine lives in the provider, outside both boundaries, so it keeps running. |
 | `localStorage` unavailable | Defaults apply every load, with no errors. |

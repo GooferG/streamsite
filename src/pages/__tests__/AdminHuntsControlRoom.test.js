@@ -67,6 +67,34 @@ const PAST = {
   createdAt: at(1000),
 };
 
+// Review Focus F5: a prediction round left open/locked from before this
+// branch existed can be older than the newest (non-prediction-blocking) round.
+const SETTLED_NEWEST = {
+  id: 'newest',
+  title: 'This week',
+  status: 'settled',
+  source: 'manual',
+  manualTotalCost: 300,
+  acceptPredictions: true,
+  rewards: { tiers: TIERS },
+  announce: false,
+  actual: { payout: 500 },
+  winners: [],
+  createdAt: at(3000),
+};
+const OLDER_OPEN = {
+  id: 'older',
+  title: 'Leftover round',
+  status: 'open',
+  source: 'manual',
+  manualTotalCost: 200,
+  acceptPredictions: true,
+  rewards: { tiers: TIERS },
+  announce: false,
+  entryCount: 1,
+  createdAt: at(1000),
+};
+
 beforeEach(() => {
   Object.keys(mockDocs).forEach((k) => delete mockDocs[k]);
 });
@@ -114,4 +142,14 @@ test('with no active round, New round is enabled', () => {
   mockDocs.hunts = [PAST];
   render(<AdminHuntsPage />);
   expect(screen.getByRole('button', { name: /new round/i }).disabled).toBe(false);
+});
+
+test('an older active round stays actionable, not just read-only under Past', () => {
+  mockDocs.hunts = [SETTLED_NEWEST, OLDER_OPEN];
+  render(<AdminHuntsPage />);
+  expect(screen.getByRole('button', { name: /new round/i }).disabled).toBe(true);
+  expect(screen.getByText(/settle or delete "leftover round" first/i)).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: /view/i }));
+  expect(screen.getByRole('button', { name: /lock entries/i })).toBeTruthy();
+  expect(screen.queryByRole('button', { name: /back to current round/i })).toBeNull();
 });

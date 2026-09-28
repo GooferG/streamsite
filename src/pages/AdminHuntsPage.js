@@ -55,11 +55,14 @@ export default function AdminHuntsPage() {
   const current = list[0] || null;
   const selected = selectedId ? list.find((r) => r.id === selectedId) : null;
   const viewing = selected || current;
-  const readOnly = !!viewing && !!current && viewing.id !== current.id;
   const past = list.slice(1);
   const active = list.find(
     (r) => r.acceptPredictions && (r.status === 'open' || r.status === 'locked')
   );
+  // Production may hold an older open/locked round from before New round was
+  // blocked while one is active. That round is never read-only — otherwise it
+  // could only be viewed under Past (Delete only), with no way to act on it.
+  const readOnly = !!viewing && !!current && viewing.id !== current.id && viewing.id !== active?.id;
   const results = useResultsAnnounce(current);
   const lastRound = useMemo(() => lastRewardsRound(list), [list]);
 
@@ -86,8 +89,21 @@ export default function AdminHuntsPage() {
 
       <div className="flex flex-wrap items-center justify-end gap-3 mb-6">
         {active && (
-          <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/45 font-mono">
-            Settle or delete the current round first
+          <p className="inline-flex items-center gap-2 text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/45 font-mono">
+            <span>
+              {active.id === current?.id
+                ? 'Settle or delete the current round first'
+                : `Settle or delete "${active.title}" first`}
+            </span>
+            {active.id !== current?.id && viewing?.id !== active.id && (
+              <button
+                type="button"
+                onClick={() => setSelectedId(active.id)}
+                className="text-orange-admin hover:text-orange-bright"
+              >
+                View
+              </button>
+            )}
           </p>
         )}
         <button

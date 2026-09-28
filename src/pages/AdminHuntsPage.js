@@ -1,56 +1,33 @@
 import { useEffect, useMemo, useState } from 'react';
-import {
-  collection,
-  onSnapshot,
-  orderBy,
-  query,
-  limit as fLimit,
-} from 'firebase/firestore';
-import {
-  Lock,
-  Unlock,
-  Trophy,
-  Plus,
-  Trash2,
-  ChevronRight,
-  Layers,
-} from 'lucide-react';
+import { collection, onSnapshot, orderBy, query, limit as fLimit } from 'firebase/firestore';
+import { Plus, ChevronRight, Layers } from 'lucide-react';
 import { db } from '../config/firebase';
-import { authedFetch } from '../utils/authedFetch';
 import SuggestionList from '../components/SuggestionList';
 import NewRoundModal from '../components/admin/predictions/NewRoundModal';
-import SettleModal from '../components/admin/predictions/SettleModal';
-
-function formatTs(ts) {
-  if (!ts) return '—';
-  const date = ts.toDate ? ts.toDate() : new Date(ts);
-  return date.toLocaleString(undefined, {
-    month: 'short',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
+import RoundControl from '../components/admin/predictions/RoundControl';
+import EntriesTable from '../components/admin/predictions/EntriesTable';
+import RoundResults from '../components/admin/predictions/RoundResults';
+import useResultsAnnounce from '../components/admin/predictions/useResultsAnnounce';
+import { formatTs, statusTone } from '../components/admin/predictions/shared';
+import { lastRewardsRound } from '../utils/predictionRewards';
 
 function RoundRow({ round, onOpen }) {
   return (
-    <button type="button" onClick={() => onOpen(round)} className="w-full grid grid-cols-[auto_1fr_auto_auto] gap-3 items-center px-4 py-3 border-t border-white/8 first:border-t-0 hover:bg-zinc-broadcast/40 text-left">
-      <span className={`px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow-md uppercase border font-mono ${
-        round.status === 'open'
-          ? 'text-emerald-signal border-emerald-signal/40'
-          : round.status === 'locked'
-            ? 'text-orange-admin border-orange-admin/40'
-            : 'text-white/65 border-white/20'
-      }`}>
+    <button
+      type="button"
+      onClick={() => onOpen(round)}
+      className="w-full grid grid-cols-[auto_1fr_auto_auto] gap-3 items-center px-4 py-3 border-t border-white/8 first:border-t-0 hover:bg-zinc-broadcast/40 text-left"
+    >
+      <span
+        className={`px-1.5 py-0.5 text-[0.5625rem] font-bold tracking-eyebrow-md uppercase border font-mono ${statusTone(round.status)}`}
+      >
         {round.status}
       </span>
       <div className="min-w-0">
         <p className="font-bold text-white-body text-sm truncate">{round.title}</p>
         <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/40 font-mono mt-0.5">
-          {[
-            round.acceptPredictions && 'PREDICT',
-            round.acceptSuggestions && `SUGGEST`,
-          ].filter(Boolean).join(' + ')} · {round.source} · {formatTs(round.createdAt)}
+          {[round.acceptPredictions && 'PREDICT', round.acceptSuggestions && 'SUGGEST'].filter(Boolean).join(' + ')} ·{' '}
+          {round.source} · {formatTs(round.createdAt)}
         </p>
       </div>
       <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono tabular-nums">
@@ -61,137 +38,8 @@ function RoundRow({ round, onOpen }) {
   );
 }
 
-function RoundDetail({ round, onBack }) {
-  const [busy, setBusy] = useState(null);
-  const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [settling, setSettling] = useState(false);
-
-  const act = async (action) => {
-    setBusy(action);
-    try {
-      const res = await authedFetch('/api/admin/hunts', {
-        method: 'POST',
-        body: JSON.stringify({ action, id: round.id }),
-      });
-      const data = await res.json();
-      if (!res.ok) alert(`Action failed: ${data.error || res.status}`);
-      else if (action === 'delete') onBack();
-    } finally {
-      setBusy(null);
-    }
-  };
-
-  return (
-    <div className="space-y-5">
-      <div className="flex items-center justify-between gap-3 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
-        <button type="button" onClick={onBack} className="text-white/55 hover:text-white-body tracking-eyebrow-lg">
-          ← Back to list
-        </button>
-        <span className="inline-flex items-center gap-2 text-orange-admin">
-          <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
-          Round · {round.status}
-        </span>
-      </div>
-
-      <div className="relative overflow-hidden border border-orange-admin/30 bg-zinc-card/40">
-        <div className="pointer-events-none absolute -top-32 -right-24 w-96 h-96 rounded-full bg-orange-admin/15 blur-3xl motion-reduce:hidden" aria-hidden="true" />
-        <div className="relative px-6 sm:px-8 py-7">
-          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-orange-admin mb-2 font-mono">
-            ▸ Prediction round
-          </p>
-          <p
-            className="font-black text-white-body leading-[0.9] tracking-[-0.03em]"
-            style={{
-              fontFamily: 'ui-sans-serif, system-ui, sans-serif',
-              fontSize: 'clamp(2.25rem, 6vw, 3.5rem)',
-            }}
-          >
-            {round.title}
-          </p>
-          {round.contextNote && <p className="mt-2 text-sm text-white/55">{round.contextNote}</p>}
-          <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono">
-            <span className="text-white/55">
-              Features{' '}
-              <span className="text-emerald-signal">
-                {[
-                  round.acceptPredictions && 'predictions',
-                  round.acceptSuggestions && 'suggestions',
-                ].filter(Boolean).join(' + ') || 'none'}
-              </span>
-            </span>
-            <span className="text-white/15">·</span>
-            <span className="text-white/55">Source <span className="text-white-body">{round.source}</span></span>
-            {round.acceptPredictions && (
-              <>
-                <span className="text-white/15">·</span>
-                <span className="text-white/55">Entries <span className="text-white-body tabular-nums">{round.entryCount ?? 0}</span></span>
-              </>
-            )}
-            {round.acceptSuggestions && (
-              <>
-                <span className="text-white/15">·</span>
-                <span className="text-white/55">Suggestions <span className="text-white-body tabular-nums">{round.suggestionCount ?? 0}</span></span>
-                <span className="text-white/15">·</span>
-                <span className="text-white/55">Cap <span className="text-white-body tabular-nums">{round.suggestionCap ?? 3}</span></span>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2">
-        {round.acceptPredictions && round.status === 'open' && (
-          <button type="button" onClick={() => act('lock')} disabled={!!busy} className="inline-flex items-center gap-2 px-3.5 py-2 border border-white/15 text-white/70 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-50">
-            <Lock size={13} aria-hidden="true" />
-            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">{busy === 'lock' ? 'Locking…' : 'Lock entries'}</span>
-          </button>
-        )}
-        {round.acceptPredictions && round.status === 'locked' && (
-          <button type="button" onClick={() => act('reopen')} disabled={!!busy} className="inline-flex items-center gap-2 px-3.5 py-2 border border-white/15 text-white/70 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-50">
-            <Unlock size={13} aria-hidden="true" />
-            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">{busy === 'reopen' ? 'Reopening…' : 'Reopen'}</span>
-          </button>
-        )}
-        {round.acceptPredictions && ['open', 'locked'].includes(round.status) && (
-          <button type="button" onClick={() => setSettling(true)} disabled={!!busy} className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-30">
-            <Trophy size={13} aria-hidden="true" />
-            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Settle & reveal</span>
-          </button>
-        )}
-        {round.acceptPredictions && round.status === 'settled' && round.winners?.[0] && (
-          <div className="inline-flex items-center gap-2 px-3 py-2 border border-emerald-signal/40 bg-emerald-signal/5 text-emerald-signal text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-            <Trophy size={12} aria-hidden="true" />
-            1st: {round.winners[0].displayName}
-          </div>
-        )}
-        {!confirmingDelete ? (
-          <button type="button" onClick={() => setConfirmingDelete(true)} className="ml-auto inline-flex items-center gap-2 px-3 py-2 border border-red-destructive/30 text-red-destructive/70 hover:bg-red-destructive/10 hover:border-red-destructive/60 transition-colors duration-150">
-            <Trash2 size={12} aria-hidden="true" />
-            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Delete</span>
-          </button>
-        ) : (
-          <div className="ml-auto flex gap-2">
-            <button type="button" onClick={() => act('delete')} className="inline-flex items-center gap-2 px-3 py-2 bg-red-destructive/15 border border-red-destructive/50 text-red-destructive hover:bg-red-destructive/25 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Confirm</button>
-            <button type="button" onClick={() => setConfirmingDelete(false)} className="px-3 py-2 border border-white/10 text-white/60 hover:text-white-body text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">Cancel</button>
-          </div>
-        )}
-      </div>
-
-      {round.acceptSuggestions && (
-        <SuggestionList huntId={round.id} adminMode />
-      )}
-
-      {settling && (
-        <SettleModal
-          round={round}
-          onClose={() => setSettling(false)}
-          onSettled={() => setSettling(false)}
-        />
-      )}
-    </div>
-  );
-}
-
+// /admin/hunts: the prediction control room. The newest round (the one viewers
+// see on /gamba/hunts) leads the page; past rounds open read-only below.
 export default function AdminHuntsPage() {
   const [list, setList] = useState([]);
   const [creating, setCreating] = useState(false);
@@ -199,18 +47,21 @@ export default function AdminHuntsPage() {
 
   useEffect(() => {
     const q = query(collection(db, 'hunts'), orderBy('createdAt', 'desc'), fLimit(50));
-    const unsub = onSnapshot(q, (snap) => {
+    return onSnapshot(q, (snap) => {
       setList(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
     });
-    return unsub;
   }, []);
 
-  const selected = useMemo(() => list.find((r) => r.id === selectedId) || null, [list, selectedId]);
-  const grouped = useMemo(() => {
-    const live = list.filter((r) => r.status === 'open' || r.status === 'locked');
-    const past = list.filter((r) => r.status === 'settled');
-    return { live, past };
-  }, [list]);
+  const current = list[0] || null;
+  const selected = selectedId ? list.find((r) => r.id === selectedId) : null;
+  const viewing = selected || current;
+  const readOnly = !!viewing && !!current && viewing.id !== current.id;
+  const past = list.slice(1);
+  const active = list.find(
+    (r) => r.acceptPredictions && (r.status === 'open' || r.status === 'locked')
+  );
+  const results = useResultsAnnounce(current);
+  const lastRound = useMemo(() => lastRewardsRound(list), [list]);
 
   return (
     <div className="p-6 sm:p-8 max-w-4xl mx-auto">
@@ -233,61 +84,77 @@ export default function AdminHuntsPage() {
         </h1>
       </header>
 
-      {!selected && (
-        <div className="flex items-center justify-end mb-6">
-          <button type="button" onClick={() => setCreating(true)} className="inline-flex items-center gap-2 px-3.5 py-2 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150">
-            <Plus size={13} aria-hidden="true" />
-            <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">New round</span>
-          </button>
+      <div className="flex flex-wrap items-center justify-end gap-3 mb-6">
+        {active && (
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/45 font-mono">
+            Settle or delete the current round first
+          </p>
+        )}
+        <button
+          type="button"
+          onClick={() => setCreating(true)}
+          disabled={!!active}
+          className="inline-flex items-center gap-2 px-3.5 py-2 bg-orange-admin text-zinc-broadcast hover:bg-orange-bright transition-colors duration-150 disabled:opacity-40 disabled:hover:bg-orange-admin"
+        >
+          <Plus size={13} aria-hidden="true" />
+          <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">New round</span>
+        </button>
+      </div>
+
+      {viewing ? (
+        <div className="space-y-5">
+          {readOnly && (
+            <button
+              type="button"
+              onClick={() => setSelectedId(null)}
+              className="text-[0.625rem] font-bold uppercase tracking-eyebrow-lg font-mono text-white/55 hover:text-white-body"
+            >
+              ← Back to current round
+            </button>
+          )}
+          <RoundControl
+            key={viewing.id}
+            round={viewing}
+            readOnly={readOnly}
+            results={viewing.id === current?.id ? results : null}
+            onDeleted={() => setSelectedId(null)}
+          />
+          {viewing.acceptPredictions && viewing.status === 'settled' && <RoundResults round={viewing} />}
+          {viewing.acceptPredictions && <EntriesTable round={viewing} />}
+          {viewing.acceptSuggestions && <SuggestionList huntId={viewing.id} adminMode />}
+        </div>
+      ) : (
+        <div className="border border-white/8 bg-zinc-card/30 py-16 text-center">
+          <div className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-white/15 mb-3 text-white/35">
+            <Layers size={16} aria-hidden="true" />
+          </div>
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
+            No rounds yet
+          </p>
+          <p className="text-sm text-white/55">Start one to begin.</p>
         </div>
       )}
 
-      {selected ? (
-        <RoundDetail round={selected} onBack={() => setSelectedId(null)} />
-      ) : (
-        <div className="space-y-6">
-          {grouped.live.length > 0 && (
-            <section>
-              <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal mb-2 font-mono">
-                Live · {grouped.live.length}
-              </p>
-              <div className="border border-white/8 bg-zinc-card/30">
-                {grouped.live.map((r) => (
-                  <RoundRow key={r.id} round={r} onOpen={(x) => setSelectedId(x.id)} />
-                ))}
-              </div>
-            </section>
-          )}
-          {grouped.past.length > 0 && (
-            <section>
-              <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 mb-2 font-mono">
-                Past · {grouped.past.length}
-              </p>
-              <div className="border border-white/8 bg-zinc-card/30">
-                {grouped.past.map((r) => (
-                  <RoundRow key={r.id} round={r} onOpen={(x) => setSelectedId(x.id)} />
-                ))}
-              </div>
-            </section>
-          )}
-          {list.length === 0 && (
-            <div className="border border-white/8 bg-zinc-card/30 py-16 text-center">
-              <div className="inline-flex items-center justify-center w-10 h-10 rounded-full border border-white/15 mb-3 text-white/35">
-                <Layers size={16} aria-hidden="true" />
-              </div>
-              <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">No rounds yet</p>
-              <p className="text-sm text-white/55">Start one to begin.</p>
-            </div>
-          )}
-        </div>
+      {past.length > 0 && (
+        <section className="mt-10">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 mb-2 font-mono">
+            Past · {past.length}
+          </p>
+          <div className="border border-white/8 bg-zinc-card/30">
+            {past.map((r) => (
+              <RoundRow key={r.id} round={r} onOpen={(x) => setSelectedId(x.id)} />
+            ))}
+          </div>
+        </section>
       )}
 
       {creating && (
         <NewRoundModal
+          lastRound={lastRound}
           onClose={() => setCreating(false)}
-          onCreated={(id) => {
+          onCreated={() => {
             setCreating(false);
-            setSelectedId(id);
+            setSelectedId(null);
           }}
         />
       )}

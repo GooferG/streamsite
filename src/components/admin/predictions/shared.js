@@ -31,6 +31,13 @@ export function errorText(code) {
   return ERROR_TEXT[code] || code || 'Failed';
 }
 
+// Text + border colour for a round status chip.
+export function statusTone(status) {
+  if (status === 'open') return 'text-emerald-signal border-emerald-signal/40';
+  if (status === 'locked') return 'text-orange-admin border-orange-admin/40';
+  return 'text-white/65 border-white/20';
+}
+
 // POST one action to the admin rounds endpoint. Never throws.
 export async function roundsAction(body) {
   try {

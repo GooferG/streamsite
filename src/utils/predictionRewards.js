@@ -39,14 +39,22 @@ export function winnerPrizeLabel(prize) {
 }
 
 // One tier as "100t + $10 cash", "50t", "Bonus buy $20" or "No reward".
-export function rewardSummary(tier) {
+// `legacyType` is the round's old `rewards.type` ('tickets'|'cash'|'both'),
+// which only matters for a legacy tier (no `prize` key) — the old form hid
+// the ticket or cash input behind it, so honor whichever the admin picked.
+export function rewardSummary(tier, legacyType) {
+  const legacy = !(tier && Object.prototype.hasOwnProperty.call(tier, 'prize'));
+  const showTickets = !legacy || legacyType !== 'cash';
+  const showCash = !legacy || legacyType !== 'tickets';
   const parts = [];
   const tickets = Number(tier && tier.tickets) || 0;
-  if (tickets > 0) parts.push(`${tickets}t`);
-  const prize = tier && tier.prize;
-  const label = prizeLabel(prize);
-  if (label) parts.push(prize.kind === 'cash' ? `${label} cash` : label);
-  else if (tier && tier.cashLabel) parts.push(tier.cashLabel);
+  if (showTickets && tickets > 0) parts.push(`${tickets}t`);
+  if (showCash) {
+    const prize = tier && tier.prize;
+    const label = prizeLabel(prize);
+    if (label) parts.push(prize.kind === 'cash' ? `${label} cash` : label);
+    else if (tier && tier.cashLabel) parts.push(tier.cashLabel);
+  }
   return parts.length ? parts.join(' + ') : 'No reward';
 }
 

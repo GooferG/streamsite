@@ -108,7 +108,8 @@ export default function RoundControl({ round, readOnly = false, results = null, 
             <ul className="flex flex-wrap gap-x-4 gap-y-1 text-[0.625rem] font-bold tracking-eyebrow-md uppercase font-mono">
               {tiers.map((tier) => (
                 <li key={tier.place} className="text-white/55">
-                  <span className="text-white-body">{placeLabel(tier.place)}</span> · {rewardSummary(tier)}
+                  <span className="text-white-body">{placeLabel(tier.place)}</span> ·{' '}
+                  {rewardSummary(tier, round.rewards?.type)}
                 </li>
               ))}
             </ul>

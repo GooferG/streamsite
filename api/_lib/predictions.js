@@ -33,16 +33,34 @@ export function pickWinners(entries, round) {
   return tiers.map((_, i) => ranked[i] || null);
 }
 
+// Rounds created before this branch have tiers with NO `prize` key (just
+// { place, tickets, cashLabel }), and a round-level rewards.type
+// ('tickets'|'cash'|'both') that the old form used to hide the ticket or cash
+// input — but the server ignored, so e.g. a 'cash' round still paid its
+// hidden 100/50 tickets. For those legacy tiers only, honor the type the
+// admin actually picked. Tiers with a `prize` key (the new shape) always pay
+// exactly what they list, regardless of rewards.type.
+function legacyPrizeFor(tier, legacyType) {
+  const hasPrizeKey = Object.prototype.hasOwnProperty.call(tier, 'prize');
+  const raw = Number(tier.tickets);
+  const tickets = Number.isFinite(raw) && raw > 0 ? Math.floor(raw) : 0;
+  const prize = tierPrize(tier);
+  if (hasPrizeKey) return { tickets, prize };
+  if (legacyType === 'cash') return { tickets: 0, prize };
+  if (legacyType === 'tickets') return { tickets, prize: null };
+  return { tickets, prize };
+}
+
 // Winner records for a payout: one per tier in place order, null where no
 // entry placed. Settle fills in redemptionId when it files a prize.
 export function buildWinners(entries, round, actualPayout) {
   const tiers = sortedTiers(round);
   const picks = pickWinners(entries, { ...round, actual: { payout: actualPayout } });
+  const legacyType = round && round.rewards && round.rewards.type;
   return tiers.map((tier, i) => {
     const e = picks[i];
     if (!e) return null;
-    const prize = tierPrize(tier);
-    const tickets = Number(tier.tickets);
+    const { tickets, prize } = legacyPrizeFor(tier, legacyType);
     return {
       place: tier.place,
       twitchId: e.twitchId || e.id,
@@ -52,7 +70,7 @@ export function buildWinners(entries, round, actualPayout) {
       payoutGuess: e.payoutGuess,
       diff: e.payoutDiff,
       prize: {
-        tickets: Number.isFinite(tickets) && tickets > 0 ? Math.floor(tickets) : 0,
+        tickets,
         kind: prize ? prize.kind : null,
         amount: prize ? prize.amount : null,
         label: prize ? prize.label : null,

@@ -36,6 +36,11 @@ test('reward summaries', () => {
   expect(rewardSummary({ tickets: 0, prize: null })).toBe('No reward');
 });
 
+// Review Focus F3: a legacy tier (no `prize` key) honors the round's type.
+test('rewardSummary honors a legacy round type for tiers without a prize key', () => {
+  expect(rewardSummary({ tickets: 100, cashLabel: '$25' }, 'cash')).toBe('$25');
+});
+
 test('the form defaults to 100/50 tickets with 3rd place off', () => {
   const form = defaultRewardsForm();
   expect(form.thirdEnabled).toBe(false);

@@ -210,6 +210,26 @@ test('settle pays tickets, files the prize and settles; a second settle pays not
   expect(__fake.read('users/tw1').tickets).toBe(100);
 });
 
+// Review Focus F3: a legacy 'cash' round pays no hidden tickets at settle.
+test('settling a legacy cash round pays no tickets, only files the redemption', async () => {
+  seedRound('r1', {
+    rewards: {
+      type: 'cash',
+      tiers: [
+        { place: 1, tickets: 100, cashLabel: '$25 PayPal' },
+        { place: 2, tickets: 50, cashLabel: null },
+      ],
+    },
+  });
+  seedEntry('r1', 'tw1', 1000, 1);
+  const res = await call({ action: 'settle', id: 'r1', actualPayout: 1000 });
+  expect(res.statusCode).toBe(200);
+  expect(__fake.read('users/tw1')).toBeUndefined();
+  expect(__fake.paths('ticket_ledger')).toHaveLength(0);
+  const [redemptionPath] = __fake.paths('redemptions');
+  expect(__fake.read(redemptionPath).note).toBe('$25 PayPal');
+});
+
 // Review Focus 1: rounds opened before this change keep their cash label.
 test('settle keeps a legacy cashLabel prize', async () => {
   seedRound('r1', {

@@ -95,3 +95,32 @@ test('buildWinners keeps a legacy cashLabel prize and pads empty places', () => 
   expect(out[0].prize).toEqual({ tickets: 0, kind: 'cash', amount: null, label: '$25 PayPal' });
   expect(out[1]).toBeNull();
 });
+
+// Review Focus F3: a legacy round (no `prize` key on its tiers) hid
+// ticket/cash inputs behind rewards.type in the old form; the server must
+// honor whichever type the admin actually picked instead of paying both.
+test('a legacy "cash" round pays no hidden tickets', () => {
+  const r = { rewards: { type: 'cash', tiers: [{ place: 1, tickets: 100, cashLabel: '$25' }] } };
+  const [first] = buildWinners([{ twitchId: 'a', payoutGuess: 1, submittedAt: ts(1) }], r, 1);
+  expect(first.prize).toMatchObject({ tickets: 0, label: '$25' });
+});
+
+test('a legacy "tickets" round files no cashLabel prize', () => {
+  const r = { rewards: { type: 'tickets', tiers: [{ place: 1, tickets: 100, cashLabel: '$25' }] } };
+  const [first] = buildWinners([{ twitchId: 'a', payoutGuess: 1, submittedAt: ts(1) }], r, 1);
+  expect(first.prize).toMatchObject({ tickets: 100, label: null });
+});
+
+test('a legacy "both" round pays tickets and cash', () => {
+  const r = { rewards: { type: 'both', tiers: [{ place: 1, tickets: 100, cashLabel: '$25' }] } };
+  const [first] = buildWinners([{ twitchId: 'a', payoutGuess: 1, submittedAt: ts(1) }], r, 1);
+  expect(first.prize).toMatchObject({ tickets: 100, label: '$25' });
+});
+
+test('a tier with a real prize key is unaffected by rewards.type', () => {
+  const r = {
+    rewards: { type: 'cash', tiers: [{ place: 1, tickets: 100, prize: { kind: 'cash', amount: 10 } }] },
+  };
+  const [first] = buildWinners([{ twitchId: 'a', payoutGuess: 1, submittedAt: ts(1) }], r, 1);
+  expect(first.prize).toMatchObject({ tickets: 100, kind: 'cash', amount: 10, label: '$10' });
+});

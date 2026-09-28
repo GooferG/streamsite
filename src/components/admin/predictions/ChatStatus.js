@@ -19,6 +19,14 @@ function reached(round, key) {
   return round.status === 'settled';
 }
 
+// The status each line's message is still true for. Once the round has moved
+// past it (e.g. opened while locked/settled), the line can no longer be
+// retried — posting it now would say something false about the round.
+const CURRENT_STATUS = { opened: 'open', locked: 'locked', results: 'settled' };
+function stillCurrent(round, key) {
+  return round.status === CURRENT_STATUS[key];
+}
+
 // Chat post status for a round's three lines. `results` comes from
 // useResultsAnnounce for the current round; past rounds pass null and retry
 // results here like the other two.
@@ -58,14 +66,22 @@ export default function ChatStatus({ round, results }) {
         } else if (own.posting) {
           body = <span className="text-white/55">posting…</span>;
         } else if (own.error) {
-          body = (
-            <span className="text-red-destructive truncate max-w-[28ch]" title={own.error}>
-              failed: {own.error}
-            </span>
-          );
-          canRetry = true;
+          if (!stillCurrent(round, key)) {
+            // Reached but the round has moved on — Retry would post
+            // something no longer true, so there's nothing left to offer.
+            body = <span className="text-white/30">skipped</span>;
+          } else {
+            body = (
+              <span className="text-red-destructive truncate max-w-[28ch]" title={own.error}>
+                failed: {own.error}
+              </span>
+            );
+            canRetry = true;
+          }
         } else if (key === 'results' && pending && results.dueAt > now) {
           body = <span className="text-white/55">in {Math.ceil((results.dueAt - now) / 1000)}s</span>;
+        } else if (!stillCurrent(round, key)) {
+          body = <span className="text-white/30">skipped</span>;
         } else {
           body = <span className="text-white/45">not posted</span>;
           canRetry = true;

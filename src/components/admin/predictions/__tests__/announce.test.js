@@ -102,6 +102,25 @@ describe('ChatStatus', () => {
     expect(screen.getAllByText('not yet')).toHaveLength(2);
   });
 
+  // Review Focus F4: a reached-but-unposted line whose moment has passed
+  // (round moved on to locked/settled) must not offer a stale Retry — posting
+  // "Predictions are open!" for a closed round would be wrong.
+  test('a reached-but-unposted line that is no longer current shows skipped, not a button', () => {
+    render(
+      <ChatStatus
+        round={{
+          id: 'r1',
+          status: 'settled',
+          announce: true,
+          announced: { opened: null, locked: at(1), results: at(2) },
+        }}
+        results={null}
+      />
+    );
+    expect(screen.queryByRole('button', { name: /retry opened/i })).toBeNull();
+    expect(screen.getByText('skipped')).toBeTruthy();
+  });
+
   test('an unposted opened message offers Retry', async () => {
     authedFetch.mockReturnValue(reply(true, { ok: true, announce: { posted: true } }));
     render(

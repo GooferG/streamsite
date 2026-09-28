@@ -135,9 +135,10 @@ function mockCreateFlow(createReply = reply(true, { ok: true, id: 'new1', announ
 const createCall = () =>
   authedFetch.mock.calls.map(([, init]) => JSON.parse(init.body)).find((b) => b.action === 'create');
 
-test('the form starts from the last round rewards', () => {
+test('the form starts from the last round rewards', async () => {
   mockCreateFlow();
   render(<NewRoundModal lastRound={LAST} onClose={() => {}} onCreated={() => {}} />);
+  await screen.findByText(/your live communityhunts\.gg hunt/i);
   expect(screen.getByLabelText('1st place tickets').value).toBe('200');
   expect(screen.getByLabelText('1st place prize').value).toBe('cash');
   expect(screen.getByLabelText('1st place prize amount').value).toBe('10');
@@ -148,6 +149,7 @@ test('create sends each place tickets and prize, and the announce switch', async
   mockCreateFlow();
   const onCreated = jest.fn();
   render(<NewRoundModal onClose={() => {}} onCreated={onCreated} />);
+  await screen.findByText(/your live communityhunts\.gg hunt/i);
   fireEvent.change(screen.getByPlaceholderText('Friday night bonus hunt'), { target: { value: 'Friday' } });
   fireEvent.change(screen.getByLabelText('1st place prize'), { target: { value: 'bonus' } });
   fireEvent.change(screen.getByLabelText('1st place prize amount'), { target: { value: '20' } });
@@ -168,6 +170,7 @@ test('create sends each place tickets and prize, and the announce switch', async
 test('a prize without an amount blocks create', async () => {
   mockCreateFlow();
   render(<NewRoundModal onClose={() => {}} onCreated={() => {}} />);
+  await screen.findByText(/your live communityhunts\.gg hunt/i);
   fireEvent.change(screen.getByPlaceholderText('Friday night bonus hunt'), { target: { value: 'Friday' } });
   fireEvent.change(screen.getByLabelText('1st place prize'), { target: { value: 'cash' } });
   fireEvent.click(screen.getByRole('button', { name: /start round/i }));
@@ -178,6 +181,7 @@ test('a prize without an amount blocks create', async () => {
 test('an active round blocks create with a readable error', async () => {
   mockCreateFlow(reply(false, { error: 'ROUND_ACTIVE' }));
   render(<NewRoundModal onClose={() => {}} onCreated={() => {}} />);
+  await screen.findByText(/your live communityhunts\.gg hunt/i);
   fireEvent.change(screen.getByPlaceholderText('Friday night bonus hunt'), { target: { value: 'Friday' } });
   fireEvent.click(screen.getByRole('button', { name: /start round/i }));
   expect(await screen.findByText(/settle or delete the current round first/i)).toBeTruthy();

@@ -9,6 +9,8 @@ import {
 } from '../_lib/communityHunts.js';
 import { buildWinners } from '../_lib/predictions.js';
 import { sanitizeRewards, placeLabel } from '../_lib/predictionRewards.js';
+import { openedMessage, lockedMessage, resultsMessage } from '../_lib/predictionChat.js';
+import { sendChannelMessage } from '../_lib/twitchChat.js';
 
 // Admin prediction-round lifecycle. A round can have payout predictions and/or
 // slot suggestions enabled. Predictions go open -> locked -> settled, and only
@@ -38,6 +40,39 @@ function assertLocked(round) {
   if (!round.acceptPredictions) throw new ActionError(400, 'PREDICTIONS_DISABLED');
   if (round.status === 'settled') throw new ActionError(400, 'ALREADY_SETTLED');
   if (round.status !== 'locked') throw new ActionError(400, 'NOT_LOCKED');
+}
+
+const MESSAGES = { opened: openedMessage, locked: lockedMessage, results: resultsMessage };
+// Round statuses in which each chat line may post (null = any).
+const EVENT_STATUSES = { opened: null, locked: ['locked', 'settled'], results: ['settled'] };
+
+// Posts one chat line per round event. The event is claimed on the round in a
+// transaction before posting, so two callers can't both post; a failed post
+// releases the claim so Retry can post it. A chat failure never throws.
+async function announceEvent(ref, event) {
+  const claim = await adminDb.runTransaction(async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists) throw new ActionError(404, 'NOT_FOUND');
+    const round = snap.data();
+    if (!round.announce) return { result: { posted: false, reason: 'disabled' } };
+    const allowed = EVENT_STATUSES[event];
+    if (allowed && !allowed.includes(round.status)) throw new ActionError(400, 'WRONG_STATUS');
+    if (round.announced && round.announced[event]) {
+      return { result: { posted: false, reason: 'already' } };
+    }
+    tx.update(ref, { [`announced.${event}`]: FieldValue.serverTimestamp() });
+    return { round };
+  });
+  if (claim.result) return claim.result;
+
+  try {
+    await sendChannelMessage(MESSAGES[event](claim.round));
+    return { posted: true };
+  } catch (err) {
+    console.error('prediction chat announce failed', err);
+    await ref.update({ [`announced.${event}`]: null });
+    return { posted: false, reason: err.message };
+  }
 }
 
 export default async function handler(req, res) {
@@ -91,7 +126,8 @@ export default async function handler(req, res) {
       }
 
       const rewards = sanitizeRewards(payload.rewards);
-      const announce = payload.announce !== false;
+      // The chat lines are about guessing, so a suggestion-only round never posts.
+      const announce = acceptPredictions && payload.announce !== false;
       const now = FieldValue.serverTimestamp();
       const huntsCol = adminDb.collection('hunts');
       const ref = huntsCol.doc();
@@ -132,7 +168,10 @@ export default async function handler(req, res) {
           createdBy: admin.email,
         });
       });
-      return res.status(200).json({ ok: true, id: ref.id });
+      const announceResult = announce
+        ? await announceEvent(ref, 'opened')
+        : { posted: false, reason: 'disabled' };
+      return res.status(200).json({ ok: true, id: ref.id, announce: announceResult });
     }
 
     // All other actions need an existing hunt.
@@ -158,12 +197,14 @@ export default async function handler(req, res) {
       }
       if (round.status !== 'open') return res.status(400).json({ error: 'NOT_OPEN' });
       await ref.update({ status: 'locked', lockedAt: FieldValue.serverTimestamp() });
-      return res.status(200).json({ ok: true });
+      const announce = await announceEvent(ref, 'locked');
+      return res.status(200).json({ ok: true, announce });
     }
 
     if (action === 'reopen') {
       if (round.status !== 'locked') return res.status(400).json({ error: 'NOT_LOCKED' });
-      await ref.update({ status: 'open', lockedAt: null });
+      // The next lock posts again, with the new guess count.
+      await ref.update({ status: 'open', lockedAt: null, 'announced.locked': null });
       return res.status(200).json({ ok: true });
     }
 
@@ -259,6 +300,15 @@ export default async function handler(req, res) {
         return settled;
       });
       return res.status(200).json({ ok: true, winners });
+    }
+
+    if (action === 'announce') {
+      const event = payload.event;
+      if (!Object.prototype.hasOwnProperty.call(MESSAGES, event)) {
+        return res.status(400).json({ error: 'INVALID_EVENT' });
+      }
+      const announce = await announceEvent(ref, event);
+      return res.status(200).json({ ok: true, announce });
     }
 
     if (action === 'delete') {

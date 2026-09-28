@@ -218,3 +218,82 @@ test('a payout of 0 settles', async () => {
   expect(res.statusCode).toBe(200);
   expect(__fake.read('hunts/r1').winners[0]).toMatchObject({ twitchId: 'tw1', diff: 0 });
 });
+
+test('create posts the opened message once and records it', async () => {
+  const res = await call({ action: 'create', title: 'Friday', source: 'manual', manualTotalCost: 500 });
+  expect(res.body.announce).toEqual({ posted: true });
+  expect(sendChannelMessage).toHaveBeenCalledTimes(1);
+  expect(sendChannelMessage.mock.calls[0][0]).toMatch(/^Predictions are open! .*\(\$500 in\)/);
+  expect(__fake.read(`hunts/${res.body.id}`).announced.opened).toBeTruthy();
+});
+
+test('announce off posts nothing on create or lock', async () => {
+  const res = await call({ action: 'create', title: 'Friday', source: 'manual', announce: false });
+  expect(res.body.announce).toEqual({ posted: false, reason: 'disabled' });
+  const lock = await call({ action: 'lock', id: res.body.id });
+  expect(lock.body.announce).toEqual({ posted: false, reason: 'disabled' });
+  expect(sendChannelMessage).not.toHaveBeenCalled();
+});
+
+test('a suggestion-only round never announces', async () => {
+  const res = await call({
+    action: 'create',
+    title: 'Slots',
+    source: 'manual',
+    acceptPredictions: false,
+    acceptSuggestions: true,
+  });
+  expect(__fake.read(`hunts/${res.body.id}`).announce).toBe(false);
+  expect(sendChannelMessage).not.toHaveBeenCalled();
+});
+
+test('rounds from before announcements never post', async () => {
+  seedRound('old', { status: 'settled', announce: undefined, announced: undefined });
+  const res = await call({ action: 'announce', id: 'old', event: 'results' });
+  expect(res.body.announce).toEqual({ posted: false, reason: 'disabled' });
+  expect(sendChannelMessage).not.toHaveBeenCalled();
+});
+
+test('lock posts the locked message with the guess count, once', async () => {
+  seedRound('r1', { status: 'open', announce: true, entryCount: 37 });
+  const lock = await call({ action: 'lock', id: 'r1' });
+  expect(lock.body.announce).toEqual({ posted: true });
+  expect(sendChannelMessage).toHaveBeenCalledWith(
+    'Predictions locked. 37 guesses in. Revealed at goofer.tv/gamba/hunts'
+  );
+  const again = await call({ action: 'announce', id: 'r1', event: 'locked' });
+  expect(again.body.announce).toEqual({ posted: false, reason: 'already' });
+  expect(sendChannelMessage).toHaveBeenCalledTimes(1);
+});
+
+test('reopen clears the locked claim so the next lock posts again', async () => {
+  seedRound('r1', { status: 'open', announce: true, entryCount: 3 });
+  await call({ action: 'lock', id: 'r1' });
+  await call({ action: 'reopen', id: 'r1' });
+  expect(__fake.read('hunts/r1').announced.locked).toBeNull();
+  await call({ action: 'lock', id: 'r1' });
+  expect(sendChannelMessage).toHaveBeenCalledTimes(2);
+});
+
+test('a failed post releases the claim so a retry posts', async () => {
+  jest.spyOn(console, 'error').mockImplementation(() => {});
+  seedRound('r1', { status: 'settled', announce: true, actual: { payout: 1843 }, winners: [] });
+  sendChannelMessage.mockRejectedValueOnce(new Error('CHAT_DROPPED:spam'));
+  const first = await call({ action: 'announce', id: 'r1', event: 'results' });
+  expect(first.body.announce).toEqual({ posted: false, reason: 'CHAT_DROPPED:spam' });
+  expect(__fake.read('hunts/r1').announced.results).toBeNull();
+  const retry = await call({ action: 'announce', id: 'r1', event: 'results' });
+  expect(retry.body.announce).toEqual({ posted: true });
+  expect(sendChannelMessage).toHaveBeenLastCalledWith('Final payout $1,843. No guesses this round.');
+});
+
+test('announce checks the event and the round status', async () => {
+  seedRound('r1', { status: 'locked', announce: true });
+  const early = await call({ action: 'announce', id: 'r1', event: 'results' });
+  expect(early.statusCode).toBe(400);
+  expect(early.body).toEqual({ error: 'WRONG_STATUS' });
+  const bad = await call({ action: 'announce', id: 'r1', event: 'hype' });
+  expect(bad.statusCode).toBe(400);
+  expect(bad.body).toEqual({ error: 'INVALID_EVENT' });
+  expect(sendChannelMessage).not.toHaveBeenCalled();
+});

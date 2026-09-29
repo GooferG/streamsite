@@ -26,8 +26,12 @@ export default function StageMoment() {
   const feed = useGiveawayFeed({ enabled: true });
   const sameGiveaway = !!giveaway && feed.giveaway?.id === giveaway.id;
   const [moment, setMoment] = useState(null);
-  const [leaving, setLeaving] = useState(false);
+  // Keyed to the moment it belongs to: a new moment (a reroll, a fresh
+  // settle) is never born already leaving just because the previous one was
+  // on its way out when it arrived.
+  const [leavingKey, setLeavingKey] = useState(null);
   const staged = useRef({ pick: null, round: null });
+  const leaving = !!moment && leavingKey === moment.key;
   const now = useClock({ intervalMs: 250, active: !!moment && !leaving });
   const { setDucked } = cr;
 
@@ -35,7 +39,6 @@ export default function StageMoment() {
     const m = giveawayMoment(giveaway, staged.current.pick, Date.now());
     if (!m) return;
     staged.current.pick = m.key;
-    setLeaving(false);
     setMoment(m);
   }, [giveaway]);
 
@@ -43,23 +46,24 @@ export default function StageMoment() {
     const m = resultsMoment(round, staged.current.round, Date.now());
     if (!m) return;
     staged.current.round = m.key;
-    setLeaving(false);
     setMoment(m);
   }, [round]);
 
   const over = !!moment && (now >= moment.endsAt || !stillOnStage(moment, giveaway));
   useEffect(() => {
-    if (over && !leaving) setLeaving(true);
-  }, [over, leaving]);
+    if (over && !leaving) setLeavingKey(moment.key);
+  }, [over, leaving, moment]);
 
   useEffect(() => {
     if (!leaving) return undefined;
+    const key = moment.key;
     const t = setTimeout(() => {
-      setMoment(null);
-      setLeaving(false);
+      // Only clear it if it's still the moment that was leaving: a new one
+      // may already have taken its place.
+      setMoment((current) => (current && current.key === key ? null : current));
     }, prefersReducedMotion() ? MOTION.reducedFade : MOTION.powerOff);
     return () => clearTimeout(t);
-  }, [leaving]);
+  }, [leaving, moment]);
 
   useEffect(() => {
     setDucked(!!moment);
@@ -69,7 +73,7 @@ export default function StageMoment() {
   useEffect(() => {
     if (!moment) return undefined;
     const onKey = (e) => {
-      if (e.key === 'Escape') setLeaving(true);
+      if (e.key === 'Escape') setLeavingKey(moment.key);
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
@@ -95,25 +99,31 @@ export default function StageMoment() {
         </p>
       </>
     );
-  } else if (moment.kind === 'results' && round) {
+  } else if (moment.kind === 'results' && moment.round) {
     body = (
-      <div
-        className="fixed inset-0 flex flex-col items-center justify-center gap-6 px-8 overflow-y-auto"
-        style={{ background: 'radial-gradient(ellipse at center, rgba(9,9,11,0.7) 0%, rgba(9,9,11,0.94) 75%)' }}
-      >
-        <p className="font-mono font-bold uppercase tracking-eyebrow-lg text-sm text-orange-admin">Prediction results</p>
-        <h2 className="font-display text-white-body text-center leading-none" style={{ fontSize: 'clamp(3rem, 7vw, 6rem)' }}>
-          {round.title}
-        </h2>
-        <div className="w-full max-w-4xl">
-          <PredictionWinnersReveal round={round} />
+      <>
+        <div
+          aria-hidden="true"
+          className="fixed inset-0 flex flex-col items-center justify-center gap-6 px-8 overflow-y-auto"
+          style={{ background: 'radial-gradient(ellipse at center, rgba(9,9,11,0.7) 0%, rgba(9,9,11,0.94) 75%)' }}
+        >
+          <p className="font-mono font-bold uppercase tracking-eyebrow-lg text-sm text-orange-admin">Prediction results</p>
+          <h2 className="font-display text-white-body text-center leading-none" style={{ fontSize: 'clamp(3rem, 7vw, 6rem)' }}>
+            {moment.round.title}
+          </h2>
+          <div className="w-full max-w-4xl">
+            <PredictionWinnersReveal round={moment.round} />
+          </div>
         </div>
-      </div>
+        <p className="sr-only" aria-live="polite">
+          Prediction results: {moment.round.title}
+        </p>
+      </>
     );
   }
 
   return createPortal(
-    <div className={`cr-stage ${leaving ? 'cr-stage-out' : ''}`} onClick={() => setLeaving(true)} role="presentation">
+    <div className={`cr-stage ${leaving ? 'cr-stage-out' : ''}`} onClick={() => setLeavingKey(moment.key)} role="presentation">
       {body}
     </div>,
     document.body

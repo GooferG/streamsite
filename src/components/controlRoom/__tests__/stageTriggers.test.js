@@ -22,6 +22,10 @@ test('a pick older than 10s never replays (reload, or Stage turned on late)', ()
   expect(giveawayMoment(rolling(NOW - 10_000), null, NOW)).toBeNull();
 });
 
+test('a pick whose hold has already elapsed never flashes just to power off', () => {
+  expect(giveawayMoment(rolling(NOW - 8_000), null, NOW)).toBeNull();
+});
+
 test('the same pick stages once; a reroll is a new pick', () => {
   const g = rolling(NOW - 1_000);
   expect(giveawayMoment(g, `tw1:${NOW - 1_000}`, NOW)).toBeNull();
@@ -36,7 +40,7 @@ test('only rolling giveaways with a winner stage', () => {
 
 test('a fresh settle stages once, for 8s', () => {
   const round = { id: 'r1', status: 'settled', settledAt: at(NOW - 1_000) };
-  expect(resultsMoment(round, null, NOW)).toEqual({ kind: 'results', key: 'r1', endsAt: NOW + RESULTS_HOLD_MS });
+  expect(resultsMoment(round, null, NOW)).toEqual({ kind: 'results', key: 'r1', endsAt: NOW + RESULTS_HOLD_MS, round });
   expect(resultsMoment(round, 'r1', NOW)).toBeNull();
   expect(resultsMoment({ ...round, settledAt: at(NOW - 11_000) }, null, NOW)).toBeNull();
   expect(resultsMoment({ ...round, status: 'locked' }, null, NOW)).toBeNull();

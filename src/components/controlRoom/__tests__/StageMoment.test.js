@@ -40,6 +40,34 @@ test('a stale pick does nothing', () => {
   expect(screen.queryByText('reveal stage')).toBeNull();
 });
 
+test('a reroll while a pick is on stage swaps to the new pick without powering off', () => {
+  const view = show({ giveaway: pick(500) });
+  expect(screen.getByText('reveal stage')).toBeTruthy();
+
+  useControlRoom.mockReturnValue({
+    giveaway: {
+      id: 'g1',
+      status: 'rolling',
+      winnerTwitchId: 'tw2',
+      rolledAt: at(Date.now() - 100),
+      winner: { twitchId: 'tw2', displayName: 'ReubenTheGoblin' },
+    },
+    latestRound: null,
+    setDucked,
+  });
+  view.rerender(<StageMoment />);
+
+  expect(screen.getByText('reveal stage')).toBeTruthy();
+  expect(screen.getByRole('presentation').className).not.toMatch('cr-stage-out');
+
+  act(() => {
+    jest.advanceTimersByTime(400);
+  });
+
+  expect(screen.getByText('reveal stage')).toBeTruthy();
+  expect(screen.getByRole('presentation').className).not.toMatch('cr-stage-out');
+});
+
 test('a fresh settle shows the results card', () => {
   show({ latestRound: { id: 'r1', title: 'Friday hunt', status: 'settled', settledAt: at(Date.now() - 500) } });
   expect(screen.getByText('Prediction results')).toBeTruthy();

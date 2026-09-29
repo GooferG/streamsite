@@ -50,7 +50,7 @@ function StepRail({ status }) {
 
 // Header, lifecycle steps and actions for one round. readOnly (a past round
 // opened from the list) hides the lifecycle actions.
-export default function RoundControl({ round, readOnly = false, results = null, onDeleted }) {
+export default function RoundControl({ round, readOnly = false, results = null, onDeleted, compact = false }) {
   const [busy, setBusy] = useState(null);
   const [error, setError] = useState(null);
   const [settling, setSettling] = useState(false);
@@ -82,7 +82,7 @@ export default function RoundControl({ round, readOnly = false, results = null, 
           className="pointer-events-none absolute -top-32 -right-24 w-96 h-96 rounded-full bg-orange-admin/15 blur-3xl motion-reduce:hidden"
           aria-hidden="true"
         />
-        <div className="relative px-6 sm:px-8 py-6 space-y-4">
+        <div className={compact ? 'relative px-4 py-4 space-y-4' : 'relative px-6 sm:px-8 py-6 space-y-4'}>
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-orange-admin font-mono">
               ▸ Prediction round
@@ -92,12 +92,16 @@ export default function RoundControl({ round, readOnly = false, results = null, 
             </span>
           </div>
           <div>
-            <p
-              className="font-black text-white-body leading-[0.9] tracking-[-0.03em]"
-              style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)' }}
-            >
-              {round.title}
-            </p>
+            {compact ? (
+              <p className="font-black text-white-body leading-tight tracking-[-0.03em] text-xl">{round.title}</p>
+            ) : (
+              <p
+                className="font-black text-white-body leading-[0.9] tracking-[-0.03em]"
+                style={{ fontFamily: 'ui-sans-serif, system-ui, sans-serif', fontSize: 'clamp(2rem, 5vw, 3rem)' }}
+              >
+                {round.title}
+              </p>
+            )}
             {round.contextNote && <p className="mt-2 text-sm text-white/55">{round.contextNote}</p>}
             <p className="mt-2 text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/45 font-mono">
               {sourceLine(round)}

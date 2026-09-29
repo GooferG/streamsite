@@ -4,31 +4,18 @@ import { Plus, Trophy } from 'lucide-react';
 import { useControlRoom } from '../../contexts/ControlRoomContext';
 import RoundControl from '../admin/predictions/RoundControl';
 import NewRoundModal from '../admin/predictions/NewRoundModal';
-import { statusTone } from '../admin/predictions/shared';
 import { lastRewardsRound } from '../../utils/predictionRewards';
 
+// RoundControl's own header already shows status, title and (for
+// communityhunts rounds) the bonus count via its source line, so the panel
+// only adds the guess count here.
 function Summary({ round }) {
-  const bonuses = round.bonusHuntSnapshot?.bonusCount;
   return (
-    <div className="flex items-end justify-between gap-3 mb-3">
-      <div className="min-w-0 flex-1">
-        <span
-          className={`inline-block px-1.5 py-0.5 border text-[0.5625rem] font-bold tracking-eyebrow-md uppercase font-mono ${statusTone(round.status)}`}
-        >
-          {round.status}
-        </span>
-        <p className="mt-1.5 font-bold text-white-body truncate">{round.title}</p>
-      </div>
+    <div className="flex items-end justify-end gap-3 mb-3">
       <div className="text-right">
         <p className="cr-lbl">guesses</p>
         <p className="cr-timecode">{round.entryCount ?? 0}</p>
       </div>
-      {bonuses != null && (
-        <div className="text-right">
-          <p className="cr-lbl">bonuses</p>
-          <p className="cr-big">{bonuses}</p>
-        </div>
-      )}
     </div>
   );
 }
@@ -62,7 +49,13 @@ export default function PredictTab() {
       {round ? (
         <>
           <Summary round={round} />
-          <RoundControl key={round.id} round={round} results={isLatest ? cr.results : null} onDeleted={() => {}} />
+          <RoundControl
+            key={round.id}
+            round={round}
+            results={isLatest ? cr.results : null}
+            onDeleted={() => {}}
+            compact
+          />
           {round.status === 'settled' && <Winners round={round} />}
         </>
       ) : (

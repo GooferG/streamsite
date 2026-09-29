@@ -37,10 +37,9 @@ test('no round: says so and offers New round', () => {
 
 test('an open round: summary, the lifecycle controls, no New round', () => {
   show({ activeRound: OPEN, latestRound: OPEN, rounds: [OPEN] });
-  // RoundControl (the lifecycle controls) also renders the round title in its
-  // own header, so the tab shows it twice; getAllByText keeps the same intent
-  // (the title is displayed) without an ambiguous getByText match.
-  expect(screen.getAllByText('Friday hunt').length).toBeGreaterThan(0);
+  expect(screen.getByText('Friday hunt')).toBeTruthy();
+  // The panel no longer duplicates RoundControl's own oversized title.
+  expect(screen.getByText('Friday hunt').style.fontSize).toBe('');
   expect(screen.getByText('212')).toBeTruthy();
   expect(screen.getByRole('button', { name: /lock entries/i })).toBeTruthy();
   expect(screen.queryByRole('button', { name: /new round/i })).toBeNull();

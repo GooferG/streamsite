@@ -3,11 +3,13 @@
 // path, auto ids, where('==' | 'in'), transactions and batches (writes apply
 // when the callback or commit finishes; a throw discards them), set with
 // merge, dotted update paths, and the serverTimestamp / increment sentinels.
-// Transactions are optimistic like the real thing: each document read through
-// tx.get records its version, and if any of them changed before commit the
-// callback runs again (up to 5 attempts). Two interleaved runTransaction
-// calls on one document therefore resolve the way Firestore resolves them.
-// Query reads inside a transaction are not version-checked.
+// Transactions model version conflicts with retries (optimistic): each
+// document read through tx.get records its version, and if any of them
+// changed before commit the callback runs again (up to 5 attempts). The admin
+// SDK locks pessimistically instead, but for these handlers the outcome is the
+// same: two interleaved runTransaction calls on one document end with one
+// winner and one caller that sees the other's write. Query reads inside a
+// transaction are not version-checked.
 
 export function createFakeFirestore() {
   let docs = new Map();

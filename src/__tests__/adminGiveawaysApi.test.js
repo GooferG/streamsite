@@ -94,6 +94,29 @@ test('roll picks a winner, flips to rolling and clears the old winner chat', asy
   expect(__fake.paths('giveaways/g1/winner_messages')).toEqual([]);
 });
 
+// Final review T4: the pick already committed, so a failed chat cleanup must
+// not turn it into an error for the caller ("Auto-roll failed: INTERNAL").
+test('roll still answers with the winner when clearing the old winner chat fails', async () => {
+  seedGiveaway('g1', { status: 'closed' });
+  seedEntry('g1', 'tw1');
+  __fake.seed('giveaways/g1/winner_messages/m1', { text: 'old pick chatter' });
+  const batch = jest.spyOn(__fake.db, 'batch').mockImplementation(() => ({
+    delete: () => {},
+    commit: () => Promise.reject(new Error('quota')),
+  }));
+  const error = jest.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    const res = await call({ action: 'roll', id: 'g1' });
+    expect(res.statusCode).toBe(200);
+    expect(res.body.winner.twitchId).toBe('tw1');
+    expect(__fake.read('giveaways/g1').status).toBe('rolling');
+    expect(error).toHaveBeenCalledWith('clear winner stream failed', expect.any(Error));
+  } finally {
+    batch.mockRestore();
+    error.mockRestore();
+  }
+});
+
 test('two rolls at once: exactly one pick lands, the other gets ROLL_RACE', async () => {
   seedGiveaway('g1', { status: 'closed' });
   seedEntry('g1', 'tw1');

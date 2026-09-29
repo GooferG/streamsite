@@ -32,11 +32,14 @@ async function tryAnnounce(text) {
 //            played on stream; the actual win is logged with `payout`.
 //            kind 'item': a plain prize (keys, merch), no play step.
 //            durationSec > 0 sets `closesAt`; EventSub ignores entries after
-//            it even if nobody closes the giveaway. The admin page closes it
-//            (and rolls, with autoRoll) when the clock runs out.
+//            it even if nobody closes the giveaway. The control-room engine
+//            (in the tab holding the driver lock) closes it, and rolls with
+//            autoRoll, when the clock runs out.
 //   close    { id }                       -> stop accepting entries (transactional; losers get NOT_OPEN)
 //   lastCall { id }                       -> post the last-call chat message
-//                                            once (admin page fires it at T-30s)
+//                                            once (the control-room engine,
+//                                            in the driving tab, fires it at
+//                                            T-30s)
 //   roll     { id }                       -> pick weighted winner, status='rolling'.
 //                                            409 ROLL_RACE when another caller
 //                                            rolled first (transactional)
@@ -44,8 +47,9 @@ async function tryAnnounce(text) {
 //   skip     { id }                       -> mark current pick skipped, then re-pick
 //   announce { id, winnerTwitchId, rolledAtMs }
 //                                         -> post the winner chat message for
-//                                            the current pick, once. The admin
-//                                            page calls it after the on-stream
+//                                            the current pick, once. The
+//                                            control-room engine (the driving
+//                                            tab) calls it after the on-stream
 //                                            reveal has played; posting at pick
 //                                            time spoiled the reveal, since chat
 //                                            runs seconds ahead of the video.
@@ -433,7 +437,13 @@ export default async function handler(req, res) {
       if (!won) return res.status(409).json({ error: 'ROLL_RACE' });
       // Reset the winner chat stream only after this pick is the one that
       // stuck, so a losing caller never wipes the real winner's messages.
-      await clearWinnerStream(ref);
+      // The pick has already landed, so a failed cleanup is logged, not
+      // reported as a failed roll.
+      try {
+        await clearWinnerStream(ref);
+      } catch (err) {
+        console.error('clear winner stream failed', err);
+      }
       // Chat hears about the winner later, from `announce`, once the reveal
       // has played on stream.
       return res.status(200).json({ ok: true, winner: trimEntry(winner) });

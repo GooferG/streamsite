@@ -1,11 +1,10 @@
 import { render, screen, fireEvent, act } from '@testing-library/react';
 import StageMoment from '../StageMoment';
 import { useControlRoom } from '../../../contexts/ControlRoomContext';
+import { useGiveawayFeed } from '../../../hooks/useGiveawayFeed';
 
 jest.mock('../../../contexts/ControlRoomContext', () => ({ useControlRoom: jest.fn() }));
-jest.mock('../../../hooks/useGiveawayFeed', () => ({
-  useGiveawayFeed: () => ({ giveaway: null, entries: [], firstMessage: null }),
-}));
+jest.mock('../../../hooks/useGiveawayFeed', () => ({ useGiveawayFeed: jest.fn() }));
 jest.mock('../../giveaway/RevealStage', () => () => require('react').createElement('p', null, 'reveal stage'));
 jest.mock('../../PredictionWinnersReveal', () => () => require('react').createElement('p', null, 'winners reveal'));
 
@@ -26,13 +25,25 @@ const pick = (agoMs) => ({
   winner: { twitchId: 'tw1', displayName: 'SlotGoblin' },
 });
 
-beforeEach(() => jest.useFakeTimers());
+beforeEach(() => {
+  jest.useFakeTimers();
+  useGiveawayFeed.mockReturnValue({ giveaway: null, entries: [], firstMessage: null });
+});
 afterEach(() => jest.useRealTimers());
 
 test('a fresh pick takes the stage and ducks the panel', () => {
   show({ giveaway: pick(500) });
   expect(screen.getByText('reveal stage')).toBeTruthy();
   expect(setDucked).toHaveBeenLastCalledWith(true);
+});
+
+// Final review T14: no giveaway running, no overlay feed subscription.
+test('follows the overlay feed only while a giveaway is live', () => {
+  const view = show();
+  expect(useGiveawayFeed).toHaveBeenLastCalledWith({ enabled: false });
+  useControlRoom.mockReturnValue({ giveaway: pick(60_000), latestRound: null, setDucked });
+  view.rerender(<StageMoment />);
+  expect(useGiveawayFeed).toHaveBeenLastCalledWith({ enabled: true });
 });
 
 test('a stale pick does nothing', () => {

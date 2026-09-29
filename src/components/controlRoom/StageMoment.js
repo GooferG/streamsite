@@ -23,7 +23,8 @@ export default function StageMoment() {
   const cr = useControlRoom();
   const giveaway = cr.giveaway;
   const round = cr.latestRound;
-  const feed = useGiveawayFeed({ enabled: true });
+  // Only while a giveaway is live: nothing to reveal otherwise.
+  const feed = useGiveawayFeed({ enabled: !!giveaway });
   const sameGiveaway = !!giveaway && feed.giveaway?.id === giveaway.id;
   const [moment, setMoment] = useState(null);
   // Keyed to the moment it belongs to: a new moment (a reroll, a fresh

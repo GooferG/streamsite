@@ -32,6 +32,9 @@ const isTypingTarget = (el) => !!el && (TYPING_TAGS.includes(el.tagName) || el.i
 const modalOpen = () => !!document.querySelector('[aria-modal="true"], [data-cr-keep-open]');
 // pt-BR and US-International layouts report the backtick as a dead key.
 const isBacktick = (e) => e.key === '`' || (e.key === 'Dead' && e.code === 'Backquote');
+// Clamping only needs the float width (always PANEL_W); a drag measures the
+// panel itself for snapping.
+const FALLBACK_SIZE = { w: PANEL_W, h: 420 };
 
 function statusMessage(g) {
   if (!g) return '';
@@ -63,13 +66,11 @@ export default function ControlRoom({ isLive = false }) {
   const dragRef = useRef(null);
   const flipRectRef = useRef(null);
   const prevMode = useRef(panel.mode);
-  const [size, setSize] = useState({ w: PANEL_W, h: 420 });
   const [anim, setAnim] = useState(null); // 'on' | 'off' | null
   const [flipping, setFlipping] = useState(false);
   const [dragRect, setDragRect] = useState(null);
   const [ghost, setGhost] = useState(false);
   const [dragging, setDragging] = useState(false);
-  const open = isOpenMode(panel.mode);
   const docked = panel.mode === 'dock' && !narrow;
   const reduced = prefersReducedMotion();
 
@@ -114,18 +115,6 @@ export default function ControlRoom({ isLive = false }) {
   useEffect(() => {
     if (!isOpenMode(panel.mode) || narrow) clearDrag();
   }, [panel.mode, narrow, clearDrag]);
-
-  // Measure for clamping and snapping (height is automatic). Deliberately
-  // unkeyed: it has to re-measure after every render, not just when a
-  // specific dep changes, to catch content-driven height changes.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  useLayoutEffect(() => {
-    if (!open || !rootRef.current) return;
-    const r = rootRef.current.getBoundingClientRect();
-    const w = Math.round(r.width);
-    const h = Math.round(r.height);
-    if (w && h && (w !== size.w || h !== size.h)) setSize({ w, h });
-  });
 
   const powerOffThen = useCallback(
     (action) => {
@@ -248,7 +237,7 @@ export default function ControlRoom({ isLive = false }) {
             offY: e.clientY - r.top,
             startX: e.clientX,
             fromDock: panel.mode === 'dock',
-            size: { w: r.width || PANEL_W, h: r.height || size.h },
+            size: { w: r.width || PANEL_W, h: r.height || FALLBACK_SIZE.h },
             // The rect at pointerdown, kept so a drop into the dock zone can
             // restore the float position it actually started from rather
             // than the drop point (which is only ~48px from the edge).
@@ -318,7 +307,7 @@ export default function ControlRoom({ isLive = false }) {
     );
   }
 
-  const rect = dragRect || clampRect(panel.rect || defaultRect(view.vw), size, view);
+  const rect = dragRect || clampRect(panel.rect || defaultRect(view.vw), FALLBACK_SIZE, view);
   let style;
   if (narrow) style = { left: 0, right: 0, bottom: 0, maxHeight: '75vh' };
   else if (docked) style = { top: NAV_H, right: 0, bottom: 0, width: DOCK_W };

@@ -78,6 +78,9 @@ export default function NewGiveawayForm({ seed, chat, onClose, onCreated, inline
   const formEl = (
     <form
       onSubmit={submit}
+      // Inline, it lives in the control room panel: the panel's backtick and
+      // Escape leave it alone while it's on screen, so the draft survives.
+      data-cr-keep-open={inline ? '' : undefined}
       onKeyDown={
         inline
           ? (e) => {

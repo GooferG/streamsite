@@ -94,6 +94,9 @@ export default function NewRoundModal({ onClose, onCreated, lastRound = null }) 
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="New round"
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-broadcast/70 backdrop-blur-sm overflow-y-auto"
       onClick={onClose}
     >

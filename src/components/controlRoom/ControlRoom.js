@@ -27,7 +27,11 @@ import './controlRoom.css';
 
 const TYPING_TAGS = ['INPUT', 'TEXTAREA', 'SELECT'];
 const isTypingTarget = (el) => !!el && (TYPING_TAGS.includes(el.tagName) || el.isContentEditable);
-const modalOpen = () => !!document.querySelector('[aria-modal="true"]');
+// A modal, or an inline draft that marks itself keep-open, owns the keys:
+// powering the panel off would unmount it mid-flow.
+const modalOpen = () => !!document.querySelector('[aria-modal="true"], [data-cr-keep-open]');
+// pt-BR and US-International layouts report the backtick as a dead key.
+const isBacktick = (e) => e.key === '`' || (e.key === 'Dead' && e.code === 'Backquote');
 
 function statusMessage(g) {
   if (!g) return '';
@@ -159,9 +163,10 @@ export default function ControlRoom({ isLive = false }) {
   // ` toggles, Escape minimizes (unless something inside wants Escape first).
   useEffect(() => {
     const onKey = (e) => {
+      if (e.repeat) return;
       if (e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === '`') {
-        if (isTypingTarget(e.target)) return;
+      if (isBacktick(e)) {
+        if (isTypingTarget(e.target) || modalOpen()) return;
         e.preventDefault();
         if (isOpenMode(panel.mode)) minimize();
         else panelActions.open();

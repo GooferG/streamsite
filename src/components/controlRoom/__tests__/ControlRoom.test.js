@@ -1,10 +1,22 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+import { render, screen, fireEvent, act, within } from '@testing-library/react';
 import ControlRoom from '../ControlRoom';
+import SettleModal from '../../admin/predictions/SettleModal';
+import NewRoundModal from '../../admin/predictions/NewRoundModal';
 import { useControlRoom } from '../../../contexts/ControlRoomContext';
+import { authedFetch } from '../../../utils/authedFetch';
 
 jest.mock('../../../contexts/ControlRoomContext', () => ({ useControlRoom: jest.fn() }));
 jest.mock('../GiveawayTab', () => () => require('react').createElement('p', null, 'giveaway tab body'));
 jest.mock('../PredictTab', () => () => require('react').createElement('p', null, 'predict tab body'));
+jest.mock('../../../config/firebase', () => ({ db: {}, auth: {} }));
+jest.mock('firebase/firestore', () => ({
+  collection: () => ({}),
+  onSnapshot: () => () => {},
+  orderBy: () => ({}),
+  query: () => ({}),
+  limit: () => ({}),
+}));
+jest.mock('../../../utils/authedFetch', () => ({ authedFetch: jest.fn() }));
 
 const at = (ms) => ({ toMillis: () => ms });
 
@@ -115,6 +127,90 @@ test('Escape leaves the panel alone while a modal dialog is open', () => {
     jest.advanceTimersByTime(1000);
   });
   expect(cr.panelActions.minimize).not.toHaveBeenCalled();
+});
+
+// Final review I1: the prediction modals open over the panel. Keys pressed in
+// them must never power the panel off, which would unmount the modal and lose
+// the settle preview or the new round draft.
+const ROUND = {
+  id: 'r1',
+  title: 'Sunday',
+  source: 'manual',
+  acceptPredictions: true,
+  bonusHuntSnapshot: null,
+  rewards: { tiers: [{ place: 1, tickets: 100, prize: null }] },
+};
+
+function pressAndWait(el, key) {
+  fireEvent.keyDown(el, { key });
+  act(() => {
+    jest.advanceTimersByTime(1000);
+  });
+}
+
+test('Escape and backtick inside the settle modal leave the panel open', () => {
+  show();
+  render(<SettleModal round={ROUND} onClose={() => {}} onSettled={() => {}} />);
+  const modal = screen.getByRole('dialog', { name: 'Settle round' });
+  const cancel = within(modal).getByRole('button', { name: /cancel/i });
+  pressAndWait(cancel, 'Escape');
+  pressAndWait(cancel, '`');
+  expect(cr.panelActions.minimize).not.toHaveBeenCalled();
+  expect(screen.getByRole('dialog', { name: 'Control room' })).toBeTruthy();
+});
+
+test('Escape and backtick inside the new round modal leave the panel open', async () => {
+  authedFetch.mockResolvedValue({ ok: false, json: () => Promise.resolve({ error: 'NO_CURRENT_HUNT' }) });
+  show();
+  render(<NewRoundModal onClose={() => {}} onCreated={() => {}} />);
+  await screen.findByText(/no communityhunts\.gg hunt found yet/i);
+  const modal = screen.getByRole('dialog', { name: 'New round' });
+  const manual = within(modal).getByRole('button', { name: /manual entry/i });
+  pressAndWait(manual, 'Escape');
+  pressAndWait(manual, '`');
+  expect(cr.panelActions.minimize).not.toHaveBeenCalled();
+});
+
+// Final review M5: the inline new giveaway form marks itself keep-open, so a
+// backtick on one of its chip buttons never drops the draft.
+test('backtick and Escape leave the panel open while an inline draft is on screen', () => {
+  const draft = document.createElement('form');
+  draft.setAttribute('data-cr-keep-open', '');
+  const chip = document.createElement('button');
+  chip.type = 'button';
+  draft.appendChild(chip);
+  document.body.appendChild(draft);
+  show();
+  pressAndWait(chip, '`');
+  pressAndWait(window, 'Escape');
+  expect(cr.panelActions.minimize).not.toHaveBeenCalled();
+});
+
+// Final review T11: focus stays on the menu trigger, so Escape has to be
+// caught there, or it reaches the panel and powers the whole thing off.
+test('Escape with the options menu open closes just the menu', () => {
+  show();
+  const trigger = screen.getByRole('button', { name: 'Panel options' });
+  fireEvent.click(trigger);
+  expect(screen.getByRole('menu')).toBeTruthy();
+  pressAndWait(trigger, 'Escape');
+  expect(screen.queryByRole('menu')).toBeNull();
+  expect(cr.panelActions.minimize).not.toHaveBeenCalled();
+});
+
+// pt-BR and US-International keyboards report the backtick as a dead key.
+test('a dead-key backtick toggles the panel, other dead keys do not', () => {
+  show({ panel: { mode: 'closed' } });
+  fireEvent.keyDown(window, { key: 'Dead', code: 'BracketLeft' });
+  expect(cr.panelActions.open).not.toHaveBeenCalled();
+  fireEvent.keyDown(window, { key: 'Dead', code: 'Backquote' });
+  expect(cr.panelActions.open).toHaveBeenCalledTimes(1);
+});
+
+test('a held-down backtick does not keep toggling', () => {
+  show({ panel: { mode: 'closed' } });
+  fireEvent.keyDown(window, { key: '`', repeat: true });
+  expect(cr.panelActions.open).not.toHaveBeenCalled();
 });
 
 test('header controls call the right actions', () => {

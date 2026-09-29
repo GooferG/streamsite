@@ -68,7 +68,17 @@ export default function PanelChrome({
           >
             Stage
           </button>
-          <div className="relative">
+          {/* Escape is caught here, not on the menu: focus usually stays on
+              the trigger, and an uncaught Escape minimizes the whole panel. */}
+          <div
+            className="relative"
+            onKeyDown={(e) => {
+              if (menuOpen && e.key === 'Escape') {
+                e.preventDefault();
+                setMenuOpen(false);
+              }
+            }}
+          >
             <button
               type="button"
               aria-haspopup="menu"
@@ -80,16 +90,7 @@ export default function PanelChrome({
               <MoreHorizontal size={13} aria-hidden="true" />
             </button>
             {menuOpen && (
-              <div
-                role="menu"
-                className="cr-menu"
-                onKeyDown={(e) => {
-                  if (e.key === 'Escape') {
-                    e.preventDefault();
-                    setMenuOpen(false);
-                  }
-                }}
-              >
+              <div role="menu" className="cr-menu">
                 <button
                   type="button"
                   role="menuitemcheckbox"

@@ -6,12 +6,12 @@ import {
   User as UserIcon,
   Store as StoreIcon,
   ChevronDown,
-  Gift,
+  MonitorPlay,
 } from 'lucide-react';
-import { collection, onSnapshot, orderBy, query, where, limit as fLimit } from 'firebase/firestore';
-import { db } from '../config/firebase';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 import { useAuth } from '../contexts/AuthContext';
+import { useControlRoom } from '../contexts/ControlRoomContext';
+import ControlRoomButton from './controlRoom/ControlRoomButton';
 import { GAMBA_TOOLS } from '../data/gambaTools';
 
 const ADMIN_EMAIL = 'luimeneghim@gmail.com';
@@ -29,63 +29,6 @@ const NAV_ITEMS = [
 
 const ADMIN_ITEM = { id: 'admin', label: 'Admin', code: 'AD' };
 const GIVEAWAY_ADMIN_PATH = 'admin/giveaways';
-
-// The running giveaway, if any. Only subscribed for the operator, so the
-// shortcut can show it's live and how many are in.
-function useLiveGiveaway(enabled) {
-  const [live, setLive] = useState(null);
-  useEffect(() => {
-    if (!enabled) {
-      setLive(null);
-      return undefined;
-    }
-    const q = query(
-      collection(db, 'giveaways'),
-      where('status', 'in', ['open', 'closed', 'rolling', 'playing']),
-      orderBy('createdAt', 'desc'),
-      fLimit(1)
-    );
-    return onSnapshot(
-      q,
-      (snap) => setLive(snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() }),
-      () => setLive(null)
-    );
-  }, [enabled]);
-  return live;
-}
-
-function GiveawayShortcut({ live, onClick }) {
-  const STATUS_LABEL = { rolling: 'Rolling', playing: 'Playing', closed: 'Closed' };
-  const label = live ? STATUS_LABEL[live.status] || 'Live' : null;
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={live ? `Giveaway ${label.toLowerCase()}: ${live.prize}` : 'Open the giveaway panel'}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 border transition-colors duration-150 whitespace-nowrap ${
-        live
-          ? 'border-emerald-signal/50 bg-emerald-signal/10 text-emerald-signal hover:bg-emerald-signal/20'
-          : 'border-orange-admin/30 text-orange-admin/90 hover:bg-orange-admin/10 hover:text-orange-admin'
-      }`}
-    >
-      <Gift size={12} aria-hidden="true" />
-      {/* Icon-only at md so the nav row doesn't crowd; label from lg up. */}
-      <span className="sr-only lg:not-sr-only text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-        Giveaways
-      </span>
-      {live && (
-        <span className="inline-flex items-center gap-1 pl-1.5 ml-0.5 border-l border-emerald-signal/30 text-[0.625rem] font-bold font-mono tabular-nums">
-          <span className="relative flex w-1.5 h-1.5" aria-hidden="true">
-            <span className="absolute inset-0 rounded-full bg-emerald-signal motion-safe:animate-ping opacity-60" />
-            <span className="relative w-1.5 h-1.5 rounded-full bg-emerald-signal" />
-          </span>
-          {live.entryCount ?? 0}
-          <span className="sr-only"> entries, {label}</span>
-        </span>
-      )}
-    </button>
-  );
-}
 
 function Wordmark({ onClick, onSecretActivate }) {
   const clicksRef = useRef([]);
@@ -380,9 +323,13 @@ export default function Navigation({ currentPage, setPage }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedMobile, setExpandedMobile] = useState(null);
   const { twitchUser, loginWithTwitch, logout } = useTwitchAuth();
-  const { currentUser } = useAuth();
+  const { currentUser, isStaff } = useAuth();
   const isAdmin = currentUser?.email === ADMIN_EMAIL;
-  const liveGiveaway = useLiveGiveaway(isAdmin);
+  const cr = useControlRoom();
+  const liveGiveaway = cr?.enabled ? cr.giveaway : null;
+  // The panel is hidden on /admin, so there the button keeps its old job.
+  const panelHere = !!cr?.enabled && currentPage !== 'admin';
+  const toggleControlRoom = () => (panelHere ? cr.panelActions.toggle() : setPage(GIVEAWAY_ADMIN_PATH));
 
   const handleNavClick = (pageId) => {
     setPage(pageId);
@@ -428,7 +375,7 @@ export default function Navigation({ currentPage, setPage }) {
                   <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" aria-hidden="true" />
                   Operator
                 </span>
-                <GiveawayShortcut live={liveGiveaway} onClick={() => setPage(GIVEAWAY_ADMIN_PATH)} />
+                <ControlRoomButton giveaway={liveGiveaway} onClick={toggleControlRoom} />
                 <div className="pl-2 lg:pl-3 border-l border-white/10">
                   <NavLink
                     item={ADMIN_ITEM}
@@ -439,7 +386,10 @@ export default function Navigation({ currentPage, setPage }) {
                 </div>
               </div>
             ) : (
-              <ViewerAuthControl onNavigate={(id) => setPage(id)} />
+              <div className="flex items-center gap-2 lg:gap-3">
+                {isStaff && <ControlRoomButton giveaway={liveGiveaway} onClick={toggleControlRoom} />}
+                <ViewerAuthControl onNavigate={(id) => setPage(id)} />
+              </div>
             )}
           </div>
 
@@ -642,7 +592,7 @@ export default function Navigation({ currentPage, setPage }) {
             );
           })}
 
-          {isAdmin && (
+          {isStaff && (
             <>
               {/* Admin separator */}
               <div className="mt-2 px-5 pt-4 pb-2 border-t border-white/10 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 font-mono">
@@ -651,11 +601,18 @@ export default function Navigation({ currentPage, setPage }) {
 
               <button
                 type="button"
-                onClick={() => handleNavClick(GIVEAWAY_ADMIN_PATH)}
+                onClick={() => {
+                  if (panelHere) {
+                    cr.panelActions.open();
+                    setMobileMenuOpen(false);
+                  } else {
+                    handleNavClick(GIVEAWAY_ADMIN_PATH);
+                  }
+                }}
                 className="group flex items-center gap-3 px-5 py-3.5 border-l-2 border-transparent hover:bg-zinc-card/50 transition-colors duration-150"
               >
-                <Gift size={15} className="text-orange-admin" aria-hidden="true" />
-                <span className="text-sm font-bold tracking-tight text-white/70">Giveaways</span>
+                <MonitorPlay size={15} className="text-orange-admin" aria-hidden="true" />
+                <span className="text-sm font-bold tracking-tight text-white/70">Control room</span>
                 {liveGiveaway && (
                   <span className="ml-auto inline-flex items-center gap-1.5 text-[0.5625rem] font-bold tracking-eyebrow-lg uppercase text-emerald-signal font-mono">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-signal" aria-hidden="true" />
@@ -664,30 +621,32 @@ export default function Navigation({ currentPage, setPage }) {
                 )}
               </button>
 
-              <button
-                type="button"
-                onClick={() => handleNavClick(ADMIN_ITEM.id)}
-                className={`group flex items-center gap-3 px-5 py-3.5 border-l-2 transition-colors duration-150 ${
-                  currentPage === ADMIN_ITEM.id
-                    ? 'bg-zinc-card border-orange-admin'
-                    : 'border-transparent hover:bg-zinc-card/50'
-                }`}
-              >
-                <span
-                  className={`text-sm font-bold tracking-tight ${
+              {isAdmin && (
+                <button
+                  type="button"
+                  onClick={() => handleNavClick(ADMIN_ITEM.id)}
+                  className={`group flex items-center gap-3 px-5 py-3.5 border-l-2 transition-colors duration-150 ${
                     currentPage === ADMIN_ITEM.id
-                      ? 'text-white-body'
-                      : 'text-white/70'
+                      ? 'bg-zinc-card border-orange-admin'
+                      : 'border-transparent hover:bg-zinc-card/50'
                   }`}
                 >
-                  {ADMIN_ITEM.label}
-                </span>
-                {currentPage === ADMIN_ITEM.id && (
-                  <span className="ml-auto text-[0.5625rem] font-bold tracking-eyebrow-lg text-orange-admin font-mono">
-                    ON
+                  <span
+                    className={`text-sm font-bold tracking-tight ${
+                      currentPage === ADMIN_ITEM.id
+                        ? 'text-white-body'
+                        : 'text-white/70'
+                    }`}
+                  >
+                    {ADMIN_ITEM.label}
                   </span>
-                )}
-              </button>
+                  {currentPage === ADMIN_ITEM.id && (
+                    <span className="ml-auto text-[0.5625rem] font-bold tracking-eyebrow-lg text-orange-admin font-mono">
+                      ON
+                    </span>
+                  )}
+                </button>
+              )}
             </>
           )}
         </nav>

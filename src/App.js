@@ -8,7 +8,6 @@ import {
 import Navigation from './components/Navigation';
 import SiteFooter from './components/SiteFooter';
 import GrainOverlay from './components/GrainOverlay';
-import LiveIndicator from './components/LiveIndicator';
 import AdminLayout from './components/AdminLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import TVStaticIntro from './components/TVStaticIntro';
@@ -16,6 +15,8 @@ import HomePage from './pages/HomePage';
 import GambaPage from './pages/GambaPage';
 import { AuthProvider } from './contexts/AuthContext';
 import { TwitchAuthProvider } from './contexts/TwitchAuthContext';
+import { ControlRoomProvider } from './contexts/ControlRoomContext';
+import StaffLayer from './components/controlRoom/StaffLayer';
 import {
   getTwitchAccessToken,
   getTwitchUserId,
@@ -232,7 +233,7 @@ function StreamingSiteContent() {
         setPage={(id) => navigate(id === 'home' ? '/' : `/${id}`)}
       />
 
-      <LiveIndicator isLive={isLive} streamData={streamData} />
+      <StaffLayer isLive={isLive} streamData={streamData} pathname={location.pathname} />
 
       <main
         className={`transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'} ${signalLocking ? 'motion-safe:animate-signal-lock' : ''}`}
@@ -329,9 +330,11 @@ function AppShell() {
 export default function StreamingSite() {
   return (
     <AuthProvider>
-      <TwitchAuthProvider>
-        <AppShell />
-      </TwitchAuthProvider>
+      <ControlRoomProvider>
+        <TwitchAuthProvider>
+          <AppShell />
+        </TwitchAuthProvider>
+      </ControlRoomProvider>
     </AuthProvider>
   );
 }

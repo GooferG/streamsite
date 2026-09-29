@@ -32,18 +32,24 @@ async function tryAnnounce(text) {
 //            played on stream; the actual win is logged with `payout`.
 //            kind 'item': a plain prize (keys, merch), no play step.
 //            durationSec > 0 sets `closesAt`; EventSub ignores entries after
-//            it even if nobody closes the giveaway. The admin page closes it
-//            (and rolls, with autoRoll) when the clock runs out.
-//   close    { id }                       -> stop accepting entries
+//            it even if nobody closes the giveaway. The control-room engine
+//            (in the tab holding the driver lock) closes it, and rolls with
+//            autoRoll, when the clock runs out.
+//   close    { id }                       -> stop accepting entries (transactional; losers get NOT_OPEN)
 //   lastCall { id }                       -> post the last-call chat message
-//                                            once (admin page fires it at T-30s)
-//   roll     { id }                       -> pick weighted winner, status='rolling'
+//                                            once (the control-room engine,
+//                                            in the driving tab, fires it at
+//                                            T-30s)
+//   roll     { id }                       -> pick weighted winner, status='rolling'.
+//                                            409 ROLL_RACE when another caller
+//                                            rolled first (transactional)
 //   reroll   { id }                       -> pick again silently from remaining
 //   skip     { id }                       -> mark current pick skipped, then re-pick
 //   announce { id, winnerTwitchId, rolledAtMs }
 //                                         -> post the winner chat message for
-//                                            the current pick, once. The admin
-//                                            page calls it after the on-stream
+//                                            the current pick, once. The
+//                                            control-room engine (the driving
+//                                            tab) calls it after the on-stream
 //                                            reveal has played; posting at pick
 //                                            time spoiled the reveal, since chat
 //                                            runs seconds ahead of the video.
@@ -208,6 +214,17 @@ function currentPickConfirmed(giveaway) {
   return (giveaway.winners || []).some((w) => w.twitchId === giveaway.winnerTwitchId);
 }
 
+const tsMs = (ts) => (ts && typeof ts.toMillis === 'function' ? ts.toMillis() : null);
+
+// Rollable from open/closed, from a bonus being played, or from the winner
+// window once the pick on screen has been confirmed ("roll another").
+function isRollable(giveaway) {
+  return (
+    ['open', 'closed', 'playing'].includes(giveaway.status) ||
+    (giveaway.status === 'rolling' && currentPickConfirmed(giveaway))
+  );
+}
+
 function lastConfirmedWinner(giveaway) {
   const winners = giveaway.winners || [];
   return winners.length > 0 ? winners[winners.length - 1] : null;
@@ -322,10 +339,15 @@ export default async function handler(req, res) {
     const giveaway = snap.data();
 
     if (action === 'close') {
-      if (giveaway.status !== 'open') {
-        return res.status(400).json({ error: 'NOT_OPEN' });
-      }
-      await ref.update({ status: 'closed', closedAt: FieldValue.serverTimestamp() });
+      // Two browsers can hit zero on the same second. Only the transaction
+      // that still sees 'open' closes it, and only that caller auto-rolls.
+      const closed = await adminDb.runTransaction(async (tx) => {
+        const cur = await tx.get(ref);
+        if (!cur.exists || cur.data().status !== 'open') return false;
+        tx.update(ref, { status: 'closed', closedAt: FieldValue.serverTimestamp() });
+        return true;
+      });
+      if (!closed) return res.status(400).json({ error: 'NOT_OPEN' });
       return res.status(200).json({ ok: true });
     }
 
@@ -387,26 +409,41 @@ export default async function handler(req, res) {
     }
 
     if (action === 'roll') {
-      // Rollable from open/closed, from a bonus being played, or from the
-      // winner window once the pick on screen has been confirmed. That is
-      // "roll another" for the next prize.
-      const rollable =
-        ['open', 'closed', 'playing'].includes(giveaway.status) ||
-        (giveaway.status === 'rolling' && currentPickConfirmed(giveaway));
-      if (!rollable) {
+      if (!isRollable(giveaway)) {
         return res.status(400).json({ error: 'NOT_ROLLABLE' });
       }
+      // The pick reads the entries subcollection, so it runs first; the
+      // transaction then checks nobody rolled or moved the giveaway since.
       const winner = await pickWeightedWinner(ref, excludedIds(giveaway));
       if (!winner) return res.status(400).json({ error: 'NO_ENTRIES' });
-      await clearWinnerStream(ref); // reset chat stream for the modal
-      await ref.update({
-        status: 'rolling',
-        winner: trimEntry(winner),
-        winnerTwitchId: winner.id,
-        rolledAt: FieldValue.serverTimestamp(),
-        announcedPick: null,
-        playing: null,
+      const seenStatus = giveaway.status;
+      const seenRolledAt = tsMs(giveaway.rolledAt);
+      const won = await adminDb.runTransaction(async (tx) => {
+        const snapNow = await tx.get(ref);
+        const cur = snapNow.exists ? snapNow.data() : null;
+        if (!cur || cur.status !== seenStatus || tsMs(cur.rolledAt) !== seenRolledAt || !isRollable(cur)) {
+          return false;
+        }
+        tx.update(ref, {
+          status: 'rolling',
+          winner: trimEntry(winner),
+          winnerTwitchId: winner.id,
+          rolledAt: FieldValue.serverTimestamp(),
+          announcedPick: null,
+          playing: null,
+        });
+        return true;
       });
+      if (!won) return res.status(409).json({ error: 'ROLL_RACE' });
+      // Reset the winner chat stream only after this pick is the one that
+      // stuck, so a losing caller never wipes the real winner's messages.
+      // The pick has already landed, so a failed cleanup is logged, not
+      // reported as a failed roll.
+      try {
+        await clearWinnerStream(ref);
+      } catch (err) {
+        console.error('clear winner stream failed', err);
+      }
       // Chat hears about the winner later, from `announce`, once the reveal
       // has played on stream.
       return res.status(200).json({ ok: true, winner: trimEntry(winner) });

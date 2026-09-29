@@ -10,6 +10,7 @@ import RoundResults from '../components/admin/predictions/RoundResults';
 import useResultsAnnounce from '../components/admin/predictions/useResultsAnnounce';
 import { formatTs, statusTone } from '../components/admin/predictions/shared';
 import { lastRewardsRound } from '../utils/predictionRewards';
+import { useControlRoom } from '../contexts/ControlRoomContext';
 
 function RoundRow({ round, onOpen }) {
   return (
@@ -63,7 +64,12 @@ export default function AdminHuntsPage() {
   // blocked while one is active. That round is never read-only — otherwise it
   // could only be viewed under Past (Delete only), with no way to act on it.
   const readOnly = !!viewing && !!current && viewing.id !== current.id && viewing.id !== active?.id;
-  const results = useResultsAnnounce(current);
+  // The control room provider posts results for every page; without it
+  // (tests), this page posts them itself.
+  const cr = useControlRoom();
+  const shared = !!cr?.enabled;
+  const localResults = useResultsAnnounce(current, { armed: !shared });
+  const results = shared ? cr.results : localResults;
   const lastRound = useMemo(() => lastRewardsRound(list), [list]);
 
   return (

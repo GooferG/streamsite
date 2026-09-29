@@ -8,7 +8,6 @@ import {
 import Navigation from './components/Navigation';
 import SiteFooter from './components/SiteFooter';
 import GrainOverlay from './components/GrainOverlay';
-import LiveIndicator from './components/LiveIndicator';
 import AdminLayout from './components/AdminLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import TVStaticIntro from './components/TVStaticIntro';
@@ -16,9 +15,8 @@ import HomePage from './pages/HomePage';
 import GambaPage from './pages/GambaPage';
 import { AuthProvider } from './contexts/AuthContext';
 import { TwitchAuthProvider } from './contexts/TwitchAuthContext';
-import { ControlRoomProvider, useControlRoom } from './contexts/ControlRoomContext';
-import CrashPill from './components/controlRoom/CrashPill';
-import { panelAllowed } from './components/controlRoom/selectors';
+import { ControlRoomProvider } from './contexts/ControlRoomContext';
+import StaffLayer from './components/controlRoom/StaffLayer';
 import {
   getTwitchAccessToken,
   getTwitchUserId,
@@ -66,9 +64,6 @@ const TermsPage = lazy(() => import('./pages/TermsPage'));
 const SuggestOverlay = lazy(() => import('./pages/SuggestOverlay'));
 const GiveawayOverlay = lazy(() => import('./pages/GiveawayOverlay'));
 const BattlePage = lazy(() => import('./pages/BattlePage'));
-// Staff-only control room; viewers never download it.
-const ControlRoom = lazy(() => import('./components/controlRoom/ControlRoom'));
-const StageMoment = lazy(() => import('./components/controlRoom/StageMoment'));
 
 // Product/overlay routes render without the brand chrome (footer, brand body
 // class). Everything else is a public brand page.
@@ -83,8 +78,6 @@ const PRODUCT_PREFIXES = [
 function StreamingSiteContent() {
   const navigate = useNavigate();
   const location = useLocation();
-  const cr = useControlRoom();
-  const showPanel = !!cr?.enabled && panelAllowed(location.pathname);
   const [isVisible, setIsVisible] = useState(false);
   const [channelData, setChannelData] = useState(null);
   const [isLive, setIsLive] = useState(false);
@@ -240,27 +233,7 @@ function StreamingSiteContent() {
         setPage={(id) => navigate(id === 'home' ? '/' : `/${id}`)}
       />
 
-      <LiveIndicator
-        isLive={isLive}
-        streamData={streamData}
-        hidden={!!cr?.enabled && cr.prefs.hideLiveBadge}
-      />
-
-      {showPanel && (
-        <ErrorBoundary fallback={(reset) => <CrashPill onReopen={reset} />}>
-          <Suspense fallback={null}>
-            <ControlRoom isLive={isLive} />
-          </Suspense>
-        </ErrorBoundary>
-      )}
-
-      {showPanel && cr.prefs.stage && (
-        <ErrorBoundary fallback={null}>
-          <Suspense fallback={null}>
-            <StageMoment />
-          </Suspense>
-        </ErrorBoundary>
-      )}
+      <StaffLayer isLive={isLive} streamData={streamData} pathname={location.pathname} />
 
       <main
         className={`transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'} ${signalLocking ? 'motion-safe:animate-signal-lock' : ''}`}

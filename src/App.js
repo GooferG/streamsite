@@ -17,6 +17,8 @@ import GambaPage from './pages/GambaPage';
 import { AuthProvider } from './contexts/AuthContext';
 import { TwitchAuthProvider } from './contexts/TwitchAuthContext';
 import { ControlRoomProvider, useControlRoom } from './contexts/ControlRoomContext';
+import CrashPill from './components/controlRoom/CrashPill';
+import { panelAllowed } from './components/controlRoom/selectors';
 import {
   getTwitchAccessToken,
   getTwitchUserId,
@@ -64,6 +66,8 @@ const TermsPage = lazy(() => import('./pages/TermsPage'));
 const SuggestOverlay = lazy(() => import('./pages/SuggestOverlay'));
 const GiveawayOverlay = lazy(() => import('./pages/GiveawayOverlay'));
 const BattlePage = lazy(() => import('./pages/BattlePage'));
+// Staff-only control room; viewers never download it.
+const ControlRoom = lazy(() => import('./components/controlRoom/ControlRoom'));
 
 // Product/overlay routes render without the brand chrome (footer, brand body
 // class). Everything else is a public brand page.
@@ -79,6 +83,7 @@ function StreamingSiteContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const cr = useControlRoom();
+  const showPanel = !!cr?.enabled && panelAllowed(location.pathname);
   const [isVisible, setIsVisible] = useState(false);
   const [channelData, setChannelData] = useState(null);
   const [isLive, setIsLive] = useState(false);
@@ -239,6 +244,14 @@ function StreamingSiteContent() {
         streamData={streamData}
         hidden={!!cr?.enabled && cr.prefs.hideLiveBadge}
       />
+
+      {showPanel && (
+        <ErrorBoundary fallback={(reset) => <CrashPill onReopen={reset} />}>
+          <Suspense fallback={null}>
+            <ControlRoom isLive={isLive} />
+          </Suspense>
+        </ErrorBoundary>
+      )}
 
       <main
         className={`transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'} ${signalLocking ? 'motion-safe:animate-signal-lock' : ''}`}

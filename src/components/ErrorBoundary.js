@@ -24,6 +24,12 @@ export default class ErrorBoundary extends Component {
 
   render() {
     if (this.state.hasError) {
+      // Floating UI (the control room) passes its own fallback so a crash
+      // never covers the page on stream: null, or (reset) => node.
+      if (this.props.fallback !== undefined) {
+        const { fallback } = this.props;
+        return typeof fallback === 'function' ? fallback(this.handleReset) : fallback;
+      }
       return (
         <div className="min-h-[60vh] flex items-center justify-center px-4">
           <div className="max-w-md w-full border border-white/8 bg-zinc-card/40 p-6 text-center space-y-4">

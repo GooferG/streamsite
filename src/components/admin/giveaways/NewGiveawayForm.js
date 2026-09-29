@@ -21,7 +21,7 @@ const PRIZE_KIND_OPTIONS = [
   { label: 'Other prize', value: 'item' },
 ];
 
-export default function NewGiveawayForm({ seed, chat, onClose, onCreated }) {
+export default function NewGiveawayForm({ seed, chat, onClose, onCreated, inline = false }) {
   const [form, setForm] = useState(seed);
   const [showMore, setShowMore] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -75,27 +75,26 @@ export default function NewGiveawayForm({ seed, chat, onClose, onCreated }) {
     }
   };
 
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-broadcast/70 backdrop-blur-sm"
-      onMouseDown={(e) => {
-        pressOnBackdrop.current = e.target === e.currentTarget;
-      }}
-      onClick={(e) => {
-        const endedOnBackdrop = e.target === e.currentTarget;
-        const startedOnBackdrop = pressOnBackdrop.current;
-        pressOnBackdrop.current = false;
-        if (startedOnBackdrop && endedOnBackdrop) onClose();
-      }}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') onClose();
-      }}
+  const formEl = (
+    <form
+      onSubmit={submit}
+      onKeyDown={
+        inline
+          ? (e) => {
+              if (e.key === 'Escape') {
+                e.preventDefault(); // the panel leaves Escape alone
+                onClose();
+              }
+            }
+          : undefined
+      }
+      className={
+        inline
+          ? 'w-full border border-white/10 bg-zinc-card'
+          : 'w-full max-w-lg max-h-full overflow-y-auto border border-white/10 bg-zinc-card'
+      }
     >
-      <form
-        onSubmit={submit}
-        className="w-full max-w-lg max-h-full overflow-y-auto border border-white/10 bg-zinc-card"
-      >
-        <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
+      <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="w-1.5 h-1.5 rounded-full bg-orange-admin" />
             New giveaway
@@ -374,6 +373,26 @@ export default function NewGiveawayForm({ seed, chat, onClose, onCreated }) {
           </button>
         </div>
       </form>
+  );
+
+  if (inline) return formEl;
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-broadcast/70 backdrop-blur-sm"
+      onMouseDown={(e) => {
+        pressOnBackdrop.current = e.target === e.currentTarget;
+      }}
+      onClick={(e) => {
+        const endedOnBackdrop = e.target === e.currentTarget;
+        const startedOnBackdrop = pressOnBackdrop.current;
+        pressOnBackdrop.current = false;
+        if (startedOnBackdrop && endedOnBackdrop) onClose();
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') onClose();
+      }}
+    >
+      {formEl}
     </div>
   );
 }

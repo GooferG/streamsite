@@ -8,7 +8,7 @@ import { Kbd, inputCls, labelCls } from './ui';
 import ClaimTimer from './ClaimTimer';
 import ChatAnnounceStatus from './ChatAnnounceStatus';
 
-export default function WinnerModal({ giveaway, announce }) {
+export default function WinnerModal({ giveaway, announce, inline = false, scopeRef = null, globalHotkeys = true }) {
   // 'reroll' | 'skip' | 'confirm' | 'roll' | 'back' | 'end'
   const [busy, setBusy] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -76,6 +76,14 @@ export default function WinnerModal({ giveaway, announce }) {
       if (busy || e.metaKey || e.ctrlKey || e.altKey) return;
       const tag = e.target?.tagName;
       const k = e.key.toLowerCase();
+      if (inline) {
+        // In the control room, Escape belongs to the panel (minimize), so it
+        // can never discard a pick. Other keys count only while the operator
+        // is in the panel, or while the stage moment plays.
+        if (k === 'escape') return;
+        const scope = scopeRef?.current;
+        if (!globalHotkeys && !(scope && scope.contains(document.activeElement))) return;
+      }
       // A focused button already acts on Enter/Space; don't fire twice.
       if ((tag === 'BUTTON' || tag === 'A') && (k === 'enter' || k === ' ')) return;
       const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(tag);
@@ -99,7 +107,7 @@ export default function WinnerModal({ giveaway, announce }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [busy, confirmed, needMore, act]);
+  }, [busy, confirmed, needMore, act, inline, globalHotkeys, scopeRef]);
 
   if (!giveaway || giveaway.status !== 'rolling' || !giveaway.winner) return null;
   const w = giveaway.winner;
@@ -108,28 +116,15 @@ export default function WinnerModal({ giveaway, announce }) {
     'inline-flex items-center gap-2 px-3.5 py-2.5 border border-white/15 text-white/75 hover:text-white-body hover:border-white/35 transition-colors duration-150 disabled:opacity-40';
   const btnLabel = 'text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono';
 
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-broadcast/85 backdrop-blur-md"
-      onClick={(e) => {
-        // Disallow click-outside-to-close so the admin doesn't accidentally
-        // dismiss the winner mid-stream.
-        e.stopPropagation();
-      }}
-    >
-      <div
-        ref={rootRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Giveaway winner"
-        className="relative w-full max-w-2xl max-h-full overflow-y-auto border border-orange-admin/40 bg-zinc-card"
-      >
-        {/* Atmospheric backing */}
+  const content = (
+    <>
+      {!inline && (
         <div
           className="pointer-events-none absolute -top-32 -right-32 w-96 h-96 rounded-full bg-orange-admin/15 blur-3xl motion-reduce:hidden"
           aria-hidden="true"
         />
-
+      )}
+      {!inline && (
         <div className="relative flex items-center justify-between gap-3 px-5 py-3 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
           <span className="inline-flex items-center gap-2 text-orange-admin">
             <span className="relative flex w-1.5 h-1.5">
@@ -142,8 +137,8 @@ export default function WinnerModal({ giveaway, announce }) {
             {giveaway.title} · {giveaway.prize}
           </span>
         </div>
-
-        <div className="relative px-6 sm:px-10 py-8">
+      )}
+      <div className={inline ? 'relative' : 'relative px-6 sm:px-10 py-8'}>
           <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 mb-2 font-mono inline-flex items-center gap-2">
             <Trophy size={11} className="text-orange-admin" aria-hidden="true" />
             Winner #{winnerNo}
@@ -267,7 +262,7 @@ export default function WinnerModal({ giveaway, announce }) {
                 <ArrowLeft size={13} aria-hidden="true" />
                 <span className={btnLabel}>
                   {busy === 'back' ? 'Going back…' : 'Discard'}
-                  <Kbd>Esc</Kbd>
+                  {!inline && <Kbd>Esc</Kbd>}
                 </span>
               </button>
               <button
@@ -294,7 +289,7 @@ export default function WinnerModal({ giveaway, announce }) {
                 <ArrowLeft size={13} aria-hidden="true" />
                 <span className={btnLabel}>
                   {busy === 'back' ? 'Going back…' : 'Back to entries'}
-                  <Kbd>Esc</Kbd>
+                  {!inline && <Kbd>Esc</Kbd>}
                 </span>
               </button>
               {needMore ? (
@@ -347,7 +342,34 @@ export default function WinnerModal({ giveaway, announce }) {
               {error}
             </p>
           )}
-        </div>
+      </div>
+    </>
+  );
+
+  if (inline) {
+    return (
+      <div ref={rootRef} role="group" aria-label="Giveaway winner">
+        {content}
+      </div>
+    );
+  }
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-zinc-broadcast/85 backdrop-blur-md"
+      onClick={(e) => {
+        // Disallow click-outside-to-close so the admin doesn't accidentally
+        // dismiss the winner mid-stream.
+        e.stopPropagation();
+      }}
+    >
+      <div
+        ref={rootRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Giveaway winner"
+        className="relative w-full max-w-2xl max-h-full overflow-y-auto border border-orange-admin/40 bg-zinc-card"
+      >
+        {content}
       </div>
     </div>
   );

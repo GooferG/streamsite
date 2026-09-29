@@ -68,6 +68,26 @@ test('open: countdown, entries, and Close posts close', async () => {
   await waitFor(() => expect(postAction).toHaveBeenCalledWith('close', { id: 'g1' }));
 });
 
+// Final review M3: a manual Last call that didn't reach chat says so.
+test('open: a Last call that did not post in chat raises a warning', async () => {
+  postAction.mockResolvedValue({ ok: true, status: 200, data: { ok: true, announce: { posted: false, reason: 'chat down' } } });
+  const pushWarning = jest.fn();
+  show(OPEN, { pushWarning });
+  fireEvent.click(screen.getByRole('button', { name: /last call/i }));
+  await waitFor(() => expect(pushWarning).toHaveBeenCalledWith("Last call didn't post in chat: chat down"));
+  expect(postAction).toHaveBeenCalledWith('lastCall', { id: 'g1' });
+});
+
+test('open: a quiet Last call reply (already posted) raises nothing', async () => {
+  postAction.mockResolvedValue({ ok: true, status: 200, data: { ok: true, announce: { posted: false, reason: 'already' } } });
+  const pushWarning = jest.fn();
+  show(OPEN, { pushWarning });
+  fireEvent.click(screen.getByRole('button', { name: /last call/i }));
+  await waitFor(() => expect(screen.getByRole('button', { name: /last call/i }).disabled).toBe(false));
+  expect(postAction).toHaveBeenCalledWith('lastCall', { id: 'g1' });
+  expect(pushWarning).not.toHaveBeenCalled();
+});
+
 // Review Focus 4: a giveaway without a timer.
 test('open without a timer: no countdown and no progress bar', () => {
   show({ ...OPEN, closesAt: null, announceLastCall: false });

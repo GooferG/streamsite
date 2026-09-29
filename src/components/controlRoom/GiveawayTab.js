@@ -9,6 +9,7 @@ import WinnerModal from '../admin/giveaways/WinnerModal';
 import PlayPanel from '../admin/giveaways/PlayPanel';
 import AnimatedCount from '../admin/giveaways/AnimatedCount';
 import { useEventSubStatus } from '../admin/giveaways/EventSubStatus';
+import { QUIET_ANNOUNCE } from '../admin/giveaways/api';
 import { useGiveawayAction } from './useGiveawayAction';
 import { useLatestGiveaway, useRecentEntrants } from './giveawayFeeds';
 
@@ -87,12 +88,19 @@ function Entries({ giveaway }) {
   );
 }
 
-function OpenView({ giveaway, chat }) {
+function OpenView({ giveaway, chat, onWarn }) {
   const { busy, error, run } = useGiveawayAction(giveaway.id);
   const entrants = useRecentEntrants(giveaway.id, true);
   const canLastCall =
     !!giveaway.announceLastCall && !!giveaway.lastCallMessage && !giveaway.lastCallAt && !!giveaway.closesAt;
   const nobody = (giveaway.entryCount ?? 0) === 0;
+  const lastCall = async () => {
+    const data = await run('lastCall');
+    const a = data && data.announce;
+    if (a && a.posted === false && !QUIET_ANNOUNCE.includes(a.reason)) {
+      onWarn(`Last call didn't post in chat: ${a.reason}`);
+    }
+  };
   return (
     <div>
       <p className="font-bold text-white-body truncate mb-3">{giveaway.prize}</p>
@@ -102,7 +110,7 @@ function OpenView({ giveaway, chat }) {
       </div>
       <div className="flex gap-1.5 mt-3">
         {canLastCall && (
-          <button type="button" className="cr-btn" disabled={!!busy} onClick={() => run('lastCall')}>
+          <button type="button" className="cr-btn" disabled={!!busy} onClick={lastCall}>
             <Megaphone size={12} aria-hidden="true" />
             {busy === 'lastCall' ? 'Posting…' : 'Last call'}
           </button>
@@ -256,5 +264,5 @@ export default function GiveawayTab({ scopeRef = null }) {
     );
   }
   if (g.status === 'closed') return <ClosedView giveaway={g} chat={chat} />;
-  return <OpenView giveaway={g} chat={chat} />;
+  return <OpenView giveaway={g} chat={chat} onWarn={cr.pushWarning} />;
 }

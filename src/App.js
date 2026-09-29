@@ -68,6 +68,7 @@ const GiveawayOverlay = lazy(() => import('./pages/GiveawayOverlay'));
 const BattlePage = lazy(() => import('./pages/BattlePage'));
 // Staff-only control room; viewers never download it.
 const ControlRoom = lazy(() => import('./components/controlRoom/ControlRoom'));
+const StageMoment = lazy(() => import('./components/controlRoom/StageMoment'));
 
 // Product/overlay routes render without the brand chrome (footer, brand body
 // class). Everything else is a public brand page.
@@ -249,6 +250,14 @@ function StreamingSiteContent() {
         <ErrorBoundary fallback={(reset) => <CrashPill onReopen={reset} />}>
           <Suspense fallback={null}>
             <ControlRoom isLive={isLive} />
+          </Suspense>
+        </ErrorBoundary>
+      )}
+
+      {showPanel && cr.prefs.stage && (
+        <ErrorBoundary fallback={null}>
+          <Suspense fallback={null}>
+            <StageMoment />
           </Suspense>
         </ErrorBoundary>
       )}

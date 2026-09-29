@@ -35,9 +35,11 @@ export function pickConfirmed(giveaway) {
   return (giveaway.winners || []).some((w) => w.twitchId === giveaway.winnerTwitchId);
 }
 
-// Where the provider runs at all. OBS browser sources never drive timers.
+// Where the provider runs at all. OBS browser sources never drive timers,
+// with or without a trailing slash on the URL.
 export function controlRoomAllowed(pathname) {
-  return !OVERLAY_PATHS.includes(pathname);
+  const p = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname;
+  return !OVERLAY_PATHS.includes(p);
 }
 
 // Where the floating panel and the stage moment render. /admin has its own UI.

@@ -56,6 +56,8 @@ test('viewers get a disabled control room with no subscriptions', () => {
   mount();
   expect(latest.enabled).toBe(false);
   expect(onSnapshot).not.toHaveBeenCalled();
+  // Final review T8: viewers never get a localStorage key either.
+  expect(localStorage.getItem('goofer:control-room')).toBeNull();
 });
 
 test('OBS overlay routes never run it', () => {

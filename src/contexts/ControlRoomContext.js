@@ -60,7 +60,10 @@ export function ControlRoomProvider({ children }) {
   const results = useResultsAnnounce(latestRound, { armed });
 
   const [store, setStore] = useState(readStore);
-  useEffect(() => writeStore(store), [store]);
+  // Staff only: viewers never get a localStorage key.
+  useEffect(() => {
+    if (enabled) writeStore(store);
+  }, [enabled, store]);
   const [ducked, setDucked] = useState(false);
 
   const panelActions = useMemo(() => {

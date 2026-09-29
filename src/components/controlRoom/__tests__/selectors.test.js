@@ -47,3 +47,12 @@ test('OBS sources never run the control room; /admin runs it without the panel',
   expect(panelAllowed('/gamba/hunts')).toBe(true);
   expect(panelAllowed('/')).toBe(true);
 });
+
+// Final review T8: the router matches overlay URLs with a trailing slash too.
+test('a trailing slash on an overlay URL still keeps the control room out', () => {
+  expect(controlRoomAllowed('/suggest-overlay/')).toBe(false);
+  expect(controlRoomAllowed('/giveaway-overlay/')).toBe(false);
+  expect(controlRoomAllowed('/giveaway-overlay//')).toBe(false);
+  expect(panelAllowed('/giveaway-overlay/')).toBe(false);
+  expect(controlRoomAllowed('/')).toBe(true);
+});

@@ -3,7 +3,7 @@ import { collection, onSnapshot, orderBy, query, limit as fLimit } from 'firebas
 import { ArrowLeft, Check, Flag, Gift, Radio, RefreshCcw, SkipForward, Trophy } from 'lucide-react';
 import { db } from '../../../config/firebase';
 import { isBonusGiveaway } from '../../../utils/giveaway';
-import { postAction } from './api';
+import { giveawayErrorText, postAction } from './api';
 import { Kbd, inputCls, labelCls } from './ui';
 import ClaimTimer from './ClaimTimer';
 import ChatAnnounceStatus from './ChatAnnounceStatus';
@@ -42,20 +42,24 @@ export default function WinnerModal({ giveaway, announce, inline = false, scopeR
         const { ok, status, data } = await postAction(action, body);
         if (!ok) {
           setError(
-            data.error === 'NO_MORE_ENTRIES' || data.error === 'NO_ENTRIES'
-              ? 'Nobody left to draw.'
-              : `Action failed: ${data.error || status}`
+            inline
+              ? giveawayErrorText(data.error, status)
+              : data.error === 'NO_MORE_ENTRIES' || data.error === 'NO_ENTRIES'
+                ? 'Nobody left to draw.'
+                : `Action failed: ${data.error || status}`
           );
           return;
         }
         if (['roll', 'reroll', 'skip'].includes(action)) setPrizeNote('');
       } catch (err) {
-        setError('Network error.');
+        setError(
+          inline && err && err.message === 'NOT_AUTHENTICATED' ? giveawayErrorText('NOT_AUTHENTICATED') : 'Network error.'
+        );
       } finally {
         setBusy(null);
       }
     },
-    [giveaway.id, prizeNote]
+    [giveaway.id, prizeNote, inline]
   );
 
   const winners = useMemo(() => giveaway.winners || [], [giveaway.winners]);

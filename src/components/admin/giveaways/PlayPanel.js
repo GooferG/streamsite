@@ -4,7 +4,7 @@ import { ArrowLeft, Check, ChevronDown, Flag, Gift, Minus, Pencil } from 'lucide
 import { db } from '../../../config/firebase';
 import { toImageUrl } from '../../../utils/slotImage';
 import { formatMoney, formatMulti, parseMoney } from '../../../utils/giveaway';
-import { postAction, QUIET_ANNOUNCE } from './api';
+import { giveawayErrorText, postAction, QUIET_ANNOUNCE } from './api';
 import { MoneyInput, inputCls, labelCls } from './ui';
 import ChatAnnounceStatus from './ChatAnnounceStatus';
 
@@ -52,12 +52,20 @@ export default function PlayPanel({ giveaway, announce, inline = false }) {
         ...body,
       });
       if (!ok) {
-        setError(data.error === 'NO_ENTRIES' ? 'Nobody left to draw.' : `Action failed: ${data.error || status}`);
+        setError(
+          inline
+            ? giveawayErrorText(data.error, status)
+            : data.error === 'NO_ENTRIES'
+              ? 'Nobody left to draw.'
+              : `Action failed: ${data.error || status}`
+        );
         return null;
       }
       return data;
-    } catch {
-      setError('Network error.');
+    } catch (err) {
+      setError(
+        inline && err && err.message === 'NOT_AUTHENTICATED' ? giveawayErrorText('NOT_AUTHENTICATED') : 'Network error.'
+      );
       return null;
     } finally {
       setBusy(null);

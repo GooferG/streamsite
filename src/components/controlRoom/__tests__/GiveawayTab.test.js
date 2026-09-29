@@ -116,6 +116,7 @@ test('rolling: the winner shows inline; hotkeys only count in the panel or on st
   view.rerender(<GiveawayTab scopeRef={{ current: null }} />);
   fireEvent.keyDown(window, { key: 'r' });
   await waitFor(() => expect(postAction).toHaveBeenCalledWith('reroll', { id: 'g1' }));
+  await waitFor(() => expect(screen.getByRole('button', { name: /reroll/i }).disabled).toBe(false));
   fireEvent.keyDown(window, { key: 'Escape' });
   expect(postAction).not.toHaveBeenCalledWith('back', expect.anything());
 });

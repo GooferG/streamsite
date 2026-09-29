@@ -14,8 +14,8 @@ jest.mock('firebase/firestore', () => ({
   },
 }));
 jest.mock('../api', () => ({
+  ...jest.requireActual('../api'),
   postAction: jest.fn(),
-  QUIET_ANNOUNCE: ['disabled', 'empty', 'already'],
 }));
 
 const at = (ms) => ({ toMillis: () => ms, toDate: () => new Date(ms) });
@@ -56,4 +56,18 @@ test('R rerolls from the keyboard', async () => {
   render(<WinnerModal giveaway={ROLLING} announce={ANNOUNCE} />);
   fireEvent.keyDown(window, { key: 'r' });
   await waitFor(() => expect(postAction).toHaveBeenCalledWith('reroll', { id: 'g1' }));
+});
+
+test('inline: a signed-out operator reads a plain sign-out message', async () => {
+  postAction.mockResolvedValue({ ok: false, status: 401, data: { error: 'Invalid token' } });
+  render(<WinnerModal giveaway={ROLLING} announce={ANNOUNCE} inline />);
+  fireEvent.click(screen.getByRole('button', { name: /reroll/i }));
+  expect(await screen.findByText('Signed out. Sign in again at /admin.')).toBeTruthy();
+});
+
+test('not inline: the same failure keeps the raw error text', async () => {
+  postAction.mockResolvedValue({ ok: false, status: 401, data: { error: 'Invalid token' } });
+  render(<WinnerModal giveaway={ROLLING} announce={ANNOUNCE} />);
+  fireEvent.click(screen.getByRole('button', { name: /reroll/i }));
+  expect(await screen.findByText('Action failed: Invalid token')).toBeTruthy();
 });

@@ -16,7 +16,7 @@ import HomePage from './pages/HomePage';
 import GambaPage from './pages/GambaPage';
 import { AuthProvider } from './contexts/AuthContext';
 import { TwitchAuthProvider } from './contexts/TwitchAuthContext';
-import { ControlRoomProvider } from './contexts/ControlRoomContext';
+import { ControlRoomProvider, useControlRoom } from './contexts/ControlRoomContext';
 import {
   getTwitchAccessToken,
   getTwitchUserId,
@@ -78,6 +78,7 @@ const PRODUCT_PREFIXES = [
 function StreamingSiteContent() {
   const navigate = useNavigate();
   const location = useLocation();
+  const cr = useControlRoom();
   const [isVisible, setIsVisible] = useState(false);
   const [channelData, setChannelData] = useState(null);
   const [isLive, setIsLive] = useState(false);
@@ -233,7 +234,11 @@ function StreamingSiteContent() {
         setPage={(id) => navigate(id === 'home' ? '/' : `/${id}`)}
       />
 
-      <LiveIndicator isLive={isLive} streamData={streamData} />
+      <LiveIndicator
+        isLive={isLive}
+        streamData={streamData}
+        hidden={!!cr?.enabled && cr.prefs.hideLiveBadge}
+      />
 
       <main
         className={`transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'} ${signalLocking ? 'motion-safe:animate-signal-lock' : ''}`}

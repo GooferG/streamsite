@@ -1,15 +1,15 @@
 import { Twitch, Eye } from 'lucide-react';
 import { SOCIAL_LINKS } from '../constants';
 
-export default function LiveIndicator({ isLive, streamData }) {
-  if (!isLive) return null;
+export default function LiveIndicator({ isLive, streamData, hidden = false }) {
+  if (!isLive || hidden) return null;
 
   return (
     <a
       href={SOCIAL_LINKS.twitch}
       target="_blank"
       rel="noopener noreferrer"
-      className="fixed bottom-6 right-6 z-50 group"
+      className="fixed bottom-6 right-[calc(1.5rem+var(--control-dock-w,0px))] z-50 group"
     >
       <div className="relative">
         {/* Pulsing glow effect */}

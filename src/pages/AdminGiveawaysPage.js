@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { collection, onSnapshot, orderBy, query, limit as fLimit } from 'firebase/firestore';
 import {
   Check,
@@ -39,6 +39,9 @@ import PlayPanel from '../components/admin/giveaways/PlayPanel';
 import AnimatedCount from '../components/admin/giveaways/AnimatedCount';
 import useGiveawayClock from '../components/admin/giveaways/useGiveawayClock';
 import useWinnerAnnounce from '../components/admin/giveaways/useWinnerAnnounce';
+import { useControlRoom } from '../contexts/ControlRoomContext';
+import { useWarnings } from '../components/controlRoom/useWarnings';
+import WarningStrip from '../components/controlRoom/WarningStrip';
 
 function OverlayLink() {
   const url = `${window.location.origin}/giveaway-overlay`;
@@ -642,15 +645,18 @@ export default function AdminGiveawaysPage() {
   // null | form seed (see formFromGiveaway)
   const [formSeed, setFormSeed] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
-  const [warning, setWarning] = useState(null);
   const chat = useEventSubStatus();
   const autoOpened = useRef(false);
 
-  useEffect(() => {
-    if (!warning) return undefined;
-    const t = setTimeout(() => setWarning(null), 8000);
-    return () => clearTimeout(t);
-  }, [warning]);
+  // With the control room provider (staff on /admin), the provider runs the
+  // clock and the winner announce for every page; this page only shows them.
+  // Without it (tests), the page drives its own, as it always did.
+  const cr = useControlRoom();
+  const shared = !!cr?.enabled;
+  const local = useWarnings();
+  const warn = shared ? cr : local;
+  const { pushWarning: pushLocal } = local;
+  const warnSticky = useCallback((message) => pushLocal(message, { sticky: true }), [pushLocal]);
 
   useEffect(() => {
     const q = query(collection(db, 'giveaways'), orderBy('createdAt', 'desc'), fLimit(50));
@@ -670,7 +676,7 @@ export default function AdminGiveawaysPage() {
     if (live) setSelectedId((cur) => cur || live.id);
   }, [loaded, list]);
 
-  useGiveawayClock(list, setWarning);
+  useGiveawayClock(list, warnSticky, { armed: !shared });
 
   const selected = useMemo(() => list.find((g) => g.id === selectedId) || null, [list, selectedId]);
   // Auto-open the winner modal whenever any giveaway is 'rolling'.
@@ -688,7 +694,8 @@ export default function AdminGiveawaysPage() {
       ) || null,
     [list]
   );
-  const announce = useWinnerAnnounce(currentPick);
+  const localAnnounce = useWinnerAnnounce(currentPick, { armed: !shared });
+  const announce = shared ? cr.announce : localAnnounce;
 
   const grouped = useMemo(() => {
     const open = list.filter((g) => ['open', 'rolling', 'playing'].includes(g.status));
@@ -735,6 +742,8 @@ export default function AdminGiveawaysPage() {
           </button>
         </div>
       </header>
+
+      <WarningStrip warnings={warn.warnings} onDismiss={warn.dismissWarning} className="mb-6" />
 
       <div className="space-y-2 mb-6">
         <EventSubStatus chat={chat} />
@@ -810,7 +819,7 @@ export default function AdminGiveawaysPage() {
             setFormSeed(null);
             setSelectedId(id);
             if (meta?.announceError) {
-              setWarning(`Giveaway started, but chat announce failed: ${meta.announceError}`);
+              warn.pushWarning(`Giveaway started, but chat announce failed: ${meta.announceError}`);
             }
           }}
         />
@@ -824,22 +833,6 @@ export default function AdminGiveawaysPage() {
           giveaway={activePlaying}
           announce={currentPick?.id === activePlaying.id ? announce : null}
         />
-      )}
-      {warning && (
-        <div role="status" className="fixed bottom-6 right-6 z-50 max-w-sm border border-orange-admin/60 bg-zinc-card/95 backdrop-blur px-4 py-3 shadow-lg">
-          <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-orange-admin mb-1 font-mono">
-            Warning
-          </p>
-          <p className="text-sm text-white/80">{warning}</p>
-          <button
-            type="button"
-            onClick={() => setWarning(null)}
-            className="absolute top-1 right-2 text-white/40 hover:text-white-body text-xs font-mono"
-            aria-label="Dismiss"
-          >
-            ×
-          </button>
-        </div>
       )}
     </div>
   );

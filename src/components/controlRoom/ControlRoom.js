@@ -64,9 +64,22 @@ export default function ControlRoom({ isLive = false }) {
   const [flipping, setFlipping] = useState(false);
   const [dragRect, setDragRect] = useState(null);
   const [ghost, setGhost] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const open = isOpenMode(panel.mode);
   const docked = panel.mode === 'dock' && !narrow;
   const reduced = prefersReducedMotion();
+
+  // A drag can be interrupted mid-gesture (Escape/backtick minimize, auto-
+  // restore, a narrow-mode flip that drops the pointer handlers, or a lost
+  // native pointer capture) without ever firing pointerup/pointercancel. Any
+  // of those must fully clear drag state, or the panel is left with a frozen
+  // position and a resting `.cr-lifted` transform.
+  const clearDrag = useCallback(() => {
+    dragRef.current = null;
+    setDragRect(null);
+    setGhost(false);
+    setDragging(false);
+  }, []);
 
   // Power on when opening from the pill/closed; FLIP between float and dock.
   useLayoutEffect(() => {
@@ -91,6 +104,13 @@ export default function ControlRoom({ isLive = false }) {
     return () => clearTimeout(t);
   }, [anim, reduced]);
 
+  // Belt and suspenders on top of the synchronous clears below: if the panel
+  // ever leaves an open mode, or narrow mode drops the drag handlers
+  // entirely, any drag in progress is gone too.
+  useEffect(() => {
+    if (!isOpenMode(panel.mode) || narrow) clearDrag();
+  }, [panel.mode, narrow, clearDrag]);
+
   // Measure for clamping and snapping (height is automatic). Deliberately
   // unkeyed: it has to re-measure after every render, not just when a
   // specific dep changes, to catch content-driven height changes.
@@ -105,6 +125,9 @@ export default function ControlRoom({ isLive = false }) {
 
   const powerOffThen = useCallback(
     (action) => {
+      // Minimizing/closing ends the drag right away rather than waiting on
+      // the power-off timer or a pointerup that may never come.
+      clearDrag();
       if (!isOpenMode(panel.mode)) return action();
       setAnim('off');
       setTimeout(() => {
@@ -114,7 +137,7 @@ export default function ControlRoom({ isLive = false }) {
       }, reduced ? MOTION.reducedFade : MOTION.powerOff);
       return undefined;
     },
-    [panel.mode, reduced]
+    [panel.mode, reduced, clearDrag]
   );
   const minimize = useCallback(() => powerOffThen(panelActions.minimize), [powerOffThen, panelActions]);
   const close = useCallback(() => powerOffThen(panelActions.close), [powerOffThen, panelActions]);
@@ -174,6 +197,8 @@ export default function ControlRoom({ isLive = false }) {
     if (!settled || autoFrom.current == null) return;
     const to = autoFrom.current;
     autoFrom.current = null;
+    // Auto-restore bypasses the power-off animation, so clear any drag here too.
+    clearDrag();
     if (to === 'closed') panelActions.close();
     else panelActions.minimize();
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -219,8 +244,15 @@ export default function ControlRoom({ isLive = false }) {
             startX: e.clientX,
             fromDock: panel.mode === 'dock',
             size: { w: r.width || PANEL_W, h: r.height || size.h },
+            // The rect at pointerdown, kept so a drop into the dock zone can
+            // restore the float position it actually started from rather
+            // than the drop point (which is only ~48px from the edge).
+            startRect: { x: r.left, y: r.top },
           };
-          if (panel.mode !== 'dock') setDragRect({ x: r.left, y: r.top });
+          if (panel.mode !== 'dock') {
+            setDragRect({ x: r.left, y: r.top });
+            setDragging(true);
+          }
         },
         onPointerMove: (e) => {
           const d = dragRef.current;
@@ -232,6 +264,7 @@ export default function ControlRoom({ isLive = false }) {
             d.offX = Math.min(d.offX, PANEL_W - 24);
             const next = clampRect({ x: e.clientX - d.offX, y: e.clientY - d.offY }, d.size, view);
             setDragRect(next);
+            setDragging(true);
             panelActions.undock(next);
             return;
           }
@@ -240,24 +273,20 @@ export default function ControlRoom({ isLive = false }) {
         },
         onPointerUp: (e) => {
           const d = dragRef.current;
-          dragRef.current = null;
-          setGhost(false);
-          if (!d) return;
-          if (d.fromDock) {
-            setDragRect(null);
-            return;
-          }
+          clearDrag();
+          if (!d || d.fromDock) return;
           const at = clampRect({ x: e.clientX - d.offX, y: e.clientY - d.offY }, d.size, view);
           if (inDockZone(e.clientX, view.vw)) {
             flipRectRef.current = rootRef.current?.getBoundingClientRect() || null;
-            panelActions.moveTo(at, nearestCorner(at, d.size, view));
+            const floatRect = clampRect(d.startRect, d.size, view);
+            panelActions.moveTo(floatRect, nearestCorner(floatRect, d.size, view));
             panelActions.dock();
           } else {
             const snapped = snapToCorner(at, d.size, view);
             panelActions.moveTo(snapped.rect, snapped.corner || nearestCorner(snapped.rect, d.size, view));
           }
-          setDragRect(null);
         },
+        onLostPointerCapture: clearDrag,
       };
   if (dragHandlers.onPointerUp) dragHandlers.onPointerCancel = dragHandlers.onPointerUp;
 
@@ -296,7 +325,7 @@ export default function ControlRoom({ isLive = false }) {
     narrow ? 'is-sheet' : docked ? 'is-docked' : '',
     anim === 'on' ? 'cr-power-on' : '',
     anim === 'off' ? 'cr-power-off' : '',
-    dragRect && dragRef.current ? 'cr-lifted' : '',
+    dragging ? 'cr-lifted' : '',
     cr.ducked ? 'cr-ducked' : '',
   ].join(' ');
 

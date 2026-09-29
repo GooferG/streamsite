@@ -8,6 +8,20 @@ jest.mock('../PredictTab', () => () => require('react').createElement('p', null,
 
 const at = (ms) => ({ toMillis: () => ms });
 
+// jsdom has no PointerEvent constructor, so `fireEvent.pointerDown` (which
+// falls back to the plain `Event` constructor) silently drops `button`,
+// `clientX`, `clientY` and `pointerId` — properties the base Event type
+// doesn't accept as init options. Build the event by hand and assign them
+// directly, wrapped in `act` since dispatchEvent bypasses fireEvent's own
+// act wrapping.
+function firePointer(type, el, { clientX = 0, clientY = 0, button = 0, pointerId = 1 } = {}) {
+  const event = new Event(type, { bubbles: true, cancelable: true });
+  Object.assign(event, { button, clientX, clientY, pointerId });
+  act(() => {
+    el.dispatchEvent(event);
+  });
+}
+
 function makeCr(overrides = {}) {
   const { panel, ...rest } = overrides;
   return {
@@ -152,4 +166,37 @@ test('arrow keys move between tabs', () => {
     jest.advanceTimersByTime(240);
   });
   expect(cr.panelActions.setTab).toHaveBeenCalledWith('predict');
+});
+
+// Fix round 1, finding 7: Escape inside a text field must not minimize.
+test('Escape inside a text field does not minimize the panel', () => {
+  show();
+  const input = document.createElement('input');
+  document.body.appendChild(input);
+  fireEvent.keyDown(input, { key: 'Escape' });
+  act(() => {
+    jest.advanceTimersByTime(1000);
+  });
+  expect(cr.panelActions.minimize).not.toHaveBeenCalled();
+});
+
+// Fix round 1, finding 2: an interrupted drag (Escape mid-drag, here) must
+// never leave the panel with a resting `.cr-lifted` transform.
+test('an interrupted drag never leaves a resting lift', () => {
+  const view = show();
+  const dialog = screen.getByRole('dialog', { name: 'Control room' });
+  // The drag handle is the header strip; the LIVE tally sits inside it and
+  // isn't a button/link/input, so a pointerdown there starts a drag without
+  // reaching into the DOM tree for the header itself.
+  firePointer('pointerdown', screen.getByText('LIVE'), { button: 0, clientX: 100, clientY: 100 });
+  expect(dialog.className).toMatch('cr-lifted');
+  fireEvent.keyDown(window, { key: 'Escape' });
+  act(() => {
+    jest.advanceTimersByTime(320);
+  });
+  cr = makeCr({ panel: { mode: 'float' } });
+  useControlRoom.mockReturnValue(cr);
+  view.rerender(<ControlRoom isLive />);
+  const reopened = screen.getByRole('dialog', { name: 'Control room' });
+  expect(reopened.className).not.toMatch('cr-lifted');
 });

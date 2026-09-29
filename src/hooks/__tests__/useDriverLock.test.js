@@ -73,6 +73,30 @@ function fakeDoc(state = 'visible') {
   };
 }
 
+// Minimal BroadcastChannel bus: a message reaches every other open channel
+// (never the sender), asynchronously, like the real thing.
+function createFakeBus() {
+  const open = new Set();
+  return {
+    channel() {
+      const listeners = new Set();
+      const ch = {
+        postMessage(data) {
+          open.forEach((other) => {
+            if (other !== ch) queueMicrotask(() => other.deliver(data));
+          });
+        },
+        addEventListener: (type, fn) => type === 'message' && listeners.add(fn),
+        removeEventListener: (_type, fn) => listeners.delete(fn),
+        close: () => open.delete(ch),
+        deliver: (data) => listeners.forEach((fn) => fn({ data })),
+      };
+      open.add(ch);
+      return ch;
+    },
+  };
+}
+
 async function flush() {
   await act(async () => {
     for (let i = 0; i < 6; i += 1) await Promise.resolve();
@@ -117,6 +141,49 @@ test('a tab that becomes visible takes the lock from a hidden driver', async () 
   expect(utils.result.current.isDriver).toBe(true);
   expect(view.result.current.isDriver).toBe(false);
   expect(locks.queued).toBe(1); // A queued again behind B
+});
+
+// Final review I2: with two windows, the other one may already be visible and
+// never see a visibilitychange. The driver going hidden says so on the bus,
+// and a visible tab takes over.
+test('a visible queued tab takes over when the driver goes hidden', async () => {
+  const locks = createFakeLocks();
+  const bus = createFakeBus();
+  const docA = fakeDoc('visible');
+  const docB = fakeDoc('visible');
+  const chA = bus.channel();
+  const chB = bus.channel();
+  const utils = renderHook(() => useDriverLock(true, { locks, doc: docB, channel: chB }));
+  await flush();
+  // A mounts last while visible, so it takes the lock and B queues behind it.
+  const view = renderHook(() => useDriverLock(true, { locks, doc: docA, channel: chA }));
+  await flush();
+  expect(view.result.current.isDriver).toBe(true);
+  expect(utils.result.current.isDriver).toBe(false);
+  expect(locks.queued).toBe(1);
+  act(() => docA.set('hidden'));
+  await flush();
+  expect(utils.result.current.isDriver).toBe(true);
+  expect(view.result.current.isDriver).toBe(false);
+  expect(locks.queued).toBe(1); // A queued again behind B
+});
+
+test('a hidden tab ignores the hand-off, so only visible tabs steal', async () => {
+  const locks = createFakeLocks();
+  const bus = createFakeBus();
+  const docA = fakeDoc('visible');
+  const docB = fakeDoc('hidden');
+  const chA = bus.channel();
+  const chB = bus.channel();
+  const view = renderHook(() => useDriverLock(true, { locks, doc: docA, channel: chA }));
+  await flush();
+  const utils = renderHook(() => useDriverLock(true, { locks, doc: docB, channel: chB }));
+  await flush();
+  act(() => docA.set('hidden'));
+  await flush();
+  expect(view.result.current.isDriver).toBe(true);
+  expect(utils.result.current.isDriver).toBe(false);
+  expect(locks.queued).toBe(1);
 });
 
 test('without Web Locks every tab drives', () => {

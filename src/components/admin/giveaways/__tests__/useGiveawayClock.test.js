@@ -114,13 +114,25 @@ test('does not roll when its own close failed (someone else closed it)', async (
   expect(calls('roll')).toHaveLength(0);
 });
 
+// Final review I2: the auto-roll the giveaway asked for did not happen, so
+// the operator hears about it instead of finding it silently skipped.
 test('closes, but never rolls, a timer that ran out long ago', async () => {
-  run([giveaway({ closesAt: at(NOW - 60_000) })]);
+  const { onWarn } = run([giveaway({ closesAt: at(NOW - 60_000) })]);
   await act(async () => {
     await flush();
   });
   expect(postAction).toHaveBeenCalledWith('close', { id: 'g1' });
   expect(calls('roll')).toHaveLength(0);
+  expect(onWarn).toHaveBeenCalledWith('The timer closed late, so nothing was rolled. Roll by hand.');
+});
+
+test('a late close without auto-roll stays quiet', async () => {
+  const { onWarn } = run([giveaway({ closesAt: at(NOW - 60_000), autoRoll: false })]);
+  await act(async () => {
+    await flush();
+  });
+  expect(postAction).toHaveBeenCalledWith('close', { id: 'g1' });
+  expect(onWarn).not.toHaveBeenCalled();
 });
 
 test('ignores giveaways without a timer or not open', async () => {

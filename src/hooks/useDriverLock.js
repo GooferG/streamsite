@@ -1,19 +1,29 @@
 import { useEffect, useState } from 'react';
 
 export const DRIVER_LOCK = 'goofer-control-driver';
+const DRIVER_HIDDEN = 'driver-hidden';
 
 const defaultLocks = () => (typeof navigator !== 'undefined' ? navigator.locks : undefined);
 const defaultDoc = () => (typeof document !== 'undefined' ? document : undefined);
+const openChannel = () =>
+  typeof BroadcastChannel === 'function' ? new BroadcastChannel(DRIVER_LOCK) : null;
 
 /**
  * Elects one tab per browser to run the giveaway and prediction timers.
  *
  * The visible tab wins: browsers throttle timers in hidden tabs (last call
  * could fire a minute late), so a tab that becomes visible steals the lock and
- * the old holder queues up again. Without Web Locks every tab drives and the
- * server's claim-once guards dedupe.
+ * the old holder queues up again. A window that is already visible never sees
+ * a visibilitychange, so the driver also says 'driver-hidden' on a
+ * BroadcastChannel when it goes hidden, and any visible tab takes over. Only
+ * visible tabs steal, so the lock never ping-pongs. Without Web Locks every
+ * tab drives and the server's claim-once guards dedupe.
+ *
+ * `channel` is for tests: an object shaped like a BroadcastChannel. Left out,
+ * the hook opens (and closes) its own when the browser has one; null turns
+ * the hand-off off.
  */
-export function useDriverLock(enabled, { locks = defaultLocks(), doc = defaultDoc() } = {}) {
+export function useDriverLock(enabled, { locks = defaultLocks(), doc = defaultDoc(), channel } = {}) {
   const supported = !!(locks && typeof locks.request === 'function');
   const [held, setHeld] = useState(false);
   // Set when a Web Locks request rejects with something other than our own
@@ -78,18 +88,32 @@ export function useDriverLock(enabled, { locks = defaultLocks(), doc = defaultDo
       queued?.abort();
     };
 
+    const ownsBus = channel === undefined;
+    const bus = ownsBus ? openChannel() : channel;
+    const onVisibility = () => {
+      // The driver going hidden hands off to a tab that is already visible.
+      if (release && doc?.visibilityState === 'hidden') bus?.postMessage(DRIVER_HIDDEN);
+      takeOver();
+    };
+    const onMessage = (e) => {
+      if (e && e.data === DRIVER_HIDDEN) takeOver();
+    };
+
     acquire(!!doc && doc.visibilityState === 'visible');
-    doc?.addEventListener('visibilitychange', takeOver);
+    doc?.addEventListener('visibilitychange', onVisibility);
+    bus?.addEventListener('message', onMessage);
 
     return () => {
       disposed = true;
       gen += 1;
-      doc?.removeEventListener('visibilitychange', takeOver);
+      doc?.removeEventListener('visibilitychange', onVisibility);
+      bus?.removeEventListener('message', onMessage);
+      if (ownsBus) bus?.close();
       release?.();
       release = null;
       controller?.abort();
     };
-  }, [enabled, supported, locks, doc]);
+  }, [enabled, supported, locks, doc, channel]);
 
   return { isDriver: enabled && (supported ? fallback || held : true), supported };
 }

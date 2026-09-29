@@ -44,9 +44,12 @@ export default function useGiveawayClock(list, onWarn, { armed = true } = {}) {
         if (now >= closesAt && !fired.current.has(closeKey)) {
           fired.current.add(closeKey);
           const closed = await postAction('close', { id: g.id }).catch(() => ({ ok: false }));
-          // Only auto-roll when we watched the clock run out, not when the
-          // page is opened long after the timer ended.
-          if (closed.ok && g.autoRoll && now - closesAt < AUTO_ROLL_GRACE_MS) {
+          // Only auto-roll when we watched the clock run out. A close noticed
+          // late (the page opened long after the timer, or a throttled tab)
+          // says so instead of skipping the roll silently.
+          if (closed.ok && g.autoRoll && now - closesAt >= AUTO_ROLL_GRACE_MS) {
+            onWarn('The timer closed late, so nothing was rolled. Roll by hand.');
+          } else if (closed.ok && g.autoRoll) {
             if ((g.entryCount ?? 0) === 0) {
               onWarn('Time ran out with no entries, so nothing was rolled.');
             } else {

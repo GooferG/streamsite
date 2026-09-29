@@ -16,6 +16,7 @@ import HomePage from './pages/HomePage';
 import GambaPage from './pages/GambaPage';
 import { AuthProvider } from './contexts/AuthContext';
 import { TwitchAuthProvider } from './contexts/TwitchAuthContext';
+import { ControlRoomProvider } from './contexts/ControlRoomContext';
 import {
   getTwitchAccessToken,
   getTwitchUserId,
@@ -329,9 +330,11 @@ function AppShell() {
 export default function StreamingSite() {
   return (
     <AuthProvider>
-      <TwitchAuthProvider>
-        <AppShell />
-      </TwitchAuthProvider>
+      <ControlRoomProvider>
+        <TwitchAuthProvider>
+          <AppShell />
+        </TwitchAuthProvider>
+      </ControlRoomProvider>
     </AuthProvider>
   );
 }

@@ -81,7 +81,7 @@ module.exports = {
             6: '#6d6873',
             7: '#4a4550',
           },
-          screen: { ink: '#c9a993', dim: '#8a7d75' },
+          screen: { ink: '#c9a993', dim: '#9a8b82' },
           ticket: { top: '#2a1d3d', mid: '#231933', bottom: '#17121f' },
         },
       },
@@ -101,6 +101,10 @@ module.exports = {
         'eyebrow': '0.22em',
         'eyebrow-md': '0.28em',
         'eyebrow-lg': '0.32em',
+      },
+      backgroundImage: {
+        // The guess meter's dotted track.
+        'onair-track': 'repeating-linear-gradient(90deg, rgba(255,255,255,.18) 0 2px, transparent 2px 12px)',
       },
       borderRadius: {
         'onair-bezel': '36px',
@@ -125,6 +129,7 @@ module.exports = {
         'onair-live': '0 0 24px rgba(216,58,28,.6)',
         'onair-led': '0 0 10px #ff4a2a',
         'onair-ticket': '0 24px 40px -14px rgba(145,70,255,.4)',
+        'onair-ticket-top': 'inset 0 1px 0 rgba(200,170,255,.18)',
         'onair-winner-ring': '0 0 0 5px #1a100c, 0 0 0 7px #ff6a1a, 0 0 60px rgba(255,106,26,.55)',
         'onair-winner-chip': '0 8px 20px rgba(255,106,26,.4)',
         'onair-dot': '0 0 0 3px #0f0b0d',

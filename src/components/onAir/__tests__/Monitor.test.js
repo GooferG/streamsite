@@ -70,6 +70,14 @@ test('reduced motion swaps channels without static', () => {
   expect(screen.queryByTestId('onair-static')).toBeNull();
 });
 
+// Glow Means Something: the power LED is set dressing, so it only glows on air.
+test('the bezel LED glows only while the channel is live', () => {
+  const { container, rerender } = render(<Monitor {...PROPS} channelKey="open" />);
+  expect(container.querySelector('[data-led]').className).toContain('shadow-onair-led');
+  rerender(<Monitor {...PROPS} status="replay" channelKey="settled" />);
+  expect(container.querySelector('[data-led]').className).not.toContain('shadow-onair-led');
+});
+
 test('a replay monitor shows Replay and no ticker when chyron is omitted', () => {
   render(<Monitor {...PROPS} status="replay" chyron={null} channelKey="settled" />);
   expect(screen.getByText('Replay')).toBeTruthy();

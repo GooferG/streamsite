@@ -17,7 +17,7 @@ export default function Ticket({ header, className = '', children }) {
   return (
     <section aria-label="Prediction slip" className={`rounded-onair-card shadow-onair-ticket ${className}`}>
       <div
-        className="rounded-t-onair-card bg-gradient-to-b from-onair-ticket-top to-onair-ticket-mid px-[22px] pb-[18px] pt-[22px] shadow-[inset_0_1px_0_rgba(200,170,255,.18)]"
+        className="rounded-t-onair-card bg-gradient-to-b from-onair-ticket-top to-onair-ticket-mid px-[22px] pb-[18px] pt-[22px] shadow-onair-ticket-top"
         style={notchMask('bottom')}
       >
         {header}

@@ -31,8 +31,8 @@ export default function PastEpisodes({ hunts, activeId, onSelect }) {
                 className={`flex w-full items-center justify-between gap-3 rounded-onair-control p-3 text-left hover:bg-white/[0.04] ${active ? 'bg-white/[0.06]' : ''} ${FOCUS}`}
               >
                 <span className="flex min-w-0 flex-col gap-0.5">
-                  <span className="truncate text-[0.9375rem] font-semibold">{huntTypeLabel(h.huntType)} hunt</span>
-                  <span className={`${MONO} text-[0.625rem] tracking-[0.12em] text-onair-ink-5`}>
+                  <span className="truncate text-[0.9375rem] font-bold">{huntTypeLabel(h.huntType)} hunt</span>
+                  <span className={`${MONO} text-[0.625rem] tracking-[0.15em] ${active ? 'text-onair-ink-4' : 'text-onair-ink-5'}`}>
                     {formatEpisodeDate(h.endedAt || h.startedAt)}
                   </span>
                 </span>

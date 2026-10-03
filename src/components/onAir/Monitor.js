@@ -94,7 +94,7 @@ function Chyron({ tag, tone, items }) {
 function Knob({ label, sizeClass, deg, indicatorClass, className = '' }) {
   return (
     <div className={`flex items-center gap-2 ${className}`} aria-hidden="true">
-      <span className={`${MONO} text-[0.5625rem] tracking-[0.2em] text-onair-ink-6`}>{label}</span>
+      <span className={`${MONO} text-[0.625rem] tracking-[0.2em] text-onair-ink-6`}>{label}</span>
       <span
         className={`relative rounded-full bg-[radial-gradient(circle_at_35%_30%,#4a4650,#1c1a20_70%)] shadow-[0_3px_6px_rgba(0,0,0,.6),inset_0_1px_0_rgba(255,255,255,.15),0_0_0_3px_#17151a] transition-transform duration-[350ms] ease-[cubic-bezier(.3,1.5,.5,1)] motion-reduce:transition-none ${sizeClass}`}
         style={{ transform: `rotate(${deg}deg)` }}
@@ -105,11 +105,12 @@ function Knob({ label, sizeClass, deg, indicatorClass, className = '' }) {
   );
 }
 
-function BezelStrip({ readout, turns }) {
+function BezelStrip({ readout, turns, live }) {
   return (
     <div className="flex items-center justify-between gap-4 px-3 pb-4 pt-3.5 sm:gap-5 sm:px-[18px]">
       <div className="flex items-center gap-3" aria-hidden="true">
-        <span className="h-2 w-2 rounded-full bg-onair-live shadow-onair-led" />
+        {/* The power LED only glows while the channel is live (Glow Means Something). */}
+        <span className={`h-2 w-2 rounded-full bg-onair-live ${live ? 'shadow-onair-led' : 'opacity-70'}`} data-led />
         <span className={`${MONO} hidden text-[0.6875rem] font-bold tracking-[0.35em] text-onair-ink-6 sm:inline`}>
           Goofer·vision
         </span>
@@ -180,7 +181,7 @@ export default function Monitor({
         </div>
         {chyron && chyron.items.length > 0 && <Chyron {...chyron} />}
       </div>
-      <BezelStrip readout={readout} turns={turns} />
+      <BezelStrip readout={readout} turns={turns} live={status === 'live'} />
     </section>
   );
 }

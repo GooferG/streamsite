@@ -8,7 +8,7 @@ const DOT = {
   runner: 'bg-onair-ink-3 shadow-onair-dot',
   me: 'bg-onair-viewer-bright shadow-onair-dot-viewer',
   open: 'bg-onair-ink-5 shadow-onair-dot',
-  dim: 'bg-onair-ink-7 shadow-onair-dot',
+  dim: 'bg-onair-ink-6 shadow-onair-dot',
 };
 const MARK = { signal: 'text-onair-signal', winner: 'text-onair-winner-light', muted: 'text-onair-ink-3' };
 
@@ -31,12 +31,12 @@ export default function HuntMeter({ meter, currency }) {
       className="relative mt-6 rounded-onair-row bg-black/[0.35] px-4 pb-3.5 pt-[18px] shadow-onair-row sm:px-5"
     >
       <div className="relative h-14" aria-hidden="true">
-        <div className="absolute inset-x-0 top-[26px] h-1 rounded-full bg-[repeating-linear-gradient(90deg,rgba(255,255,255,.18)_0_2px,transparent_2px_12px)]" />
+        <div className="absolute inset-x-0 top-[26px] h-1 rounded-full bg-onair-track" />
         {meter.markers.map((m) => (
           <div key={m.key} className={MARK[m.tone]}>
             <div className="absolute bottom-3 top-1.5 -ml-[1.5px] w-[3px] rounded-sm bg-current" style={{ left: `${m.pct}%` }} />
             <div
-              className={`${MONO} absolute whitespace-nowrap text-[0.5625rem] tracking-[0.15em] ${m.labelAt === 'bottom' ? 'top-[44px]' : '-top-2.5'}`}
+              className={`${MONO} absolute whitespace-nowrap text-[0.625rem] tracking-[0.15em] ${m.labelAt === 'bottom' ? 'top-[44px]' : '-top-2.5'}`}
               style={{ left: `${m.pct}%`, transform: labelShift(m.pct) }}
             >
               {m.label}

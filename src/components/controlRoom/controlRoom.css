@@ -66,6 +66,8 @@
 .cr-pill.tone-error { border-color: rgba(239, 68, 68, 0.7); }
 .cr-pill.tone-error .cr-pill-dot { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
 .cr-pill-in { animation: cr-pill-in 180ms cubic-bezier(0.2, 1.25, 0.3, 1) backwards; }
+.cr-pill-count { padding: 3px 5px; border-radius: 2px; background: #27272a; color: #ffb24d; letter-spacing: 0.16em; }
+.cr-pill-count.is-pulse { background: #ffb24d; color: #0a0a0a; animation: cr-led-pulse 1.4s ease-in-out infinite; }
 
 .cr-power-on { animation: cr-power-on 550ms cubic-bezier(0.2, 0.7, 0.2, 1) backwards; }
 .cr-power-on .cr-tabs, .cr-power-on .cr-body { animation: cr-fade-up 300ms 250ms ease-out backwards; }
@@ -107,7 +109,7 @@ body.control-docked { padding-right: var(--control-dock-w, 0px); }
   .cr-power-off, .cr-stage-out { animation: cr-fade 150ms ease-in reverse forwards; }
   .cr-power-on .cr-tabs, .cr-power-on .cr-body, .cr-flip .cr-static { animation: none; }
   .cr-flip > :not(.cr-static) { filter: none; transform: none; }
-  .cr-led-pulse, .cr-pill.tone-attention .cr-pill-dot, .cr-timecode.is-hot { animation: none; }
+  .cr-led-pulse, .cr-pill.tone-attention .cr-pill-dot, .cr-timecode.is-hot, .cr-pill-count.is-pulse { animation: none; }
   .cr-lifted { transform: none; }
   .cr-bar > i { transition: none; }
   body { transition: none; }

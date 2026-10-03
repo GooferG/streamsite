@@ -8,6 +8,7 @@ import { authedFetch } from '../../../utils/authedFetch';
 jest.mock('../../../contexts/ControlRoomContext', () => ({ useControlRoom: jest.fn() }));
 jest.mock('../GiveawayTab', () => () => require('react').createElement('p', null, 'giveaway tab body'));
 jest.mock('../PredictTab', () => () => require('react').createElement('p', null, 'predict tab body'));
+jest.mock('../RedeemTab', () => () => require('react').createElement('p', null, 'redeem tab body'));
 jest.mock('../../../config/firebase', () => ({ db: {}, auth: {} }));
 jest.mock('firebase/firestore', () => ({
   collection: () => ({}),
@@ -43,6 +44,8 @@ function makeCr(overrides = {}) {
     activeRound: null,
     latestRound: null,
     rounds: [],
+    redemptions: [],
+    redeem: { pending: 0, unseen: 0, capped: false },
     warnings: [],
     dismissWarning: jest.fn(),
     dataLost: false,
@@ -295,4 +298,43 @@ test('an interrupted drag never leaves a resting lift', () => {
   view.rerender(<ControlRoom isLive />);
   const reopened = screen.getByRole('dialog', { name: 'Control room' });
   expect(reopened.className).not.toMatch('cr-lifted');
+});
+
+test('the Redeem tab shows its body', () => {
+  show({ panel: { tab: 'redeem' } });
+  expect(screen.getByRole('tab', { name: /redeem/i }).getAttribute('aria-selected')).toBe('true');
+  expect(screen.getByText('redeem tab body')).toBeTruthy();
+});
+
+test('ArrowLeft from Giveaway wraps to Redeem', () => {
+  show();
+  fireEvent.keyDown(screen.getByRole('tab', { name: /giveaway/i }), { key: 'ArrowLeft' });
+  act(() => {
+    jest.advanceTimersByTime(240);
+  });
+  expect(cr.panelActions.setTab).toHaveBeenCalledWith('redeem');
+});
+
+test('pending redemptions light the RED tally and pulse the Redeem LED while unseen', () => {
+  const view = show({ redeem: { pending: 2, unseen: 1, capped: false } });
+  expect(screen.getByText('RED 2').className).toMatch('is-on');
+  const led = () => screen.getByRole('tab', { name: /redeem/i }).querySelector('.cr-tab-led');
+  expect(led().className).toMatch('cr-led-pulse');
+  cr = makeCr({ redeem: { pending: 2, unseen: 0, capped: false } });
+  useControlRoom.mockReturnValue(cr);
+  view.rerender(<ControlRoom isLive />);
+  expect(led().className).toMatch('cr-led-on');
+});
+
+test('the pill counts pending redemptions next to its label', () => {
+  show({ panel: { mode: 'pill' }, redeem: { pending: 2, unseen: 1, capped: false } });
+  const pill = screen.getByRole('button', { name: 'Open control room. CONTROL ROOM. 2 redemptions pending' });
+  expect(within(pill).getByText('RED 2').className).toMatch('is-pulse');
+});
+
+test('the options menu resets position and size', () => {
+  show();
+  fireEvent.click(screen.getByRole('button', { name: 'Panel options' }));
+  fireEvent.click(screen.getByRole('menuitem', { name: 'Reset position and size' }));
+  expect(cr.panelActions.resetPosition).toHaveBeenCalled();
 });

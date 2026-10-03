@@ -5,7 +5,9 @@ import { Minus, MoreHorizontal, PanelRight, PanelRightClose, X } from 'lucide-re
 const TABS = [
   ['giveaway', 'Giveaway'],
   ['predict', 'Predict'],
+  ['redeem', 'Redeem'],
 ];
+const ADMIN_HREF = { giveaway: '/admin/giveaways', predict: '/admin/hunts', redeem: '/admin/redemptions' };
 
 function Tally({ on, tone, children }) {
   return <span className={`cr-tally tone-${tone} ${on ? 'is-on' : ''}`}>{children}</span>;
@@ -32,7 +34,7 @@ export default function PanelChrome({
   dragHandlers,
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
-  const adminHref = tab === 'predict' ? '/admin/hunts' : '/admin/giveaways';
+  const adminHref = ADMIN_HREF[tab] || ADMIN_HREF.giveaway;
 
   const onTabKey = (e) => {
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
@@ -52,6 +54,9 @@ export default function PanelChrome({
         <Tally on={tallies.live} tone="red">LIVE</Tally>
         <Tally on={tallies.gvw} tone="orange">GVW</Tally>
         <Tally on={tallies.prd} tone="amber">PRD</Tally>
+        <Tally on={tallies.red > 0} tone="amber">
+          {tallies.red > 0 ? `RED ${tallies.red}` : 'RED'}
+        </Tally>
         {dataLost && <Tally on tone="red">DATA</Tally>}
         {!narrow && !docked && (
           <span className="cr-grip" aria-hidden="true">
@@ -110,7 +115,7 @@ export default function PanelChrome({
                     setMenuOpen(false);
                   }}
                 >
-                  Reset position
+                  Reset position and size
                 </button>
                 <Link role="menuitem" to={adminHref}>
                   Open admin ↗

@@ -23,6 +23,7 @@ import Pill from './Pill';
 import WarningStrip from './WarningStrip';
 import GiveawayTab from './GiveawayTab';
 import PredictTab from './PredictTab';
+import RedeemTab from './RedeemTab';
 import './controlRoom.css';
 
 const TYPING_TAGS = ['INPUT', 'TEXTAREA', 'SELECT'];
@@ -300,6 +301,7 @@ export default function ControlRoom({ isLive = false }) {
           round={cr.activeRound}
           warnings={cr.warnings}
           dataLost={cr.dataLost}
+          redeem={cr.redeem}
           anchor={narrow ? { left: 16, bottom: 16 } : pillAnchor(panel.corner, panel.restoreTo)}
           onOpen={panelActions.open}
         />
@@ -342,9 +344,9 @@ export default function ControlRoom({ isLive = false }) {
         style={style}
       >
         <PanelChrome
-          tallies={tallies({ isLive, giveaway: cr.giveaway, activeRound: cr.activeRound })}
+          tallies={tallies({ isLive, giveaway: cr.giveaway, activeRound: cr.activeRound, redeem: cr.redeem })}
           dataLost={cr.dataLost}
-          leds={tabLeds({ giveaway: cr.giveaway, activeRound: cr.activeRound })}
+          leds={tabLeds({ giveaway: cr.giveaway, activeRound: cr.activeRound, redeem: cr.redeem })}
           tab={panel.tab}
           onTab={switchTab}
           stage={cr.prefs.stage}
@@ -371,7 +373,13 @@ export default function ControlRoom({ isLive = false }) {
               {cr.dataGaveUp ? 'Live data lost. Reload to reconnect.' : 'Live data lost. Reconnecting…'}
             </p>
           )}
-          {panel.tab === 'predict' ? <PredictTab /> : <GiveawayTab scopeRef={rootRef} />}
+          {panel.tab === 'predict' ? (
+            <PredictTab />
+          ) : panel.tab === 'redeem' ? (
+            <RedeemTab />
+          ) : (
+            <GiveawayTab scopeRef={rootRef} />
+          )}
           <div className="cr-static" aria-hidden="true" />
         </div>
       </section>

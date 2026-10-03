@@ -69,6 +69,13 @@ test('loading the wallet shows neither the setup warning nor a hold button', () 
   expect(screen.queryByRole('button', { name: 'Hold to order' })).toBeNull();
 });
 
+// Found in the browser: the empty-shelf line flashed on every load.
+test('while the catalogue loads the wallet tunes in instead of claiming the shelf is empty', () => {
+  render(<WalletSlip {...props(1080, { item: null, itemsLoading: true })} />);
+  expect(screen.getByText('Tuning in…')).toBeTruthy();
+  expect(screen.queryByText('Nothing to order right now.')).toBeNull();
+});
+
 test('a missing user doc explains how to fix it', () => {
   render(<WalletSlip {...props(null)} />);
   expect(screen.getByText("Your wallet isn't set up yet. Sign out and back in.")).toBeTruthy();
@@ -106,6 +113,18 @@ test('a received order tears off a stub showing what was spent', () => {
   const ghost = screen.getByTestId('tear-ghost');
   expect(ghost.textContent).toBe('−420');
   expect(ghost.getAttribute('aria-hidden')).toBe('true');
+});
+
+// Found in the browser: a background tab may never run the tear animation, so
+// animationend never fires; the stub must still clear instead of covering the button.
+test('the torn stub clears itself even if the animation never runs', () => {
+  jest.useFakeTimers();
+  render(<WalletSlip {...props(660, { tear: { key: 'r1', amount: 420 } })} />);
+  expect(screen.getByTestId('tear-ghost')).toBeTruthy();
+  act(() => {
+    jest.advanceTimersByTime(700);
+  });
+  expect(screen.queryByTestId('tear-ghost')).toBeNull();
 });
 
 test('the dock carries the balance and the hold-to-order action', () => {

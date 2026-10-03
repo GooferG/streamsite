@@ -79,7 +79,7 @@ export default function Lineup({ items, tunedId, balance, onTune, className = ''
           {count} {count === 1 ? 'channel' : 'channels'}
         </p>
       </div>
-      <ul className="grid gap-3.5 sm:grid-cols-[repeat(auto-fill,minmax(240px,1fr))]">
+      <ul className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => (
           <li key={item.id}>
             <LineupCard item={item} tuned={item.id === tunedId} balance={balance} onTune={onTune} />

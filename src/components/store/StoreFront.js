@@ -113,6 +113,7 @@ export default function StoreFront({
     user,
     userLoading,
     item,
+    itemsLoading: items === undefined,
     balance,
     ordering: phase === 'calling',
     onSignIn,
@@ -123,7 +124,7 @@ export default function StoreFront({
   const tear = phase === 'received' && order.item ? { key: order.orderId, amount: order.item.cost } : null;
 
   return (
-    <div className="pb-28 font-onair text-onair-ink-1 lg:pb-0">
+    <div className="font-onair text-onair-ink-1">
       <header>
         <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <GsnBug />

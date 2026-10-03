@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Ticket from '../onAir/Ticket';
 import OnAirButton from '../onAir/OnAirButton';
 import HoldButton from '../onAir/HoldButton';
@@ -27,15 +27,23 @@ function Header({ viewer, balance }) {
   );
 }
 
+// How long the stub lives: the 0.6 s tear plus a beat.
+const TEAR_MS = 700;
+
 // The torn stub: a ghost of the slip's foot that drops away after an order.
+// A timer clears it, not animationend: a background tab may never run the
+// animation, and the stub must not sit over the hold button.
 function TearGhost({ amount }) {
   const [done, setDone] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setDone(true), TEAR_MS);
+    return () => clearTimeout(t);
+  }, []);
   if (done) return null;
   return (
     <div
       aria-hidden="true"
       data-testid="tear-ghost"
-      onAnimationEnd={() => setDone(true)}
       className="pointer-events-none absolute inset-x-0 bottom-0 flex h-16 origin-top-left items-center justify-center rounded-b-onair-card bg-gradient-to-b from-onair-ticket-mid to-onair-ticket-bottom text-[1.375rem] font-extrabold tabular-nums motion-safe:animate-onair-tear motion-reduce:hidden"
     >
       −{formatTickets(amount)}
@@ -43,7 +51,7 @@ function TearGhost({ amount }) {
   );
 }
 
-function Body({ state, item, balance, ordering, onSignIn, onOrder, onEarn, onHoldStart }) {
+function Body({ state, item, itemsLoading, balance, ordering, onSignIn, onOrder, onEarn, onHoldStart }) {
   if (state === 'signin') {
     return (
       <>
@@ -56,7 +64,13 @@ function Body({ state, item, balance, ordering, onSignIn, onOrder, onEarn, onHol
   }
   if (state === 'loading') return <p className={`${LABEL} text-onair-viewer-muted`}>Opening your wallet…</p>;
   if (state === 'missing') return <p className={NOTE}>Your wallet isn't set up yet. Sign out and back in.</p>;
-  if (state === 'none') return <p className={NOTE}>Nothing to order right now.</p>;
+  if (state === 'none') {
+    return itemsLoading ? (
+      <p className={`${LABEL} text-onair-viewer-muted`}>Tuning in…</p>
+    ) : (
+      <p className={NOTE}>Nothing to order right now.</p>
+    );
+  }
 
   const heading = <p className={`${MONO} mb-3 text-[0.625rem] tracking-[0.18em] text-onair-viewer-muted`}>Ordering · {item.name}</p>;
   if (state === 'soldout') {
@@ -128,7 +142,9 @@ export default function WalletSlip(props) {
 }
 
 // Below lg the slip becomes a dock pinned to the bottom, so "Hold to order"
-// stays under the thumb while the lineup scrolls.
+// stays under the thumb while the lineup scrolls. Sticky (not fixed) and last
+// in the store: it rests at the end of the store instead of covering the
+// site footer.
 export function WalletDock({ viewer, user, userLoading, item, balance, ordering, onSignIn, onOrder, onEarn, onHoldStart }) {
   const state = walletState({ viewer, user, userLoading, item });
   let action = null;
@@ -167,7 +183,7 @@ export function WalletDock({ viewer, user, userLoading, item, balance, ordering,
   }
   return (
     <div
-      className="fixed inset-x-3 bottom-3 z-40 flex items-center gap-3 rounded-onair-row bg-gradient-to-b from-onair-ticket-top to-onair-ticket-bottom px-4 py-3 shadow-onair-ticket lg:hidden"
+      className="sticky bottom-3 z-40 mt-8 flex items-center gap-3 rounded-onair-row bg-gradient-to-b from-onair-ticket-top to-onair-ticket-bottom px-4 py-3 shadow-onair-ticket lg:hidden"
       style={{ marginBottom: 'env(safe-area-inset-bottom)' }}
     >
       <div className="min-w-0 flex-1">

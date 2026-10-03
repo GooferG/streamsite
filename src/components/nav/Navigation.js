@@ -57,6 +57,17 @@ export default function Navigation({ isLive = false, viewerCount = null, statusR
   const closeSheet = useCallback(() => setSheetOpen(false), []);
   // Any navigation (a row, Back, a link elsewhere) closes the sheet.
   useEffect(() => setSheetOpen(false), [pathname]);
+  // The sheet is lg:hidden; reaching lg with it open would leave the page
+  // scroll-locked behind nothing, so close it.
+  useEffect(() => {
+    if (!sheetOpen || typeof window.matchMedia !== 'function') return undefined;
+    const lg = window.matchMedia('(min-width: 1024px)');
+    const onChange = (e) => {
+      if (e.matches) setSheetOpen(false);
+    };
+    lg.addEventListener?.('change', onChange);
+    return () => lg.removeEventListener?.('change', onChange);
+  }, [sheetOpen]);
   // When the sheet closes, focus goes back to the button that opened it.
   useEffect(() => {
     if (wasOpen.current && !sheetOpen) menuButtonRef.current?.focus();

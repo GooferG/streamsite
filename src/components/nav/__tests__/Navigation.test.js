@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import Navigation from '../Navigation';
 import { useTwitchAuth } from '../../../contexts/TwitchAuthContext';
@@ -33,7 +33,8 @@ function renderAt(path, props = {}) {
 }
 
 const bar = () => screen.getByRole('navigation', { name: 'Site' });
-const menuButton = () => screen.getByRole('button', { name: /^(Open|Close) menu$/ });
+// The bar's toggle (the open sheet has its own Close menu button).
+const menuButton = () => within(bar()).getByRole('button', { name: /^(Open|Close) menu$/ });
 
 beforeEach(() => arm());
 
@@ -100,6 +101,44 @@ test('the menu button opens the sheet; navigating closes it and returns focus', 
   expect(sheet.hasAttribute('inert')).toBe(true);
   expect(document.activeElement).toBe(menuButton());
   expect(document.body.style.overflow).toBe('');
+});
+
+describe('reaching lg', () => {
+  const realMatchMedia = window.matchMedia;
+  let listeners;
+  let lg;
+
+  beforeEach(() => {
+    listeners = new Set();
+    lg = {
+      matches: false,
+      addEventListener: jest.fn((type, fn) => listeners.add(fn)),
+      removeEventListener: jest.fn((type, fn) => listeners.delete(fn)),
+    };
+    window.matchMedia = jest.fn(() => lg);
+  });
+
+  afterEach(() => {
+    window.matchMedia = realMatchMedia;
+  });
+
+  test('closes the sheet (and unlocks scroll) when the viewport reaches lg', () => {
+    renderAt('/');
+    fireEvent.click(menuButton());
+    expect(menuButton().getAttribute('aria-expanded')).toBe('true');
+    expect(window.matchMedia).toHaveBeenCalledWith('(min-width: 1024px)');
+    act(() => listeners.forEach((fn) => fn({ matches: true })));
+    expect(menuButton().getAttribute('aria-expanded')).toBe('false');
+    expect(document.body.style.overflow).toBe('');
+  });
+
+  test('stops listening on unmount', () => {
+    const { unmount } = renderAt('/');
+    fireEvent.click(menuButton());
+    expect(listeners.size).toBe(1);
+    unmount();
+    expect(listeners.size).toBe(0);
+  });
 });
 
 test('five quick clicks on the wordmark open /admin', () => {

@@ -159,6 +159,11 @@ module.exports = {
           '55%': { transform: 'translateY(-2px)' },
           '100%': { transform: 'translateY(0)' },
         },
+        // Prediction board tiles turning face up as guesses reveal.
+        'tote-flip': {
+          '0%': { opacity: '0', transform: 'perspective(600px) rotateX(-80deg)' },
+          '100%': { opacity: '1', transform: 'perspective(600px) rotateX(0deg)' },
+        },
       },
       animation: {
         'slow-zoom': 'slow-zoom 18s ease-in-out infinite',
@@ -175,6 +180,9 @@ module.exports = {
         'crt-blink': 'crt-blink 1.1s steps(1) infinite',
         'crt-roll': 'crt-roll 0.7s ease-in-out both',
         'signal-lock': 'signal-lock 0.7s cubic-bezier(0.2, 0.7, 0.3, 1)',
+        // backwards, not both: a held end frame would pin opacity at 1 and
+        // stop settled boards dimming the losing tiles.
+        'tote-flip': 'tote-flip 0.45s cubic-bezier(0.16, 1, 0.3, 1) backwards',
       },
     },
   },

@@ -6,105 +6,127 @@ import {
   query,
   limit as fLimit,
 } from 'firebase/firestore';
-import { Pin, EyeOff } from 'lucide-react';
 import { db } from '../config/firebase';
-import { formatMoney } from '../utils/money';
+import { moneyParts } from '../utils/money';
+import { fitFontSize } from '../utils/fitText';
 import { roundCurrency, entriesSealed } from '../utils/predictionRound';
+import { placeLabel, placeTone } from '../utils/predictionPlaces';
 import { useAuth } from '../contexts/AuthContext';
 
-const MAX_CARDS = 80;
+const MAX_TILES = 80;
+const FACE_DOWN_TILES = 10;
+const GRID = 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2';
+const TILE = 'relative min-w-0 border px-3 pt-2 pb-3';
 
-// Deterministic rotation per twitchId so the same person always sits at the
-// same angle on the wall.
-function rotationFor(id) {
-  if (!id) return 0;
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  // -7 to +7 degrees
-  return ((h % 1400) - 700) / 100;
+const SCANLINES = {
+  backgroundImage:
+    'repeating-linear-gradient(to bottom, transparent 0px, transparent 2px, rgba(255,255,255,0.6) 2px, rgba(255,255,255,0.6) 3px)',
+};
+
+const CORNERS = [
+  { pos: 'top-1.5 left-1.5', glyph: '◤' },
+  { pos: 'top-1.5 right-1.5', glyph: '◥' },
+  { pos: 'bottom-1.5 left-1.5', glyph: '◣' },
+  { pos: 'bottom-1.5 right-1.5', glyph: '◢' },
+];
+
+function entryNo(index) {
+  return String(index + 1).padStart(3, '0');
 }
 
-function colorAccentFor(id) {
-  const palette = [
-    'bg-[#f5e9c7]', // cream
-    'bg-[#ffe0d6]', // peach
-    'bg-[#dde8f0]', // pale blue
-    'bg-[#f5d9d9]', // pink
-    'bg-[#e1e7d2]', // pale olive
-    'bg-[#f0e1f0]', // pale violet
-  ];
-  if (!id) return palette[0];
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return palette[h % palette.length];
-}
-
-function Card({ entry, round, dim, winnerInfo }) {
-  const rotation = rotationFor(entry.twitchId);
-  const paper = colorAccentFor(entry.twitchId);
-  const showPayout = typeof entry.payoutGuess === 'number';
-
+// The tote board: every guess on a numbered tile, in the channel's chyron
+// style. Header strip, static scanlines and viewfinder corners match the
+// leaderboard broadcast frame.
+function BoardFrame({ status, children }) {
   return (
-    <div
-      className={`relative transition-all duration-500 ${dim ? 'opacity-30' : 'opacity-100'}`}
-      style={{ transform: `rotate(${rotation}deg)` }}
-    >
-      <div
-        className={`relative w-44 ${paper} text-zinc-900 shadow-[0_6px_12px_-6px_rgba(0,0,0,0.6)] p-3`}
-        style={{
-          backgroundImage:
-            'radial-gradient(circle at 15% 25%, rgba(0,0,0,0.04) 0 1px, transparent 1px), radial-gradient(circle at 80% 70%, rgba(0,0,0,0.03) 0 1px, transparent 1px)',
-          backgroundSize: '6px 6px, 8px 8px',
-        }}
-      >
-        {/* Pin */}
-        <span
-          aria-hidden="true"
-          className="absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full bg-red-destructive shadow-[0_2px_2px_rgba(0,0,0,0.4)]"
-        />
-
-        <div className="flex items-center gap-2 mb-2">
-          {entry.profileImageUrl ? (
-            <img
-              src={entry.profileImageUrl}
-              alt=""
-              className="w-7 h-7 rounded-full border-2 border-zinc-800/30"
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-7 h-7 rounded-full border-2 border-zinc-800/30 bg-zinc-800/10 flex items-center justify-center text-[0.6875rem] font-bold text-zinc-700/80">
-              {(entry.displayName || entry.twitchName || '?').charAt(0).toUpperCase()}
-            </div>
-          )}
-          <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-zinc-800/75 font-mono truncate flex-1">
-            {entry.displayName || entry.twitchName}
-          </p>
-        </div>
-
-        {showPayout && (
-          <p
-            className="text-3xl font-black leading-none text-zinc-900 tabular-nums"
-            style={{ fontFamily: '"Caveat", "Patrick Hand", cursive' }}
-          >
-            {formatMoney(entry.payoutGuess, roundCurrency(round), { decimals: 0 })}
-          </p>
-        )}
-
-        {/* Winner stamp */}
-        {winnerInfo && (
-          <span
-            className={`absolute -top-1 -right-2 rotate-[12deg] px-2 py-0.5 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase border-2 font-mono ${
-              winnerInfo.place === 1
-                ? 'text-orange-admin border-orange-admin bg-zinc-broadcast/85'
-                : winnerInfo.place === 2
-                  ? 'text-white-body border-white-body bg-zinc-broadcast/85'
-                  : 'text-emerald-signal border-emerald-signal bg-zinc-broadcast/85'
-            }`}
-          >
-            {winnerInfo.place === 1 ? '1st' : winnerInfo.place === 2 ? '2nd' : '3rd'}
-          </span>
-        )}
+    <section className="border border-white/8 bg-zinc-card/30" aria-label="Prediction board">
+      <div className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-white/8 text-[0.625rem] font-bold uppercase tracking-eyebrow-md font-mono">
+        <span className="text-white/70">The board</span>
+        <span className="text-white/40">{status}</span>
       </div>
+      <div className="relative px-4 sm:px-5 py-5">
+        <div className="pointer-events-none absolute inset-0 opacity-[0.03]" style={SCANLINES} aria-hidden="true" />
+        {CORNERS.map(({ pos, glyph }) => (
+          <span
+            key={pos}
+            className={`pointer-events-none select-none absolute ${pos} text-xs font-bold leading-none text-white/25`}
+            aria-hidden="true"
+          >
+            {glyph}
+          </span>
+        ))}
+        <div className="relative">{children}</div>
+      </div>
+    </section>
+  );
+}
+
+function Avatar({ entry }) {
+  if (entry.profileImageUrl) {
+    return (
+      <img
+        src={entry.profileImageUrl}
+        alt=""
+        className="w-5 h-5 shrink-0 rounded-full border border-white/15"
+        loading="lazy"
+      />
+    );
+  }
+  return (
+    <span className="w-5 h-5 shrink-0 rounded-full border border-white/15 bg-white/5 flex items-center justify-center text-[0.5625rem] font-bold text-white/60">
+      {(entry.displayName || entry.twitchName || '?').charAt(0).toUpperCase()}
+    </span>
+  );
+}
+
+function Tile({ entry, index, currency, winner, dim }) {
+  const { code, amount } = moneyParts(entry.payoutGuess, currency, { decimals: 0 });
+  const tone = winner ? placeTone(winner.place) : 'border-white/10 bg-zinc-broadcast/70 text-white-body';
+  return (
+    <li
+      className={`${TILE} ${tone} origin-top transition-opacity duration-300 motion-safe:animate-tote-flip ${dim ? 'opacity-40' : ''}`}
+      style={{ animationDelay: `${Math.min(index, 24) * 30}ms` }}
+    >
+      <div className="flex items-center justify-between gap-2 h-4 font-mono text-[0.5625rem] font-bold tracking-eyebrow-md uppercase">
+        <span className="text-white/35 tabular-nums">{entryNo(index)}</span>
+        {winner && <span className="px-1.5 border border-current leading-[0.9rem]">{placeLabel(winner.place)}</span>}
+      </div>
+      <div className="mt-1.5 flex items-center gap-1.5 min-w-0">
+        <Avatar entry={entry} />
+        <span className="truncate font-mono text-[0.625rem] font-bold tracking-eyebrow-sm uppercase text-white/70">
+          {entry.displayName || entry.twitchName}
+        </span>
+      </div>
+      <div className="mt-3" style={{ containerType: 'inline-size' }}>
+        <span className="block font-mono text-[0.5625rem] font-bold tracking-eyebrow-md text-white/40">{code}</span>
+        <p
+          className="mt-1 text-xl font-black leading-none tabular-nums whitespace-nowrap"
+          style={{ fontSize: fitFontSize(amount, { min: 0.875, max: 1.75 }) }}
+        >
+          {amount}
+        </p>
+      </div>
+    </li>
+  );
+}
+
+function FaceDownTile({ index }) {
+  return (
+    <li data-testid="face-down-tile" className={`${TILE} border-white/10 bg-zinc-broadcast/70`}>
+      <span className="block h-4 font-mono text-[0.5625rem] font-bold tracking-eyebrow-md text-white/25 tabular-nums">
+        {entryNo(index)}
+      </span>
+      <span className="mt-1.5 block h-3 bg-white/10" style={{ width: `${45 + ((index * 37) % 40)}%` }} />
+      <span className="mt-4 block h-6 bg-white/[0.07]" style={{ width: `${55 + ((index * 23) % 40)}%` }} />
+    </li>
+  );
+}
+
+function BoardNote({ title, children }) {
+  return (
+    <div className="text-center">
+      <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/45 mb-1 font-mono">{title}</p>
+      <p className="text-sm text-white/55">{children}</p>
     </div>
   );
 }
@@ -122,7 +144,7 @@ export default function PredictionWall({ round }) {
     const q = query(
       collection(db, 'hunts', round.id, 'entries'),
       orderBy('submittedAt', 'asc'),
-      fLimit(MAX_CARDS + 1)
+      fLimit(MAX_TILES + 1)
     );
     const unsub = onSnapshot(
       q,
@@ -144,67 +166,63 @@ export default function PredictionWall({ round }) {
     return map;
   }, [round]);
 
-  if (sealed || denied) {
-    const count = round?.entryCount ?? 0;
+  const count = round?.entryCount ?? 0;
+
+  if ((sealed || denied) && count > 0) {
     return (
-      <div className="border border-dashed border-white/15 bg-zinc-card/20 py-12 text-center">
-        <div className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/15 mb-3 text-white/35">
-          <EyeOff size={14} aria-hidden="true" />
+      <BoardFrame status="Sealed until lock">
+        <ol className={GRID} aria-hidden="true">
+          {Array.from({ length: Math.min(count, FACE_DOWN_TILES) }, (_, i) => (
+            <FaceDownTile key={i} index={i} />
+          ))}
+        </ol>
+        <div className="mt-5">
+          <BoardNote title={`${count} ${count === 1 ? 'guess' : 'guesses'} face down`}>
+            Flipped when predictions lock.
+          </BoardNote>
         </div>
-        <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
-          {count} {count === 1 ? 'guess' : 'guesses'} pinned face down
-        </p>
-        <p className="text-sm text-white/55">Revealed when predictions lock.</p>
-      </div>
+      </BoardFrame>
     );
   }
 
-  if (entries.length === 0) {
+  if (sealed || denied || entries.length === 0) {
     return (
-      <div className="border border-dashed border-white/15 bg-zinc-card/20 py-12 text-center">
-        <div className="inline-flex items-center justify-center w-9 h-9 rounded-full border border-white/15 mb-3 text-white/35">
-          <Pin size={14} aria-hidden="true" />
+      <BoardFrame status="No guesses yet">
+        <div className="py-6">
+          <BoardNote title="Board empty">Submit your slip to put the first number up.</BoardNote>
         </div>
-        <p className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/40 mb-1 font-mono">
-          Wall empty
-        </p>
-        <p className="text-sm text-white/55">
-          Submit your slip to pin the first card.
-        </p>
-      </div>
+      </BoardFrame>
     );
   }
 
-  const visible = entries.slice(0, MAX_CARDS);
-  const overflow = Math.max(0, entries.length - MAX_CARDS);
+  const currency = roundCurrency(round);
+  const visible = entries.slice(0, MAX_TILES);
+  // The query stops at MAX_TILES + 1, so the round's counter sizes the rest.
+  const overflow = Math.max(0, Math.max(count, entries.length) - MAX_TILES);
   const settled = round?.status === 'settled';
 
   return (
-    <div
-      className="relative px-4 py-6 sm:px-6 sm:py-8 border border-white/10"
-      style={{
-        backgroundColor: '#22201d',
-        backgroundImage:
-          'radial-gradient(circle at 20% 30%, rgba(255,200,140,0.04) 0 30%, transparent 60%), radial-gradient(circle at 80% 70%, rgba(180,220,255,0.03) 0 30%, transparent 60%), repeating-linear-gradient(45deg, rgba(0,0,0,0.18) 0 2px, transparent 2px 4px)',
-      }}
-    >
-      <div className="flex flex-wrap gap-4 sm:gap-6 justify-center">
-        {visible.map((entry) => {
-          const winnerInfo = winnersByTwitchId[entry.twitchId] || null;
-          const dim = settled && !winnerInfo;
+    <BoardFrame status="In order of entry">
+      <ol className={GRID}>
+        {visible.map((entry, i) => {
+          const winner = winnersByTwitchId[entry.twitchId] || null;
           return (
-            <Card key={entry.id} entry={entry} round={round} dim={dim} winnerInfo={winnerInfo} />
+            <Tile
+              key={entry.id}
+              entry={entry}
+              index={i}
+              currency={currency}
+              winner={winner}
+              dim={settled && !winner}
+            />
           );
         })}
-      </div>
-
+      </ol>
       {overflow > 0 && (
-        <div className="mt-6 text-center">
-          <span className="inline-flex items-center gap-2 px-3 py-1.5 border border-white/20 text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/65 font-mono">
-            +{overflow} more pinned elsewhere
-          </span>
-        </div>
+        <p className="mt-4 text-center text-[0.625rem] font-bold tracking-eyebrow-lg uppercase text-white/50 font-mono">
+          +{overflow} more off the board
+        </p>
       )}
-    </div>
+    </BoardFrame>
   );
 }

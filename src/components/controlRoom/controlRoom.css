@@ -18,7 +18,7 @@
 .cr-icon:hover { color: #fafafa; background: rgba(255, 255, 255, 0.06); }
 .cr-switch { padding: 4px 6px; border-radius: 3px; border: 1px solid #3f3f46; color: #a1a1aa; letter-spacing: 0.2em; cursor: pointer; font: inherit; }
 .cr-switch.is-on { border-color: #ffb24d; color: #ffb24d; box-shadow: 0 0 8px rgba(255, 178, 77, 0.35); }
-.cr-icon:focus-visible, .cr-tab:focus-visible, .cr-switch:focus-visible, .cr-btn:focus-visible, .cr-pill:focus-visible, .cr-chip:focus-visible, .cr-red-summary:focus-visible { outline: 2px solid #ffb24d; outline-offset: 1px; }
+.cr-icon:focus-visible, .cr-tab:focus-visible, .cr-switch:focus-visible, .cr-btn:focus-visible, .cr-pill:focus-visible, .cr-chip:focus-visible, .cr-red-summary:focus-visible, .cr-rz-grip:focus-visible { outline: 2px solid #ffb24d; outline-offset: 1px; }
 
 .cr-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 1; min-width: 180px; display: grid; padding: 4px; background: #18181b; border: 1px solid #2a2a2e; border-radius: 6px; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6); }
 .cr-menu > * { text-align: left; padding: 8px; border-radius: 4px; font: 600 10px/1.2 source-code-pro, Menlo, monospace; letter-spacing: 0.12em; text-transform: uppercase; color: #d4d4d8; cursor: pointer; }
@@ -74,6 +74,24 @@
 .cr-power-off { animation: cr-power-off 320ms cubic-bezier(0.5, 0, 0.8, 0.4) forwards; }
 .cr-lifted { transform: scale(1.01); box-shadow: 0 40px 80px -20px rgba(0, 0, 0, 0.95); cursor: grabbing; }
 .cr-dock-ghost { border: 1px dashed rgba(249, 115, 22, 0.7); background: rgba(249, 115, 22, 0.06); animation: cr-fade 150ms ease-out backwards; pointer-events: none; }
+
+/* Resize handles: hit strips on the panel's edges, above the body. The grip
+   is the bottom corner facing the screen centre; the dock has one edge. */
+.cr-rz { position: absolute; z-index: 2; touch-action: none; }
+.cr-rz-l, .cr-rz-r { top: 36px; bottom: 14px; width: 6px; cursor: ew-resize; }
+.cr-rz-l { left: 0; }
+.cr-rz-r { right: 0; }
+.cr-rz-b { left: 14px; right: 14px; bottom: 0; height: 6px; cursor: ns-resize; }
+.cr-rz-bl, .cr-rz-br { bottom: 0; width: 14px; height: 14px; }
+.cr-rz-bl { left: 0; cursor: nesw-resize; }
+.cr-rz-br { right: 0; cursor: nwse-resize; }
+.cr-rz-grip { color: #52525b; }
+.cr-rz-grip.cr-rz-br { background: linear-gradient(135deg, transparent 50%, currentColor 50% 58%, transparent 58% 70%, currentColor 70% 78%, transparent 78%); }
+.cr-rz-grip.cr-rz-bl { background: linear-gradient(225deg, transparent 50%, currentColor 50% 58%, transparent 58% 70%, currentColor 70% 78%, transparent 78%); }
+.cr-rz-grip:hover, .cr-rz-grip:focus-visible { color: #ffb24d; }
+.cr-rz-dock { left: 0; top: 0; bottom: 0; width: 6px; cursor: ew-resize; }
+.cr-rz-dock:hover, .cr-rz-dock:focus-visible { background: rgba(255, 178, 77, 0.35); outline: none; }
+body.cr-resizing, body.cr-resizing * { cursor: var(--cr-resize-cursor, ew-resize) !important; user-select: none; }
 
 body { transition: padding-right 300ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 body.control-docked { padding-right: var(--control-dock-w, 0px); }

@@ -4,11 +4,13 @@ import SettleModal from '../../admin/predictions/SettleModal';
 import NewRoundModal from '../../admin/predictions/NewRoundModal';
 import { useControlRoom } from '../../../contexts/ControlRoomContext';
 import { authedFetch } from '../../../utils/authedFetch';
+import { useMediaQuery } from '../useMediaQuery';
 
 jest.mock('../../../contexts/ControlRoomContext', () => ({ useControlRoom: jest.fn() }));
 jest.mock('../GiveawayTab', () => () => require('react').createElement('p', null, 'giveaway tab body'));
 jest.mock('../PredictTab', () => () => require('react').createElement('p', null, 'predict tab body'));
 jest.mock('../RedeemTab', () => () => require('react').createElement('p', null, 'redeem tab body'));
+jest.mock('../useMediaQuery', () => ({ useMediaQuery: jest.fn() }));
 jest.mock('../../../config/firebase', () => ({ db: {}, auth: {} }));
 jest.mock('firebase/firestore', () => ({
   collection: () => ({}),
@@ -62,6 +64,8 @@ function makeCr(overrides = {}) {
       moveTo: jest.fn(),
       setTab: jest.fn(),
       resetPosition: jest.fn(),
+      resizeTo: jest.fn(),
+      setDockW: jest.fn(),
     },
     prefs: { stage: false, hideLiveBadge: false },
     setStage: jest.fn(),
@@ -81,6 +85,7 @@ beforeEach(() => jest.useFakeTimers());
 afterEach(() => {
   jest.useRealTimers();
   document.body.innerHTML = '';
+  document.body.className = '';
 });
 
 test('closed renders no panel', () => {
@@ -337,4 +342,123 @@ test('the options menu resets position and size', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Panel options' }));
   fireEvent.click(screen.getByRole('menuitem', { name: 'Reset position and size' }));
   expect(cr.panelActions.resetPosition).toHaveBeenCalled();
+});
+
+const handle = (edge) => document.querySelector(`[data-cr-resize="${edge}"]`);
+const panelEl = () => screen.getByRole('dialog', { name: 'Control room' });
+const resizing = () => document.body.classList.contains('cr-resizing');
+
+// jsdom is 1024×768, so a fresh panel floats at { x: 628, y: 73 }, 380 wide.
+test('a floating panel has resize handles; the phone sheet has none', () => {
+  const view = show();
+  const edges = [...document.querySelectorAll('[data-cr-resize]')].map((el) => el.dataset.crResize).sort();
+  expect(edges).toEqual(['b', 'bl', 'br', 'l', 'r']);
+  view.unmount();
+  useMediaQuery.mockReturnValue(true);
+  show();
+  expect(document.querySelectorAll('[data-cr-resize]')).toHaveLength(0);
+});
+
+test('dragging the left edge widens a top-right panel and keeps its right edge', () => {
+  show();
+  firePointer('pointerdown', handle('l'), { clientX: 628, clientY: 200 });
+  firePointer('pointermove', handle('l'), { clientX: 528, clientY: 200 });
+  expect(panelEl().style.width).toBe('480px');
+  expect(panelEl().style.left).toBe('528px');
+  expect(resizing()).toBe(true);
+  expect(cr.panelActions.resizeTo).not.toHaveBeenCalled();
+  firePointer('pointerup', handle('l'), { clientX: 528, clientY: 200 });
+  expect(cr.panelActions.resizeTo).toHaveBeenCalledWith({ x: 528, y: 73 }, { w: 480, h: null });
+  expect(resizing()).toBe(false);
+});
+
+test('the bottom-right grip sets width and height', () => {
+  show({ panel: { rect: { x: 16, y: 73 } } });
+  const grip = screen.getByRole('button', { name: 'Resize panel' });
+  expect(grip.dataset.crResize).toBe('br');
+  firePointer('pointerdown', grip, { clientX: 100, clientY: 100 });
+  firePointer('pointerup', grip, { clientX: 140, clientY: 160 });
+  expect(cr.panelActions.resizeTo).toHaveBeenCalledWith({ x: 16, y: 73 }, { w: 420, h: 480 });
+});
+
+test('a click on the grip without moving changes nothing', () => {
+  show();
+  const grip = screen.getByRole('button', { name: 'Resize panel' });
+  firePointer('pointerdown', grip, { clientX: 300, clientY: 400 });
+  firePointer('pointerup', grip, { clientX: 300, clientY: 400 });
+  expect(cr.panelActions.resizeTo).not.toHaveBeenCalled();
+});
+
+test('the grip resizes from the keyboard', () => {
+  show();
+  const grip = screen.getByRole('button', { name: 'Resize panel' });
+  expect(grip.dataset.crResize).toBe('bl');
+  fireEvent.keyDown(grip, { key: 'ArrowLeft' });
+  expect(cr.panelActions.resizeTo).toHaveBeenLastCalledWith({ x: 612, y: 73 }, { w: 396, h: null });
+  fireEvent.keyDown(grip, { key: 'ArrowLeft', shiftKey: true });
+  expect(cr.panelActions.resizeTo).toHaveBeenLastCalledWith({ x: 564, y: 73 }, { w: 444, h: null });
+  fireEvent.keyDown(grip, { key: 'ArrowDown' });
+  expect(cr.panelActions.resizeTo).toHaveBeenLastCalledWith({ x: 628, y: 73 }, { w: 380, h: 436 });
+});
+
+// Review Focus 3: a size saved on a bigger monitor fits this one.
+test('a stored size comes back clamped to the window', () => {
+  show({ panel: { size: { w: 700, h: 2000 } } });
+  expect(panelEl().style.width).toBe('700px');
+  expect(panelEl().style.height).toBe('695px');
+  expect(panelEl().style.maxHeight).toBe('');
+});
+
+test('the dock edge resizes by keyboard and pointer, and the page follows on release', () => {
+  const view = show({ panel: { mode: 'dock', restoreTo: 'dock', dockW: 400 } });
+  const edge = screen.getByRole('separator', { name: 'Resize dock' });
+  expect(edge.getAttribute('aria-valuenow')).toBe('400');
+  fireEvent.keyDown(edge, { key: 'ArrowLeft' });
+  expect(cr.panelActions.setDockW).toHaveBeenLastCalledWith(416);
+  firePointer('pointerdown', edge, { clientX: 624, clientY: 300 });
+  firePointer('pointermove', edge, { clientX: 524, clientY: 300 });
+  expect(panelEl().style.width).toBe('500px');
+  expect(document.documentElement.style.getPropertyValue('--control-dock-w')).toBe('400px');
+  firePointer('pointerup', edge, { clientX: 524, clientY: 300 });
+  expect(cr.panelActions.setDockW).toHaveBeenLastCalledWith(500);
+  cr = makeCr({ panel: { mode: 'dock', restoreTo: 'dock', dockW: 500 } });
+  useControlRoom.mockReturnValue(cr);
+  view.rerender(<ControlRoom isLive />);
+  expect(document.documentElement.style.getPropertyValue('--control-dock-w')).toBe('500px');
+});
+
+// Review Focus 3: the page padding uses the clamped dock width too.
+test('a dock width saved on a wider monitor fits this one', () => {
+  show({ panel: { mode: 'dock', restoreTo: 'dock', dockW: 720 } });
+  expect(panelEl().style.width).toBe('544px');
+  expect(document.documentElement.style.getPropertyValue('--control-dock-w')).toBe('544px');
+});
+
+// Review Focus 2: release outside the window, alt-tab, lost capture.
+test('losing the pointer mid-resize commits nothing and puts the size back', () => {
+  show();
+  firePointer('pointerdown', handle('l'), { clientX: 628, clientY: 200 });
+  firePointer('pointermove', handle('l'), { clientX: 528, clientY: 200 });
+  firePointer('lostpointercapture', handle('l'));
+  expect(panelEl().style.width).toBe('380px');
+  expect(cr.panelActions.resizeTo).not.toHaveBeenCalled();
+  expect(resizing()).toBe(false);
+});
+
+test('minimizing mid-resize drops the preview', () => {
+  const view = show();
+  firePointer('pointerdown', handle('l'), { clientX: 628, clientY: 200 });
+  firePointer('pointermove', handle('l'), { clientX: 528, clientY: 200 });
+  fireEvent.keyDown(window, { key: 'Escape' });
+  act(() => {
+    jest.advanceTimersByTime(320);
+  });
+  cr = makeCr({ panel: { mode: 'pill' } });
+  useControlRoom.mockReturnValue(cr);
+  view.rerender(<ControlRoom isLive />);
+  cr = makeCr();
+  useControlRoom.mockReturnValue(cr);
+  view.rerender(<ControlRoom isLive />);
+  expect(panelEl().style.width).toBe('380px');
+  expect(resizing()).toBe(false);
 });

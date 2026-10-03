@@ -3,11 +3,12 @@ import { useControlRoom } from '../../contexts/ControlRoomContext';
 import { pickKey } from '../../utils/giveaway';
 import { isOpenMode } from './storage';
 import {
-  DOCK_W,
   NAV_H,
-  PANEL_W,
+  clampDockW,
   clampRect,
+  clampSize,
   defaultRect,
+  gripSide,
   inDockZone,
   nearestCorner,
   originFor,
@@ -19,6 +20,7 @@ import { MOTION, flipFrom, prefersReducedMotion } from './motion';
 import { tabLeds, tallies } from './panelStatus';
 import { useMediaQuery } from './useMediaQuery';
 import PanelChrome from './PanelChrome';
+import ResizeHandles from './ResizeHandles';
 import Pill from './Pill';
 import WarningStrip from './WarningStrip';
 import GiveawayTab from './GiveawayTab';
@@ -33,9 +35,9 @@ const isTypingTarget = (el) => !!el && (TYPING_TAGS.includes(el.tagName) || el.i
 const modalOpen = () => !!document.querySelector('[aria-modal="true"], [data-cr-keep-open]');
 // pt-BR and US-International layouts report the backtick as a dead key.
 const isBacktick = (e) => e.key === '`' || (e.key === 'Dead' && e.code === 'Backquote');
-// Clamping only needs the float width (always PANEL_W); a drag measures the
-// panel itself for snapping.
-const FALLBACK_SIZE = { w: PANEL_W, h: 420 };
+// Clamping needs only the width. A drag or resize measures the panel itself
+// and falls back to this height where it can't (jsdom).
+const FALLBACK_H = 420;
 
 function statusMessage(g) {
   if (!g) return '';
@@ -72,10 +74,17 @@ export default function ControlRoom({ isLive = false }) {
   const [dragRect, setDragRect] = useState(null);
   const [ghost, setGhost] = useState(false);
   const [dragging, setDragging] = useState(false);
+  const [resize, setResize] = useState(null); // live preview: { rect, size } or { dockW }
   const docked = panel.mode === 'dock' && !narrow;
   const reduced = prefersReducedMotion();
 
-  // A drag can be interrupted mid-gesture (Escape/backtick minimize, auto-
+  // Sizes from the store, clamped to this window. A resize in progress
+  // previews on top of them; the page reflows to the saved dock width only.
+  const floatSize = clampSize(resize?.size || panel.size, view);
+  const savedDockW = clampDockW(panel.dockW, view.vw);
+  const dockW = resize?.dockW ?? savedDockW;
+
+  // A drag or resize can be interrupted mid-gesture (Escape/backtick minimize, auto-
   // restore, a narrow-mode flip that drops the pointer handlers, or a lost
   // native pointer capture) without ever firing pointerup/pointercancel. Any
   // of those must fully clear drag state, or the panel is left with a frozen
@@ -85,6 +94,7 @@ export default function ControlRoom({ isLive = false }) {
     setDragRect(null);
     setGhost(false);
     setDragging(false);
+    setResize(null);
   }, []);
 
   // Power on when opening from the pill/closed; FLIP between float and dock.
@@ -116,6 +126,11 @@ export default function ControlRoom({ isLive = false }) {
   useEffect(() => {
     if (!isOpenMode(panel.mode) || narrow) clearDrag();
   }, [panel.mode, narrow, clearDrag]);
+
+  // A resize preview never outlives the mode it started in.
+  useEffect(() => {
+    setResize(null);
+  }, [panel.mode, narrow]);
 
   const powerOffThen = useCallback(
     (action) => {
@@ -203,13 +218,13 @@ export default function ControlRoom({ isLive = false }) {
   useEffect(() => {
     const root = document.documentElement;
     if (docked) {
-      root.style.setProperty('--control-dock-w', `${DOCK_W}px`);
+      root.style.setProperty('--control-dock-w', `${savedDockW}px`);
       document.body.classList.add('control-docked');
     } else {
       root.style.removeProperty('--control-dock-w');
       document.body.classList.remove('control-docked');
     }
-  }, [docked]);
+  }, [docked, savedDockW]);
   useEffect(
     () => () => {
       document.documentElement.style.removeProperty('--control-dock-w');
@@ -238,7 +253,7 @@ export default function ControlRoom({ isLive = false }) {
             offY: e.clientY - r.top,
             startX: e.clientX,
             fromDock: panel.mode === 'dock',
-            size: { w: r.width || PANEL_W, h: r.height || FALLBACK_SIZE.h },
+            size: { w: r.width || floatSize.w, h: r.height || FALLBACK_H },
             // The rect at pointerdown, kept so a drop into the dock zone can
             // restore the float position it actually started from rather
             // than the drop point (which is only ~48px from the edge).
@@ -255,8 +270,8 @@ export default function ControlRoom({ isLive = false }) {
           if (d.fromDock) {
             if (!shouldUndock(d.startX, e.clientX)) return;
             d.fromDock = false;
-            d.size = { w: PANEL_W, h: d.size.h };
-            d.offX = Math.min(d.offX, PANEL_W - 24);
+            d.size = { w: floatSize.w, h: d.size.h };
+            d.offX = Math.min(d.offX, floatSize.w - 24);
             const next = clampRect({ x: e.clientX - d.offX, y: e.clientY - d.offY }, d.size, view);
             setDragRect(next);
             setDragging(true);
@@ -309,11 +324,18 @@ export default function ControlRoom({ isLive = false }) {
     );
   }
 
-  const rect = dragRect || clampRect(panel.rect || defaultRect(view.vw), FALLBACK_SIZE, view);
+  const rect =
+    dragRect ||
+    resize?.rect ||
+    clampRect(panel.rect || defaultRect(view.vw, floatSize.w), { w: floatSize.w, h: FALLBACK_H }, view);
   let style;
   if (narrow) style = { left: 0, right: 0, bottom: 0, maxHeight: '75vh' };
-  else if (docked) style = { top: NAV_H, right: 0, bottom: 0, width: DOCK_W };
-  else style = { left: rect.x, top: rect.y, width: PANEL_W, maxHeight: '70vh' };
+  else if (docked) style = { top: NAV_H, right: 0, bottom: 0, width: dockW };
+  else {
+    style = { left: rect.x, top: rect.y, width: floatSize.w };
+    if (floatSize.h != null) style.height = floatSize.h;
+    else style.maxHeight = '70vh';
+  }
   style.transformOrigin = originFor(panel.corner, panel.restoreTo);
 
   const classes = [
@@ -331,7 +353,7 @@ export default function ControlRoom({ isLive = false }) {
       {ghost && (
         <div
           className="cr-dock-ghost fixed z-[64]"
-          style={{ top: NAV_H, right: 0, bottom: 0, width: DOCK_W }}
+          style={{ top: NAV_H, right: 0, bottom: 0, width: savedDockW }}
           aria-hidden="true"
         />
       )}
@@ -382,6 +404,31 @@ export default function ControlRoom({ isLive = false }) {
           )}
           <div className="cr-static" aria-hidden="true" />
         </div>
+        {!narrow && (
+          <ResizeHandles
+            key={docked ? 'dock' : 'float'}
+            mode={docked ? 'dock' : 'float'}
+            view={view}
+            side={gripSide(rect, floatSize.w, view.vw)}
+            dockW={dockW}
+            getStart={() =>
+              docked
+                ? { w: dockW }
+                : {
+                    x: rect.x,
+                    y: rect.y,
+                    w: floatSize.w,
+                    h: rootRef.current?.getBoundingClientRect().height || FALLBACK_H,
+                    fixedH: floatSize.h,
+                  }
+            }
+            onPreview={setResize}
+            onCommit={(next) =>
+              docked ? panelActions.setDockW(next.dockW) : panelActions.resizeTo(next.rect, next.size)
+            }
+            onEnd={() => setResize(null)}
+          />
+        )}
       </section>
     </>
   );

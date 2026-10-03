@@ -1,43 +1,62 @@
 import { render, screen, waitFor } from '@testing-library/react';
+import { onSnapshot } from 'firebase/firestore';
 import HuntsPage from '../HuntsPage';
 
 jest.mock('../../config/firebase', () => ({ db: {} }));
 jest.mock('firebase/firestore', () => ({
-  collection: () => ({}),
-  doc: () => ({}),
-  onSnapshot: () => () => {},
+  collection: (db, ...path) => ({ path: path.join('/') }),
+  doc: (db, ...path) => ({ path: path.join('/') }),
+  query: (ref) => ref,
   orderBy: () => ({}),
-  query: () => ({}),
   limit: () => ({}),
   where: () => ({}),
+  onSnapshot: jest.fn(),
 }));
+jest.mock('../../contexts/AuthContext', () => ({ useAuth: () => ({ isStaff: false }) }));
 jest.mock('../../contexts/TwitchAuthContext', () => ({
   useTwitchAuth: () => ({ twitchUser: null, loginWithTwitch: () => {} }),
 }));
 
-const ARCHIVED = { id: 'h1', status: 'archived', huntType: 'solo', currency: 'ARS', bonusCount: 48, pot: 150000, totalWon: 84221.4, averageMultiple: 20 };
+const ARCHIVED = { id: 'h1', status: 'archived', huntType: 'solo', currency: 'ARS', bonusCount: 48, pot: 150000, totalWon: 84221.4, averageMultiple: 20, endedAt: '2026-09-24T23:06:49.441Z' };
 
-test('shows the latest hunt card and the promo band', async () => {
-  global.fetch = jest.fn(() =>
-    Promise.resolve({ ok: true, json: () => Promise.resolve({ live: null, recent: [ARCHIVED] }) })
-  );
+function roundSnapshot(round) {
+  onSnapshot.mockImplementation((ref, next) => {
+    if (ref.path === 'hunts') {
+      next(round ? { empty: false, docs: [{ id: round.id, data: () => round }] } : { empty: true, docs: [] });
+    }
+    return () => {};
+  });
+}
+
+function overview(body, ok = true) {
+  global.fetch = jest.fn(() => Promise.resolve({ ok, status: ok ? 200 : 502, json: () => Promise.resolve(body) }));
+}
+
+beforeEach(() => onSnapshot.mockReset());
+
+test('off air shows the last hunt and keeps the promo band', async () => {
+  roundSnapshot(null);
+  overview({ live: null, recent: [ARCHIVED] });
   render(<HuntsPage />);
-  await waitFor(() => expect(screen.getByText(/latest hunt/i)).toBeTruthy());
+  await waitFor(() => expect(screen.getAllByText(/Last hunt/i).length).toBeGreaterThan(0));
   expect(screen.getByLabelText('communityhunts.gg')).toBeTruthy();
-  // The card's hunt is not repeated in the archive list.
-  expect(screen.queryByText(/hunt archive/i)).toBeNull();
 });
 
-// Review Focus 4: API down → promo still renders, no hunt sections.
-test('API failure hides hunt sections but keeps the promo band', async () => {
-  global.fetch = jest.fn(() =>
-    Promise.resolve({ ok: false, status: 502, json: () => Promise.resolve({ error: 'UPSTREAM_UNAVAILABLE' }) })
-  );
-  const { container } = render(<HuntsPage />);
-  // Loading spinner first, then it must disappear once the failed fetch settles.
-  expect(container.querySelector('.animate-spin')).toBeTruthy();
-  await waitFor(() => expect(container.querySelector('.animate-spin')).toBeNull());
+// API down: the off-air screen and the promo band still render.
+test('API failure keeps the off-air screen and the promo band', async () => {
+  roundSnapshot(null);
+  overview({ error: 'UPSTREAM_UNAVAILABLE' }, false);
+  render(<HuntsPage />);
+  await waitFor(() => expect(screen.getByRole('heading', { name: 'Nothing on right now' })).toBeTruthy());
   expect(screen.getByLabelText('communityhunts.gg')).toBeTruthy();
-  expect(screen.queryByText(/latest hunt/i)).toBeNull();
-  expect(screen.queryByText(/live hunt/i)).toBeNull();
+});
+
+test('an open round shows sealed rows and never queries entries', async () => {
+  roundSnapshot({ id: 'r1', title: 'Sunday hunt', status: 'open', acceptPredictions: true, entryCount: 5, source: 'manual', manualTotalCost: 1000 });
+  overview({ live: null, recent: [] });
+  render(<HuntsPage />);
+  await waitFor(() => expect(screen.getAllByTestId('face-down-row')).toHaveLength(5));
+  const paths = onSnapshot.mock.calls.map(([ref]) => ref.path);
+  expect(paths).not.toContain('hunts/r1/entries');
+  expect(screen.queryByTestId('onair-static')).toBeNull();
 });

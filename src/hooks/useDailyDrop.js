@@ -2,18 +2,7 @@ import { useEffect, useState } from 'react';
 import { authedFetch } from '../utils/authedFetch';
 import { DAILY_COOLDOWN_MS } from '../utils/earnRates';
 
-const pad = (n) => String(n).padStart(2, '0');
-
-export function clockLabel(ms) {
-  const s = Math.max(0, Math.floor(ms / 1000));
-  return `${pad(Math.floor(s / 3600))}:${pad(Math.floor((s % 3600) / 60))}:${pad(s % 60)}`;
-}
-
-export function shortLabel(ms) {
-  const m = Math.max(0, Math.floor(ms / 60000));
-  const h = Math.floor(m / 60);
-  return h ? `${h}h ${m % 60}m` : `${m}m`;
-}
+export { clockLabel, shortLabel } from '../utils/countdown';
 
 function toMillis(ts) {
   if (!ts) return 0;

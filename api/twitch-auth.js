@@ -1,5 +1,6 @@
 import { adminAuth, adminDb, FieldValue } from './_lib/firebaseAdmin.js';
 import { claimWatchBank } from './_lib/watchtimeStore.js';
+import { missingStarterFields } from './_lib/userDoc.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -42,31 +43,26 @@ export default async function handler(req, res) {
 
   const twitchUser = userData.data[0];
 
-  // Upsert users/{twitchId} — initialize ticket fields only on first login.
+  // Upsert users/{twitchId}. Profile fields refresh on every login. Starter
+  // fields are written once: on first login, or later for a doc made
+  // elsewhere first (a prediction settle credits tickets with set+merge).
   const userRef = adminDb.collection('users').doc(twitchUser.id);
   const existing = await userRef.get();
+  const profile = {
+    twitchName: twitchUser.login,
+    displayName: twitchUser.display_name,
+    profileImageUrl: twitchUser.profile_image_url || null,
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+  const starter = missingStarterFields(
+    existing.exists ? existing.data() : {},
+    twitchUser.id,
+    FieldValue.serverTimestamp()
+  );
   if (!existing.exists) {
-    await userRef.set({
-      twitchId: twitchUser.id,
-      twitchName: twitchUser.login,
-      displayName: twitchUser.display_name,
-      profileImageUrl: twitchUser.profile_image_url || null,
-      tickets: 0,
-      totalEarned: 0,
-      totalSpent: 0,
-      lastDailyClaimAt: null,
-      watchMinutes: 0,
-      createdAt: FieldValue.serverTimestamp(),
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+    await userRef.set({ ...starter, ...profile });
   } else {
-    // Refresh profile fields (display name / avatar) on every login.
-    await userRef.update({
-      twitchName: twitchUser.login,
-      displayName: twitchUser.display_name,
-      profileImageUrl: twitchUser.profile_image_url || null,
-      updatedAt: FieldValue.serverTimestamp(),
-    });
+    await userRef.update({ ...starter, ...profile });
   }
 
   // Watch time earned before they had an account. Never block login on it.

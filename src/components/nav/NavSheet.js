@@ -13,7 +13,7 @@ import { Avatar, SignInButton } from './AccountMenu';
 import { OperatorBadge, useControlRoomLauncher } from './OperatorControls';
 
 const EYEBROW = `${MONO} px-3 pb-1.5 pt-4 text-[0.625rem] tracking-[0.25em] text-onair-ink-5`;
-const GHOST = `inline-flex flex-1 items-center justify-center rounded-onair-control bg-white/[0.07] px-3 py-2 text-sm font-bold text-onair-ink-2 transition-colors duration-150 hover:bg-white/[0.12] motion-reduce:transition-none ${FOCUS}`;
+const GHOST = `inline-flex min-h-11 flex-1 items-center justify-center rounded-onair-control bg-white/[0.07] px-3 py-2 text-sm font-bold text-onair-ink-2 transition-colors duration-150 hover:bg-white/[0.12] motion-reduce:transition-none ${FOCUS}`;
 
 function SheetRow({ to, code, label, current, now = false, sub = false, onClick }) {
   const lit = now || current === 'page';
@@ -26,7 +26,7 @@ function SheetRow({ to, code, label, current, now = false, sub = false, onClick 
         sub ? 'pl-9 text-[0.9375rem] font-medium' : 'text-base font-bold'
       } ${lit ? MENU_ROW_NOW : 'text-onair-ink-2 hover:bg-white/5'}`}
     >
-      <span className={`${MONO} w-8 flex-none text-xs font-bold ${lit || current ? 'text-onair-signal' : 'text-onair-ink-5'}`}>
+      <span className={`${MONO} w-8 flex-none text-xs font-bold tracking-[0.15em] ${lit || current ? 'text-onair-signal' : 'text-onair-ink-5'}`}>
         {code}
       </span>
       {label}
@@ -35,7 +35,7 @@ function SheetRow({ to, code, label, current, now = false, sub = false, onClick 
   );
 }
 
-function Identity({ isAdmin }) {
+function Identity({ isAdmin, onClose }) {
   const { twitchUser, loading, loginWithTwitch, logout } = useTwitchAuth();
   const { logout: adminLogout } = useAuth();
   if (isAdmin) {
@@ -49,7 +49,7 @@ function Identity({ isAdmin }) {
           </div>
         </div>
         <div className="flex gap-2">
-          <button type="button" onClick={adminLogout} className={GHOST}>
+          <button type="button" onClick={() => { adminLogout(); onClose(); }} className={GHOST}>
             Sign out
           </button>
         </div>
@@ -77,7 +77,7 @@ function Identity({ isAdmin }) {
         <Link to="/me" className={GHOST}>
           Account
         </Link>
-        <button type="button" onClick={logout} className={GHOST}>
+        <button type="button" onClick={() => { logout(); onClose(); }} className={GHOST}>
           Sign out
         </button>
       </div>
@@ -100,7 +100,22 @@ export default function NavSheet({ id, open, onClose, isLive, viewerCount, statu
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const onKey = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (e.key !== 'Tab') return;
+      const list = panelRef.current?.querySelectorAll('a[href], button:not([disabled])');
+      if (!list || list.length === 0) return;
+      const first = list[0];
+      const last = list[list.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener('keydown', onKey);
     panelRef.current?.querySelector('a[href], button:not([disabled])')?.focus();
@@ -134,7 +149,7 @@ export default function NavSheet({ id, open, onClose, isLive, viewerCount, statu
           open ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
-        <Identity isAdmin={isAdmin} />
+        <Identity isAdmin={isAdmin} onClose={onClose} />
         {statusReady && (
           <div className="px-2 py-2">
             <StatusReadout isLive={isLive} viewerCount={viewerCount} statusReady variant="sheet" />

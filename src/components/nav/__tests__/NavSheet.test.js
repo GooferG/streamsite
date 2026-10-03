@@ -91,3 +91,43 @@ test('staff get the operator section; the admin also gets Admin', () => {
   expect(within(sheet()).getByRole('link', { name: /AD\s*Admin/ }).getAttribute('href')).toBe('/admin');
   expect(within(sheet()).getByText('Signed in · Admin')).toBeTruthy();
 });
+
+const focusables = () => Array.from(sheet().querySelectorAll('a[href], button:not([disabled])'));
+
+test('Tab and Shift+Tab wrap inside the open sheet', () => {
+  renderSheet('/');
+  const list = focusables();
+  list[list.length - 1].focus();
+  fireEvent.keyDown(document, { key: 'Tab' });
+  expect(document.activeElement).toBe(list[0]);
+  fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+  expect(document.activeElement).toBe(list[list.length - 1]);
+});
+
+test('signed-in viewer: identity block, Account link, Sign out closes the sheet', () => {
+  const logout = jest.fn();
+  useTwitchAuth.mockReturnValue({
+    twitchUser: { displayName: 'Viewer1', profileImage: null },
+    loading: false,
+    loginWithTwitch,
+    logout,
+  });
+  renderSheet('/');
+  const s = within(sheet());
+  expect(s.getByText('Viewer1')).toBeTruthy();
+  expect(s.getByText('Signed in · Twitch')).toBeTruthy();
+  const account = s.getByRole('link', { name: 'Account' });
+  expect(account.getAttribute('href')).toBe('/me');
+  expect(account.className).toContain('min-h-11');
+  const out = s.getByRole('button', { name: 'Sign out' });
+  expect(out.className).toContain('min-h-11');
+  fireEvent.click(out);
+  expect(logout).toHaveBeenCalled();
+  expect(onClose).toHaveBeenCalled();
+});
+
+test('row codes track at 0.15em', () => {
+  renderSheet('/');
+  const code = within(sheet()).getByText('02');
+  expect(code.className).toContain('tracking-[0.15em]');
+});

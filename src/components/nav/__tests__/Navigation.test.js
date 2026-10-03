@@ -38,6 +38,20 @@ const menuButton = () => within(bar()).getByRole('button', { name: /^(Open|Close
 
 beforeEach(() => arm());
 
+test('the first stop in the nav skips to the content', () => {
+  renderAt('/schedule');
+  const first = bar().querySelector('a[href], button');
+  expect(first.textContent).toBe('Skip to content');
+  expect(first.getAttribute('href')).toBe('#main');
+  expect(first.className).toContain('sr-only');
+  expect(first.className).toContain('focus:not-sr-only');
+});
+
+test('the menu button is a 44px target', () => {
+  renderAt('/');
+  expect(menuButton().className).toContain('h-11 w-11');
+});
+
 test('eight coded channels; Home is the current page on /', () => {
   renderAt('/');
   const links = within(bar()).getAllByRole('link').filter((a) => /^0\d/.test(a.textContent));

@@ -6,20 +6,27 @@ const config = require('../../../../tailwind.config.js');
 
 const ROOT = path.resolve(__dirname, '../../../..');
 const DIRS = ['src/components/onAir', 'src/components/hunts', 'src/components/nav'];
+// Nav chrome that lives outside the nav folder, scanned with the nav.
+const CONTROL_ROOM_BUTTON = 'src/components/controlRoom/ControlRoomButton.js';
+const FILES = [CONTROL_ROOM_BUTTON];
 // Fixture data and the per-slot tile tints are the recorded raw-colour exceptions.
 const RAW_COLOUR_EXEMPT = ['src/components/hunts/huntFixtures.js'];
 
+const read = (rel) => [rel, fs.readFileSync(path.join(ROOT, rel), 'utf8')];
+
 function sources() {
-  return DIRS.flatMap((dir) =>
-    fs
-      .readdirSync(path.join(ROOT, dir))
-      .filter((f) => f.endsWith('.js'))
-      .map((f) => {
-        const rel = `${dir}/${f}`;
-        return [rel, fs.readFileSync(path.join(ROOT, rel), 'utf8')];
-      })
-  );
+  return [
+    ...DIRS.flatMap((dir) =>
+      fs
+        .readdirSync(path.join(ROOT, dir))
+        .filter((f) => f.endsWith('.js'))
+        .map((f) => read(`${dir}/${f}`))
+    ),
+    ...FILES.map(read),
+  ];
 }
+
+const isNavChrome = (rel) => rel.startsWith('src/components/nav/') || rel === CONTROL_ROOM_BUTTON;
 
 function offenders(pattern, { only = () => true } = {}) {
   return sources()
@@ -59,11 +66,21 @@ test('Type: nothing below the 10px floor, no unloaded 600 weight, mono tracking 
 test('Tokens: no raw colours or bare radii in the Hunts and nav components', () => {
   expect(
     offenders(/rgba\(|#[0-9a-fA-F]{6}\b|\brounded\b(?!-)/, {
-      only: (rel) =>
-        (rel.startsWith('src/components/hunts/') || rel.startsWith('src/components/nav/')) &&
-        !RAW_COLOUR_EXEMPT.includes(rel),
+      only: (rel) => (rel.startsWith('src/components/hunts/') || isNavChrome(rel)) && !RAW_COLOUR_EXEMPT.includes(rel),
     })
   ).toEqual([]);
+});
+
+test('Scope: the control room button is scanned as nav chrome', () => {
+  expect(sources().map(([rel]) => rel)).toContain(CONTROL_ROOM_BUTTON);
+});
+
+test('Type: every mono label in the nav sets its tracking (0.15em or more) on the same line', () => {
+  expect(offenders(/\$\{MONO\}(?!.*tracking-\[)/, { only: isNavChrome })).toEqual([]);
+});
+
+test('Type: the nav stays on the §7 scale (no text-base or text-lg)', () => {
+  expect(offenders(/\btext-(base|lg)\b/, { only: isNavChrome })).toEqual([]);
 });
 
 test('Roles: orange stays off the open slip', () => {
@@ -84,5 +101,5 @@ test('Tokens: the nav bar shadow is a boxShadow token, not a radius', () => {
 });
 
 test('Roles: the nav carries no orange (inside On Air orange is the winner)', () => {
-  expect(offenders(/orange|onair-winner/, { only: (rel) => rel.startsWith('src/components/nav/') })).toEqual([]);
+  expect(offenders(/orange|onair-winner/, { only: isNavChrome })).toEqual([]);
 });

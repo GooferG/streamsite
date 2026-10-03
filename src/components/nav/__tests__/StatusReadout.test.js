@@ -53,10 +53,18 @@ test('live on Home is status text, not a link to itself', () => {
 
 test('off air: the next stream, linking to the schedule, from lg in the bar', () => {
   const { container } = renderAt('/', { isLive: false, viewerCount: null, statusReady: true });
-  const link = screen.getByRole('link', { name: /Off air/ });
+  const link = screen.getByRole('link', { name: /Off air\s·\sMON 5:00 PM EST/ });
   expect(link.getAttribute('href')).toBe('/schedule');
-  expect(link.textContent).toMatch(/Off air\s·\sMON 5:00 PM EST/);
   expect(container.firstChild.className).toContain('hidden lg:inline-flex');
+});
+
+test('off air in the bar: the time shows from 2xl and is always in the name', () => {
+  renderAt('/', { isLive: false, viewerCount: null, statusReady: true });
+  const time = screen.getByText(/MON 5:00 PM EST/);
+  // Visually "Off air" below 2xl; screen readers still hear the time.
+  expect(time.className).toContain('sr-only 2xl:not-sr-only');
+  expect(time.className).not.toMatch(/\bhidden\b/);
+  expect(time.className).not.toContain('xl:inline');
 });
 
 test('off air in the sheet shows at every width', () => {

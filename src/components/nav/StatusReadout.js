@@ -54,13 +54,15 @@ function OffAirReadout({ full }) {
     >
       <span className="h-1.5 w-1.5 rounded-full bg-onair-ink-6" aria-hidden="true" />
       Off air
-      {next && <span className={full ? '' : 'hidden xl:inline'}>&nbsp;· {next}</span>}
+      {/* Visible from 2xl (the staff bar runs out of room below it); always in the name. */}
+      {next && <span className={full ? '' : 'sr-only 2xl:not-sr-only'}>&nbsp;· {next}</span>}
     </Link>
   );
 }
 
-// `variant="bar"` follows the nav breakpoints (count and next-stream time from
-// xl, the off-air readout from lg); `variant="sheet"` shows everything.
+// `variant="bar"` follows the nav breakpoints (the off-air readout from lg, the
+// viewer count from xl, the next-stream time from 2xl); `variant="sheet"` shows
+// everything.
 // Nothing renders until the first Twitch poll succeeds (`statusReady`), so the
 // nav never claims "off air" without knowing.
 export default function StatusReadout({ isLive, viewerCount, statusReady, variant = 'bar' }) {

@@ -185,6 +185,17 @@ test('signed-in viewer: identity block, Account link, Sign out closes the sheet'
   expect(onClose).toHaveBeenCalled();
 });
 
+test('top-level rows and the Control room row set at 17px (on the scale)', () => {
+  renderSheet('/', { isStaff: true });
+  const s = within(sheet());
+  const schedule = s.getByRole('link', { name: /02\s*Schedule/ });
+  expect(schedule.className).toContain('text-[1.0625rem]');
+  expect(schedule.className).not.toContain('text-base');
+  const room = s.getByRole('button', { name: /Control room/ });
+  expect(room.className).toContain('text-[1.0625rem]');
+  expect(room.className).not.toContain('text-base');
+});
+
 test('row codes track at 0.15em', () => {
   renderSheet('/');
   const code = within(sheet()).getByText('02');

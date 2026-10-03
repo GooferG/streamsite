@@ -66,7 +66,7 @@ export default function OperatorControls({ isAdmin }) {
                 >
                   <MonitorPlay size={15} aria-hidden="true" />
                   Control room
-                  <kbd className={`${MONO} ml-auto text-[0.625rem] text-onair-ink-5`} aria-hidden="true">`</kbd>
+                  <kbd className={`${MONO} ml-auto text-[0.625rem] tracking-[0.15em] text-onair-ink-5`} aria-hidden="true">`</kbd>
                 </button>
               </li>
               <li>

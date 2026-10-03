@@ -86,6 +86,13 @@ export default function Navigation({ isLive = false, viewerCount = null, statusR
         style={{ height: NAV_H }}
         className="fixed inset-x-0 top-0 z-50 [&:has([data-nav-popover][aria-expanded=true])]:z-[70] flex items-center gap-3 bg-gradient-to-b from-onair-bezel-top to-onair-bezel-bottom px-4 font-onair shadow-onair-bar sm:px-6 lg:gap-4 lg:px-[22px]"
       >
+        {/* The first Tab stop on every page: past the nav, straight to <main>. */}
+        <a
+          href="#main"
+          className={`sr-only rounded-onair-control focus:not-sr-only focus:absolute focus:left-3 focus:top-2 focus:z-10 focus:inline-flex focus:min-h-11 focus:items-center focus:bg-gradient-to-b focus:from-onair-surface-1 focus:to-onair-surface-3 focus:px-4 focus:text-sm focus:font-bold focus:text-onair-ink-1 focus:shadow-onair-card ${FOCUS}`}
+        >
+          Skip to content
+        </a>
         <Wordmark live={statusReady && isLive} />
 
         <ul className="hidden min-w-0 flex-1 items-center justify-center gap-0.5 lg:flex">
@@ -119,7 +126,7 @@ export default function Navigation({ isLive = false, viewerCount = null, statusR
             aria-expanded={sheetOpen}
             aria-controls={sheetId}
             aria-label={sheetOpen ? 'Close menu' : 'Open menu'}
-            className={`inline-flex h-10 w-10 items-center justify-center rounded-onair-control bg-white/[0.07] text-onair-ink-2 transition-colors duration-150 hover:bg-white/[0.12] motion-reduce:transition-none lg:hidden ${FOCUS}`}
+            className={`inline-flex h-11 w-11 items-center justify-center rounded-onair-control bg-white/[0.07] text-onair-ink-2 transition-colors duration-150 hover:bg-white/[0.12] motion-reduce:transition-none lg:hidden ${FOCUS}`}
           >
             {sheetOpen ? <X size={20} aria-hidden="true" /> : <Menu size={20} aria-hidden="true" />}
           </button>

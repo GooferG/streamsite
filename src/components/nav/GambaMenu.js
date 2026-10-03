@@ -88,7 +88,7 @@ export default function GambaMenu({ current }) {
                   onClick={popover.close}
                   className={`${MENU_ROW} ${now ? MENU_ROW_NOW : MENU_ROW_IDLE}`}
                 >
-                  <span className={`${MONO} w-8 flex-none text-xs font-bold ${now ? 'text-onair-signal' : 'text-onair-ink-5'}`}>
+                  <span className={`${MONO} w-8 flex-none text-xs font-bold tracking-[0.15em] ${now ? 'text-onair-signal' : 'text-onair-ink-5'}`}>
                     {subchannelLabel(ch, GAMBA_ITEM.code)}
                   </span>
                   {ch.label}

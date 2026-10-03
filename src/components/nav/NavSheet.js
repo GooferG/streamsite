@@ -24,7 +24,7 @@ function SheetRow({ to, code, label, current, now = false, sub = false, onClick 
       onClick={onClick}
       aria-current={now ? 'page' : current}
       className={`flex min-h-11 items-center gap-3 rounded-onair-control px-3 py-2.5 transition-colors duration-150 motion-reduce:transition-none ${FOCUS} ${
-        sub ? 'pl-9 text-[0.9375rem] font-medium' : 'text-base font-bold'
+        sub ? 'pl-9 text-[0.9375rem] font-medium' : 'text-[1.0625rem] font-bold'
       } ${lit ? MENU_ROW_NOW : 'text-onair-ink-2 hover:bg-white/5'}`}
     >
       <span className={`${MONO} w-8 flex-none text-xs font-bold tracking-[0.15em] ${lit || current ? 'text-onair-signal' : 'text-onair-ink-5'}`}>
@@ -211,7 +211,7 @@ export default function NavSheet({ id, open, onClose, isLive, viewerCount, statu
                 launcher.open();
                 onClose();
               }}
-              className={`flex min-h-11 w-full items-center gap-3 rounded-onair-control px-3 py-2.5 text-left text-base font-bold text-onair-ink-2 transition-colors duration-150 hover:bg-white/5 motion-reduce:transition-none ${FOCUS}`}
+              className={`flex min-h-11 w-full items-center gap-3 rounded-onair-control px-3 py-2.5 text-left text-[1.0625rem] font-bold text-onair-ink-2 transition-colors duration-150 hover:bg-white/5 motion-reduce:transition-none ${FOCUS}`}
             >
               <MonitorPlay size={16} aria-hidden="true" className="w-8 flex-none" />
               Control room

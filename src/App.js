@@ -234,6 +234,8 @@ function StreamingSiteContent() {
       <StaffLayer isLive={isLive} streamData={streamData} pathname={location.pathname} />
 
       <main
+        id="main"
+        tabIndex={-1}
         className={`transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'} ${signalLocking ? 'motion-safe:animate-signal-lock' : ''}`}
       >
         <ErrorBoundary key={location.pathname}>

@@ -94,6 +94,12 @@ test('a second caret click closes a pinned menu', () => {
   expect(caret().getAttribute('aria-expanded')).toBe('true');
 });
 
+test('row codes track at 0.15em', () => {
+  renderAt('/', undefined);
+  fireEvent.click(caret());
+  expect(screen.getByText('4-2').className).toContain('tracking-[0.15em]');
+});
+
 test('the caret is at least a 24px target', () => {
   renderAt('/', undefined);
   expect(caret().className).toContain('h-8 w-8');

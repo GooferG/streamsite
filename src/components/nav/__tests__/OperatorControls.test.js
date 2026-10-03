@@ -63,6 +63,12 @@ test('admin: the OP menu holds control room, admin and sign out', () => {
   expect(logout).toHaveBeenCalled();
 });
 
+test('the shortcut hint tracks at 0.15em', () => {
+  const { container } = renderAt('/', true);
+  fireEvent.click(screen.getByRole('button', { name: 'OP: operator menu' }));
+  expect(container.querySelector('kbd').className).toContain('tracking-[0.15em]');
+});
+
 test('no orange anywhere in the operator controls', () => {
   arm({ status: 'open', prize: 'Key', entryCount: 37 });
   const { container } = renderAt('/', true);

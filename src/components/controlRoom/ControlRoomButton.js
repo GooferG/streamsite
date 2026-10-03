@@ -5,7 +5,8 @@ const STATUS_LABEL = { open: 'Live', rolling: 'Rolling', playing: 'Playing', clo
 
 // Nav shortcut into the control room. Shows the running giveaway's entry
 // count so the operator can see it's live without opening anything. On Air:
-// neutral when idle, signal (open) while a giveaway runs, never orange.
+// neutral when idle, signal (open) while a giveaway runs; the winner colour
+// stays out of the nav.
 export default function ControlRoomButton({ giveaway, onClick }) {
   const label = giveaway ? STATUS_LABEL[giveaway.status] || 'Live' : null;
   return (

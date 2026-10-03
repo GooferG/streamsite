@@ -48,6 +48,42 @@ module.exports = {
         'nn-violet': '#7a3dff',
         'nn-purple': '#b14dff',
         'nn-orange': '#ff8a3d',
+        // On Air (pilot: /gamba/hunts). Semantic roles, see DESIGN.md §7.
+        onair: {
+          signal: { DEFAULT: '#3ee0bf', light: '#7af0d6', deep: '#1fc9a8' },
+          winner: {
+            DEFAULT: '#ff6a1a',
+            hot: '#ff8a3d',
+            warm: '#ff9a5c',
+            light: '#ffb27a',
+            pale: '#ffd2b0',
+            deep: '#e0520c',
+            ink: '#1a0a02',
+          },
+          viewer: {
+            DEFAULT: '#9146ff',
+            bright: '#a26bff',
+            deep: '#8240f0',
+            light: '#b89cff',
+            ink: '#d6cce4',
+            muted: '#b7aec4',
+          },
+          live: '#d83a1c',
+          loss: '#ff6b6b',
+          surface: { 1: '#17151b', 2: '#141216', 3: '#121015', 4: '#0f0e12', raised: '#3a3540' },
+          bezel: { top: '#26232c', bottom: '#141217' },
+          ink: {
+            1: '#ece8e1',
+            2: '#e4e0e8',
+            3: '#c9c4cf',
+            4: '#a7a2ad',
+            5: '#8a8690',
+            6: '#6d6873',
+            7: '#4a4550',
+          },
+          screen: { ink: '#c9a993', dim: '#8a7d75' },
+          ticket: { top: '#2a1d3d', mid: '#231933', bottom: '#17121f' },
+        },
       },
       fontFamily: {
         mono: ['source-code-pro', 'Menlo', 'Monaco', 'Consolas', 'monospace'],
@@ -56,6 +92,8 @@ module.exports = {
         grotesk: ['"Space Grotesk"', 'system-ui', 'sans-serif'],
         orbitron: ['Orbitron', 'sans-serif'],
         rajdhani: ['Rajdhani', 'sans-serif'],
+        onair: ['"Bricolage Grotesque"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        'onair-mono': ['"JetBrains Mono"', 'source-code-pro', 'Menlo', 'Consolas', 'monospace'],
       },
       letterSpacing: {
         'eyebrow-xs': '0.15em',
@@ -63,6 +101,35 @@ module.exports = {
         'eyebrow': '0.22em',
         'eyebrow-md': '0.28em',
         'eyebrow-lg': '0.32em',
+      },
+      borderRadius: {
+        'onair-bezel': '36px',
+        'onair-screen': '26px',
+        'onair-card': '24px',
+        'onair-row': '18px',
+        'onair-inner': '16px',
+        'onair-control': '14px',
+        'onair-tile': '10px',
+      },
+      boxShadow: {
+        'onair-bezel':
+          'inset 0 1px 0 rgba(255,255,255,.09), inset 0 -2px 0 rgba(0,0,0,.6), 0 30px 60px rgba(0,0,0,.6)',
+        'onair-screen': 'inset 0 0 80px rgba(0,0,0,.85), inset 0 0 0 1px rgba(255,255,255,.04)',
+        'onair-card': 'inset 0 1px 0 rgba(255,255,255,.06), 0 14px 30px rgba(0,0,0,.4)',
+        'onair-row': 'inset 0 1px 0 rgba(255,255,255,.05)',
+        'onair-well': 'inset 0 2px 6px rgba(0,0,0,.5)',
+        'onair-raised': 'inset 0 1px 0 rgba(255,255,255,.25)',
+        'onair-lit-signal': 'inset 0 1px 0 rgba(120,255,220,.12)',
+        'onair-lit-winner': 'inset 0 1px 0 rgba(255,180,130,.2), 0 12px 30px -12px rgba(255,106,26,.45)',
+        'onair-lit-viewer': 'inset 0 1px 0 rgba(200,170,255,.2), 0 12px 30px -12px rgba(145,70,255,.45)',
+        'onair-live': '0 0 24px rgba(216,58,28,.6)',
+        'onair-led': '0 0 10px #ff4a2a',
+        'onair-ticket': '0 24px 40px -14px rgba(145,70,255,.4)',
+        'onair-winner-ring': '0 0 0 5px #1a100c, 0 0 0 7px #ff6a1a, 0 0 60px rgba(255,106,26,.55)',
+        'onair-winner-chip': '0 8px 20px rgba(255,106,26,.4)',
+        'onair-dot': '0 0 0 3px #0f0b0d',
+        'onair-dot-winner': '0 0 0 3px #0f0b0d, 0 0 16px #ff6a1a',
+        'onair-dot-viewer': '0 0 0 3px #0f0b0d, 0 0 16px #9146ff',
       },
       keyframes: {
         grain: {
@@ -164,6 +231,26 @@ module.exports = {
           '0%': { opacity: '0', transform: 'perspective(600px) rotateX(-80deg)' },
           '100%': { opacity: '1', transform: 'perspective(600px) rotateX(0deg)' },
         },
+        // On Air monitor: channel-change static, rolling band, chyron, LIVE light.
+        'onair-static': {
+          '0%': { backgroundPosition: '0 0, 0 0' },
+          '25%': { backgroundPosition: '-37px 21px, 13px -9px' },
+          '50%': { backgroundPosition: '19px -43px, -27px 31px' },
+          '75%': { backgroundPosition: '-11px 7px, 41px 17px' },
+          '100%': { backgroundPosition: '29px 39px, -7px -23px' },
+        },
+        'onair-roll': {
+          '0%': { transform: 'translateY(-100%)' },
+          '100%': { transform: 'translateY(100%)' },
+        },
+        'onair-ticker': {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(-50%)' },
+        },
+        'onair-pulse': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.35' },
+        },
       },
       animation: {
         'slow-zoom': 'slow-zoom 18s ease-in-out infinite',
@@ -183,6 +270,10 @@ module.exports = {
         // backwards, not both: a held end frame would pin opacity at 1 and
         // stop settled boards dimming the losing tiles.
         'tote-flip': 'tote-flip 0.45s cubic-bezier(0.16, 1, 0.3, 1) backwards',
+        'onair-static': 'onair-static 0.12s steps(4) infinite',
+        'onair-roll': 'onair-roll 0.4s linear infinite',
+        'onair-ticker': 'onair-ticker 38s linear infinite',
+        'onair-pulse': 'onair-pulse 1.4s ease-in-out infinite',
       },
     },
   },

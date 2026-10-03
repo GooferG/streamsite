@@ -8,6 +8,7 @@ import {
   ordinal,
   quickPicks,
   signedMoney,
+  splitMoney,
   tabHuntRef,
   topPrizeText,
   winnerPrizeText,
@@ -174,6 +175,13 @@ describe('formatting helpers', () => {
     expect(winnerPrizeText({ tickets: 500, label: null })).toBe('+500 tickets');
     expect(winnerPrizeText({ tickets: 0, label: 'Bonus buy $20' })).toBe('Bonus buy $20');
     expect(winnerPrizeText(null)).toBeNull();
+  });
+
+  test('splitMoney separates sign, currency symbol and figure', () => {
+    expect(splitMoney('ARS 1,850,000.00')).toEqual({ sign: '', symbol: 'ARS', figure: '1,850,000.00' });
+    expect(splitMoney('−$375.70')).toEqual({ sign: '−', symbol: '$', figure: '375.70' });
+    expect(splitMoney('+CA$1,284.40')).toEqual({ sign: '+', symbol: 'CA$', figure: '1,284.40' });
+    expect(splitMoney('—')).toEqual({ sign: '', symbol: '', figure: '—' });
   });
 
   test('signedMoney and ordinal', () => {

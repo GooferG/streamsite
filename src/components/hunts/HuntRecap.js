@@ -6,6 +6,8 @@ import { formatMoney } from '../../utils/money';
 import { formatMultiplier } from '../../utils/huntFormat';
 import { formatAvg, signedMoney } from './huntStats';
 import BonusTable from './BonusTable';
+import MoneyFigure, { fitTextFor } from './MoneyFigure';
+import { fitFontSize } from '../../utils/fitText';
 
 // "On the docket" / "Opening now" / "Hunt recap": four stats and the bonus
 // table. `kind` picks the stats; past episodes reuse the 'final' kind.
@@ -41,7 +43,7 @@ function cells(kind, stats, currency) {
   ];
 }
 
-export default function HuntRecap({ kind, title, stats, currency, loading = false, error = null, onBack = null }) {
+export default function HuntRecap({ kind, title, stats, currency, loading = false, error = null, onBack = null, headingRef = null }) {
   const [open, setOpen] = useState(true);
   const headingId = useId();
   const tableId = useId();
@@ -50,7 +52,7 @@ export default function HuntRecap({ kind, title, stats, currency, loading = fals
     <Panel as="section" aria-labelledby={headingId} className="flex flex-col gap-4 p-4 sm:px-6 sm:py-[22px]">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex min-w-0 items-baseline gap-2.5">
-          <h2 id={headingId} className="truncate text-xl font-extrabold">
+          <h2 id={headingId} ref={headingRef} tabIndex={-1} className="truncate text-xl font-extrabold outline-none">
             {title}
           </h2>
           {stats.bonusCount ? (
@@ -73,9 +75,15 @@ export default function HuntRecap({ kind, title, stats, currency, loading = fals
       </div>
       <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-onair-inner bg-white/5 sm:grid-cols-4">
         {cells(kind, stats, currency).map((c) => (
-          <div key={c.label} className="flex flex-col gap-1 bg-onair-surface-2 px-4 py-3.5">
+          <div key={c.label} className="flex min-w-0 flex-col gap-1 bg-onair-surface-2 px-4 py-3.5" style={{ containerType: 'inline-size' }}>
             <dt className="text-xs text-onair-ink-5">{c.label}</dt>
-            <dd className={`text-xl font-extrabold tabular-nums ${TONE[c.tone] || 'text-onair-ink-1'}`}>{c.value}</dd>
+            {/* Fitted to the cell: long currency figures shrink instead of clipping. */}
+            <dd
+              className={`whitespace-nowrap text-xl font-extrabold tabular-nums ${TONE[c.tone] || 'text-onair-ink-1'}`}
+              style={{ fontSize: fitFontSize(fitTextFor(String(c.value)), { min: 0.875, max: 1.25 }) }}
+            >
+              <MoneyFigure text={String(c.value)} />
+            </dd>
           </div>
         ))}
       </dl>

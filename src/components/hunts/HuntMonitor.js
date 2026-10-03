@@ -7,6 +7,7 @@ import { formatMultiplier } from '../../utils/huntFormat';
 import { formatAvg, formatAvgFigure, signedMoney, winnerPrizeText } from './huntStats';
 import { entryName } from './huntBoard';
 import HuntMeter from './HuntMeter';
+import MoneyFigure, { fitTextFor } from './MoneyFigure';
 import ViewerAvatar from './ViewerAvatar';
 
 // The Hunts tab's stage: one screen per mode on the On Air Monitor (spec
@@ -37,14 +38,16 @@ function Question({ children }) {
   return <h2 className="text-[1.375rem] font-bold tracking-[-0.01em] text-onair-ink-3 sm:text-3xl">{children}</h2>;
 }
 
+// The hero figure fills its share of the screen (2–6rem). A currency code is
+// set at half size beside the figure, so "ARS 1,850,000.00" fits a phone.
 function Hero({ text, suffix = null, label, tone = 'ink' }) {
   return (
     <div className="flex min-w-0 max-w-full flex-col items-center gap-1.5">
       <p
         className={`whitespace-nowrap font-extrabold leading-[0.9] tracking-[-0.03em] tabular-nums ${HERO[tone]}`}
-        style={{ fontSize: fitFigure(`${text}${suffix || ''}`, { min: 3.25, max: 6 }) }}
+        style={{ fontSize: fitFigure(`${fitTextFor(text)}${suffix || ''}`, { min: 2, max: 6 }) }}
       >
-        {text}
+        <MoneyFigure text={text} symbolClassName="align-[0.5em] text-[0.45em]" />
         {suffix && <span className="text-[0.58em] text-onair-signal-light">{suffix}</span>}
       </p>
       {label && <p className={`${MONO} text-[0.6875rem] tracking-[0.25em] text-onair-ink-5`}>{label}</p>}
@@ -71,7 +74,7 @@ function SideStats({ items }) {
 
 function HeroRow({ hero, side }) {
   return (
-    <div className="mt-1 flex w-full flex-col items-center gap-4 sm:flex-row sm:items-end sm:justify-center sm:gap-7">
+    <div className="mt-1 flex w-full flex-col items-center gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-center sm:gap-7">
       {hero}
       <SideStats items={side} />
     </div>
@@ -195,7 +198,26 @@ function SettledStage({ round, currency, winner }) {
   );
 }
 
+function BonusChip({ count }) {
+  if (!count) return null;
+  return (
+    <Chips>
+      <Chip>
+        <b>{count}</b> bonuses
+      </Chip>
+    </Chips>
+  );
+}
+
 function OffAirStage({ stats, money, currency, offair }) {
+  if (offair.noSignal) {
+    return (
+      <Stage eyebrow={<Eyebrow tone="muted">No signal</Eyebrow>}>
+        <Question>No signal</Question>
+        <p className="text-sm text-onair-ink-4">We can’t reach the round right now. Refresh to retune.</p>
+      </Stage>
+    );
+  }
   if (!offair.hasHunt) {
     return (
       <Stage eyebrow={<Eyebrow tone="muted">Off air</Eyebrow>}>
@@ -214,6 +236,7 @@ function OffAirStage({ stats, money, currency, offair }) {
       <Stage eyebrow={<Eyebrow tone="signal">Hunt in progress · {offair.title}</Eyebrow>}>
         <Question>Predictions aren’t open this hunt</Question>
         <HeroRow hero={<Hero text={money(stats.wonSoFar)} label={`Won so far${progress}`} />} side={side} />
+        <BonusChip count={stats.bonusCount} />
       </Stage>
     );
   }
@@ -231,6 +254,7 @@ function OffAirStage({ stats, money, currency, offair }) {
   return (
     <Stage eyebrow={<Eyebrow tone="muted">Last hunt · {offair.title}</Eyebrow>}>
       <HeroRow hero={hero} side={side} />
+      <BonusChip count={stats.bonusCount} />
     </Stage>
   );
 }
@@ -250,7 +274,9 @@ export default function HuntMonitor({
   ticker,
   phrase,
 }) {
-  const screen = SCREENS[mode] || SCREENS.offair;
+  const base = SCREENS[mode] || SCREENS.offair;
+  const screen =
+    mode === 'offair' && offair && offair.noSignal ? { ...base, readout: { channel: CH, label: 'No signal', tone: 'muted' } } : base;
   const status = mode === 'offair' && offair && offair.isLive ? 'live' : screen.status;
   const money = (v) => formatMoney(v, currency);
   const chyron = screen.tag && ticker && ticker.length ? { tag: screen.tag, tone: screen.tone, items: ticker } : null;

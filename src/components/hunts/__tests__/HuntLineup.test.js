@@ -60,6 +60,9 @@ test('settled: closest first, the winner row lit, offsets signed', () => {
   expect(within(rows[0]).getByText('Xilentdrifter')).toBeTruthy();
   expect(within(rows[0]).getAllByText('+$76').length).toBeGreaterThan(0);
   expect(within(rows[1]).getAllByText('−$191').length).toBeGreaterThan(0);
+  // Screen readers hear what the numbers mean.
+  expect(rows[0].textContent).toMatch(/^Place 01/);
+  expect(within(rows[0]).getAllByText('off by').length).toBeGreaterThan(0);
 });
 
 // Review Focus 5: the viewer's own winning row shows winner styling and "(you)".

@@ -75,9 +75,56 @@ test('quick picks spread around the start cost', () => {
   expect(input().value).toBe('300,000');
 });
 
-test('an empty slip cannot be locked', () => {
+// a11y: the unavailable button stays reachable and says why it is unavailable.
+test('an empty slip cannot be locked, but the button stays focusable', () => {
   renderSlip();
-  expect(screen.getByRole('button', { name: 'Lock it in' }).disabled).toBe(true);
+  const lock = screen.getByRole('button', { name: 'Lock it in' });
+  expect(lock.disabled).toBe(false);
+  expect(lock.getAttribute('aria-disabled')).toBe('true');
+  fireEvent.click(lock);
+  expect(authedFetch).not.toHaveBeenCalled();
+});
+
+test('during the edit cooldown the lock button points at the countdown', async () => {
+  renderSlip();
+  fireEvent.change(input(), { target: { value: '2000' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Lock it in' }));
+  await waitFor(() => expect(screen.getByText('Slip submitted.')).toBeTruthy());
+  const lock = screen.getByRole('button', { name: 'Lock it in' });
+  expect(lock.getAttribute('aria-disabled')).toBe('true');
+  expect(document.getElementById(lock.getAttribute('aria-describedby')).textContent).toBe('Edit again in 30s');
+});
+
+// a11y: focus never falls back to <body> when the pressed control disappears.
+test('change guess moves focus into the input; keep moves it to the slip heading', () => {
+  renderSlip({ myEntry: { id: 'viewer1', payoutGuess: 2450 } });
+  fireEvent.click(screen.getByRole('button', { name: 'Change guess' }));
+  expect(document.activeElement).toBe(input());
+  fireEvent.click(screen.getByRole('button', { name: /^Keep/ }));
+  expect(document.activeElement).toBe(screen.getByRole('heading', { name: "You're on the board" }));
+});
+
+test('a successful submit moves focus to the slip heading', async () => {
+  renderSlip();
+  fireEvent.change(input(), { target: { value: '2000' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Lock it in' }));
+  await waitFor(() => expect(document.activeElement.tagName).toBe('H2'));
+});
+
+// a11y: one live region survives the view swap, so the message is announced.
+test('the feedback live region is the same node in both slip views', () => {
+  renderSlip({ myEntry: { id: 'viewer1', payoutGuess: 2450 } });
+  const before = screen.getByRole('status');
+  fireEvent.click(screen.getByRole('button', { name: 'Change guess' }));
+  expect(screen.getByRole('status')).toBe(before);
+});
+
+// Review: until the viewer's own entry loads, don't claim they have no guess.
+test('while the viewer entry loads the slip says it is checking', () => {
+  renderSlip({ mode: 'locked', myEntry: undefined });
+  expect(screen.getByText('Checking your slip…')).toBeTruthy();
+  expect(screen.queryByText(/didn't get a guess/)).toBeNull();
+  expect(screen.queryByLabelText('Final payout guess')).toBeNull();
 });
 
 test('server errors are announced', async () => {
@@ -122,7 +169,11 @@ test('settled: a winner sees their place and prize; others see how far off', () 
   expect(screen.getByText('Off by $403.88 · 4th of 7')).toBeTruthy();
 });
 
-test('off air: no round open', () => {
-  renderSlip({ mode: 'offair', round: null });
+test('off air: no round open, signed in or not', () => {
+  const { unmount } = renderSlip({ mode: 'offair', round: null });
   expect(screen.getByRole('heading', { name: 'No round open' })).toBeTruthy();
+  unmount();
+  renderSlip({ mode: 'offair', round: null, viewer: null });
+  expect(screen.getByRole('heading', { name: 'No round open' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Sign in with Twitch' })).toBeTruthy();
 });

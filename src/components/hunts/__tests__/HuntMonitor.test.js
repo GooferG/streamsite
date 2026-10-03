@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import HuntMonitor from '../HuntMonitor';
 import { huntStats } from '../huntStats';
 
@@ -27,6 +27,9 @@ const BASE = {
   meter: null,
 };
 
+// The hero sets its currency symbol in its own span; match the whole figure.
+const hero = (text) => screen.getByText((_, el) => el.tagName === 'P' && el.textContent === text);
+
 function renderMonitor(props) {
   return render(<HuntMonitor {...BASE} {...props} />);
 }
@@ -48,7 +51,7 @@ test('open: required avg hero, side stats, chips and the open readout', () => {
 test('open without bets falls back to the start cost as break-even', () => {
   const stats = huntStats(null, { ...ROUND, source: 'manual', manualTotalCost: 2421.82 });
   renderMonitor({ mode: 'open', round: ROUND, stats });
-  expect(screen.getByText('$2,421.82')).toBeTruthy();
+  expect(hero('$2,421.82')).toBeTruthy();
   expect(screen.getByText('Break-even')).toBeTruthy();
 });
 
@@ -57,7 +60,7 @@ test('locked: won so far with progress, still-need avg and chat median', () => {
   const stats = huntStats({ bonuses: BONUSES }, round);
   renderMonitor({ mode: 'locked', round, stats, chatMedian: 2938.5 });
   expect(screen.getByText(/Entries closed · Opening bonuses/i)).toBeTruthy();
-  expect(screen.getByText('$520.40')).toBeTruthy();
+  expect(hero('$520.40')).toBeTruthy();
   expect(screen.getByText('Won so far · 2/3 opened')).toBeTruthy();
   expect(screen.getByText('Chat median')).toBeTruthy();
   expect(screen.getByText('$2,938.50')).toBeTruthy();
@@ -82,14 +85,15 @@ test('settled without winners shows the payout and no eligible guesses', () => {
   const round = { ...ROUND, status: 'settled', actual: { payout: 2046.12 } };
   renderMonitor({ mode: 'settled', round, stats: huntStats(null, round), winner: null });
   expect(screen.getByText('No eligible guesses')).toBeTruthy();
-  expect(screen.getByText('$2,046.12')).toBeTruthy();
+  expect(hero('$2,046.12')).toBeTruthy();
 });
 
 test('off air: last hunt result, or nothing on when there is no hunt', () => {
-  const stats = huntStats({ pot: 3103.62, totalWon: 1318.8, averageMultiple: 30.44 }, null);
+  const stats = huntStats({ pot: 3103.62, totalWon: 1318.8, averageMultiple: 30.44, bonusCount: 18 }, null);
   const { unmount } = renderMonitor({ mode: 'offair', round: null, stats });
   expect(screen.getByText(/Last hunt · Community hunt/i)).toBeTruthy();
-  expect(screen.getByText('−$1,784.82')).toBeTruthy();
+  expect(screen.getByText((_, el) => el.tagName === 'P' && el.textContent === '−$1,784.82')).toBeTruthy();
+  expect(screen.getByText((_, el) => el.tagName === 'SPAN' && el.textContent === '18 bonuses')).toBeTruthy();
   expect(screen.getByText('No round')).toBeTruthy();
   unmount();
   renderMonitor({ mode: 'offair', round: null, stats: huntStats(null, null), offair: { isLive: false, hasHunt: false, title: null } });
@@ -106,10 +110,12 @@ test('tuning shows the phrase and no status light', () => {
 // Review Focus 1: a nine-figure ARS hero renders in one piece. (jsdom drops
 // clamp()/cqi font sizes, so the sizing itself is pinned by the fitFigure
 // unit test in Task 2.)
-test('a huge ARS hero renders without NaN', () => {
+test('a huge ARS hero splits the currency code from the figure', () => {
   const round = { ...ROUND, status: 'settled', actual: { payout: 185000000.5 } };
   const { container } = renderMonitor({ mode: 'settled', round, currency: 'ARS', stats: huntStats(null, round), winner: null });
-  expect(screen.getByText(/185,000,000\.50/).className).toContain('whitespace-nowrap');
+  const figure = screen.getByText('185,000,000.50');
+  expect(figure.className).toContain('whitespace-nowrap');
+  expect(within(figure).getByText('ARS').tagName).toBe('SPAN');
   expect(container.textContent).not.toMatch(/NaN/);
 });
 

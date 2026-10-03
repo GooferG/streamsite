@@ -6,8 +6,10 @@ import { formatMultiplier } from '../../utils/huntFormat';
 // Slot-by-slot table. Full layout from sm up; on phones the # column and the
 // bar drop and the bet moves under the slot name.
 const LIMIT = 10;
-// Per-slot tile tints for the initials fallback (documented raw-colour exception).
-const HUES = ['#ff8a3d', '#3ee0bf', '#b48cff', '#ffcf5c', '#ff6b8a'];
+// Per-slot tile tints for the initials fallback: the one raw-colour exception
+// in hunts/ (DESIGN.md §7). None of them is a role colour, so no slot reads as
+// a winner or the signal.
+const HUES = ['#ffcf5c', '#b48cff', '#ff6b8a', '#6ec3ff', '#c8e06b']; // contract-exempt
 const COLS =
   'grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2.5 px-3 sm:grid-cols-[44px_minmax(0,1fr)_90px_110px_200px] sm:gap-4 sm:px-[18px]';
 const TAGS = {
@@ -54,7 +56,7 @@ function SlotTile({ bonus, index }) {
 function Tag({ kind }) {
   const tag = TAGS[kind];
   return (
-    <span className={`${MONO} flex-none whitespace-nowrap rounded-full px-2.5 py-[3px] text-[0.5625rem] font-bold tracking-[0.15em] ${tag.className}`}>
+    <span className={`${MONO} flex-none whitespace-nowrap rounded-full px-2.5 py-[3px] text-[0.625rem] font-bold tracking-[0.15em] ${tag.className}`}>
       {tag.label}
     </span>
   );
@@ -112,39 +114,56 @@ function BonusRow({ bonus, index, currency, tag, best, maxMulti }) {
   );
 }
 
+// The collapsed table shows LIMIT rows. While bonuses are still opening the
+// window follows the next unopened one (two opened rows above it for context),
+// so "Up next" never hides behind Show all; a finished hunt shows the top.
+function windowStart(count, nextIndex) {
+  if (count <= LIMIT || nextIndex < 0) return 0;
+  return Math.max(0, Math.min(nextIndex - 2, count - LIMIT));
+}
+
 export default function BonusTable({ bonuses, currency, bestIndex = -1, nextIndex = -1, openedCount = 0 }) {
   const [all, setAll] = useState(false);
   const maxMulti = Math.max(0, ...bonuses.filter((b) => isOpened(b) && finite(b.multiplier)).map((b) => Number(b.multiplier)));
-  const visible = all ? bonuses : bonuses.slice(0, LIMIT);
+  const start = all ? 0 : windowStart(bonuses.length, nextIndex);
+  const visible = all ? bonuses : bonuses.slice(start, start + LIMIT);
   const nextTag = openedCount === 0 ? 'up-first' : 'up-next';
+  const shown =
+    start === 0 ? `Showing ${LIMIT} of ${bonuses.length}` : `Showing ${start + 1}–${start + LIMIT} of ${bonuses.length}`;
   return (
-    <div role="table" aria-label="Bonuses" className="flex flex-col overflow-hidden rounded-onair-inner bg-onair-surface-4 shadow-onair-row">
-      <div role="row" className={`${COLS} ${MONO} bg-white/[0.025] py-3 text-[0.625rem] tracking-[0.2em] text-onair-ink-5`}>
-        <span role="columnheader" className="hidden sm:block">#</span>
-        <span role="columnheader">Slot</span>
-        <span role="columnheader" className="hidden text-right sm:block">Bet</span>
-        <span role="columnheader" className="text-right">Payout</span>
-        <span role="columnheader" className="text-right">Multi</span>
+    <div className="flex flex-col overflow-hidden rounded-onair-inner bg-onair-surface-4 shadow-onair-row">
+      <div role="table" aria-label="Bonuses" className="flex flex-col">
+        <div role="row" className={`${COLS} ${MONO} bg-white/[0.025] py-3 text-[0.625rem] tracking-[0.2em] text-onair-ink-5`}>
+          <span role="columnheader" className="hidden sm:block">#</span>
+          <span role="columnheader">Slot</span>
+          <span role="columnheader" className="hidden text-right sm:block">Bet</span>
+          <span role="columnheader" className="text-right">Payout</span>
+          <span role="columnheader" className="text-right">Multi</span>
+        </div>
+        {visible.map((b, i) => {
+          const index = start + i;
+          return (
+            <BonusRow
+              key={`${b.slot}-${index}`}
+              bonus={b}
+              index={index}
+              currency={currency}
+              best={index === bestIndex}
+              maxMulti={maxMulti}
+              tag={index === bestIndex ? 'best' : index === nextIndex ? nextTag : null}
+            />
+          );
+        })}
       </div>
-      {visible.map((b, i) => (
-        <BonusRow
-          key={`${b.slot}-${i}`}
-          bonus={b}
-          index={i}
-          currency={currency}
-          best={i === bestIndex}
-          maxMulti={maxMulti}
-          tag={i === bestIndex ? 'best' : i === nextIndex ? nextTag : null}
-        />
-      ))}
+      {/* Outside role="table": the footer is not a row. */}
       {bonuses.length > LIMIT && (
-        <div className="border-t border-white/[0.04] px-[18px] py-3 text-center text-sm text-onair-ink-4">
-          {all ? `Showing all ${bonuses.length}` : `Showing ${LIMIT} of ${bonuses.length}`} ·{' '}
+        <div className="border-t border-white/[0.04] px-[18px] py-2 text-center text-sm text-onair-ink-4">
+          {all ? `Showing all ${bonuses.length}` : shown} ·{' '}
           <button
             type="button"
             aria-expanded={all}
             onClick={() => setAll((v) => !v)}
-            className={`rounded font-semibold text-onair-signal hover:text-onair-signal-light ${FOCUS}`}
+            className={`inline-flex min-h-11 items-center rounded-onair-tile px-2 font-bold text-onair-signal hover:text-onair-signal-light sm:min-h-0 sm:py-1 ${FOCUS}`}
           >
             {all ? 'Show fewer' : 'Show all'}
           </button>

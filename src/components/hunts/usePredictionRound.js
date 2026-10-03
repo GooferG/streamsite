@@ -3,17 +3,18 @@ import { collection, limit as fLimit, onSnapshot, orderBy, query } from 'firebas
 import { db } from '../../config/firebase';
 
 // The latest prediction round (a settled one lingers until the next opens).
-// undefined until the first snapshot lands, then the round or null, so the
-// tab can tell "still tuning" from "off air".
+// `round` is undefined until the first snapshot lands, then the round or null,
+// so the tab can tell "still tuning" from "off air"; `error` flags a failed
+// read, which the tab shows as "no signal" rather than an idle channel.
 export default function usePredictionRound() {
-  const [round, setRound] = useState(undefined);
+  const [state, setState] = useState({ round: undefined, error: false });
   useEffect(() => {
     const q = query(collection(db, 'hunts'), orderBy('createdAt', 'desc'), fLimit(1));
     return onSnapshot(
       q,
-      (snap) => setRound(snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() }),
-      () => setRound(null)
+      (snap) => setState({ round: snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() }, error: false }),
+      () => setState({ round: null, error: true })
     );
   }, []);
-  return round;
+  return state;
 }

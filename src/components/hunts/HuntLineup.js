@@ -36,11 +36,29 @@ function Row({ row, mode, currency, now }) {
         : settled
           ? 'text-onair-ink-3'
           : 'text-onair-ink-2';
-  const meta = settled ? signedMoney(row.off, currency, { decimals: 0 }) : timeAgo(row.submittedAt, now) || 'just now';
+  const metaText = settled ? signedMoney(row.off, currency, { decimals: 0 }) : timeAgo(row.submittedAt, now) || 'just now';
+  const meta = settled ? (
+    <>
+      <span className="sr-only">off by </span>
+      {metaText}
+    </>
+  ) : (
+    metaText
+  );
   const metaTone = !settled && row.isMe ? 'text-onair-signal' : 'text-onair-ink-5';
   return (
     <Panel as="li" radius="row" lit={lit} className={`${GRID} transition-[filter] duration-150 hover:brightness-[1.15]`}>
-      <span className={`${MONO} text-center text-[0.8125rem] font-bold ${leadTone}`}>{lead}</span>
+      {settled ? (
+        <span className={`${MONO} text-center text-[0.8125rem] font-bold ${leadTone}`}>
+          <span className="sr-only">Place </span>
+          {lead}
+        </span>
+      ) : (
+        // Entry numbers repeat the "Entry #" line below; the sealed "··" says nothing.
+        <span className={`${MONO} text-center text-[0.8125rem] font-bold ${leadTone}`} aria-hidden="true">
+          {lead}
+        </span>
+      )}
       <ViewerAvatar
         src={row.avatar}
         name={row.name}
@@ -51,7 +69,8 @@ function Row({ row, mode, currency, now }) {
           {row.name}
           {row.isMe && <span className="font-medium text-onair-viewer-light"> (you)</span>}
         </p>
-        <p className={`${MONO} text-[0.625rem] tracking-[0.15em] text-onair-ink-5`}>
+        {/* Lit rows lift the sub-label a step: ink-5 drops to ~4.3:1 on the wash. */}
+        <p className={`${MONO} text-[0.625rem] tracking-[0.15em] ${lit ? 'text-onair-ink-4' : 'text-onair-ink-5'}`}>
           {row.no == null ? 'Your slip · sealed' : `Entry #${pad3(row.no)}`}
         </p>
       </div>
@@ -116,12 +135,13 @@ function sealedBody({ round, myEntry, myId, mode, currency, now }) {
   );
 }
 
-export default function HuntLineup({ mode, sealed, entries, round, myEntry, myId, currency, now }) {
+export default function HuntLineup({ mode, sealed, pending = false, entries, round, myEntry, myId, currency, now }) {
   const [expanded, setExpanded] = useState(false);
   const headingId = useId();
   const settled = mode === 'settled';
   const title = settled ? "Tonight's lineup" : 'Guesses so far';
-  const label = sealed ? 'Sealed until entries close' : settled ? 'Closest first' : 'Low to high';
+  // `pending`: entries are readable but still loading, so they stay face down.
+  const label = pending ? 'Turning them over…' : sealed ? 'Sealed until entries close' : settled ? 'Closest first' : 'Low to high';
 
   let body;
   if (sealed) {

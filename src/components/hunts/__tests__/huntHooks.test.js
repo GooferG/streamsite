@@ -39,7 +39,7 @@ describe('useRoundEntries (sealing guarantees)', () => {
     let value;
     render(<Probe hook={() => useRoundEntries(ROUND)} onValue={(v) => { value = v; }} />);
     expect(onSnapshot).not.toHaveBeenCalled();
-    expect(value).toEqual({ entries: [], sealed: true });
+    expect(value).toEqual({ entries: [], sealed: true, loading: false });
   });
 
   test('staff subscribe while open', () => {
@@ -55,7 +55,21 @@ describe('useRoundEntries (sealing guarantees)', () => {
     });
     let value;
     render(<Probe hook={() => useRoundEntries({ ...ROUND, status: 'locked' })} onValue={(v) => { value = v; }} />);
-    expect(value).toEqual({ entries: [{ id: 'a', payoutGuess: 10 }], sealed: false });
+    expect(value).toEqual({ entries: [{ id: 'a', payoutGuess: 10 }], sealed: false, loading: false });
+  });
+
+  // Review: until the first snapshot lands, "no entries yet" is not "no guesses".
+  test('revealed entries report loading until the first snapshot', () => {
+    let push;
+    onSnapshot.mockImplementation((q, next) => {
+      push = next;
+      return () => {};
+    });
+    let value;
+    render(<Probe hook={() => useRoundEntries({ ...ROUND, status: 'locked' })} onValue={(v) => { value = v; }} />);
+    expect(value.loading).toBe(true);
+    act(() => push({ docs: [] }));
+    expect(value.loading).toBe(false);
   });
 
   // Review Focus 2: an admin re-opens a locked round.
@@ -80,6 +94,14 @@ describe('useRoundEntries (sealing guarantees)', () => {
   });
 });
 
+test('useMyEntry is undefined until its first snapshot, null when signed out', () => {
+  let value;
+  const { rerender } = render(<Probe hook={() => useMyEntry('r1', 'viewer1')} onValue={(v) => { value = v; }} />);
+  expect(value).toBeUndefined();
+  rerender(<Probe hook={() => useMyEntry('r1', null)} onValue={(v) => { value = v; }} />);
+  expect(value).toBeNull();
+});
+
 test('useMyEntry listens to hunts/{id}/entries/{twitchId}', () => {
   onSnapshot.mockImplementation((ref, next) => {
     next({ exists: () => true, id: 'viewer1', data: () => ({ payoutGuess: 2450 }) });
@@ -99,9 +121,20 @@ test('usePredictionRound is undefined until the first snapshot, then the round o
   });
   const seen = [];
   render(<Probe hook={usePredictionRound} onValue={(v) => seen.push(v)} />);
-  expect(seen[0]).toBeUndefined();
+  expect(seen[0]).toEqual({ round: undefined, error: false });
   act(() => push({ empty: true, docs: [] }));
-  expect(seen[seen.length - 1]).toBeNull();
+  expect(seen[seen.length - 1]).toEqual({ round: null, error: false });
+});
+
+// Review: a failed read is not "off air".
+test('usePredictionRound reports a failed read as an error, not as no round', () => {
+  onSnapshot.mockImplementation((q, next, error) => {
+    error(new Error('unavailable'));
+    return () => {};
+  });
+  let value;
+  render(<Probe hook={usePredictionRound} onValue={(v) => { value = v; }} />);
+  expect(value).toEqual({ round: null, error: true });
 });
 
 describe('useHunt', () => {
@@ -136,6 +169,38 @@ describe('useHunt', () => {
     await waitFor(() => expect(value.error).toBe('Could not load this hunt’s bonuses.'));
     expect(value.hunt).toEqual({ id: 'h3' });
     expect(value.loading).toBe(false);
+  });
+
+  // Review: a mid-hunt copy cached at page load outlived the live hunt.
+  test('a live hunt detail is never cached, a finished one is', async () => {
+    global.fetch = jest
+      .fn()
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ hunt: { id: 'h4', status: 'live', bonuses: [] } }) })
+      .mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ hunt: { id: 'h4', status: 'archived', bonuses: [{ slot: 'A' }] } }) });
+    let value;
+    const first = render(<Probe hook={() => useHunt('h4', { id: 'h4' })} onValue={(v) => { value = v; }} />);
+    await waitFor(() => expect(value.hunt.status).toBe('live'));
+    first.unmount();
+    render(<Probe hook={() => useHunt('h4', { id: 'h4' })} onValue={(v) => { value = v; }} />);
+    await waitFor(() => expect(value.hunt.status).toBe('archived'));
+    expect(global.fetch).toHaveBeenCalledTimes(2);
+  });
+
+  test('a fetch that resolves after the hunt went live is not cached', async () => {
+    let resolve;
+    global.fetch = jest.fn(() => new Promise((r) => { resolve = r; }));
+    let value;
+    const { rerender, unmount } = render(<Probe hook={() => useHunt('h5', { id: 'h5' })} onValue={(v) => { value = v; }} />);
+    rerender(<Probe hook={() => useHunt('h5', { id: 'h5', bonuses: [] })} onValue={(v) => { value = v; }} />);
+    await act(async () => {
+      resolve({ ok: true, json: () => Promise.resolve({ hunt: { id: 'h5', status: 'archived', bonuses: [{ slot: 'stale' }] } }) });
+    });
+    unmount();
+    global.fetch = jest.fn(() => Promise.resolve({ ok: true, json: () => Promise.resolve({ hunt: { id: 'h5', bonuses: [] } }) }));
+    render(<Probe hook={() => useHunt('h5', { id: 'h5' })} onValue={(v) => { value = v; }} />);
+    expect(value.loading).toBe(true);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(value.loading).toBe(false));
   });
 
   test('no hunt id returns the summary without fetching', () => {

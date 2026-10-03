@@ -20,16 +20,18 @@ if (process.env.NODE_ENV !== 'production') {
 }
 
 function LiveHuntsTab() {
-  const round = usePredictionRound();
-  const { entries, sealed } = useRoundEntries(round);
+  const { round, error } = usePredictionRound();
+  const { entries, sealed, loading } = useRoundEntries(round);
   const { twitchUser, loginWithTwitch } = useTwitchAuth();
   const myEntry = useMyEntry(round && round.id, twitchUser && twitchUser.twitchId);
   const { live, recent } = useCommunityHunts();
   return (
     <HuntsTab
       round={round}
+      roundError={error}
       entries={entries}
       sealed={sealed}
+      entriesLoading={loading}
       myEntry={myEntry}
       viewer={twitchUser}
       onSignIn={loginWithTwitch}

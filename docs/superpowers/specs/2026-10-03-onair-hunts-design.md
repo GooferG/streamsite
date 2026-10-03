@@ -124,7 +124,7 @@ An admin can re-open a locked round, so `open ⇄ locked` must work in both dire
 | Status light | LIVE | LIVE | REPLAY | LIVE if a hunt is live, else REPLAY |
 | Eyebrow | `{title} · PREDICTIONS OPEN` | `{title} · ENTRIES CLOSED · OPENING BONUSES` | `{title} · AND THE CLOSEST GUESS IS` | `HUNT IN PROGRESS` / `LAST HUNT` |
 | Hero | "What does the hunt pay?" + required avg (fallback: start cost as break-even) | won so far + `N/M OPENED` | winner avatar, name; chips: guessed, actual, prize | live: won so far + opened; replay: result (±) |
-| Side stats | total bet, avg bet, start cost | start cost, still-need avg, chat median | — | start cost, won, avg multi |
+| Side stats | total bet, avg bet, start cost | start cost, still-need avg, chat median | — | live: start cost, still-need avg (won so far is the hero); replay: start cost, won, avg multi |
 | Chips | bonuses, guesses in, prize | bonuses, guesses, prize | — | bonuses |
 | Meter | break-even marker; your dot only (staff: all) | all dots; break-even + SO FAR markers | all dots; ACTUAL marker; winner orange, runner-up light, you purple | none |
 | Chyron tag | OPEN (teal) | CLOSED (light) | FINAL (orange) | OFF AIR (light) |
@@ -137,6 +137,8 @@ An admin can re-open a locked round, so `open ⇄ locked` must work in both dire
 | Rail extras | past episodes | past episodes | runner-up card, past episodes | past episodes |
 
 - **Settled with no winners:** the hero shows the actual payout with "NO ELIGIBLE GUESSES" instead of a winner.
+- **Loading and failure (added after review):** revealed entries that are still loading stay face down, counted from `entryCount` ("Turning them over…"), never "no guesses"; the viewer's own entry shows "Checking your slip…" until its first snapshot; a failed round read shows a "No signal" screen, never the idle off-air screen. Past episodes never include a hunt that is still live.
+- **Announcements (added after review):** a polite live region says "Entries closed…", "Results are in. {winner} wins." (or no eligible guesses) and "Predictions are open." when the round changes state, never on first load.
 - **Staff while open:** entries are readable to staff, so their lineup and meter show revealed rows and every dot (today's behaviour). Viewers get face-down rows.
 - **Missing money data:** with no start cost and no bets, the open hero shows only the question and the guesses-in chip. A locked round without hunt data (manual round) keeps the open hero (break-even) with the locked eyebrow, and adds chat median as a side stat.
 - **Face-down rows:** entry number, blank avatar, a redacted bar, "SEALED" in the value column. Up to 8 rows, then "+N more sealed". Header note: "Sealed until entries close".

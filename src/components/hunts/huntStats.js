@@ -156,6 +156,15 @@ export function signedMoney(value, currency, opts) {
   return body;
 }
 
+// "−ARS 1,850,000.00" → { sign: '−', symbol: 'ARS', figure: '1,850,000.00' }, so
+// a display figure can shrink a long currency code instead of clipping. Text
+// without a digit ('—', '109.1x' has no symbol) passes through as the figure.
+export function splitMoney(text) {
+  const m = /^([+−-]?)([^\d]*?)\s*(\d[\s\S]*)$/.exec(String(text));
+  if (!m) return { sign: '', symbol: '', figure: String(text) };
+  return { sign: m[1], symbol: m[2].trim(), figure: m[3] };
+}
+
 export function ordinal(n) {
   const v = n % 100;
   if (v >= 11 && v <= 13) return `${n}th`;

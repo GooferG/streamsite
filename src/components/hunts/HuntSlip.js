@@ -43,7 +43,7 @@ function useCooldown(targetMs) {
   return targetMs ? Math.max(0, Math.ceil((targetMs - Date.now()) / 1000)) : 0;
 }
 
-function SlipHeader({ serial, locked = false, title, sub }) {
+function SlipHeader({ serial, locked = false, title, sub, headingRef = null }) {
   return (
     <div className="flex flex-col gap-2">
       <p className={`${MONO} flex justify-between gap-2 text-[0.625rem] tracking-[0.24em] text-onair-viewer-light`}>
@@ -54,7 +54,9 @@ function SlipHeader({ serial, locked = false, title, sub }) {
           </span>
         )}
       </p>
-      <h2 className="text-[1.375rem] font-extrabold leading-tight">{title}</h2>
+      <h2 ref={headingRef} tabIndex={-1} className="text-[1.375rem] font-extrabold leading-tight outline-none">
+        {title}
+      </h2>
       {sub && <p className="text-sm leading-snug text-onair-viewer-muted">{sub}</p>}
     </div>
   );
@@ -74,8 +76,12 @@ function BigGuess({ value, currency }) {
   );
 }
 
-function Note({ children }) {
-  return <p className="text-center text-xs text-onair-viewer-muted">{children}</p>;
+function Note({ id, children }) {
+  return (
+    <p id={id} className="text-center text-xs text-onair-viewer-muted">
+      {children}
+    </p>
+  );
 }
 
 function Feedback({ feedback }) {
@@ -95,7 +101,9 @@ function OpenSlip({ round, serial, myEntry, currency, startCost, prize, guessCou
   const cooldown = useCooldown(cooldownUntil);
   const inputId = useId();
   const inputRef = useRef(null);
+  const headingRef = useRef(null);
   const caretRef = useRef(null);
+  const cooldownId = useId();
   const [, rerender] = useReducer((n) => n + 1, 0);
   const seps = useMemo(() => localeSeparators(), []);
   const display = formatAmountInput(payoutInput, seps);
@@ -107,6 +115,15 @@ function OpenSlip({ round, serial, myEntry, currency, startCost, prize, guessCou
     if (myGuess != null) setPayoutInput(String(myGuess));
     if (lastEditMs && lastEditMs + EDIT_COOLDOWN_MS > Date.now()) setCooldownUntil(lastEditMs + EDIT_COOLDOWN_MS);
   }, [myGuess, lastEditMs]);
+
+  // Focus never falls back to <body> when the pressed control disappears:
+  // opening the editor lands in the input, leaving it lands on the heading.
+  useEffect(() => {
+    if (editing && inputRef.current) inputRef.current.focus();
+  }, [editing]);
+  const focusHeading = () => {
+    if (headingRef.current) headingRef.current.focus();
+  };
 
   // Regrouping moves characters around the caret; put it back after the same digit.
   useLayoutEffect(() => {
@@ -151,6 +168,7 @@ function OpenSlip({ round, serial, myEntry, currency, startCost, prize, guessCou
         setCooldownUntil(Date.now() + EDIT_COOLDOWN_MS);
         setEditing(false);
         setFeedback({ kind: 'success', message: data.isNew ? 'Slip submitted.' : 'Slip updated.' });
+        focusHeading();
       }
     } catch {
       setFeedback({ kind: 'error', message: 'Network error.' });
@@ -162,7 +180,17 @@ function OpenSlip({ round, serial, myEntry, currency, startCost, prize, guessCou
   if (myGuess != null && !editing) {
     const others = Math.max(0, guessCount - 1);
     return (
-      <Ticket header={<SlipHeader serial={serial} locked title="You're on the board" sub="Good luck. Results land when the last bonus opens." />}>
+      <Ticket
+        header={
+          <SlipHeader
+            serial={serial}
+            locked
+            title="You're on the board"
+            sub="Good luck. Results land when the last bonus opens."
+            headingRef={headingRef}
+          />
+        }
+      >
         <div className="flex flex-col gap-3">
           <BigGuess value={myGuess} currency={currency} />
           <p className="text-[0.8125rem] text-onair-viewer-muted">
@@ -180,7 +208,7 @@ function OpenSlip({ round, serial, myEntry, currency, startCost, prize, guessCou
             Change guess
           </OnAirButton>
           {cooldown > 0 && <Note>Edit again in {cooldown}s</Note>}
-          <Feedback feedback={feedback} />
+          <Feedback key="feedback" feedback={feedback} />
         </div>
       </Ticket>
     );
@@ -188,14 +216,23 @@ function OpenSlip({ round, serial, myEntry, currency, startCost, prize, guessCou
 
   const picks = quickPicks(startCost);
   return (
-    <Ticket header={<SlipHeader serial={serial} title="Call the payout" sub={prize ? `Closest guess takes ${prize}.` : 'Closest guess wins.'} />}>
+    <Ticket
+      header={
+        <SlipHeader
+          serial={serial}
+          title="Call the payout"
+          sub={prize ? `Closest guess takes ${prize}.` : 'Closest guess wins.'}
+          headingRef={headingRef}
+        />
+      }
+    >
       <div className="flex flex-col gap-3">
         <label htmlFor={inputId} className="sr-only">
           Final payout guess
         </label>
         <div
           className={`flex items-center gap-1.5 rounded-onair-inner bg-black/[0.35] px-4 py-1 shadow-onair-well ring-1 focus-within:ring-2 focus-within:ring-onair-viewer-light ${
-            valid ? 'ring-onair-viewer-bright/[0.55]' : 'ring-white/[0.06]'
+            valid ? 'ring-onair-viewer-bright/[0.55]' : 'ring-white/[0.35]'
           }`}
         >
           <span className="text-[0.9375rem] font-bold text-onair-viewer-muted">{currency || '$'}</span>
@@ -213,7 +250,7 @@ function OpenSlip({ round, serial, myEntry, currency, startCost, prize, guessCou
                 if (e.key === 'Enter') submit();
               }}
               placeholder={`0${seps.decimal}00`}
-              className="block w-full min-w-0 bg-transparent py-2 text-[2rem] font-extrabold tabular-nums text-white-body outline-none placeholder:text-onair-viewer-muted/50"
+              className="block w-full min-w-0 bg-transparent py-2 text-[2rem] font-extrabold tabular-nums text-white-body outline-none placeholder:text-onair-viewer-muted/80"
               style={{ fontSize: fitFontSize(display || '0.00', { min: 1.25, max: 2 }) }}
             />
           </div>
@@ -225,18 +262,25 @@ function OpenSlip({ round, serial, myEntry, currency, startCost, prize, guessCou
                 key={p.label}
                 type="button"
                 onClick={() => setPayoutInput(String(p.value))}
-                className={`min-h-9 rounded-onair-tile bg-white/[0.07] px-3 text-xs text-onair-viewer-ink hover:bg-white/[0.13] ${FOCUS}`}
+                className={`min-h-9 rounded-onair-tile bg-white/[0.07] px-3 text-xs [@media(pointer:coarse)]:min-h-11 text-onair-viewer-ink hover:bg-white/[0.13] ${FOCUS}`}
               >
                 {p.label} {formatMoney(p.value, currency, { decimals: 0 })}
               </button>
             ))}
           </div>
         )}
-        <OnAirButton variant="viewer" onClick={submit} disabled={!canSubmit}>
+        {/* aria-disabled, not disabled: the button stays reachable and points at
+            the countdown that explains it. submit() is the guard. */}
+        <OnAirButton
+          variant="viewer"
+          onClick={submit}
+          aria-disabled={!canSubmit}
+          aria-describedby={cooldown > 0 ? cooldownId : undefined}
+        >
           {submitting ? 'Locking…' : myGuess != null ? 'Update guess' : 'Lock it in'}
         </OnAirButton>
-        {cooldown > 0 && <p className="text-center text-xs text-onair-winner-warm">Edit again in {cooldown}s</p>}
-        <Feedback feedback={feedback} />
+        {cooldown > 0 && <Note id={cooldownId}>Edit again in {cooldown}s</Note>}
+        <Feedback key="feedback" feedback={feedback} />
         <Note>Editable until Goofer closes entries.</Note>
         {myGuess != null && (
           <OnAirButton
@@ -246,6 +290,7 @@ function OpenSlip({ round, serial, myEntry, currency, startCost, prize, guessCou
             onClick={() => {
               setEditing(false);
               setPayoutInput(String(myGuess));
+              focusHeading();
             }}
           >
             Keep {formatMoney(myGuess, currency)}
@@ -267,7 +312,8 @@ export default function HuntSlip({ mode, round, viewer, onSignIn, myEntry, curre
   const myGuess = guessOf(myEntry);
 
   if (!twitchId) {
-    const title = mode === 'open' ? 'Call the payout' : mode === 'locked' ? 'Entries closed' : 'Call the next payout';
+    const title =
+      mode === 'open' ? 'Call the payout' : mode === 'locked' ? 'Entries closed' : mode === 'offair' ? 'No round open' : 'Call the next payout';
     const sub =
       mode === 'offair'
         ? 'Predictions open when Goofer starts a round.'
@@ -287,6 +333,16 @@ export default function HuntSlip({ mode, round, viewer, onSignIn, myEntry, curre
     return (
       <Ticket header={<SlipHeader serial={serial} title="No round open" sub="Predictions open when Goofer starts a round." />}>
         <Note>Your slip unlocks when entries open.</Note>
+      </Ticket>
+    );
+  }
+
+  // The viewer's entry is still loading: don't claim they have no guess yet.
+  if (myEntry === undefined) {
+    const title = mode === 'open' ? 'Call the payout' : mode === 'locked' ? 'Entries closed' : 'Your result';
+    return (
+      <Ticket header={<SlipHeader serial={serial} title={title} />}>
+        <Note>Checking your slip…</Note>
       </Ticket>
     );
   }

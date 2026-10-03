@@ -33,10 +33,28 @@ test('final: best hit tagged, 0x in the loss colour, show all expands', () => {
   expect(within(rows()[0]).getByText('Best hit')).toBeTruthy();
   expect(within(rows()[6]).getByText('0.0x').className).toContain('text-onair-loss');
   expect(rows()).toHaveLength(10);
+  // The footer is not a table row, so it lives outside role="table".
+  expect(within(screen.getByRole('table', { name: 'Bonuses' })).queryByText(/Showing 10 of 12/)).toBeNull();
+  expect(screen.getByText(/Showing 10 of 12/)).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
   expect(rows()).toHaveLength(12);
   // A final recap never tags "Up next", even if the data has an unopened bonus.
   expect(within(rows()[11]).queryByText('Up next')).toBeNull();
+});
+
+// Review: during the opening the next bonus sat past row 10, hidden behind Show all.
+test('opening: the visible window follows the next bonus so Up next stays on screen', () => {
+  const many = Array.from({ length: 37 }, (_, i) => ({
+    slot: `Slot ${i + 1}`,
+    bet: 0.6,
+    win: i < 12 ? 6 : null,
+    multiplier: i < 12 ? 10 : null,
+  }));
+  render(<HuntRecap kind="opening" title="Opening now" stats={huntStats({ bonuses: many }, ROUND)} currency={null} />);
+  expect(rows()).toHaveLength(10);
+  expect(within(rows()[2]).getByText('Up next')).toBeTruthy();
+  expect(within(rows()[0]).getByText('11')).toBeTruthy();
+  expect(screen.getByText(/Showing 11–20 of 37/)).toBeTruthy();
 });
 
 test('opening: won so far, opened count, still-need avg', () => {
@@ -66,6 +84,13 @@ test('a potless hunt renders without NaN and offers back when browsing an episod
   expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(2);
   fireEvent.click(screen.getByRole('button', { name: 'Back to tonight' }));
   expect(onBack).toHaveBeenCalled();
+});
+
+// Review Focus 1: long currency codes shrink beside the figure instead of clipping.
+test('recap money splits a long currency code from the figure', () => {
+  render(<HuntRecap kind="final" title="Hunt recap" stats={huntStats({ pot: 150000, totalWon: 1850000 }, null)} currency="ARS" />);
+  const won = screen.getByText((_, el) => el.tagName === 'DD' && el.textContent.endsWith('1,850,000.00'));
+  expect(within(won).getByText('ARS').tagName).toBe('SPAN');
 });
 
 test('loading and error lines while a hunt detail is fetched', () => {

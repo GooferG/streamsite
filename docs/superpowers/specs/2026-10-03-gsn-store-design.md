@@ -239,9 +239,11 @@ The owner's machine runs ComfyUI Desktop (`Documents/ComfyUI`, RTX 5080 16 GB) w
 
 | Asset | Files | Model | Size budget |
 | --- | --- | --- | --- |
-| Item art, one per current item | `public/store/items/{slug}.webp`, 1200×900 | Z-Image Turbo (Flux 2 dev if Z-Image misses the look) | ≤ 120 KB each |
-| The operator, three poses | `public/store/gsn/operator-{standby,call,shrug}.webp`, 480×600 | Base character from Z-Image / Flux 2; poses via Qwen Image Edit for consistency | ≤ 60 KB each |
-| Station ident backdrop | `public/store/gsn/ident.webp`, 1600×900 | Z-Image Turbo | ≤ 150 KB |
+| Item art, one per current item | `public/gsn/items/{slug}.webp`, 1200×900 | Z-Image Turbo (Flux 2 dev if Z-Image misses the look) | ≤ 120 KB each |
+| The operator, three poses | `public/gsn/operator-{standby,call,shrug}.webp`, 480×600 | Base character from Z-Image / Flux 2; poses via Qwen Image Edit for consistency | ≤ 60 KB each |
+| Station ident backdrop | `public/gsn/ident.webp`, 1600×900 | Z-Image Turbo | ≤ 150 KB |
+
+Art lives under `public/gsn/`, never `public/store/`. A `store` folder in `public/` would be served as a directory at `/store` and shadow the SPA route (the dev server redirects `/store` to `/store/`).
 
 **Art direction (shared prompt base).** A 1990s late-night home-shopping broadcast still, shot on a TV studio set: hard key light, deep shadows, warm practical lights in the background, a set tinted dark teal and plum, light VHS grain, slight chromatic bleed. No text, no logos, no real people's likenesses. Item art puts the subject on a slowly turning velvet pedestal. The operator is an invented, deadpan late-night phone operator with a headset at a cluttered desk; the same character appears in every pose. Diffusion text is unreliable, so all lettering (GSN, prices) stays in CSS.
 
@@ -251,7 +253,7 @@ The owner's machine runs ComfyUI Desktop (`Documents/ComfyUI`, RTX 5080 16 GB) w
 2. The owner picks.
 3. Convert to webp at the budget.
 4. Commit.
-5. The owner points each item's `imageUrl` at `/store/items/{slug}.webp` in `/admin/store` (the field already accepts any string).
+5. The owner points each item's `imageUrl` at `/gsn/items/{slug}.webp` in `/admin/store` (the field already accepts any string).
 
 Item art is per item and opt-in, so new items can still use any URL. The page treats every image the same way: object-cover inside the scanlined frame. Operator images preload on the first `pointerdown` of a hold, so the PiP never pops in late.
 

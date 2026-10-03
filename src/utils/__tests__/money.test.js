@@ -1,4 +1,4 @@
-import { formatMoney, formatMoneyCompact } from '../money';
+import { formatMoney, formatMoneyCompact, moneyParts } from '../money';
 import { roundCurrency, roundTotalCost } from '../predictionRound';
 
 test('formatMoney without currency keeps the site $ format', () => {
@@ -29,6 +29,14 @@ test('formatMoneyCompact matches the old number-line format without currency', (
   expect(formatMoneyCompact(950)).toBe('$950');
   expect(formatMoneyCompact(null)).toBe('—');
   expect(formatMoneyCompact(76344, 'ARS')).toMatch(/ARS\s?76\.3K/);
+});
+
+test('moneyParts splits the currency code from the figure', () => {
+  expect(moneyParts(1850000, 'ARS', { decimals: 0 })).toEqual({ code: 'ARS', amount: '1,850,000' });
+  expect(moneyParts(3103.62, 'CAD')).toEqual({ code: 'CAD', amount: '3,103.62' });
+  expect(moneyParts(1234.4, null, { decimals: 0 })).toEqual({ code: '$', amount: '1,234' });
+  expect(moneyParts(-5, null, { decimals: 0 })).toEqual({ code: '$', amount: '-5' });
+  expect(moneyParts(null, 'ARS')).toEqual({ code: 'ARS', amount: '—' });
 });
 
 test('roundCurrency / roundTotalCost read the right source', () => {

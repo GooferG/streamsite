@@ -23,6 +23,17 @@ export function formatMoney(value, currency = null, { decimals = 2 } = {}) {
   return `${sign}$${Math.abs(n).toLocaleString('en-US', digits)}`;
 }
 
+// Code and figure apart, so the figure can be sized to its box on its own:
+// "ARS 1,850,000" overflows a tile, "1,850,000" under an ARS tag fits.
+export function moneyParts(value, currency = null, { decimals = 2 } = {}) {
+  const code = currency || '$';
+  const n = toNumber(value);
+  if (n == null) return { code, amount: '—' };
+  const digits = { minimumFractionDigits: decimals, maximumFractionDigits: decimals };
+  const amount = Math.abs(n).toLocaleString('en-US', digits);
+  return { code, amount: n < 0 ? `-${amount}` : amount };
+}
+
 export function formatMoneyCompact(value, currency = null) {
   const n = toNumber(value);
   if (n == null) return '—';

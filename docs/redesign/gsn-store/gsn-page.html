@@ -1,0 +1,271 @@
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
+<style>
+  .oa { --sig:#3ee0bf; --sigl:#7af0d6; --win:#ff6a1a; --winh:#ff8a3d; --wink:#1a0a02; --vw:#9146ff; --vwd:#8240f0; --vwl:#b89cff; --loss:#ff6b6b;
+        --s1:#17151b; --s2:#141216; --s3:#121015; --i1:#ece8e1; --i2:#e4e0e8; --i3:#c9c4cf; --i4:#a7a2ad; --i5:#8a8690; --i6:#6d6873;
+        font-family:"Bricolage Grotesque",system-ui,sans-serif; color:var(--i1); background:radial-gradient(120% 80% at 20% 0%, #0f1f1c 0%, #0c0a0e 45%, #140c1c 100%);
+        border-radius:14px; padding:24px; overflow:hidden; }
+  .oa * { box-sizing:border-box; }
+  .oa .mono { font-family:"JetBrains Mono",monospace; text-transform:uppercase; letter-spacing:.2em; }
+  .oa .t9 { font-size:9px; } .oa .t10 { font-size:10px; } .oa .t11 { font-size:11px; }
+  .oa .panel { border-radius:22px; background:linear-gradient(var(--s1),var(--s3)); box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 14px 30px rgba(0,0,0,.4); }
+  .oa .row { border-radius:14px; background:var(--s2); box-shadow:inset 0 1px 0 rgba(255,255,255,.05); }
+  .oa .lit-sig { background:linear-gradient(90deg,rgba(31,201,168,.16),rgba(31,201,168,.03)) , var(--s2); box-shadow:inset 0 1px 0 rgba(120,255,220,.12); }
+  .oa .lit-vw { background:linear-gradient(90deg,rgba(145,70,255,.22),rgba(145,70,255,.04) 60%,transparent), var(--s2); box-shadow:inset 0 1px 0 rgba(200,170,255,.2),0 12px 30px -12px rgba(145,70,255,.45); }
+  .oa .bezel { border-radius:30px; background:linear-gradient(#26232c,#141217); padding:10px 10px 0; box-shadow:inset 0 1px 0 rgba(255,255,255,.09),inset 0 -2px 0 rgba(0,0,0,.6),0 30px 60px rgba(0,0,0,.6); }
+  .oa .screen { position:relative; border-radius:22px; overflow:hidden; background:radial-gradient(120% 90% at 50% 40%, #0f2220 0%, #120c0e 60%, #07060a 100%); box-shadow:inset 0 0 80px rgba(0,0,0,.85); }
+  .oa .screen.win { background:radial-gradient(120% 90% at 50% 40%, #2a1810 0%, #120c0e 60%, #07060a 100%); }
+  .oa .scan { position:absolute; inset:0; pointer-events:none; background:repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 3px); mix-blend-mode:screen; z-index:3; }
+  .oa .static { position:absolute; inset:0; z-index:4; opacity:.5; background-image:repeating-radial-gradient(circle at 17% 32%, #fff 0 1px, #000 1px 2px, #777 2px 3px), repeating-conic-gradient(#222 0 7deg, #ddd 7deg 9deg, #555 9deg 15deg); background-size:97px 89px,61px 53px; filter:contrast(1.6) grayscale(1); mix-blend-mode:screen; }
+  .oa .chyron { display:flex; height:32px; background:rgba(0,0,0,.55); }
+  .oa .chyron .tag { background:var(--winh); color:var(--wink); font-size:9.5px; font-weight:700; display:flex; align-items:center; padding:0 13px; }
+  .oa .chyron .run { flex:1; overflow:hidden; display:flex; align-items:center; font-size:10px; color:var(--i2); white-space:nowrap; padding-left:14px; letter-spacing:.16em; }
+  .oa .star { color:var(--winh); margin:0 14px; }
+  .oa .strip { display:flex; justify-content:space-between; align-items:center; padding:11px 14px 13px; }
+  .oa .knob { width:30px; height:30px; border-radius:50%; background:radial-gradient(circle at 35% 30%,#4a4650,#1c1a20 70%); box-shadow:0 3px 6px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.15),0 0 0 3px #17151a; position:relative; transform:rotate(60deg); flex:none; }
+  .oa .knob::after { content:""; position:absolute; left:50%; top:3px; margin-left:-1.5px; width:3px; height:8px; border-radius:2px; background:var(--winh); }
+  .oa .readout { font-size:9.5px; color:var(--sig); background:rgba(0,0,0,.35); border-radius:9px; padding:7px 11px; box-shadow:inset 0 2px 6px rgba(0,0,0,.5); }
+  .oa .chip { display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:5px 11px; font-size:12px; background:rgba(255,255,255,.07); color:var(--i1); white-space:nowrap; }
+  .oa .chip.sig { background:rgba(62,224,191,.14); color:var(--sigl); }
+  .oa .chip.vw { background:rgba(145,70,255,.2); color:#d6cce4; }
+  .oa .btn { border-radius:13px; padding:12px 14px; font-weight:700; font-size:14px; text-align:center; display:block; }
+  .oa .btn.vw { background:linear-gradient(var(--vw),var(--vwd)); color:#fafafa; box-shadow:inset 0 1px 0 rgba(255,255,255,.25); position:relative; overflow:hidden; }
+  .oa .btn.hold { background:rgba(145,70,255,.25); color:#fafafa; position:relative; overflow:hidden; box-shadow:inset 0 1px 0 rgba(255,255,255,.12); }
+  .oa .btn.hold i { position:absolute; inset:0 auto 0 0; background:linear-gradient(var(--vw),var(--vwd)); }
+  .oa .btn.hold span { position:relative; }
+  .oa .btn.ghost { background:rgba(255,255,255,.07); color:var(--i2); }
+  .oa .btn.off { background:rgba(255,255,255,.08); color:var(--i5); }
+  .oa .bar { height:6px; border-radius:6px; background:rgba(0,0,0,.45); box-shadow:inset 0 1px 3px rgba(0,0,0,.6); overflow:hidden; }
+  .oa .bar i { display:block; height:100%; border-radius:6px; background:linear-gradient(90deg,var(--vwd),var(--vwl)); }
+  .oa .ticket { border-radius:22px; box-shadow:0 24px 40px -14px rgba(145,70,255,.4); }
+  .oa .ticket .top { border-radius:22px 22px 0 0; background:linear-gradient(#2a1d3d,#231933); padding:18px 18px 16px;
+        -webkit-mask: radial-gradient(circle at 0 100%, transparent 11px,#000 11.5px) left/51% 100% no-repeat, radial-gradient(circle at 100% 100%, transparent 11px,#000 11.5px) right/51% 100% no-repeat; }
+  .oa .ticket .bot { border-radius:0 0 22px 22px; background:linear-gradient(#231933,#17121f); padding:0 18px 18px;
+        -webkit-mask: radial-gradient(circle at 0 0, transparent 11px,#000 11.5px) left/51% 100% no-repeat, radial-gradient(circle at 100% 0, transparent 11px,#000 11.5px) right/51% 100% no-repeat; }
+  .oa .perf { border-top:2px dashed rgba(255,255,255,.12); margin:0 -4px 16px; }
+  .oa .img { background-size:cover; background-position:center; filter:saturate(.85) contrast(1.05); }
+  .oa .logo { background-color:#1a1420; background-size:55%; background-repeat:no-repeat; }
+  .oa .fig { font-weight:800; letter-spacing:-.03em; line-height:.9; }
+  .oa .bug { display:inline-flex; align-items:center; justify-content:center; height:30px; padding:0 10px; border-radius:9px; background:linear-gradient(#f3efe8,#cfc8bd); color:#141216; font-weight:800; font-size:15px; letter-spacing:-.02em; box-shadow:inset 0 -2px 0 rgba(0,0,0,.25); }
+  .oa .pip { position:absolute; right:12px; top:12px; width:92px; aspect-ratio:4/5; border-radius:12px; overflow:hidden; z-index:2; background:repeating-linear-gradient(135deg,#2a2330 0 8px,#231d29 8px 16px); box-shadow:0 0 0 2px rgba(0,0,0,.6),0 8px 20px rgba(0,0,0,.5); display:flex; align-items:flex-end; }
+  .oa .pip .cap { width:100%; background:rgba(0,0,0,.65); padding:4px 6px; }
+  .oa .art { outline:2px dashed rgba(255,138,61,.75); outline-offset:3px; }
+  .lab { display:inline-block; font:700 .7rem/1 system-ui; text-transform:uppercase; letter-spacing:.08em; color:var(--text-secondary); margin:28px 0 10px; }
+  .note { font-size:.85rem; color:var(--text-secondary); line-height:1.55; margin:10px 0 0; }
+  .note b { color:var(--text-primary); }
+  .frames { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; }
+  @media (max-width:900px){ .frames{ grid-template-columns:repeat(2,1fr);} }
+  .cap2 { font-size:.8rem; color:var(--text-secondary); line-height:1.45; margin-top:8px; }
+  .cap2 b { color:var(--text-primary); }
+  .artkey { display:inline-flex; align-items:center; gap:6px; font-size:.75rem; color:var(--text-secondary); }
+  .artkey i { width:14px; height:10px; outline:2px dashed rgba(255,138,61,.75); display:inline-block; }
+</style>
+
+<h2>Goofer Shopping Network, up close</h2>
+<p class="subtitle">The whole page at desktop size, the order moment frame by frame, the phone layout, and where ComfyUI art plugs in. <span class="artkey"><i></i> = generated art slot</span></p>
+
+<!-- ===================== DESKTOP PAGE ===================== -->
+<span class="lab">1 · The page (desktop)</span>
+<div class="oa">
+  <!-- ident -->
+  <div style="display:flex;align-items:center;gap:12px">
+    <span class="bug art">GSN</span>
+    <span class="mono t10" style="color:#a7a2ad">Goofer shopping network</span>
+    <span class="mono t10" style="color:#6d6873">·</span>
+    <span class="mono t10" style="color:#3ee0bf">Lines open · 3 items tonight</span>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:20px;margin:14px 0 20px">
+    <div style="font-size:52px;font-weight:800;letter-spacing:-.035em;line-height:.92">Operators are<br>standing by.</div>
+    <p style="max-width:330px;font-size:14px;color:#a7a2ad;line-height:1.55;margin:0">Spend the tickets you earn hanging out in chat. Anything marked <span style="color:#7af0d6">played on stream</span> happens live, in order.</p>
+  </div>
+
+  <!-- stage -->
+  <div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start">
+    <div class="bezel">
+      <div class="screen">
+        <div class="scan"></div>
+        <div style="position:relative;z-index:2;padding:20px 24px 18px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span class="mono t10" style="color:#c9a993">CH 02 · Now selling</span>
+            <span class="mono t10" style="color:#9a8b82">Line 1 open</span>
+          </div>
+          <div style="display:grid;grid-template-columns:230px 1fr;gap:24px;margin-top:16px;align-items:center">
+            <div class="img art" style="aspect-ratio:4/3;border-radius:14px;background-image:url('https://imgs.search.brave.com/6C9kCN6jNhb13YoQGuSqGL4sSnVXwt8iDZJVImtUKeo/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly91cGxv/YWQud2lraW1lZGlh/Lm9yZy93aWtpcGVk/aWEvY29tbW9ucy9m/L2ZiL01hcmlqdWFu/YV9ibHVudC5qcGc')"></div>
+            <div>
+              <div style="font-size:34px;font-weight:800;letter-spacing:-.025em;line-height:1">Roll a blunt</div>
+              <div style="font-size:14px;color:#a7a2ad;margin:8px 0 14px;line-height:1.45">Wanna get lit together and watch Goofer roll a perfect one?</div>
+              <div style="display:flex;align-items:baseline;gap:10px"><span class="fig" style="font-size:64px;color:#3ee0bf">420</span><span class="mono t11" style="color:#a7a2ad">tickets</span></div>
+              <div style="display:flex;gap:8px;margin-top:12px"><span class="chip sig">Played on stream</span><span class="chip">Unlimited</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="chyron mono"><div class="tag">Order line</div><div class="run">Operators are standing by<span class="star">★</span>Order in · nightowl_77 · Pick a Slot<span class="star">★</span>Bonus buy · 5 left<span class="star">★</span>Daily drop resets at midnight</div></div>
+      </div>
+      <div class="strip">
+        <div style="display:flex;align-items:center;gap:12px"><span style="width:8px;height:8px;border-radius:50%;background:#d83a1c;opacity:.7"></span><span class="mono t10" style="color:#6d6873;letter-spacing:.35em">Goofer·vision</span></div>
+        <div style="display:flex;gap:14px;align-items:center"><span class="mono t10" style="color:#8a8690">◀ ▶ to flip</span><span class="mono readout">CH 02 · 420 TK</span><div class="knob"></div></div>
+      </div>
+    </div>
+
+    <div class="ticket">
+      <div class="top">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span class="mono t10" style="color:#b89cff">Your wallet</span><span class="mono t9" style="color:#b7aec4">GooferFan</span></div>
+        <div style="display:flex;align-items:baseline;gap:8px;margin-top:8px"><span class="fig" style="font-size:52px">1,080</span><span class="mono t10" style="color:#b7aec4">tickets</span></div>
+        <div class="mono t9" style="color:#b7aec4;margin-top:8px">+12 tonight from watch time</div>
+      </div>
+      <div class="bot">
+        <div class="perf"></div>
+        <div class="mono t9" style="color:#b7aec4;margin-bottom:8px">Ordering · Roll a blunt</div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#c9c4cf;margin-bottom:4px"><span>Balance</span><span>1,080</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:13px;color:#c9c4cf;margin-bottom:4px"><span>Roll a blunt</span><span>−420</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700;margin:8px 0 14px;padding-top:8px;border-top:1px solid rgba(255,255,255,.08)"><span>After</span><span>660</span></div>
+        <div class="btn vw">Hold to order</div>
+        <div class="mono t9" style="color:#8a8690;margin-top:10px;text-align:center">Press and hold · let go to cancel</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- lineup: ALL items -->
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin:30px 0 12px">
+    <div><span class="mono t10" style="color:#8a8690">Full lineup</span><div style="font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:4px">Everything on tonight</div></div>
+    <span class="mono t10" style="color:#8a8690">Sorted by cheapest · 3 channels</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px">
+    <!-- tuned -->
+    <div class="row lit-sig" style="padding:10px;border-radius:20px">
+      <div class="screen" style="border-radius:13px;aspect-ratio:16/9"><div class="scan"></div><div class="img art" style="position:absolute;inset:0;background-image:url('https://imgs.search.brave.com/6C9kCN6jNhb13YoQGuSqGL4sSnVXwt8iDZJVImtUKeo/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly91cGxv/YWQud2lraW1lZGlh/Lm9yZy93aWtpcGVk/aWEvY29tbW9ucy9m/L2ZiL01hcmlqdWFu/YV9ibHVudC5qcGc')"></div><span class="mono t9" style="position:absolute;left:8px;top:8px;z-index:4;background:rgba(0,0,0,.6);padding:3px 6px;border-radius:6px;color:#3ee0bf">On screen</span></div>
+      <div style="padding:12px 6px 4px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mono t9" style="color:#3ee0bf">CH 02</span><span class="mono t9" style="color:#a7a2ad">Played on stream</span></div>
+        <div style="font-size:18px;font-weight:800;margin:6px 0 2px">Roll a blunt</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><span><span class="fig" style="font-size:24px">420</span> <span class="mono t9" style="color:#a7a2ad">tk</span></span><span class="chip sig" style="font-size:11px">You can order</span></div>
+      </div>
+    </div>
+    <div class="row" style="padding:10px;border-radius:20px">
+      <div class="screen" style="border-radius:13px;aspect-ratio:16/9"><div class="scan"></div><div class="img logo art" style="position:absolute;inset:0;background-image:url('https://imgs.search.brave.com/nAlM35WPi8VBQCLn97cFWqT3WODwKmNFojpaOEQqcLY/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9yYWlu/YmV0b2ZmaWNpYWxz/aXRlLmNvbS93cC1j/b250ZW50L3VwbG9h/ZHMvMjAyNS8xMC9S/YWluQmV0LWxvZ28t/ZnVsbC53ZWJw')"></div></div>
+      <div style="padding:12px 6px 4px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mono t9" style="color:#8a8690">CH 01</span><span class="mono t9" style="color:#a7a2ad">Played on stream</span></div>
+        <div style="font-size:18px;font-weight:800;margin:6px 0 2px">Pick a Slot</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><span><span class="fig" style="font-size:24px">1,500</span> <span class="mono t9" style="color:#a7a2ad">tk</span></span><span class="mono t9" style="color:#b7aec4">420 short</span></div>
+        <div class="bar" style="margin-top:8px"><i style="width:72%"></i></div>
+      </div>
+    </div>
+    <div class="row" style="padding:10px;border-radius:20px">
+      <div class="screen" style="border-radius:13px;aspect-ratio:16/9"><div class="scan"></div><div class="img logo art" style="position:absolute;inset:0;background-size:38%;background-image:url('https://s3-eu-west-1.amazonaws.com/tpd/logos/65431fd6cffa61b1c3621dc2/0x0.png')"></div></div>
+      <div style="padding:12px 6px 4px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline"><span class="mono t9" style="color:#8a8690">CH 03</span><span class="mono t9" style="color:#a7a2ad">Instant</span></div>
+        <div style="font-size:18px;font-weight:800;margin:6px 0 2px">$ARS 10,000 Bonus Buy</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px"><span><span class="fig" style="font-size:24px">10,000</span> <span class="mono t9" style="color:#a7a2ad">tk</span></span><span class="chip" style="font-size:11px">5 left</span></div>
+        <div class="bar" style="margin-top:8px"><i style="width:11%"></i></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- earn + orders -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px">
+    <div class="panel" style="padding:20px">
+      <span class="mono t10" style="color:#8a8690">Ways to earn</span>
+      <div style="font-size:20px;font-weight:800;margin:4px 0 14px">Short on tickets?</div>
+      <div class="row lit-sig" style="display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:8px"><div style="flex:1"><div style="font-weight:700;font-size:14px">Daily drop</div><div style="font-size:12px;color:#a7a2ad">Ready to claim</div></div><span class="btn vw" style="padding:8px 12px;font-size:12px">Claim +10</span></div>
+      <div class="row" style="display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:8px"><div style="flex:1"><div style="font-weight:700;font-size:14px">Hang out in chat</div><div style="font-size:12px;color:#a7a2ad">+1 every 5 min live, +1 more if you talk</div></div><span class="mono t9" style="color:#a7a2ad">14 h watched</span></div>
+      <div class="row" style="display:flex;align-items:center;gap:12px;padding:12px 14px"><div style="flex:1"><div style="font-weight:700;font-size:14px">Link Discord</div><div style="font-size:12px;color:#a7a2ad">One-time bonus</div></div><span class="chip sig" style="font-size:11px">Linked</span></div>
+    </div>
+    <div class="panel" style="padding:20px">
+      <span class="mono t10" style="color:#8a8690">Your orders</span>
+      <div style="font-size:20px;font-weight:800;margin:4px 0 14px">On the list</div>
+      <div class="row" style="display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:8px"><span class="chip sig" style="font-size:11px">Called in</span><span style="flex:1;font-size:14px;font-weight:700">Roll a blunt</span><span class="mono t9" style="color:#8a8690">8 min ago</span></div>
+      <div class="row" style="display:flex;align-items:center;gap:12px;padding:12px 14px;margin-bottom:8px"><span class="chip" style="font-size:11px">Aired</span><span style="flex:1;font-size:14px;font-weight:700">Pick a Slot</span><span class="mono t9" style="color:#8a8690">Sep 28</span></div>
+      <div class="row" style="display:flex;align-items:center;gap:12px;padding:12px 14px"><span class="chip" style="font-size:11px;color:#ff6b6b">Refunded</span><span style="flex:1;font-size:14px;font-weight:700">Pick a Slot</span><span class="mono t9" style="color:#8a8690">Sep 21</span></div>
+    </div>
+  </div>
+</div>
+<p class="note"><b>All items in one place:</b> the "Full lineup" grid sits right under the stage and always shows every item: price, stock, and a progress bar for anything you can't afford yet. Clicking a card tunes the monitor to it (static burst, knob turns) and the wallet recalculates. So the monitor is the detail view and the lineup is the browse view. The wallet slip shows the before/after maths, so you know exactly what you're spending before you hold.</p>
+
+<!-- ===================== ORDER MOMENT ===================== -->
+<span class="lab">2 · The order moment (the wow)</span>
+<div class="frames">
+  <div>
+    <div class="oa" style="padding:12px">
+      <div class="bezel" style="border-radius:20px;padding:6px 6px 0"><div class="screen" style="border-radius:14px;height:120px"><div class="scan"></div><div style="position:relative;z-index:2;padding:12px"><div class="mono t9" style="color:#c9a993">CH 02</div><div style="font-weight:800;font-size:17px;margin-top:6px">Roll a blunt</div><div class="fig" style="font-size:30px;color:#3ee0bf;margin-top:6px">420</div></div></div><div style="height:12px"></div></div>
+      <div class="btn hold" style="margin-top:12px;font-size:12px"><i style="width:62%"></i><span>Keep holding…</span></div>
+    </div>
+    <div class="cap2"><b>1 · Hold.</b> The button fills over about a second. Let go early and nothing is spent, which ends one-click 1,500-ticket misfires. Works with Space/Enter held down too.</div>
+  </div>
+  <div>
+    <div class="oa" style="padding:12px">
+      <div class="bezel" style="border-radius:20px;padding:6px 6px 0"><div class="screen" style="border-radius:14px;height:120px"><div class="scan"></div><div class="static"></div><div class="pip art" style="width:64px;top:10px;right:10px"><div class="cap mono t9" style="font-size:7px;color:#ece8e1">Line 1</div></div><div style="position:relative;z-index:5;padding:12px"><div class="mono t9" style="color:#ece8e1">Connecting…</div></div></div><div style="height:12px"></div></div>
+      <div class="btn off" style="margin-top:12px;font-size:12px">Calling it in</div>
+    </div>
+    <div class="cap2"><b>2 · The line connects.</b> A static burst, then the operator pops up picture-in-picture, mid-call. This covers the API round-trip, so the wait reads as part of the bit.</div>
+  </div>
+  <div>
+    <div class="oa" style="padding:12px">
+      <div class="bezel" style="border-radius:20px;padding:6px 6px 0"><div class="screen win" style="border-radius:14px;height:120px"><div class="scan"></div><div style="position:relative;z-index:2;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center"><div class="mono t9" style="color:#ffb27a">Order #R7Q2</div><div style="font-weight:800;font-size:26px;letter-spacing:-.03em;margin-top:4px">You're on<br>the list.</div></div><div class="pip art" style="width:52px;top:auto;bottom:10px;right:10px"></div></div><div style="height:12px"></div></div>
+      <div style="margin-top:12px;display:flex;align-items:center;gap:8px"><div style="flex:1;height:30px;border-radius:10px;background:linear-gradient(#2a1d3d,#231933);transform:rotate(-6deg) translateY(4px);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px">−420</div><span class="mono t9" style="color:#8a8690">stub tears off</span></div>
+    </div>
+    <div class="cap2"><b>3 · Order in.</b> The monitor cuts to a bumper card with your order number, lit orange because this is the result moment. The ticket slip's stub tears off along its perforation and drops away.</div>
+  </div>
+  <div>
+    <div class="oa" style="padding:12px">
+      <div class="bezel" style="border-radius:20px;padding:6px 6px 0"><div class="screen" style="border-radius:14px;height:120px"><div class="scan"></div><div style="position:relative;z-index:2;padding:12px"><div class="mono t9" style="color:#c9a993">CH 02</div><div style="font-weight:800;font-size:17px;margin-top:6px">Roll a blunt</div></div><div class="chyron mono" style="position:absolute;bottom:0;left:0;right:0;height:24px"><div class="tag" style="font-size:7px;padding:0 6px">Order line</div><div class="run" style="font-size:8px">Order in · <span style="color:#b89cff">&nbsp;you&nbsp;</span> · Roll a blunt</div></div></div><div style="height:12px"></div></div>
+      <div style="margin-top:12px;display:flex;align-items:baseline;gap:8px"><span class="fig" style="font-size:30px">660</span><span class="mono t9" style="color:#b7aec4">1,080 rolled down</span></div>
+    </div>
+    <div class="cap2"><b>4 · Back on air.</b> The balance rolls down like an odometer, your order runs on the chyron (with "you" in viewer purple), and it shows up under Your orders as <i>Called in</i>. Under reduced motion every step is an instant cut.</div>
+  </div>
+</div>
+
+<!-- ===================== PHONE ===================== -->
+<span class="lab">3 · Phone</span>
+<div style="display:grid;grid-template-columns:300px 1fr;gap:24px;align-items:start">
+  <div class="oa" style="padding:14px;border-radius:26px;position:relative;height:600px">
+    <div style="display:flex;align-items:center;gap:8px"><span class="bug" style="height:22px;font-size:11px;padding:0 7px">GSN</span><span class="mono t9" style="color:#3ee0bf">Lines open</span></div>
+    <div style="font-size:30px;font-weight:800;letter-spacing:-.03em;line-height:.95;margin:10px 0 14px">Operators are standing by.</div>
+    <div class="bezel" style="border-radius:22px;padding:6px 6px 0"><div class="screen" style="border-radius:16px"><div class="scan"></div><div style="position:relative;z-index:2;padding:12px"><div class="img" style="aspect-ratio:16/9;border-radius:10px;background-image:url('https://imgs.search.brave.com/6C9kCN6jNhb13YoQGuSqGL4sSnVXwt8iDZJVImtUKeo/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly91cGxv/YWQud2lraW1lZGlh/Lm9yZy93aWtpcGVk/aWEvY29tbW9ucy9m/L2ZiL01hcmlqdWFu/YV9ibHVudC5qcGc')"></div><div style="font-weight:800;font-size:20px;margin-top:10px">Roll a blunt</div><div style="display:flex;align-items:baseline;gap:6px;margin-top:4px"><span class="fig" style="font-size:34px;color:#3ee0bf">420</span><span class="mono t9" style="color:#a7a2ad">tickets</span></div></div><div class="chyron mono" style="height:24px"><div class="tag" style="font-size:7px;padding:0 7px">Order line</div><div class="run" style="font-size:8px">Order in · nightowl_77 · Pick a Slot</div></div></div><div class="strip" style="padding:7px 8px 9px"><span class="mono readout" style="font-size:8px;padding:5px 8px">420 TK</span><div class="knob" style="width:22px;height:22px"></div></div></div>
+    <div class="mono t9" style="color:#8a8690;margin:16px 0 8px">Full lineup</div>
+    <div class="row lit-sig" style="display:flex;gap:10px;align-items:center;padding:8px;margin-bottom:6px"><div class="img" style="width:56px;height:40px;border-radius:8px;background-image:url('https://imgs.search.brave.com/6C9kCN6jNhb13YoQGuSqGL4sSnVXwt8iDZJVImtUKeo/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly91cGxv/YWQud2lraW1lZGlh/Lm9yZy93aWtpcGVk/aWEvY29tbW9ucy9m/L2ZiL01hcmlqdWFu/YV9ibHVudC5qcGc')"></div><span style="flex:1;font-weight:700;font-size:13px">Roll a blunt</span><span class="mono t9">420</span></div>
+    <div class="row" style="display:flex;gap:10px;align-items:center;padding:8px;margin-bottom:6px"><div class="img logo" style="width:56px;height:40px;border-radius:8px;background-image:url('https://imgs.search.brave.com/nAlM35WPi8VBQCLn97cFWqT3WODwKmNFojpaOEQqcLY/rs:fit:860:0:0:0/g:ce/aHR0cHM6Ly9yYWlu/YmV0b2ZmaWNpYWxz/aXRlLmNvbS93cC1j/b250ZW50L3VwbG9h/ZHMvMjAyNS8xMC9S/YWluQmV0LWxvZ28t/ZnVsbC53ZWJw')"></div><span style="flex:1;font-weight:700;font-size:13px">Pick a Slot</span><span class="mono t9">1,500</span></div>
+    <!-- sticky dock -->
+    <div style="position:absolute;left:10px;right:10px;bottom:10px;border-radius:18px;background:linear-gradient(#2a1d3d,#17121f);box-shadow:0 -10px 30px rgba(0,0,0,.6),inset 0 1px 0 rgba(200,170,255,.18);padding:10px 10px 10px 14px;display:flex;align-items:center;gap:10px">
+      <div style="flex:1"><div class="mono t9" style="color:#b89cff;font-size:8px">Wallet</div><div class="fig" style="font-size:22px">1,080</div></div>
+      <div class="btn vw" style="padding:10px 14px;font-size:13px">Hold to order · 420</div>
+    </div>
+  </div>
+  <div class="note" style="margin:0">
+    <p style="margin-top:0"><b>The wallet becomes a dock.</b> On a phone, the ticket slip collapses into a bar pinned to the bottom with your balance and "Hold to order" for whatever's on screen. Your thumb is always on the button while you scroll the lineup, and tapping a lineup row re-tunes the monitor above.</p>
+    <p><b>The lineup turns into compact rows</b> (thumbnail, name, price) so all items fit on one screen. Earn and orders stack below.</p>
+    <p><b>The monitor stays first</b>, the same order the Hunts tab uses on phones.</p>
+  </div>
+</div>
+
+<!-- ===================== ART ===================== -->
+<span class="lab">4 · Where ComfyUI earns its place</span>
+<div class="cards">
+  <div class="card"><div class="card-body">
+    <h3>House-style item art</h3>
+    <p>Right now the item images are hotlinked: a Brave image-proxy link and a Trustpilot logo, and either can disappear. Generate one image per item in a single look (think late-night infomercial product shot: the item on a turning pedestal under hard studio light, VHS grain) and ship it in <code>public/store/</code>. The admin keeps the image field, so new items can use generated art or any other link.<br><br><i>Z-Image Turbo or Flux 2 dev, about 10s per image on your 5080.</i></p>
+  </div></div>
+  <div class="card"><div class="card-body">
+    <h3>The operator</h3>
+    <p>A recurring GSN host who answers the line during the order moment: standing by (idle), on the phone (connecting), and a shrug (sold out or "lines are busy" errors). Qwen Image Edit keeps one character consistent across all three poses. Optional extra: a 2-second Wan 2.2 loop of them picking up the phone, as a small webm that only loads when you actually order.</p>
+  </div></div>
+  <div class="card"><div class="card-body">
+    <h3>Station ident card</h3>
+    <p>A GSN bumper (logo on a test-card or set backdrop) the monitor shows while the catalogue loads and when the store is empty, so those states look like dead air rather than a broken page. The <b>GSN</b> bug in the header can stay pure CSS.</p>
+  </div></div>
+</div>
+<p class="note">Everything generated would live as static files in the repo. Nothing runs ComfyUI at request time.</p>
+
+<!-- ===================== QUESTION ===================== -->
+<span class="lab">Your call: how should "all items" work?</span>
+<div class="options">
+  <div class="option" data-choice="lineup-grid" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content"><h3>Lineup grid under the stage (shown above, recommended)</h3><p>Every item is always visible without clicking anything. Cards tune the monitor. Scales fine to around 12 items.</p></div>
+  </div>
+  <div class="option" data-choice="guide-overlay" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content"><h3>On-screen guide</h3><p>A "Guide" button on the bezel flips the monitor into a TV-guide grid of every item, the way you'd pull up a cable guide. Very on-theme, but everything is one click away instead of always visible, and it gets cramped on phones.</p></div>
+  </div>
+  <div class="option" data-choice="both" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content"><h3>Both</h3><p>The lineup grid for browsing, plus the guide as an extra flourish.</p></div>
+  </div>
+</div>

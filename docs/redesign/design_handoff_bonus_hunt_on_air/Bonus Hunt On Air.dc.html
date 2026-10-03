@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#09080b;color:#ece8e1;font-family:'Bricolage Grotesque',sans-serif;-webkit-font-smoothing:antialiased}
+a{color:#ff7a2e;text-decoration:none}a:hover{color:#ffa36b}
+input::placeholder{color:#6d6080}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes ticker{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@keyframes static{0%{background-position:0 0,0 0}25%{background-position:-37px 21px,13px -9px}50%{background-position:19px -43px,-27px 31px}75%{background-position:-11px 7px,41px 17px}100%{background-position:29px 39px,-7px -23px}}
+@keyframes roll{0%{transform:translateY(-100%)}100%{transform:translateY(100%)}}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:radial-gradient(1200px 600px at 50% -10%,#1a1420,transparent 70%),#09080b">
+<div style="max-width:1280px;margin:0 auto">
+
+  <!-- nav -->
+  <div style="display:flex;align-items:center;justify-content:space-between;gap:24px;padding:20px 36px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:14px">
+      <div style="font-weight:800;font-size:20px">GooferG</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.2em;color:#5d5963">LATE NIGHT · EST. 2023</div>
+    </div>
+    <div style="display:flex;gap:26px;font-size:15px;font-weight:500;color:#a7a2ad;flex-wrap:wrap">
+      <span>Home</span><span>Schedule</span><span>Vods</span><span style="color:#fff">Gamba</span><span>Gaming</span><span>Store</span><span>Giveaway</span><span>About</span>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <sc-if value="{{ isOpen }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:14px;color:#c9c4cf">vonbrandt</div>
+      </sc-if>
+      <div style="width:36px;height:36px;border-radius:50%;background:#26232b;display:grid;place-items:center;font-size:13px;font-weight:700">V</div>
+    </div>
+  </div>
+
+  <div style="padding:8px 36px 48px;display:flex;flex-wrap:wrap;align-items:flex-start;gap:24px">
+    <!-- main column -->
+    <div style="flex:999 1 640px;display:flex;flex-direction:column;gap:24px;min-width:0">
+
+      <!-- monitor -->
+      <div style="border-radius:36px;padding:14px 14px 0;background:linear-gradient(180deg,#26232c,#141217);box-shadow:inset 0 1px 0 rgba(255,255,255,.09),inset 0 -2px 0 rgba(0,0,0,.6),0 30px 60px rgba(0,0,0,.6)">
+        <div style="position:relative;border-radius:26px;overflow:hidden;background:radial-gradient(120% 90% at 50% 40%,{{ screenTint }} 0%,#120c0e 60%,#07060a 100%);box-shadow:inset 0 0 80px rgba(0,0,0,.85),inset 0 0 0 1px rgba(255,255,255,.04)">
+          <sc-if value="{{ scanlines }}" hint-placeholder-val="{{ true }}">
+            <div style="position:absolute;inset:0;pointer-events:none;z-index:2;background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 1px,transparent 1px 3px);mix-blend-mode:screen"></div>
+          </sc-if>
+          {{ staticFx }}
+
+          <div style="position:relative;padding:28px 34px 24px;display:flex;flex-direction:column">
+            <!-- screen header -->
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div style="display:flex;gap:10px;align-items:center">
+                <sc-if value="{{ isSettled }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:10px;background:#3a3540;color:#e4e0e8;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.2em">REPLAY</div>
+                </sc-if>
+                <sc-if value="{{ isOpen }}" hint-placeholder-val="{{ false }}">
+                  <div style="display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:10px;background:#d83a1c;color:#fff;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.2em;box-shadow:0 0 24px rgba(216,58,28,.6)"><span style="width:7px;height:7px;border-radius:50%;background:#fff;animation:pulse 1.4s infinite"></span>LIVE</div>
+                </sc-if>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.2em;color:#c9a993">CH 02 · HUNTS</div>
+              </div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.2em;color:#8a7d75">{{ screenClock }}</div>
+            </div>
+
+            <!-- SETTLED screen -->
+            <sc-if value="{{ isSettled }}" hint-placeholder-val="{{ true }}">
+              <div style="text-align:center;padding:30px 0 6px;display:flex;flex-direction:column;align-items:center;gap:10px">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.3em;color:#ff9a5c">THURSDAY COMM HUNT · AND THE CLOSEST GUESS IS</div>
+                <div style="width:108px;height:108px;border-radius:50%;margin-top:10px;background:linear-gradient(145deg,#2de0bd,#0f8f78);display:grid;place-items:center;font-size:42px;font-weight:800;color:#06221c;box-shadow:0 0 0 5px #1a100c,0 0 0 7px #ff6a1a,0 0 60px rgba(255,106,26,.55)">X</div>
+                <div style="font-size:60px;font-weight:800;letter-spacing:-.025em;line-height:1;text-shadow:0 0 30px rgba(255,140,80,.35)">Xilentdrifter</div>
+                <div style="display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;justify-content:center">
+                  <div style="padding:9px 16px;border-radius:999px;background:rgba(255,255,255,.07);font-size:15px">Guessed <b>$2,122</b></div>
+                  <div style="padding:9px 16px;border-radius:999px;background:rgba(255,255,255,.07);font-size:15px">Actual <b style="color:#ffb27a">$2,046.12</b></div>
+                  <div style="padding:9px 16px;border-radius:999px;background:linear-gradient(180deg,#ff8a3d,#e0520c);color:#1a0a02;font-weight:800;font-size:15px;box-shadow:0 8px 20px rgba(255,106,26,.4)">+500 tickets</div>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- OPEN screen -->
+            <sc-if value="{{ isOpen }}" hint-placeholder-val="{{ false }}">
+              <div style="text-align:center;padding:30px 0 6px;display:flex;flex-direction:column;align-items:center;gap:12px">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:.3em;color:#3ee0bf">THURSDAY COMM HUNT · PREDICTIONS OPEN</div>
+                <div style="font-size:30px;font-weight:700;color:#c9c4cf;letter-spacing:-.01em">What does the hunt pay?</div>
+                <div style="display:flex;align-items:flex-end;justify-content:center;gap:28px;margin-top:4px;flex-wrap:wrap">
+                  <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+                    <div style="font-size:96px;font-weight:800;letter-spacing:-.03em;line-height:.9;font-variant-numeric:tabular-nums;text-shadow:0 0 40px rgba(62,224,191,.35)">109.1<span style="font-size:56px;color:#7af0d6">x</span></div>
+                    <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.25em;color:#8a8690">REQUIRED AVG TO BREAK EVEN</div>
+                  </div>
+                  <div style="width:1px;height:84px;background:rgba(255,255,255,.1)"></div>
+                  <div style="display:flex;flex-direction:column;align-items:flex-start;gap:8px;padding-bottom:4px;text-align:left">
+                    <div style="font-size:14px;color:#8a8690">Total bet <b style="color:#ece8e1;font-size:18px;margin-left:6px">$22.20</b></div>
+                    <div style="font-size:14px;color:#8a8690">Avg bet <b style="color:#ece8e1;font-size:18px;margin-left:6px">$0.60</b></div>
+                    <div style="font-size:14px;color:#8a8690">Chat median <b style="color:#ece8e1;font-size:18px;margin-left:6px">{{ medianFmt }}</b></div>
+                  </div>
+                </div>
+                <div style="display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;justify-content:center">
+                  <div style="padding:9px 16px;border-radius:999px;background:rgba(255,255,255,.07);font-size:15px"><b>37</b> bonuses</div>
+                  <div style="padding:9px 16px;border-radius:999px;background:rgba(255,255,255,.07);font-size:15px">Start cost <b>$2,421.82</b></div>
+                  <div style="padding:9px 16px;border-radius:999px;background:rgba(62,224,191,.14);color:#7af0d6;font-size:15px"><b>{{ guessCount }}</b> guesses in</div>
+                </div>
+              </div>
+            </sc-if>
+
+            <!-- meter -->
+            <div style="position:relative;margin-top:26px;padding:18px 20px 14px;border-radius:18px;background:rgba(0,0,0,.35);box-shadow:inset 0 1px 0 rgba(255,255,255,.04)">
+              <div style="position:relative;height:56px">
+                <div style="position:absolute;left:0;right:0;top:26px;height:4px;border-radius:999px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.18) 0 2px,transparent 2px 12px)"></div>
+                <div style="position:absolute;top:6px;bottom:0;width:3px;margin-left:-1.5px;border-radius:2px;left:{{ markerPct }}%;background:{{ markerColor }};box-shadow:0 0 18px {{ markerColor }}"></div>
+                <div style="position:absolute;top:-10px;transform:translateX(-50%);font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.15em;white-space:nowrap;left:{{ markerPct }}%;color:{{ markerColor }}">{{ markerLabel }}</div>
+                <sc-for list="{{ meterDots }}" as="e" hint-placeholder-count="6">
+                  <div title="{{ e.name }}" style="position:absolute;top:18px;width:20px;height:20px;margin-left:-10px;border-radius:50%;left:{{ e.pct }}%;background:{{ e.dot }};box-shadow:0 0 0 3px #0f0b0d,{{ e.dotGlow }}"></div>
+                </sc-for>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10px;color:#6d635e;letter-spacing:.15em"><span>$1.7K</span><span>{{ guessCount }} GUESSES</span><span>$3.8K</span></div>
+            </div>
+          </div>
+
+          <!-- chyron -->
+          <div style="position:relative;display:flex;align-items:stretch;height:40px;background:rgba(0,0,0,.55);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)">
+            <div style="flex:none;display:flex;align-items:center;padding:0 16px;font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.2em;color:#1a0a02;background:{{ chyronTag }}">{{ chyronLabel }}</div>
+            <div style="flex:1;overflow:hidden;position:relative;display:flex;align-items:center;-webkit-mask-image:linear-gradient(90deg,transparent,#000 4%,#000 96%,transparent)">{{ ticker }}</div>
+          </div>
+        </div>
+
+        <!-- bezel controls -->
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:20px;padding:14px 18px 16px">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div style="width:8px;height:8px;border-radius:50%;background:#ff4a2a;box-shadow:0 0 10px #ff4a2a"></div>
+            <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.35em;color:#6d6873;font-weight:700">GOOFER·VISION</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:22px">
+            <div style="display:flex;align-items:center;gap:8px;padding:7px 12px;border-radius:10px;background:rgba(0,0,0,.35);box-shadow:inset 0 1px 2px rgba(0,0,0,.6);font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.18em;font-weight:700;color:{{ chColor }}"><span style="width:6px;height:6px;border-radius:50%;background:{{ chColor }};box-shadow:0 0 8px {{ chColor }}"></span>{{ chReadout }}</div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.2em;color:#5d5963">CH</div>
+              <div style="width:38px;height:38px;border-radius:50%;position:relative;background:radial-gradient(circle at 35% 30%,#4a4650,#1c1a20 70%);box-shadow:0 3px 6px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.15),0 0 0 3px #17151a;transition:transform .35s cubic-bezier(.3,1.5,.5,1);transform:rotate({{ knobDeg }}deg)">
+                <div style="position:absolute;left:50%;top:5px;width:3px;height:11px;margin-left:-1.5px;border-radius:2px;background:#ff8a3d;box-shadow:0 0 6px #ff6a1a"></div>
+              </div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.2em;color:#5d5963">VOL</div>
+              <div style="width:30px;height:30px;border-radius:50%;position:relative;background:radial-gradient(circle at 35% 30%,#4a4650,#1c1a20 70%);box-shadow:0 3px 6px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.15),0 0 0 3px #17151a;transform:rotate(-40deg)">
+                <div style="position:absolute;left:50%;top:4px;width:2px;height:8px;margin-left:-1px;border-radius:2px;background:#c9c4cf"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- lineup -->
+      <div style="display:flex;flex-direction:column;gap:12px">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;padding:0 4px">
+          <div style="font-size:24px;font-weight:800">{{ lineupTitle }}</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.2em;color:#8a8690">{{ sortLabel }}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ board }}" as="e" hint-placeholder-count="6">
+            <div style="display:grid;grid-template-columns:44px 40px minmax(0,1fr) 120px 110px;gap:16px;align-items:center;padding:12px 18px 12px 14px;border-radius:18px;background:{{ e.rowBg }};box-shadow:{{ e.rowShadow }}" style-hover="filter:brightness(1.15)">
+              <div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;text-align:center;color:{{ e.placeColor }}">{{ e.place }}</div>
+              <div style="width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:15px;background:{{ e.avBg }};color:{{ e.avFg }}">{{ e.initial }}</div>
+              <div style="display:flex;flex-direction:column;gap:2px;min-width:0">
+                <div style="font-weight:700;font-size:17px">{{ e.name }}</div>
+                <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.15em;color:#6d6873">{{ e.sub }}</div>
+              </div>
+              <div style="font-size:22px;font-weight:800;text-align:right;color:{{ e.valColor }}">${{ e.val }}</div>
+              <div style="font-size:13px;text-align:right;color:{{ e.metaColor }}">{{ e.meta }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- recap + bonuses -->
+      <div style="border-radius:24px;padding:22px 24px;background:linear-gradient(180deg,#17151b,#121015);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 14px 30px rgba(0,0,0,.4);display:flex;flex-direction:column;gap:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div style="display:flex;align-items:baseline;gap:10px"><div style="font-size:20px;font-weight:800">{{ recapTitle }}</div><div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#8a8690;letter-spacing:.15em">37 BONUSES</div></div>
+          <div onClick="{{ toggleBonuses }}" style="font-size:14px;color:#e4e0e8;padding:8px 14px;border-radius:12px;background:rgba(255,255,255,.06);cursor:pointer" style-hover="background:rgba(255,255,255,.1)">{{ bonusToggleLabel }}</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;border-radius:16px;overflow:hidden;background:rgba(255,255,255,.05)">
+          <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+            <div style="padding:14px 16px;background:#141216;display:flex;flex-direction:column;gap:4px"><div style="font-size:12px;color:#8a8690">{{ s.label }}</div><div style="font-size:20px;font-weight:800;color:{{ s.color }}">{{ s.value }}</div></div>
+          </sc-for>
+        </div>
+
+        <sc-if value="{{ showBonuses }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;border-radius:16px;overflow:hidden;background:#0f0e12;box-shadow:inset 0 1px 0 rgba(255,255,255,.04)">
+            <div style="display:grid;grid-template-columns:44px minmax(0,1fr) 90px 110px 200px;gap:16px;padding:12px 18px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.2em;color:#6d6873;background:rgba(255,255,255,.025)">
+              <div>#</div><div>SLOT</div><div style="text-align:right">BET</div><div style="text-align:right">PAYOUT</div><div style="text-align:right">MULTI</div>
+            </div>
+            <sc-for list="{{ bonuses }}" as="b" hint-placeholder-count="10">
+              <div style="display:grid;grid-template-columns:44px minmax(0,1fr) 90px 110px 200px;gap:16px;align-items:center;padding:11px 18px;border-top:1px solid rgba(255,255,255,.04);background:{{ b.rowBg }}" style-hover="background:rgba(255,255,255,.03)">
+                <div style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#6d6873">{{ b.no }}</div>
+                <div style="display:flex;align-items:center;gap:12px;min-width:0">
+                  <div style="width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;font-size:12px;font-weight:800;background:{{ b.tileBg }};color:{{ b.tileFg }}">{{ b.abbr }}</div>
+                  <div style="display:flex;flex-direction:column;gap:1px;min-width:0">
+                    <div style="font-weight:700;font-size:15px">{{ b.slot }}</div>
+                    <div style="font-size:12px;color:#7d7884">{{ b.provider }}</div>
+                  </div>
+                  <sc-if value="{{ b.tag }}" hint-placeholder-val="{{ false }}">
+                    <div style="flex:none;white-space:nowrap;padding:3px 9px;border-radius:999px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:.15em;font-weight:700;background:{{ b.tagBg }};color:{{ b.tagFg }}">{{ b.tag }}</div>
+                  </sc-if>
+                </div>
+                <div style="text-align:right;font-size:15px;color:#c9c4cf;font-variant-numeric:tabular-nums">${{ b.bet }}</div>
+                <div style="text-align:right;font-size:15px;font-weight:700;font-variant-numeric:tabular-nums;color:{{ b.payColor }}">{{ b.pay }}</div>
+                <div style="display:flex;align-items:center;gap:10px;justify-content:flex-end">
+                  <div style="flex:1;max-width:110px;height:6px;border-radius:999px;background:rgba(255,255,255,.06);overflow:hidden"><div style="height:100%;border-radius:999px;width:{{ b.barW }}%;background:{{ b.barBg }}"></div></div>
+                  <div style="width:62px;text-align:right;font-weight:800;font-size:15px;font-variant-numeric:tabular-nums;color:{{ b.multiColor }}">{{ b.multi }}</div>
+                </div>
+              </div>
+            </sc-for>
+            <div style="padding:12px 18px;border-top:1px solid rgba(255,255,255,.04);text-align:center;font-size:14px;color:#a7a2ad">Showing 10 of 37 · <a href="#">Show all</a></div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <!-- rail -->
+    <div style="flex:1 1 300px;max-width:100%;display:flex;flex-direction:column;gap:20px">
+      <sc-if value="{{ adminView }}" hint-placeholder-val="{{ false }}">
+        <div style="border-radius:24px;padding:18px 20px;background:linear-gradient(170deg,rgba(255,106,26,.16),rgba(255,106,26,.03) 60%),#141116;box-shadow:inset 0 1px 0 rgba(255,180,130,.18),0 14px 30px rgba(0,0,0,.4);display:flex;flex-direction:column;gap:12px">
+          <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.24em;color:#ff9a5c"><span>● CONTROL ROOM</span><span style="color:#6d6873">ADMIN ONLY</span></div>
+          <div style="font-size:14px;color:#c9bfb6;line-height:1.45">{{ adminHint }}</div>
+          <div onClick="{{ adminAction }}" style="text-align:center;padding:12px;border-radius:14px;font-weight:700;font-size:15px;cursor:pointer;background:linear-gradient(180deg,#ff8a3d,#e0520c);color:#1a0a02;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 10px 24px rgba(255,106,26,.35)" style-hover="filter:brightness(1.1)">{{ adminLabel }}</div>
+        </div>
+      </sc-if>
+      <div style="border-radius:24px;padding:10px;background:linear-gradient(180deg,#17151b,#111014);box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 14px 30px rgba(0,0,0,.4);display:flex;flex-direction:column;gap:4px">
+        <div style="padding:10px 12px 6px;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.24em;color:#6d6873">TV GUIDE</div>
+        <div style="display:flex;gap:12px;align-items:center;padding:12px;border-radius:14px;color:#a7a2ad" style-hover="background:rgba(255,255,255,.04)"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#5d5963;width:22px">00</span>Hub</div>
+        <div style="display:flex;gap:12px;align-items:center;padding:12px;border-radius:14px;color:#a7a2ad" style-hover="background:rgba(255,255,255,.04)"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#5d5963;width:22px">01</span>Leaderboard</div>
+        <div style="display:flex;gap:12px;align-items:center;padding:12px;border-radius:14px;color:#fff;font-weight:700;background:linear-gradient(90deg,rgba(31,201,168,.16),rgba(31,201,168,.03));box-shadow:inset 0 1px 0 rgba(120,255,220,.12)"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#3ee0bf;width:22px">02</span>Hunts<span style="margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:10px;color:#3ee0bf;letter-spacing:.15em">NOW</span></div>
+        <div style="display:flex;gap:12px;align-items:center;padding:12px;border-radius:14px;color:#a7a2ad" style-hover="background:rgba(255,255,255,.04)"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#5d5963;width:22px">03</span>Bonus Battle</div>
+        <div style="display:flex;gap:12px;align-items:center;padding:12px;border-radius:14px;color:#a7a2ad" style-hover="background:rgba(255,255,255,.04)"><span style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#5d5963;width:22px">04</span>Slot Picker</div>
+      </div>
+
+      <!-- ticket -->
+      <div style="position:relative;border-radius:24px;background:linear-gradient(170deg,#2a1d3d,#17121f);box-shadow:inset 0 1px 0 rgba(200,170,255,.18),0 24px 40px -14px rgba(145,70,255,.4);overflow:hidden">
+        <div style="height:146px;padding:22px 22px 0;box-sizing:border-box;display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.24em;color:#b89cff"><span>YOUR SLIP · NO. VON8</span><sc-if value="{{ slipLocked }}" hint-placeholder-val="{{ false }}"><span style="color:#3ee0bf">● LOCKED</span></sc-if></div>
+          <div style="font-size:22px;font-weight:800;line-height:1.15">{{ slipTitle }}</div>
+          <div style="color:#b7aec4;font-size:14px;line-height:1.45">{{ slipSub }}</div>
+        </div>
+        <div style="height:0;border-top:2px dashed rgba(255,255,255,.12);margin:0 18px"></div>
+        <div style="position:absolute;left:-12px;top:134px;width:24px;height:24px;border-radius:50%;background:#09080b"></div>
+        <div style="position:absolute;right:-12px;top:134px;width:24px;height:24px;border-radius:50%;background:#09080b"></div>
+
+        <sc-if value="{{ isSettled }}" hint-placeholder-val="{{ true }}">
+          <div style="padding:18px 22px 22px">
+            <div style="text-align:center;padding:13px;border-radius:14px;background:linear-gradient(180deg,#a26bff,#8240f0);color:#fff;font-weight:700;font-size:15px;box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 10px 24px rgba(145,70,255,.45);cursor:pointer" style-hover="filter:brightness(1.1)">Sign in with Twitch</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ slipEditing }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:18px 22px 22px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:center;gap:6px;padding:4px 16px;border-radius:16px;background:rgba(0,0,0,.35);box-shadow:inset 0 2px 6px rgba(0,0,0,.5),0 0 0 1px {{ inputRing }}">
+              <span style="font-size:15px;font-weight:700;color:#8b7ca3">CA$</span>
+              <input value="{{ guess }}" onChange="{{ onGuess }}" inputmode="decimal" placeholder="0.00" style="flex:1;min-width:0;background:transparent;border:0;outline:0;color:#fff;font-family:'Bricolage Grotesque',sans-serif;font-size:32px;font-weight:800;padding:8px 0;font-variant-numeric:tabular-nums">
+            </div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <sc-for list="{{ quickPicks }}" as="q" hint-placeholder-count="3">
+                <div onClick="{{ q.pick }}" style="padding:7px 11px;border-radius:10px;background:rgba(255,255,255,.07);font-size:12px;color:#d6cce4;cursor:pointer" style-hover="background:rgba(255,255,255,.13)">{{ q.label }}</div>
+              </sc-for>
+            </div>
+            <sc-if value="{{ guessTaken }}" hint-placeholder-val="{{ false }}">
+              <div style="font-size:12px;color:#ff9a7a">Someone already called that number — nudge it a little.</div>
+            </sc-if>
+            <div onClick="{{ lock }}" style="text-align:center;padding:13px;border-radius:14px;font-weight:700;font-size:15px;cursor:pointer;background:{{ lockBg }};color:{{ lockFg }};box-shadow:{{ lockShadow }}" style-hover="filter:brightness(1.1)">Lock it in</div>
+            <div style="font-size:12px;color:#8b7ca3;text-align:center">Editable until Goofer closes entries.</div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ slipLocked }}" hint-placeholder-val="{{ false }}">
+          <div style="padding:18px 22px 22px;display:flex;flex-direction:column;gap:12px">
+            <div style="display:flex;align-items:baseline;justify-content:space-between">
+              <div style="font-size:36px;font-weight:800;letter-spacing:-.02em">${{ guessFmt }}</div>
+              <div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.2em;color:#3ee0bf">ENTRY #{{ myNo }}</div>
+            </div>
+            <div style="font-size:13px;color:#b7aec4">{{ myPosition }}</div>
+            <div onClick="{{ unlock }}" style="text-align:center;padding:11px;border-radius:14px;background:rgba(255,255,255,.07);color:#e4e0e8;font-weight:600;font-size:14px;cursor:pointer" style-hover="background:rgba(255,255,255,.12)">Change guess</div>
+          </div>
+        </sc-if>
+      </div>
+
+      <sc-if value="{{ isSettled }}" hint-placeholder-val="{{ true }}">
+        <div style="border-radius:24px;padding:18px 20px;background:linear-gradient(180deg,#17151b,#111014);box-shadow:inset 0 1px 0 rgba(255,255,255,.06);display:flex;gap:14px;align-items:center">
+          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(145deg,#d9d5df,#7b7682);display:grid;place-items:center;font-weight:800;color:#1a181d">S</div>
+          <div style="flex:1;display:flex;flex-direction:column;gap:2px"><div style="font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.2em;color:#8a8690">RUNNER-UP</div><div style="font-weight:800;font-size:17px">skillsytv</div></div>
+          <div style="font-weight:700;font-size:14px;color:#c9c4cf">+100</div>
+        </div>
+      </sc-if>
+
+      <div style="border-radius:24px;padding:10px;background:linear-gradient(180deg,#17151b,#111014);box-shadow:inset 0 1px 0 rgba(255,255,255,.06);display:flex;flex-direction:column;gap:2px">
+        <div style="padding:10px 12px 6px;display:flex;justify-content:space-between;font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.24em;color:#6d6873"><span>PAST EPISODES</span><span>009</span></div>
+        <sc-for list="{{ archive }}" as="h" hint-placeholder-count="4">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:12px;border-radius:14px" style-hover="background:rgba(255,255,255,.04)">
+            <div style="display:flex;flex-direction:column;gap:2px"><div style="font-weight:600;font-size:15px">{{ h.name }}</div><div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:#5d5963;letter-spacing:.12em">{{ h.date }}</div></div>
+            <div style="font-weight:700;font-size:14px;color:{{ h.color }}">{{ h.result }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;startState&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Settled&quot;,&quot;Predictions open&quot;],&quot;default&quot;:&quot;Predictions open&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;adminView&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;boardSort&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Closest first&quot;,&quot;Entry order&quot;],&quot;default&quot;:&quot;Closest first&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;scanlines&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;staticOnSwitch&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;}}">
+class Component extends DCLogic {
+  state = { ch: null, switching: false, showBonuses: true, guess: '', locked: false, knob: 0 };
+  componentDidUpdate(prev) {
+    if (prev.startState !== this.props.startState) {
+      const ch = this.props.startState === 'Predictions open' ? 'open' : 'settled';
+      if (ch !== this.channel()) this.go(ch);
+    }
+  }
+  componentWillUnmount() { clearTimeout(this.sw); }
+  channel() { return this.state.ch ?? ((this.props.startState ?? 'Settled') === 'Predictions open' ? 'open' : 'settled'); }
+  go(ch) {
+    if (ch === this.channel() || this.state.switching) return;
+    this.setState(s => ({ switching: true, knob: s.knob + (ch === 'open' ? 60 : -60) }));
+    clearTimeout(this.sw);
+    this.sw = setTimeout(() => this.setState({ ch, switching: false }), (this.props.staticOnSwitch ?? true) ? 420 : 0);
+  }
+  renderVals() {
+    const ch = this.channel(), open = ch === 'open', settled = !open;
+    const actual = 2046.12, start = 2421.82, lo = 1700, hi = 3800;
+    const pct = v => Math.min(100, Math.max(0, (v - lo) / (hi - lo) * 100)).toFixed(2);
+    const money = n => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    const grey = ['#3a3540', '#cfc9d6'];
+    const raw = [
+      ['skillsytv', 1855, 'S', 'linear-gradient(145deg,#d9d5df,#7b7682)', '#1a181d', '12m ago'],
+      ['G4KUR4', 3663, 'G', ...grey, '9m ago'],
+      ['GRUMPZILLA12', 3100, 'G', ...grey, '7m ago'],
+      ['RYGARTEARROW', 2777, 'R', ...grey, '5m ago'],
+      ['Xilentdrifter', 2122, 'X', 'linear-gradient(145deg,#2de0bd,#0f8f78)', '#06221c', '3m ago'],
+      ['JESSEJEK', 3333, 'J', ...grey, '1m ago'],
+    ];
+    const g = parseFloat(String(this.state.guess).replace(/[^0-9.]/g, ''));
+    const valid = !isNaN(g) && g > 0;
+    const taken = valid && raw.some(r => r[1] === Math.round(g * 100) / 100);
+    const mine = open && this.state.locked && valid;
+    const ranked = raw.map(r => Math.abs(r[1] - actual)).sort((a, b) => a - b);
+
+    let entries = raw.map(([name, v, initial, avBg, avFg, ago], i) => {
+      const off = Math.abs(v - actual), rank = ranked.indexOf(off) + 1;
+      const first = settled && rank === 1, second = settled && rank === 2;
+      const no = String(i + 1).padStart(3, '0');
+      return {
+        name, initial, avBg, avFg, rank, v, no, pct: pct(v), val: v.toLocaleString(),
+        sub: open ? 'ENTRY #' + no : 'ENTRY #' + no,
+        meta: open ? ago : (v > actual ? '+' : '−') + '$' + Math.round(off).toLocaleString(),
+        metaColor: '#8a8690',
+        valColor: first ? '#ffb27a' : second ? '#fff' : open ? '#e4e0e8' : '#c9c4cf',
+        dot: first ? '#ff8a3d' : second ? '#d9d5df' : open ? '#8a8494' : '#4a4550',
+        dotGlow: first ? '0 0 16px #ff6a1a' : '0 0 0 transparent',
+        place: open ? no.slice(1) : String(rank).padStart(2, '0'),
+        placeColor: first ? '#ff9a5c' : second ? '#e4e0e8' : '#5d5963',
+        rowBg: first ? 'linear-gradient(90deg,rgba(255,106,26,.20),rgba(255,106,26,.04) 60%),#141116' : 'linear-gradient(180deg,#17151b,#121015)',
+        rowShadow: first ? 'inset 0 1px 0 rgba(255,180,130,.2),0 12px 30px -12px rgba(255,106,26,.45)' : 'inset 0 1px 0 rgba(255,255,255,.05)',
+      };
+    });
+    const myNo = String(raw.length + 1).padStart(3, '0');
+    if (mine) entries = [...entries, {
+      name: 'vonbrandt (you)', initial: 'V', avBg: 'linear-gradient(145deg,#b48cff,#7a3ff0)', avFg: '#fff', v: g, no: myNo, pct: pct(g),
+      val: Math.round(g).toLocaleString(), sub: 'ENTRY #' + myNo, meta: 'just now', metaColor: '#3ee0bf', valColor: '#fff',
+      dot: '#a26bff', dotGlow: '0 0 16px #9146ff', place: myNo.slice(1), placeColor: '#b89cff',
+      rowBg: 'linear-gradient(90deg,rgba(145,70,255,.22),rgba(145,70,255,.04) 60%),#141116',
+      rowShadow: 'inset 0 1px 0 rgba(200,170,255,.2),0 12px 30px -12px rgba(145,70,255,.45)', rank: 99,
+    }];
+    const sort = this.props.boardSort ?? 'Closest first';
+    const board = settled && sort === 'Closest first' ? [...entries].sort((a, b) => a.rank - b.rank)
+      : open && sort === 'Closest first' ? [...entries].sort((a, b) => a.v - b.v) : entries;
+
+    const slots = [
+      ['Wanted Dead or a Wild', 'Hacksaw', 0.6, 812], ['Gates of Olympus', 'Pragmatic', 0.8, 41.5], ['Sweet Bonanza', 'Pragmatic', 0.6, 12.2],
+      ['Mental', 'Nolimit City', 0.4, 268], ['Sugar Rush', 'Pragmatic', 0.6, 3.1], ['Chaos Crew', 'Hacksaw', 0.6, 74],
+      ['The Dog House', 'Pragmatic', 0.8, 0], ['Fruit Party', 'Pragmatic', 0.6, 28.4], ['Starlight Princess', 'Pragmatic', 0.4, 156], ['Big Bass Bonanza', 'Pragmatic', 0.6, 9.6],
+    ];
+    const maxM = Math.max(...slots.map(s => s[3]));
+    const hues = ['#ff8a3d', '#3ee0bf', '#b48cff', '#ffcf5c', '#ff6b8a'];
+    const bonuses = slots.map(([slot, provider, bet, m], i) => {
+      const best = settled && m === maxM, big = settled && m >= 100, dud = settled && m === 0, next = open && i === 0;
+      return {
+        no: String(i + 1).padStart(2, '0'), slot, provider, bet: bet.toFixed(2),
+        abbr: slot.split(' ').filter(w => w.length > 2).slice(0, 2).map(w => w[0]).join(''),
+        tileBg: 'linear-gradient(145deg,' + hues[i % 5] + '33,' + hues[i % 5] + '0d)', tileFg: hues[i % 5],
+        pay: open ? '—' : '$' + money(bet * m), payColor: open ? '#5d5963' : dud ? '#6d6873' : '#ece8e1',
+        multi: open ? '—' : m + 'x', multiColor: best ? '#ffb27a' : big ? '#ffd2b0' : dud ? '#ff6b6b' : '#c9c4cf',
+        barW: open ? 0 : Math.max(2, Math.sqrt(m / maxM) * 100).toFixed(1),
+        barBg: best ? 'linear-gradient(90deg,#ff6a1a,#ffb27a)' : big ? '#ff9a5c' : 'rgba(255,255,255,.28)',
+        rowBg: best ? 'linear-gradient(90deg,rgba(255,106,26,.12),transparent 70%)' : next ? 'linear-gradient(90deg,rgba(62,224,191,.10),transparent 70%)' : 'transparent',
+        tag: best ? 'BEST HIT' : next ? 'UP FIRST' : '',
+        tagBg: best ? 'rgba(255,106,26,.2)' : 'rgba(62,224,191,.15)', tagFg: best ? '#ffb27a' : '#3ee0bf',
+      };
+    });
+
+    const archive = [['Thursday Comm Hunt', 'OCT 1', -375.70], ['Big Bonus Sunday', 'SEP 27', 1284.40], ['Midweek Mini', 'SEP 24', -112.05], ['Viewer Picks 50', 'SEP 20', 642.90]]
+      .map(([name, date, r]) => ({ name, date, result: (r < 0 ? '−' : '+') + '$' + money(Math.abs(r)), color: r < 0 ? '#ff6b6b' : '#3ee0bf' }));
+
+    const stats = settled
+      ? [{ label: 'Start cost', value: '$2,421.82' }, { label: 'Won', value: '$2,046.12' }, { label: 'Avg multi', value: '92.2x' }, { label: 'Result', value: '−$375.70', color: '#ff6b6b' }]
+      : [{ label: 'Start cost', value: '$2,421.82' }, { label: 'Total bet', value: '$22.20' }, { label: 'Bonuses', value: '37' }, { label: 'Required avg', value: '109.1x', color: '#3ee0bf' }];
+    stats.forEach(s => s.color = s.color || '#ece8e1');
+
+    const tickSettled = ['XILENTDRIFTER TAKES +500 TICKETS', 'HUNT FINISHES −$375.70', 'BEST HIT · WANTED DEAD OR A WILD 812x', 'RUNNER-UP SKILLSYTV +100', 'NEXT HUNT · SUNDAY 9PM ET'];
+    const tickOpen = ['PREDICTIONS OPEN', '37 BONUSES · START COST $2,421.82', entries.length + ' GUESSES IN', 'REQUIRED AVG · 109.1x', 'CLOSEST GUESS WINS +500 TICKETS', 'GET YOUR GUESS IN BEFORE GOOFER CLOSES ENTRIES'];
+    const items = (open ? tickOpen : tickSettled);
+    const run = k => items.map((t, i) => React.createElement('span', { key: k + i, style: { display: 'inline-flex', alignItems: 'center', gap: 28, paddingRight: 28 } },
+      t, React.createElement('span', { style: { color: open ? '#3ee0bf' : '#ff8a3d' } }, '★')));
+    const ticker = React.createElement('div', { key: ch, style: { display: 'flex', whiteSpace: 'nowrap', fontFamily: "'JetBrains Mono',monospace", fontSize: 12, letterSpacing: '.18em', color: '#e4e0e8', animation: 'ticker 38s linear infinite' } }, run('a'), run('b'));
+
+    const staticFx = this.state.switching ? React.createElement('div', { style: { position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none', overflow: 'hidden' } },
+      React.createElement('div', { style: { position: 'absolute', inset: '-20%', backgroundImage: 'repeating-radial-gradient(circle at 17% 32%,#fff 0 1px,#000 1px 2px,#777 2px 3px),repeating-conic-gradient(#222 0 7deg,#ddd 7deg 9deg,#555 9deg 15deg)', backgroundSize: '97px 89px,61px 53px', mixBlendMode: 'normal', opacity: .85, animation: 'static .12s steps(4) infinite', filter: 'contrast(1.6) grayscale(1)' } }),
+      React.createElement('div', { style: { position: 'absolute', left: 0, right: 0, height: '30%', background: 'linear-gradient(180deg,transparent,rgba(255,255,255,.35),transparent)', animation: 'roll .4s linear infinite' } })) : null;
+
+    const locked = mine;
+    const sorted = raw.map(r => r[1]).sort((a, b) => a - b);
+    const median = (sorted[2] + sorted[3]) / 2;
+    const pick = v => () => this.setState({ guess: v.toFixed(2), locked: false });
+    const below = mine ? raw.filter(r => r[1] < g).length : 0;
+
+    return {
+      isOpen: open, isSettled: settled, staticFx, ticker, showBonuses: this.state.showBonuses,
+      scanlines: this.props.scanlines ?? true,
+      screenTint: open ? '#0f2220' : '#2a1810',
+      screenClock: open ? 'THU OCT 1 · 9:58 PM' : 'THU OCT 1 · 11:42 PM',
+      medianFmt: '$' + Math.round(median).toLocaleString(),
+      chReadout: open ? 'CH 02 · ENTRIES OPEN' : 'CH 02 · ENTRIES CLOSED',
+      chColor: open ? '#3ee0bf' : '#8a8690',
+      adminView: this.props.adminView ?? false,
+      adminHint: open ? 'Entries are open. Closing locks every slip and flips viewers to the results channel once the hunt settles.' : 'Hunt settled. Open entries for the next hunt to flip every viewer back to predictions.',
+      adminLabel: open ? 'Close entries' : 'Open entries',
+      adminAction: () => this.go(open ? 'settled' : 'open'),
+      guessCount: entries.length, meterDots: entries,
+      markerPct: pct(open ? start : actual), markerColor: open ? '#3ee0bf' : '#ffb27a', markerLabel: open ? 'BREAK-EVEN' : 'ACTUAL',
+      chyronLabel: open ? 'OPEN' : 'FINAL', chyronTag: open ? '#3ee0bf' : '#ff8a3d',
+      knobDeg: this.state.knob,
+      lineupTitle: open ? 'Guesses so far' : "Tonight's lineup",
+      sortLabel: settled ? (sort === 'Closest first' ? 'CLOSEST FIRST' : 'IN ORDER OF ENTRY') : (sort === 'Closest first' ? 'LOW TO HIGH' : 'IN ORDER OF ENTRY'),
+      board, bonuses, archive, stats,
+      recapTitle: open ? 'On the docket' : 'Hunt recap',
+      bonusToggleLabel: this.state.showBonuses ? 'Hide bonuses ↑' : 'Show bonuses ↓',
+      toggleBonuses: () => this.setState(s => ({ showBonuses: !s.showBonuses })),
+      slipEditing: open && !locked, slipLocked: locked,
+      slipTitle: open ? (locked ? "You're on the board" : 'Call the payout') : 'Call the next payout',
+      slipSub: open ? (locked ? 'Good luck — results land when the last bonus opens.' : 'Closest guess takes +500 tickets.') : 'Closest guess takes +500 tickets.',
+      guess: this.state.guess, onGuess: e => this.setState({ guess: e.target.value }),
+      guessTaken: taken, inputRing: taken ? 'rgba(255,120,90,.6)' : valid ? 'rgba(162,107,255,.55)' : 'rgba(255,255,255,.06)',
+      quickPicks: [
+        { label: 'Break-even $2,421', pick: pick(start) },
+        { label: 'Chat median $' + Math.round(median).toLocaleString(), pick: pick(median) },
+        { label: 'Half back $1,211', pick: pick(start / 2) },
+      ],
+      lockBg: valid && !taken ? 'linear-gradient(180deg,#a26bff,#8240f0)' : 'rgba(255,255,255,.08)',
+      lockFg: valid && !taken ? '#fff' : '#6d6080',
+      lockShadow: valid && !taken ? 'inset 0 1px 0 rgba(255,255,255,.25),0 10px 24px rgba(145,70,255,.45)' : 'none',
+      lock: () => { if (valid && !taken) this.setState({ locked: true }); },
+      unlock: () => this.setState({ locked: false }),
+      guessFmt: valid ? money(g) : '', myNo,
+      myPosition: mine ? below + (below === 1 ? ' guess' : ' guesses') + ' below you · ' + (raw.length - below) + ' above' : '',
+    };
+  }
+}
+</script>
+</body>
+</html>

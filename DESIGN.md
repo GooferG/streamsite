@@ -306,3 +306,37 @@ Components unique to a streaming-channel hub. Their visual weight pulls more fro
 - **Don't** use "X, not Y" parallelism in copy. Constructions like "features, not bugs" or "an extension of the broadcast, not a press kit" are forbidden. State what something is on its own terms.
 - **Don't** use AI-tell vocabulary: leverage, harness, utilize, seamless, robust, cutting-edge, unlock, delve, navigate (as a verb meaning "deal with"), elevate, empower, foster, streamline, holistic, synergy, ecosystem (outside literal tech context).
 - **Don't** nest cards. For sub-sections inside a card, step the background tonally (`bg-zinc-900` → `bg-zinc-800`).
+
+## 7. On Air (pilot: /gamba/hunts)
+
+On Air is the softer broadcast look replacing the hard-lined boxes: rounded, layered surfaces with inset highlights and drop shadows, a TV monitor stage, a perforated prediction slip. It pilots on the Hunts tab (`/gamba/hunts`); other surfaces opt in one at a time by using the `onair` tokens and the primitives in `src/components/onAir/`. Until the global nav migrates, the seam between the system-font nav and On Air content is expected.
+
+### Tokens
+
+All values live in `tailwind.config.js` under `onair`. Never copy a hex out of the handoff into a component; add or reuse a token.
+
+- **Colour roles:** `onair-signal` (#3ee0bf) is the signal: open, live state, positive result. `onair-winner` (#ff6a1a family) is the result moment. `onair-viewer` (#9146ff family) is "you" and Twitch actions. `onair-live` (#d83a1c) is the LIVE tally light only. `onair-loss` (#ff6b6b) is negative results and errors.
+- **Surfaces:** `onair-surface-1…4` step from #17151b to #0f0e12, `onair-surface-raised` (#3a3540) for the REPLAY pill; `onair-bezel-*` for the monitor frame; `onair-ticket-top/mid/bottom` for the slip.
+- **Inks on colour:** `onair-screen-ink` / `-screen-dim` (warm CRT label tints, both at least as light as ink-5), `onair-winner-ink` (dark text on orange), `onair-winner-pale` (≥100x multipliers), `onair-viewer-ink` / `-viewer-muted` (text on the purple slip).
+- **Ink:** `onair-ink-1…7`, #ece8e1 down to #4a4550.
+- **Radii:** bezel 36, screen 26, card 24, row 18, inner 16, control 14, tile 10.
+- **Depth:** `shadow-onair-card` and `shadow-onair-row` for resting surfaces; `shadow-onair-lit-winner` / `-lit-viewer` for lit rows and cards; `-well` for sunken fields, `-raised` for buttons, `-ticket` / `-ticket-top` for the slip.
+- **Glow tokens** (only for what may glow): `shadow-onair-live`, `-led` (on air only), `-winner-ring`, `-winner-chip`, `-dot-winner`, `-dot-viewer`.
+- **Pattern:** `bg-onair-track` is the meter's dotted track.
+- **Type:** `font-onair` (Bricolage Grotesque 500/700/800 — no 600 is loaded) for display and UI; `font-onair-mono` (JetBrains Mono 400/600/700) uppercase with 0.15–0.35em tracking for labels and data. Scale: 96 / 60 / 30 / 24 / 22 / 20 / 17 / 15 / 14 / 13 / 12 / 11 / 10; nothing below 10px. Display figures may shrink below the scale to fit their box (container-fitted, 2rem floor for the hero), with a currency code set at half size beside the figure.
+
+### Named Rules
+
+**Depth, Not Borders.** On Air surfaces get an inset top highlight plus a drop shadow. No 1px border boxes around surfaces. Hairlines are allowed only as dividers inside one surface (table rows, the recap stat strip, the rule between the hero and its side stats), and a 1px inset edge highlight counts as depth, not a border. Form fields are the exception: a field keeps a visible resting boundary (about 3:1) so it reads as a field.
+
+**Glow Means Something.** Only three things glow: the LIVE light, the winner, and you. Hero numbers, generic buttons, markers, readouts and plain dots do not.
+
+**Readable Labels.** Informational text is never fainter than `onair-ink-5` (#8a8690, about 5:1 on On Air surfaces), including disabled labels and placeholders; on a lit (washed) row, step up to `onair-ink-4`. `onair-ink-6` and `-7` are for decoration only, except that `ink-6` may mark non-text data (meter dots) where it holds 3:1.
+
+**Roles Inside On Air.** Inside On Air, orange means the winner/result (not admin) and red means the LIVE light and losses (not only destructive). Outside On Air, §2's Two-Role Rule still holds.
+
+**Honest Set Dressing.** Decorative controls (the monitor's knobs, LED, wordmark) are `aria-hidden`, have no pointer cursor and no hover state. The power LED only glows while the channel is live.
+
+**Contract Test.** `src/components/onAir/__tests__/onAirContract.test.js` scans the On Air sources for the mechanical rules here (type floor, loaded weights, label inks, raw colours, orange on the slip, data-dot ink). Keep it green; extend it when a rule is added.
+
+**Motion Has An Off Switch.** The channel-change static, knob spin, chyron scroll and LIVE pulse all stop under `prefers-reduced-motion`.

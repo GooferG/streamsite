@@ -9,7 +9,7 @@ const MARK_EM = 0.3; // , . ' and thin spaces
 const OTHER_EM = 0.7;
 const SAFETY = 0.94;
 
-function textEm(text) {
+export function textEm(text) {
   let em = 0;
   for (const ch of String(text || '')) {
     if (ch >= '0' && ch <= '9') em += DIGIT_EM;

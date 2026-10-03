@@ -214,13 +214,13 @@ This system has **no box shadows**. Depth comes from three sources, in order of 
 
 1. **Tonal layering on the body gradient.** Surfaces float on top of `from-zinc-950 via-emerald-950 to-purple-950` using `bg-zinc-900` / `bg-zinc-800` and translucent overlays (`bg-white/5`, `bg-emerald-500/10`). The tint of the underlying gradient bleeds through.
 2. **Glow halos.** Large `blur-3xl` discs of `bg-emerald-500/20` and `bg-purple-500/20` positioned behind the hero, animated with the `glow` keyframe (`opacity 0.5↔0.8`, `blur 20px↔30px`, 8–10s ease loop). They suggest a CRT bloom.
-3. **Glass surfaces.** Top nav and mobile drawer use `backdrop-blur-xl` with `bg-black/20` or `bg-zinc-950/80` and a 1px emerald-tinted border. Glass is purposeful in this system. It lets the gradient and grain show through the nav. It is never a decorative default on every card.
+3. **Glass surfaces.** The nav side sheet's scrim (`bg-black/60 backdrop-blur-sm`) and the LIVE pill over media use backdrop blur. Glass is purposeful in this system. It lets the gradient and grain show through the scrim. It is never a decorative default on every card.
 
 ### Named Rules
 
 **The No-Shadow Rule.** `box-shadow` does not appear on cards, buttons, or surfaces. If something needs to feel lifted, use a glow halo behind it or a tonal step up (`bg-zinc-900` → `bg-zinc-800`). Drop shadows read SaaS. This site reads cable.
 
-**The Purposeful Glass Rule.** `backdrop-blur` is for surfaces the gradient must show through: top nav, mobile menu drawer, the LIVE pill over the hero video region. It is not the default for cards, modals, or list items.
+**The Purposeful Glass Rule.** `backdrop-blur` is for surfaces the gradient must show through: the nav side sheet's scrim, the LIVE pill over the hero video region. It is not the default for cards, modals, or list items.
 
 ## 5. Components
 
@@ -298,7 +298,7 @@ Components unique to a streaming-channel hub. Their visual weight pulls more fro
 - **Don't** add casino chrome to `/gamba`. No gold-on-black, no slot-machine bevels, no glossy "JACKPOT" treatments. The gamba section is a streamer's tracker.
 - **Don't** add cyberpunk drift: neon green on flat `#000`, glitch text, Blade Runner palettes. The dark gradient flirts with this lane. Stay on the warm and grimy side.
 - **Don't** use `box-shadow` on cards, buttons, or surfaces. Depth comes from tonal layering and glow halos. Shadows read SaaS.
-- **Don't** use glassmorphism (`backdrop-blur`) as a default. It belongs on three surfaces: top nav, mobile drawer, the LIVE pill over media. Anywhere else, justify it.
+- **Don't** use glassmorphism (`backdrop-blur`) as a default. It belongs on two surfaces: the nav side sheet's scrim and the LIVE pill over media. Anywhere else, justify it.
 - **Don't** use `border-left` or `border-right` greater than 1px as a colored side-stripe accent. Use a full border, a tonal background, or a leading icon.
 - **Don't** introduce middle font weights (500, 600). The system is 300 / 400 / 700 / 900 with intentional gaps.
 - **Don't** load fonts beyond the two On Air families (Bricolage Grotesque 500/700/800, JetBrains Mono 400/600/700) and the legacy Anton display face, all in `public/index.html`.

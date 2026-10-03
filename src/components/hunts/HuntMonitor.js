@@ -13,12 +13,13 @@ import ViewerAvatar from './ViewerAvatar';
 // "What each mode shows"). Screen content is the size container for the
 // fitted hero; --hero-share shrinks the hero when side stats join its row.
 
+const CH = 'CH 02';
 const SCREENS = {
-  tuning: { tint: 'neutral', status: null, readout: { label: 'CH 02 · Tuning', tone: 'muted' } },
-  open: { tint: 'signal', status: 'live', tag: 'Open', tone: 'signal', readout: { label: 'CH 02 · Entries open', tone: 'signal' } },
-  locked: { tint: 'signal', status: 'live', tag: 'Closed', tone: 'muted', readout: { label: 'CH 02 · Entries closed', tone: 'muted' } },
-  settled: { tint: 'winner', status: 'replay', tag: 'Final', tone: 'winner', readout: { label: 'CH 02 · Entries closed', tone: 'muted' } },
-  offair: { tint: 'neutral', status: 'replay', tag: 'Off air', tone: 'muted', readout: { label: 'CH 02 · No round', tone: 'muted' } },
+  tuning: { tint: 'neutral', status: null, readout: { channel: CH, label: 'Tuning', tone: 'muted' } },
+  open: { tint: 'signal', status: 'live', tag: 'Open', tone: 'signal', readout: { channel: CH, label: 'Entries open', tone: 'signal' } },
+  locked: { tint: 'signal', status: 'live', tag: 'Closed', tone: 'muted', readout: { channel: CH, label: 'Entries closed', tone: 'muted' } },
+  settled: { tint: 'winner', status: 'replay', tag: 'Final', tone: 'winner', readout: { channel: CH, label: 'Entries closed', tone: 'muted' } },
+  offair: { tint: 'neutral', status: 'replay', tag: 'Off air', tone: 'muted', readout: { channel: CH, label: 'No round', tone: 'muted' } },
 };
 
 const EYEBROW = { signal: 'text-onair-signal', winner: 'text-onair-winner-warm', muted: 'text-onair-ink-4' };
@@ -257,7 +258,7 @@ export default function HuntMonitor({
     <Monitor
       tint={screen.tint}
       status={status}
-      channel="CH 02 · Hunts"
+      channel={`${CH} · Hunts`}
       clock={clock}
       channelKey={mode === 'tuning' ? null : mode}
       readout={screen.readout}

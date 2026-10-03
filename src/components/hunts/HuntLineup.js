@@ -161,8 +161,8 @@ export default function HuntLineup({ mode, sealed, entries, round, myEntry, myId
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-3">
-      <div className="flex items-baseline justify-between gap-3 px-1">
-        <h2 id={headingId} className="text-2xl font-extrabold">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 px-1">
+        <h2 id={headingId} className="whitespace-nowrap text-2xl font-extrabold">
           {title}
         </h2>
         <span className={`${MONO} text-[0.6875rem] tracking-[0.2em] text-onair-ink-5`}>{label}</span>

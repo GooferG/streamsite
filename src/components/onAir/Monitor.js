@@ -117,9 +117,11 @@ function BezelStrip({ readout, turns }) {
       <div className="flex items-center gap-3 sm:gap-[22px]">
         {readout && (
           <div
-            className={`${MONO} flex items-center gap-2 rounded-onair-tile bg-black/[0.35] px-3 py-[7px] text-[0.625rem] font-bold tracking-[0.18em] shadow-onair-well ${READOUT[readout.tone]}`}
+            className={`${MONO} flex items-center gap-2 whitespace-nowrap rounded-onair-tile bg-black/[0.35] px-3 py-[7px] text-[0.625rem] font-bold tracking-[0.18em] shadow-onair-well ${READOUT[readout.tone]}`}
           >
             <span className="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true" />
+            {/* A phone's bezel strip has no room for the channel prefix. */}
+            {readout.channel && <span className="hidden sm:inline">{readout.channel} · </span>}
             {readout.label}
           </div>
         )}
@@ -164,16 +166,14 @@ export default function Monitor({
         <div className="pointer-events-none absolute inset-0 z-[2] mix-blend-screen" style={SCANLINES} aria-hidden="true" />
         {switching && <Static />}
         <div className="relative px-[18px] pb-4 pt-5 sm:px-[34px] sm:pb-6 sm:pt-7">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center justify-between gap-3 whitespace-nowrap">
             <div className="flex items-center gap-2.5">
               <StatusLight status={status} />
               <span className={`${MONO} text-[0.6875rem] tracking-[0.2em] text-onair-screen-ink`}>{channel}</span>
             </div>
+            {/* Phones drop the clock: status, channel and time don't fit one line at 375px. */}
             {clock && (
-              <span className={`${MONO} text-[0.6875rem] tracking-[0.2em] text-onair-screen-dim`}>
-                <span className="hidden sm:inline">{clock.long}</span>
-                <span className="sm:hidden">{clock.short}</span>
-              </span>
+              <span className={`${MONO} hidden text-[0.6875rem] tracking-[0.2em] text-onair-screen-dim sm:inline`}>{clock.long}</span>
             )}
           </div>
           {children}

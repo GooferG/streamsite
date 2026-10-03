@@ -16,7 +16,7 @@ const PROPS = {
   status: 'live',
   channel: 'CH 02 · Hunts',
   clock: { long: 'THU OCT 1 · 9:58 PM', short: '9:58 PM' },
-  readout: { label: 'CH 02 · Entries open', tone: 'signal' },
+  readout: { channel: 'CH 02', label: 'Entries open', tone: 'signal' },
   chyron: { tag: 'Open', tone: 'signal', items: ['Predictions open', '6 guesses in'] },
 };
 
@@ -28,7 +28,9 @@ afterEach(() => {
 test('renders the screen, readout and a ticker whose copy is hidden from screen readers', () => {
   render(<Monitor {...PROPS} channelKey="open"><p>screen body</p></Monitor>);
   expect(screen.getByText('screen body')).toBeTruthy();
-  expect(screen.getByText('CH 02 · Entries open')).toBeTruthy();
+  // The channel prefix hides on phones, where the bezel strip is too narrow for it.
+  expect(screen.getByText('Entries open')).toBeTruthy();
+  expect(screen.getByText('CH 02 ·').className).toContain('hidden sm:inline');
   expect(screen.getByText('Live')).toBeTruthy();
   const copies = screen.getAllByText('Predictions open');
   expect(copies).toHaveLength(2);

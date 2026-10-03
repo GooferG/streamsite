@@ -9,7 +9,7 @@ const LIMIT = 10;
 // Per-slot tile tints for the initials fallback (documented raw-colour exception).
 const HUES = ['#ff8a3d', '#3ee0bf', '#b48cff', '#ffcf5c', '#ff6b8a'];
 const COLS =
-  'grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-3 px-3.5 sm:grid-cols-[44px_minmax(0,1fr)_90px_110px_200px] sm:gap-4 sm:px-[18px]';
+  'grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2.5 px-3 sm:grid-cols-[44px_minmax(0,1fr)_90px_110px_200px] sm:gap-4 sm:px-[18px]';
 const TAGS = {
   best: { label: 'Best hit', className: 'bg-onair-winner/20 text-onair-winner-light' },
   'up-first': { label: 'Up first', className: 'bg-onair-signal/[0.15] text-onair-signal' },
@@ -35,7 +35,7 @@ function SlotTile({ bonus, index }) {
         alt=""
         loading="lazy"
         onError={() => setBroken(true)}
-        className="h-[34px] w-[34px] flex-none rounded-onair-tile object-cover"
+        className="h-7 w-7 sm:h-[34px] sm:w-[34px] flex-none rounded-onair-tile object-cover"
       />
     );
   }
@@ -43,7 +43,7 @@ function SlotTile({ bonus, index }) {
   return (
     <span
       aria-hidden="true"
-      className="grid h-[34px] w-[34px] flex-none place-items-center rounded-onair-tile text-xs font-extrabold"
+      className="grid h-7 w-7 sm:h-[34px] sm:w-[34px] flex-none place-items-center rounded-onair-tile text-xs font-extrabold"
       style={{ background: `linear-gradient(145deg, ${hue}33, ${hue}0d)`, color: hue }}
     >
       {initials(bonus.slot)}
@@ -79,14 +79,14 @@ function BonusRow({ bonus, index, currency, tag, best, maxMulti }) {
       <span role="cell" className={`${MONO} hidden text-xs text-onair-ink-5 sm:block`}>
         {pad2(index + 1)}
       </span>
-      <div role="cell" className="flex min-w-0 items-center gap-3">
+      <div role="cell" className="flex min-w-0 items-center gap-2 sm:gap-3">
         <SlotTile bonus={bonus} index={index} />
         <div className="min-w-0">
           <div className="flex flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-2.5">
-            <p className="max-w-full truncate text-[0.9375rem] font-bold">{bonus.slot || `Bonus ${index + 1}`}</p>
+            <p className="max-w-full text-sm font-bold leading-tight line-clamp-2 sm:line-clamp-none sm:truncate sm:text-[0.9375rem]">{bonus.slot || `Bonus ${index + 1}`}</p>
             {tag && <Tag kind={tag} />}
           </div>
-          <p className="text-xs text-onair-ink-5 sm:hidden">Bet {formatMoney(bonus.bet, currency)}</p>
+          <p className="whitespace-nowrap text-xs text-onair-ink-5 sm:hidden">Bet {formatMoney(bonus.bet, currency)}</p>
         </div>
       </div>
       <span role="cell" className="hidden text-right text-[0.9375rem] tabular-nums text-onair-ink-3 sm:block">
@@ -103,7 +103,7 @@ function BonusRow({ bonus, index, currency, tag, best, maxMulti }) {
           <span className={`block h-full rounded-full ${barTone}`} style={{ width: `${barW}%` }} />
         </span>
         <span
-          className={`w-[62px] text-right text-[0.9375rem] font-extrabold tabular-nums ${hasMulti ? multiTone : 'text-onair-ink-5'}`}
+          className={`text-right sm:w-[62px] text-[0.9375rem] font-extrabold tabular-nums ${hasMulti ? multiTone : 'text-onair-ink-5'}`}
         >
           {hasMulti ? formatMultiplier(m) : '—'}
         </span>

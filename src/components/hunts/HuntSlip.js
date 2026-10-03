@@ -47,9 +47,9 @@ function SlipHeader({ serial, locked = false, title, sub }) {
   return (
     <div className="flex flex-col gap-2">
       <p className={`${MONO} flex justify-between gap-2 text-[0.625rem] tracking-[0.24em] text-onair-viewer-light`}>
-        <span>Your slip · No. {serial}</span>
+        <span className="min-w-0 truncate">Your slip · No. {serial}</span>
         {locked && (
-          <span className="text-onair-signal">
+          <span className="flex-none whitespace-nowrap text-onair-signal">
             <span aria-hidden="true">● </span>Locked
           </span>
         )}

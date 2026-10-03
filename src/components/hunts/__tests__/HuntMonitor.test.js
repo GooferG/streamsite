@@ -41,7 +41,7 @@ test('open: required avg hero, side stats, chips and the open readout', () => {
   expect(screen.getByText('Total bet')).toBeTruthy();
   expect(screen.getByText((_, el) => el.tagName === 'SPAN' && el.textContent === '6 guesses in')).toBeTruthy();
   expect(screen.getByText('Closest takes +500 tickets')).toBeTruthy();
-  expect(screen.getByText('CH 02 · Entries open')).toBeTruthy();
+  expect(screen.getByText('Entries open')).toBeTruthy();
   expect(screen.getByText('Live')).toBeTruthy();
 });
 
@@ -61,7 +61,7 @@ test('locked: won so far with progress, still-need avg and chat median', () => {
   expect(screen.getByText('Won so far · 2/3 opened')).toBeTruthy();
   expect(screen.getByText('Chat median')).toBeTruthy();
   expect(screen.getByText('$2,938.50')).toBeTruthy();
-  expect(screen.getAllByText('CH 02 · Entries closed').length).toBeGreaterThan(0);
+  expect(screen.getAllByText('Entries closed').length).toBeGreaterThan(0);
 });
 
 test('settled: the winner reveal with guessed, actual and prize chips', () => {
@@ -90,7 +90,7 @@ test('off air: last hunt result, or nothing on when there is no hunt', () => {
   const { unmount } = renderMonitor({ mode: 'offair', round: null, stats });
   expect(screen.getByText(/Last hunt · Community hunt/i)).toBeTruthy();
   expect(screen.getByText('−$1,784.82')).toBeTruthy();
-  expect(screen.getByText('CH 02 · No round')).toBeTruthy();
+  expect(screen.getByText('No round')).toBeTruthy();
   unmount();
   renderMonitor({ mode: 'offair', round: null, stats: huntStats(null, null), offair: { isLive: false, hasHunt: false, title: null } });
   expect(screen.getByRole('heading', { name: 'Nothing on right now' })).toBeTruthy();

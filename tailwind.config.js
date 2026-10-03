@@ -108,8 +108,6 @@ module.exports = {
       },
       borderRadius: {
         'onair-bezel': '36px',
-        // The nav bar: the bezel's inset highlight and lip, no drop shadow.
-        'onair-bar': 'inset 0 1px 0 rgba(255,255,255,.09), inset 0 -2px 0 rgba(0,0,0,.6)',
         'onair-screen': '26px',
         'onair-card': '24px',
         'onair-row': '18px',
@@ -120,6 +118,8 @@ module.exports = {
       boxShadow: {
         'onair-bezel':
           'inset 0 1px 0 rgba(255,255,255,.09), inset 0 -2px 0 rgba(0,0,0,.6), 0 30px 60px rgba(0,0,0,.6)',
+        // The nav bar: the bezel's inset highlight and lip, no drop shadow.
+        'onair-bar': 'inset 0 1px 0 rgba(255,255,255,.09), inset 0 -2px 0 rgba(0,0,0,.6)',
         'onair-screen': 'inset 0 0 80px rgba(0,0,0,.85), inset 0 0 0 1px rgba(255,255,255,.04)',
         'onair-card': 'inset 0 1px 0 rgba(255,255,255,.06), 0 14px 30px rgba(0,0,0,.4)',
         'onair-row': 'inset 0 1px 0 rgba(255,255,255,.05)',

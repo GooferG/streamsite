@@ -75,3 +75,8 @@ test('Roles: orange stays off the open slip', () => {
 test('Glow Means Something: data dots never use decoration-only ink-7', () => {
   expect(offenders(/bg-onair-ink-7/, { only: (rel) => rel.endsWith('HuntMeter.js') })).toEqual([]);
 });
+
+test('Tokens: the nav bar shadow is a boxShadow token, not a radius', () => {
+  expect(config.theme.extend.boxShadow['onair-bar']).toBe('inset 0 1px 0 rgba(255,255,255,.09), inset 0 -2px 0 rgba(0,0,0,.6)');
+  expect(config.theme.extend.borderRadius['onair-bar']).toBeUndefined();
+});

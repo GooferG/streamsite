@@ -29,9 +29,10 @@ const at = (ms) => ({ toMillis: () => ms });
 // doesn't accept as init options. Build the event by hand and assign them
 // directly, wrapped in `act` since dispatchEvent bypasses fireEvent's own
 // act wrapping.
-function firePointer(type, el, { clientX = 0, clientY = 0, button = 0, pointerId = 1 } = {}) {
+function firePointer(type, el, { clientX = 0, clientY = 0, button = 0, pointerId = 1, buttons } = {}) {
   const event = new Event(type, { bubbles: true, cancelable: true });
   Object.assign(event, { button, clientX, clientY, pointerId });
+  if (buttons !== undefined) event.buttons = buttons;
   act(() => {
     el.dispatchEvent(event);
   });
@@ -459,6 +460,41 @@ test('minimizing mid-resize drops the preview', () => {
   cr = makeCr();
   useControlRoom.mockReturnValue(cr);
   view.rerender(<ControlRoom isLive />);
+  expect(panelEl().style.width).toBe('380px');
+  expect(resizing()).toBe(false);
+});
+
+test('the grip keeps its corner while a drag carries the panel past the centre', () => {
+  show({ panel: { rect: { x: 400, y: 73 } } });
+  const grip = screen.getByRole('button', { name: 'Resize panel' });
+  expect(grip.dataset.crResize).toBe('bl');
+  firePointer('pointerdown', grip, { clientX: 400, clientY: 300 });
+  firePointer('pointermove', grip, { clientX: 240, clientY: 300 });
+  expect(document.body.contains(grip)).toBe(true);
+  expect(grip.dataset.crResize).toBe('bl');
+  firePointer('pointerup', grip, { clientX: 240, clientY: 300 });
+  expect(cr.panelActions.resizeTo).toHaveBeenCalledWith({ x: 240, y: 73 }, { w: 540, h: 420 });
+  expect(resizing()).toBe(false);
+});
+
+test('a focused grip stays put when the panel crosses the centre', () => {
+  const view = show({ panel: { rect: { x: 400, y: 73 } } });
+  const grip = screen.getByRole('button', { name: 'Resize panel' });
+  act(() => grip.focus());
+  cr = makeCr({ panel: { rect: { x: 240, y: 73 }, size: { w: 540, h: null } } });
+  useControlRoom.mockReturnValue(cr);
+  view.rerender(<ControlRoom isLive />);
+  expect(document.activeElement).toBe(grip);
+  expect(grip.dataset.crResize).toBe('bl');
+  act(() => grip.blur());
+  expect(screen.getByRole('button', { name: 'Resize panel' }).dataset.crResize).toBe('br');
+});
+
+test('a move with no button held ends the resize without committing', () => {
+  show();
+  firePointer('pointerdown', handle('l'), { clientX: 628, clientY: 200 });
+  firePointer('pointermove', handle('l'), { clientX: 528, clientY: 200, buttons: 0 });
+  expect(cr.panelActions.resizeTo).not.toHaveBeenCalled();
   expect(panelEl().style.width).toBe('380px');
   expect(resizing()).toBe(false);
 });

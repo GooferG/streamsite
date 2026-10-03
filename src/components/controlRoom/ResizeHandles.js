@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   DOCK_MAX,
   DOCK_MIN,
@@ -8,7 +8,6 @@ import {
   resizeFrom,
 } from './geometry';
 
-const FLOAT_EDGES = ['l', 'r', 'b', 'bl', 'br'];
 const CURSORS = {
   l: 'ew-resize',
   r: 'ew-resize',
@@ -25,6 +24,10 @@ const CURSORS = {
 // arrow keys, which commit each step.
 export default function ResizeHandles({ mode, view, side, dockW, getStart, onPreview, onCommit, onEnd }) {
   const gesture = useRef(null);
+  // The grip keeps its corner while a gesture runs or it has keyboard focus,
+  // even if the preview carries the panel past the screen centre.
+  const [lockedSide, setLockedSide] = useState(null);
+  const gripAt = lockedSide || side;
 
   useEffect(() => () => document.body.classList.remove('cr-resizing'), []);
 
@@ -38,6 +41,7 @@ export default function ResizeHandles({ mode, view, side, dockW, getStart, onPre
 
   const finish = () => {
     gesture.current = null;
+    setLockedSide(null);
     document.body.classList.remove('cr-resizing');
     onEnd();
   };
@@ -46,13 +50,20 @@ export default function ResizeHandles({ mode, view, side, dockW, getStart, onPre
     onPointerDown: (e) => {
       if (e.button !== 0) return;
       e.preventDefault();
+      setLockedSide(gripAt);
       e.currentTarget.setPointerCapture?.(e.pointerId);
       gesture.current = { edge, x0: e.clientX, y0: e.clientY, start: getStart() };
       document.body.style.setProperty('--cr-resize-cursor', CURSORS[edge]);
       document.body.classList.add('cr-resizing');
     },
     onPointerMove: (e) => {
-      if (gesture.current) onPreview(measure(gesture.current, e));
+      if (!gesture.current) return;
+      // The button came up somewhere we never heard about.
+      if (e.buttons === 0) {
+        finish();
+        return;
+      }
+      onPreview(measure(gesture.current, e));
     },
     onPointerUp: (e) => {
       const g = gesture.current;
@@ -75,7 +86,7 @@ export default function ResizeHandles({ mode, view, side, dockW, getStart, onPre
   // The arrow pointing away from the panel grows it.
   const onGripKey = (e) => {
     const s = step(e);
-    const across = side === 'bl' ? 'l' : 'r';
+    const across = gripAt === 'bl' ? 'l' : 'r';
     const moves = {
       ArrowLeft: [across, -s, 0],
       ArrowRight: [across, s, 0],
@@ -113,24 +124,34 @@ export default function ResizeHandles({ mode, view, side, dockW, getStart, onPre
     );
   }
 
+  const grip = {
+    'aria-label': 'Resize panel',
+    title: 'Drag, or use the arrow keys, to resize',
+    onKeyDown: onGripKey,
+    onFocus: () => setLockedSide(gripAt),
+    onBlur: () => {
+      if (!gesture.current) setLockedSide(null);
+    },
+  };
+
   return (
     <>
-      {FLOAT_EDGES.map((edge) =>
-        edge === side ? (
+      {['l', 'r', 'b'].map((edge) => (
+        <div key={edge} aria-hidden="true" data-cr-resize={edge} className={`cr-rz cr-rz-${edge}`} {...pointer(edge)} />
+      ))}
+      {['bl', 'br'].map((edge) => {
+        const isGrip = edge === gripAt;
+        return (
           <button
             key={edge}
             type="button"
-            aria-label="Resize panel"
-            title="Drag, or use the arrow keys, to resize"
             data-cr-resize={edge}
-            className={`cr-rz cr-rz-${edge} cr-rz-grip`}
-            onKeyDown={onGripKey}
+            className={`cr-rz cr-rz-${edge}${isGrip ? ' cr-rz-grip' : ''}`}
+            {...(isGrip ? grip : { tabIndex: -1, 'aria-hidden': 'true' })}
             {...pointer(edge)}
           />
-        ) : (
-          <div key={edge} aria-hidden="true" data-cr-resize={edge} className={`cr-rz cr-rz-${edge}`} {...pointer(edge)} />
-        )
-      )}
+        );
+      })}
     </>
   );
 }

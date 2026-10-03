@@ -48,7 +48,7 @@ module.exports = {
         'nn-violet': '#7a3dff',
         'nn-purple': '#b14dff',
         'nn-orange': '#ff8a3d',
-        // On Air (pilot: /gamba/hunts). Semantic roles, see DESIGN.md §7.
+        // On Air: the site's design language. Semantic roles, see DESIGN.md §7.
         onair: {
           signal: { DEFAULT: '#3ee0bf', light: '#7af0d6', deep: '#1fc9a8' },
           winner: {
@@ -108,6 +108,8 @@ module.exports = {
       },
       borderRadius: {
         'onair-bezel': '36px',
+        // The nav bar: the bezel's inset highlight and lip, no drop shadow.
+        'onair-bar': 'inset 0 1px 0 rgba(255,255,255,.09), inset 0 -2px 0 rgba(0,0,0,.6)',
         'onair-screen': '26px',
         'onair-card': '24px',
         'onair-row': '18px',

@@ -1,4 +1,5 @@
 import { MONO } from './classes';
+import StatusLight from './StatusLight';
 import useChannelSwitch from './useChannelSwitch';
 
 // The On Air stage: a bezel around a tinted CRT screen, a chyron ticker along
@@ -19,29 +20,6 @@ const NOISE = {
   backgroundSize: '97px 89px, 61px 53px',
   filter: 'contrast(1.6) grayscale(1)',
 };
-
-function StatusLight({ status }) {
-  if (status === 'live') {
-    return (
-      <span
-        className={`${MONO} inline-flex items-center gap-[7px] rounded-onair-tile bg-onair-live px-3 py-1.5 text-[0.6875rem] font-bold tracking-[0.2em] text-white-body shadow-onair-live`}
-      >
-        <span className="h-[7px] w-[7px] rounded-full bg-white-body motion-safe:animate-onair-pulse" aria-hidden="true" />
-        Live
-      </span>
-    );
-  }
-  if (status === 'replay') {
-    return (
-      <span
-        className={`${MONO} inline-flex items-center rounded-onair-tile bg-onair-surface-raised px-3 py-1.5 text-[0.6875rem] font-bold tracking-[0.2em] text-onair-ink-2`}
-      >
-        Replay
-      </span>
-    );
-  }
-  return null;
-}
 
 function Static() {
   return (

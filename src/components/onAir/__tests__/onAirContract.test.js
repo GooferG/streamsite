@@ -82,3 +82,7 @@ test('Tokens: the nav bar shadow is a boxShadow token, not a radius', () => {
   expect(config.theme.extend.boxShadow['onair-bar']).toBe('inset 0 1px 0 rgba(255,255,255,.09), inset 0 -2px 0 rgba(0,0,0,.6)');
   expect(config.theme.extend.borderRadius['onair-bar']).toBeUndefined();
 });
+
+test('Roles: the nav carries no orange (inside On Air orange is the winner)', () => {
+  expect(offenders(/orange|onair-winner/, { only: (rel) => rel.startsWith('src/components/nav/') })).toEqual([]);
+});

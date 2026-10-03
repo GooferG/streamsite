@@ -23,7 +23,7 @@ export function useControlRoomLauncher() {
   };
 }
 
-// The operator's badge. Neutral on purpose: inside On Air, orange is the winner.
+// The operator's badge. Neutral on purpose: the winner colour is reserved inside On Air.
 export function OperatorBadge({ as: Tag = 'span', className = '', ...rest }) {
   return (
     <Tag

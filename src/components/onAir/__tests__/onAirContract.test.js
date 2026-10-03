@@ -5,7 +5,7 @@ const path = require('path');
 const config = require('../../../../tailwind.config.js');
 
 const ROOT = path.resolve(__dirname, '../../../..');
-const DIRS = ['src/components/onAir', 'src/components/hunts'];
+const DIRS = ['src/components/onAir', 'src/components/hunts', 'src/components/nav'];
 // Fixture data and the per-slot tile tints are the recorded raw-colour exceptions.
 const RAW_COLOUR_EXEMPT = ['src/components/hunts/huntFixtures.js'];
 
@@ -56,10 +56,12 @@ test('Type: nothing below the 10px floor, no unloaded 600 weight, mono tracking 
   expect(offenders(/text-\[0\.5625rem\]|font-semibold|tracking-\[0\.1[0-4]em\]/)).toEqual([]);
 });
 
-test('Tokens: no raw colours or bare radii in the Hunts components', () => {
+test('Tokens: no raw colours or bare radii in the Hunts and nav components', () => {
   expect(
     offenders(/rgba\(|#[0-9a-fA-F]{6}\b|\brounded\b(?!-)/, {
-      only: (rel) => rel.startsWith('src/components/hunts/') && !RAW_COLOUR_EXEMPT.includes(rel),
+      only: (rel) =>
+        (rel.startsWith('src/components/hunts/') || rel.startsWith('src/components/nav/')) &&
+        !RAW_COLOUR_EXEMPT.includes(rel),
     })
   ).toEqual([]);
 });

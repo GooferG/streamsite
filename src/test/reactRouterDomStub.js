@@ -23,11 +23,30 @@ function passthrough({ children }) {
   return React.createElement(React.Fragment, null, children);
 }
 
+const DEFAULT_LOCATION = { pathname: '/', search: '', hash: '', state: null };
+const LocationContext = React.createContext(DEFAULT_LOCATION);
+
+// Static location from `initialEntries[0]` (no navigation); enough for
+// components that only read the pathname or render links.
+function MemoryRouter({ children, initialEntries }) {
+  const entry = initialEntries && initialEntries[0];
+  const path = typeof entry === 'string' ? entry : (entry && entry.pathname) || '/';
+  const [pathname, search = ''] = path.split('?');
+  const location = { ...DEFAULT_LOCATION, pathname, search: search ? `?${search}` : '' };
+  return React.createElement(LocationContext.Provider, { value: location }, children);
+}
+
+// Renders a plain anchor with the real props (href, className, aria-*).
+function Link({ to, children, ...rest }) {
+  const href = typeof to === 'string' ? to : (to && to.pathname) || '/';
+  return React.createElement('a', { href, ...rest }, children);
+}
+
 module.exports = {
   useSearchParams,
-  MemoryRouter: passthrough,
+  MemoryRouter,
   BrowserRouter: passthrough,
-  Link: ({ children }) => React.createElement('a', null, children),
+  Link,
   useNavigate: () => () => {},
-  useLocation: () => ({ pathname: '/', search: '', hash: '', state: null }),
+  useLocation: () => React.useContext(LocationContext),
 };

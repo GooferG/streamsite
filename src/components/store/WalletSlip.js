@@ -113,6 +113,7 @@ function Body({ state, item, itemsLoading, balance, ordering, onSignIn, onOrder,
         </div>
       </dl>
       <HoldButton
+        key={item.id}
         className="mt-4"
         disabled={ordering}
         onConfirm={() => onOrder(item)}
@@ -155,8 +156,11 @@ export function WalletDock({ viewer, user, userLoading, item, balance, ordering,
       </OnAirButton>
     );
   } else if (state === 'order') {
+    // Keyed by item: an armed press or a running hold never carries over to
+    // another item (one stray press must never spend).
     action = (
       <HoldButton
+        key={item.id}
         size="sm"
         disabled={ordering}
         onConfirm={() => onOrder(item)}

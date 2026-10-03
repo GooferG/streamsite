@@ -64,6 +64,11 @@ export function earnHint(short) {
 
 export const orderNumber = (id) => `#${String(id || '').slice(-4).toUpperCase()}`;
 
+// The line under a failed order: a sure refusal spent nothing; an uncertain
+// outcome (dropped line, server error) may have, so it points at the orders.
+export const busyNote = (order) =>
+  order.certain ? 'No tickets were spent.' : 'Check On the list before you try again.';
+
 export function walletState({ viewer, user, userLoading, item }) {
   if (!viewer) return 'signin';
   if (userLoading) return 'loading';

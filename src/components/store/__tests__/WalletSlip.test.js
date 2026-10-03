@@ -127,6 +127,28 @@ test('the torn stub clears itself even if the animation never runs', () => {
   expect(screen.queryByTestId('tear-ghost')).toBeNull();
 });
 
+// Final review: an armed press must never carry over to another item.
+const [ZAP] = lineup([{ id: 'zap', name: 'Zap', cost: 100, kind: 'stream', stock: null, sortOrder: 0 }]);
+
+test('arming on one item never lets a single press order a different one', () => {
+  const p = props(5000);
+  const { rerender } = render(<WalletSlip {...p} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Hold to order' }));
+  expect(screen.getByRole('button', { name: 'Press again to spend 420' })).toBeTruthy();
+  rerender(<WalletSlip {...p} item={ZAP} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Hold to order' }));
+  expect(p.onOrder).not.toHaveBeenCalled();
+});
+
+test('the dock never carries an armed press over to another item', () => {
+  const p = props(5000);
+  const { rerender } = render(<WalletDock {...p} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Hold to order · 420' }));
+  rerender(<WalletDock {...p} item={ZAP} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Hold to order · 100' }));
+  expect(p.onOrder).not.toHaveBeenCalled();
+});
+
 test('the dock carries the balance and the hold-to-order action', () => {
   render(<WalletDock {...props(1080)} />);
   expect(screen.getByRole('button', { name: 'Hold to order · 420' })).toBeTruthy();

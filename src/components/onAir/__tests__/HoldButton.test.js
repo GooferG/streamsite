@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, createEvent, fireEvent, render, screen } from '@testing-library/react';
 import HoldButton from '../HoldButton';
 
 function setup(extra = {}) {
@@ -85,6 +85,15 @@ test('Space held down confirms and key repeat never restarts the timer', () => {
     jest.advanceTimersByTime(300);
   });
   expect(onConfirm).toHaveBeenCalledTimes(1);
+});
+
+// Final review: holding Enter makes the browser repeat clicks, which would arm
+// and then confirm from a single key press.
+test('a held Enter key never repeats its way into a confirm', () => {
+  const { button } = setup();
+  const repeat = createEvent.keyDown(button, { key: 'Enter', repeat: true });
+  fireEvent(button, repeat);
+  expect(repeat.defaultPrevented).toBe(true);
 });
 
 test('becoming disabled mid-hold cancels the hold', () => {

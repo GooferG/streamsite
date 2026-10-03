@@ -122,7 +122,7 @@ Heading `On the list`. The viewer's last 5 redemptions, newest first. Status chi
 - `fulfilled` + `virtual` → `Granted`
 - `cancelled` → `Refunded` (loss red: a negative result inside On Air)
 
-Each row also shows relative time. Below the list: `See everything on your account` → `/account`. Empty: `Nothing called in yet.` Hidden when signed out.
+Each row also shows relative time. Below the list: `See everything on your account` → `/me` (the account page's route). Empty: `Nothing called in yet.` Hidden when signed out.
 
 ### Phone (below `lg`)
 
@@ -144,9 +144,9 @@ A state machine in `useOrder`: `idle → confirming? → calling → received | 
    - `OUT_OF_STOCK` → `Sold out while you were holding.`
    - `ITEM_INACTIVE` → `This one just went off the air.`
    - `USER_NOT_FOUND` → `Your wallet isn't set up yet. Sign out and back in.`
-   - network → `Lines are busy. Try again in a sec.`
+   - anything else (network drop, non-JSON reply, `INTERNAL`) → `The line dropped before we heard back.`
 
-   Each is followed by `No tickets were spent.` (the redeem transaction guarantees it). The card stays until the viewer tunes or presses `Back to the lineup`.
+   A known refusal code is followed by `No tickets were spent.` (the redeem transaction threw before committing). Anything else is uncertain, since the order may have committed before the reply was lost, so it is followed by `Check On the list before you try again.` instead. (Amended after the final review: the original draft promised "No tickets were spent." for network errors, which the server cannot guarantee.) The card stays until the viewer tunes or presses `Back to the lineup`.
 
 Only one order can be in flight. While calling, every hold button is disabled.
 

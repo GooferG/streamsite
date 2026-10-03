@@ -77,11 +77,18 @@ test('calling shows the line connecting', () => {
 });
 
 test('busy explains, reassures and offers a way back', () => {
-  const { onBack } = renderMonitor({ mode: 'busy', order: { phase: 'busy', item: BLUNT, message: 'Not enough tickets.' } });
+  const { onBack } = renderMonitor({ mode: 'busy', order: { phase: 'busy', item: BLUNT, message: 'Not enough tickets.', certain: true } });
   expect(screen.getByText('Not enough tickets.')).toBeTruthy();
   expect(screen.getByText('No tickets were spent.')).toBeTruthy();
   fireEvent.click(screen.getByRole('button', { name: 'Back to the lineup' }));
   expect(onBack).toHaveBeenCalledTimes(1);
+});
+
+// Final review: after a dropped line the order may have gone through.
+test('an uncertain outcome never promises that nothing was spent', () => {
+  renderMonitor({ mode: 'busy', order: { phase: 'busy', item: BLUNT, message: 'The line dropped before we heard back.', certain: false } });
+  expect(screen.queryByText('No tickets were spent.')).toBeNull();
+  expect(screen.getByText('Check On the list before you try again.')).toBeTruthy();
 });
 
 test('your own order reads as "you" in viewer purple on the chyron', () => {

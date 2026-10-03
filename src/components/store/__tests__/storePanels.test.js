@@ -4,6 +4,11 @@ import EarnPanel from '../EarnPanel';
 import OrdersPanel from '../OrdersPanel';
 import { lineup } from '../storeModel';
 
+// The shared router stub drops `to`; this one keeps it so the link target is testable.
+jest.mock('react-router-dom', () => ({
+  Link: ({ to, children, ...rest }) => require('react').createElement('a', { href: to, ...rest }, children),
+}));
+
 const ITEMS = lineup([
   { id: 'blunt', name: 'Roll a blunt', cost: 420, kind: 'stream', stock: null, sortOrder: 0 },
   { id: 'slot', name: 'Pick a Slot', cost: 1500, kind: 'stream', stock: null, sortOrder: 0 },
@@ -79,7 +84,8 @@ describe('OrdersPanel', () => {
     expect(screen.getByText('Granted')).toBeTruthy();
     expect(screen.getByText('Refunded').className).toContain('text-onair-loss');
     expect(screen.getByText('8m ago')).toBeTruthy();
-    expect(screen.getByText('See everything on your account')).toBeTruthy();
+    // Final review: the account page lives at /me.
+    expect(screen.getByRole('link', { name: 'See everything on your account' }).getAttribute('href')).toBe('/me');
   });
 
   test('no orders yet', () => {

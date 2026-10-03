@@ -33,7 +33,7 @@ export default function OrdersPanel({ orders, now }) {
           })}
         </ul>
       )}
-      <Link to="/account" className={`mt-4 inline-block text-sm font-bold text-onair-signal-light hover:text-onair-signal ${FOCUS}`}>
+      <Link to="/me"className={`mt-4 inline-block text-sm font-bold text-onair-signal-light hover:text-onair-signal ${FOCUS}`}>
         See everything on your account
       </Link>
     </Panel>

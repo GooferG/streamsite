@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { act, render } from '@testing-library/react';
 import useOrder, { CALLING_MIN_MS, NETWORK_ERROR, RECEIVED_MS } from '../useOrder';
 import { authedFetch } from '../../../utils/authedFetch';
@@ -39,13 +40,16 @@ test('a successful order is received, then the channel returns to idle', async (
   expect(api.phase).toBe('idle');
 });
 
+// Final review: only a known refusal guarantees nothing was spent. Anything
+// else (a 500, a dropped connection) may have committed, so it is uncertain.
 test.each([
-  ['INSUFFICIENT_TICKETS', 'Not enough tickets.'],
-  ['OUT_OF_STOCK', 'Sold out while you were holding.'],
-  ['ITEM_INACTIVE', 'This one just went off the air.'],
-  ['USER_NOT_FOUND', "Your wallet isn't set up yet. Sign out and back in."],
-  ['INTERNAL', NETWORK_ERROR],
-])('%s lands on the busy line with a plain message', async (code, message) => {
+  ['INSUFFICIENT_TICKETS', 'Not enough tickets.', true],
+  ['OUT_OF_STOCK', 'Sold out while you were holding.', true],
+  ['ITEM_INACTIVE', 'This one just went off the air.', true],
+  ['USER_NOT_FOUND', "Your wallet isn't set up yet. Sign out and back in.", true],
+  ['ITEM_INVALID_COST', 'This one just went off the air.', true],
+  ['INTERNAL', NETWORK_ERROR, false],
+])('%s lands on the busy line with a plain message', async (code, message, certain) => {
   authedFetch.mockReturnValue(reply(false, { error: code }));
   render(<Probe />);
   await act(async () => {
@@ -53,20 +57,47 @@ test.each([
   });
   expect(api.phase).toBe('busy');
   expect(api.message).toBe(message);
+  expect(api.certain).toBe(certain);
 });
 
-test('a network failure and a missing session map to plain messages', async () => {
+test('a dropped connection is uncertain; a missing session is a sure refusal', async () => {
   authedFetch.mockRejectedValue(new Error('Failed to fetch'));
   render(<Probe />);
   await act(async () => {
     await api.order(ITEM);
   });
   expect(api.message).toBe(NETWORK_ERROR);
+  expect(api.certain).toBe(false);
   authedFetch.mockRejectedValue(new Error('NOT_AUTHENTICATED'));
   await act(async () => {
     await api.order(ITEM);
   });
   expect(api.message).toBe('Sign in with Twitch to order.');
+  expect(api.certain).toBe(true);
+});
+
+test('a reply that is not JSON is uncertain', async () => {
+  authedFetch.mockReturnValue(Promise.resolve({ ok: false, json: () => Promise.reject(new SyntaxError('Unexpected token <')) }));
+  render(<Probe />);
+  await act(async () => {
+    await api.order(ITEM);
+  });
+  expect(api.message).toBe(NETWORK_ERROR);
+  expect(api.certain).toBe(false);
+});
+
+// Final review: the dev-only StrictMode double mount left the hook stuck on "calling".
+test('orders still land under StrictMode', async () => {
+  authedFetch.mockReturnValue(reply(true, { redemptionId: 'x', status: 'pending' }));
+  render(
+    <StrictMode>
+      <Probe />
+    </StrictMode>
+  );
+  await act(async () => {
+    await api.order(ITEM);
+  });
+  expect(api.phase).toBe('received');
 });
 
 test('only one order is ever in flight', async () => {

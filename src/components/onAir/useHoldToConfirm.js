@@ -92,7 +92,14 @@ export default function useHoldToConfirm({ duration = 900, confirmWindow = 4000,
     onPointerLeave: release,
     onPointerCancel: release,
     onKeyDown: (e) => {
-      if (e.key === 'Enter') swallowClick.current = false;
+      if (e.key === 'Enter') {
+        // A held Enter repeats clicks: one press must not arm and then confirm.
+        if (e.repeat) {
+          e.preventDefault();
+          return;
+        }
+        swallowClick.current = false;
+      }
       if (e.key === ' ' && !e.repeat) start();
     },
     onKeyUp: (e) => {

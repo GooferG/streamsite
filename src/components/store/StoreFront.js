@@ -8,7 +8,7 @@ import Lineup from './Lineup';
 import EarnPanel from './EarnPanel';
 import OrdersPanel from './OrdersPanel';
 import { preloadOperator } from './storeArt';
-import { chyronItems, formatTickets, lineup, orderNumber } from './storeModel';
+import { busyNote, chyronItems, formatTickets, lineup, orderNumber } from './storeModel';
 
 const noop = () => {};
 const ORDER_PHASES = ['calling', 'received', 'busy'];
@@ -69,9 +69,9 @@ export default function StoreFront({
       const left = before != null ? ` ${formatTickets(before - order.item.cost)} tickets left.` : '';
       setAnnouncement(`Order in: ${order.item.name}, order ${orderNumber(order.orderId).slice(1)}.${left}`);
     } else if (phase === 'busy') {
-      setAnnouncement(`${order.message} No tickets were spent.`);
+      setAnnouncement(`${order.message} ${busyNote({ certain: order.certain })}`);
     }
-  }, [phase, order.orderId, order.item, order.message]);
+  }, [phase, order.orderId, order.item, order.message, order.certain]);
 
   function tune(id, { fromLineup = false } = {}) {
     if (phase === 'calling') return;

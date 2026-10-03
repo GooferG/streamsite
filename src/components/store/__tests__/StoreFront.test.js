@@ -40,10 +40,19 @@ test('received: bumper, order number and a spoken confirmation', () => {
 test('busy: the error, the reassurance and a way back', () => {
   const onResetOrder = jest.fn();
   render(<StoreFront {...STORE_FIXTURES.busy} onResetOrder={onResetOrder} />);
-  expect(within(monitor()).getByText('Lines are busy. Try again in a sec.')).toBeTruthy();
+  expect(within(monitor()).getByText('Not enough tickets.')).toBeTruthy();
   expect(within(monitor()).getByText('No tickets were spent.')).toBeTruthy();
+  expect(screen.getByText('Not enough tickets. No tickets were spent.')).toBeTruthy();
   fireEvent.click(within(monitor()).getByRole('button', { name: 'Back to the lineup' }));
   expect(onResetOrder).toHaveBeenCalled();
+});
+
+// Final review: a dropped line may have committed the order.
+test('unsure: no false reassurance, and a pointer to the orders list', () => {
+  render(<StoreFront {...STORE_FIXTURES.unsure} />);
+  expect(within(monitor()).getByText('The line dropped before we heard back.')).toBeTruthy();
+  expect(screen.queryByText(/No tickets were spent/)).toBeNull();
+  expect(screen.getByText('The line dropped before we heard back. Check On the list before you try again.')).toBeTruthy();
 });
 
 test('tuning from the lineup changes the monitor and reports the item', () => {

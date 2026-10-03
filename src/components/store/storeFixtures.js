@@ -86,5 +86,9 @@ export const STORE_FIXTURES = {
     initialItemId: 'bonus',
   },
   received: { ...BASE, user: user(660), order: { phase: 'received', item: ITEMS[0], orderId: 'xYz9R7Q2', status: 'pending' } },
-  busy: { ...BASE, initialItemId: 'slot', order: { phase: 'busy', item: ITEMS[1], message: 'Lines are busy. Try again in a sec.' } },
+  busy: { ...BASE, initialItemId: 'slot', order: { phase: 'busy', item: ITEMS[1], message: 'Not enough tickets.', certain: true } },
+  unsure: {
+    ...BASE,
+    order: { phase: 'busy', item: ITEMS[0], message: 'The line dropped before we heard back.', certain: false },
+  },
 };

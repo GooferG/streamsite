@@ -8,7 +8,7 @@ import GsnBug from './GsnBug';
 import ItemArt from './ItemArt';
 import Operator from './Operator';
 import { IDENT } from './storeArt';
-import { formatTickets, isSoldOut, kindLabel, orderNumber, stockLabel } from './storeModel';
+import { busyNote, formatTickets, isSoldOut, kindLabel, orderNumber, stockLabel } from './storeModel';
 
 const IDENT_LINES = {
   loading: 'Tuning in…',
@@ -92,7 +92,7 @@ function Busy({ order, onBack }) {
     <div className={STAGE}>
       <Operator key="shrug" pose="shrug" className="h-32 w-[6.5rem] rounded-onair-tile" />
       <p className="text-[1.375rem] font-bold">{order.message}</p>
-      <p className="text-[0.9375rem] text-onair-ink-3">No tickets were spent.</p>
+      <p className="text-[0.9375rem] text-onair-ink-3">{busyNote(order)}</p>
       <OnAirButton variant="ghost" size="sm" className="mt-1" onClick={onBack}>
         Back to the lineup
       </OnAirButton>

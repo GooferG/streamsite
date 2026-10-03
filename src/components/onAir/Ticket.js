@@ -13,9 +13,9 @@ function notchMask(edge) {
   return { WebkitMask: value, mask: value };
 }
 
-export default function Ticket({ header, className = '', children }) {
+export default function Ticket({ header, label = 'Prediction slip', stubOverlay = null, className = '', children }) {
   return (
-    <section aria-label="Prediction slip" className={`rounded-onair-card shadow-onair-ticket ${className}`}>
+    <section aria-label={label} className={`relative rounded-onair-card shadow-onair-ticket ${className}`}>
       <div
         className="rounded-t-onair-card bg-gradient-to-b from-onair-ticket-top to-onair-ticket-mid px-[22px] pb-[18px] pt-[22px] shadow-onair-ticket-top"
         style={notchMask('bottom')}
@@ -29,6 +29,8 @@ export default function Ticket({ header, className = '', children }) {
         <div className="-mx-1 border-t-2 border-dashed border-white/[0.12]" aria-hidden="true" />
         <div className="pt-[18px]">{children}</div>
       </div>
+      {/* Outside both masked halves so it can fall past the slip's edge (the wallet's torn stub). */}
+      {stubOverlay}
     </section>
   );
 }

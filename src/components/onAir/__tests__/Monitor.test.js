@@ -83,3 +83,25 @@ test('a replay monitor shows Replay and no ticker when chyron is omitted', () =>
   expect(screen.getByText('Replay')).toBeTruthy();
   expect(screen.queryByRole('marquee')).toBeNull();
 });
+
+test('defaults keep the Hunts labels', () => {
+  render(<Monitor {...PROPS} channelKey="open" />);
+  expect(screen.getByRole('region', { name: 'Hunt monitor' })).toBeTruthy();
+  expect(screen.getByRole('marquee', { name: 'Hunt ticker' })).toBeTruthy();
+});
+
+test('a surface can relabel the monitor and ticker and put real controls in the bezel', () => {
+  render(
+    <Monitor
+      {...PROPS}
+      label="Store monitor"
+      chyron={{ ...PROPS.chyron, label: 'Order line ticker' }}
+      controls={<button type="button">Next item</button>}
+      channelKey="open"
+    />
+  );
+  expect(screen.getByRole('region', { name: 'Store monitor' })).toBeTruthy();
+  expect(screen.getByRole('marquee', { name: 'Order line ticker' })).toBeTruthy();
+  // Controls are real: never inside the aria-hidden set dressing.
+  expect(screen.getByRole('button', { name: 'Next item' }).closest('[aria-hidden="true"]')).toBeNull();
+});

@@ -3,19 +3,20 @@ import { LogOut, MonitorPlay, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useControlRoom } from '../../contexts/ControlRoomContext';
 import ControlRoomButton from '../controlRoom/ControlRoomButton';
+import { panelAllowed } from '../controlRoom/selectors';
 import { MENU_ROW, MENU_ROW_IDLE, PopoverPanel, usePopover } from '../onAir/Popover';
 import { FOCUS, MONO } from '../onAir/classes';
 
 export const GIVEAWAY_ADMIN_PATH = '/admin/giveaways';
 const ROW = `${MENU_ROW} ${MENU_ROW_IDLE}`;
 
-// The control room: the floating panel where it can show (not on /admin, and
-// only with a provider), otherwise the giveaways admin page.
+// The control room: the floating panel where it can show (with a provider, by
+// the same rule StaffLayer renders it with), otherwise the giveaways admin page.
 export function useControlRoomLauncher() {
   const cr = useControlRoom();
   const navigate = useNavigate();
   const { pathname } = useLocation();
-  const panelHere = !!cr?.enabled && !pathname.startsWith('/admin');
+  const panelHere = !!cr?.enabled && panelAllowed(pathname);
   return {
     giveaway: cr?.enabled ? cr.giveaway : null,
     toggle: () => (panelHere ? cr.panelActions.toggle() : navigate(GIVEAWAY_ADMIN_PATH)),

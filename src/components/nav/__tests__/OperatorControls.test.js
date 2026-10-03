@@ -44,6 +44,14 @@ test('on /admin, where the panel is hidden, it opens the giveaways page', () => 
   expect(screen.getByText('giveaways page')).toBeTruthy();
 });
 
+test('it follows the panel rule: where the panel cannot render, it opens the giveaways page', () => {
+  // An OBS source path (trailing slash included) never shows the panel.
+  renderAt('/giveaway-overlay/', false);
+  fireEvent.click(screen.getByRole('button', { name: /Control room/ }));
+  expect(toggle).not.toHaveBeenCalled();
+  expect(screen.getByText('giveaways page')).toBeTruthy();
+});
+
 test('without a provider it still offers the giveaways page', () => {
   useControlRoom.mockReturnValue(null);
   renderAt('/', false);

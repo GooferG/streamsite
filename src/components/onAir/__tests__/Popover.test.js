@@ -37,6 +37,25 @@ test('Escape closes and returns focus to the trigger', () => {
   expect(document.activeElement).toBe(trigger());
 });
 
+test('Escape with focus outside closes it and leaves focus where it was', () => {
+  render(<Harness />);
+  fireEvent.click(trigger());
+  const outside = screen.getByRole('button', { name: 'Outside' });
+  outside.focus();
+  fireEvent.keyDown(document, { key: 'Escape' });
+  expect(trigger().getAttribute('aria-expanded')).toBe('false');
+  expect(document.activeElement).toBe(outside);
+});
+
+test('an Escape something else already handled leaves it open', () => {
+  render(<Harness />);
+  fireEvent.click(trigger());
+  const outside = screen.getByRole('button', { name: 'Outside' });
+  outside.addEventListener('keydown', (e) => e.preventDefault());
+  fireEvent.keyDown(outside, { key: 'Escape' });
+  expect(trigger().getAttribute('aria-expanded')).toBe('true');
+});
+
 test('a press outside closes it', () => {
   render(<Harness />);
   fireEvent.click(trigger());

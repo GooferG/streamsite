@@ -4,7 +4,8 @@ import { FOCUS } from './classes';
 // Disclosure popover for On Air menus (the nav's Gamba, account and operator
 // menus): a button with aria-expanded over a panel of links. Not
 // role="menu", which is for app menus, not site navigation. Closes on a press
-// outside, on Escape (focus returns to the trigger) and when focus leaves.
+// outside, on Escape (focus returns to the trigger when it was inside) and
+// when focus leaves. An Escape another handler already took is left alone.
 export function usePopover() {
   const [open, setOpen] = useState(false);
   const wrapRef = useRef(null);
@@ -20,9 +21,10 @@ export function usePopover() {
       if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
     };
     const onKey = (e) => {
-      if (e.key !== 'Escape') return;
+      if (e.key !== 'Escape' || e.defaultPrevented) return;
+      const focusInside = !!wrapRef.current?.contains(document.activeElement);
       setOpen(false);
-      triggerRef.current?.focus();
+      if (focusInside) triggerRef.current?.focus();
     };
     document.addEventListener('mousedown', onPress);
     document.addEventListener('keydown', onKey);

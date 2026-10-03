@@ -35,6 +35,8 @@ test('signed in: avatar menu with account, store and sign out', () => {
   renderMenu();
   const trigger = screen.getByRole('button', { name: 'Account: vonbrandt' });
   expect(trigger.textContent).toBe('V');
+  // The initial is decoration: the button's label already names the viewer.
+  expect(trigger.querySelector('span').getAttribute('aria-hidden')).toBe('true');
   fireEvent.click(trigger);
   expect(screen.getByRole('link', { name: /My account/ }).getAttribute('href')).toBe('/me');
   expect(screen.getByRole('link', { name: /Store/ }).getAttribute('href')).toBe('/store');

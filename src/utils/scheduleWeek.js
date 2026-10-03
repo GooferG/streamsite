@@ -60,7 +60,8 @@ export function nextStreamLabel(stream) {
   const day = dayAbbrev(stream.day);
   const time = (stream.time || '').trim();
   if (!time) return day;
-  const start = time.split(/\s*-\s*/)[0];
+  // The range may be written with a hyphen, an en dash or an em dash.
+  const start = time.split(/\s*[-–—]\s*/)[0];
   const last = time.split(/\s+/).pop();
   const zone = /^[A-Z]{2,4}$/.test(last) && !/^(AM|PM)$/.test(last) ? last : null;
   return zone && !start.endsWith(zone) ? `${day} ${start} ${zone}` : `${day} ${start}`;

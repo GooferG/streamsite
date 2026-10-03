@@ -8,13 +8,15 @@ import TwitchGlyph from './TwitchGlyph';
 
 const ROW = `${MENU_ROW} ${MENU_ROW_IDLE}`;
 
-// The viewer's Twitch avatar, or their initial on a viewer-purple disc.
+// The viewer's Twitch avatar, or their initial on a viewer-purple disc. Both
+// are decoration: the button or the text beside it names the viewer.
 export function Avatar({ user, size = 'h-[34px] w-[34px]' }) {
   if (user.profileImageUrl) {
     return <img src={user.profileImageUrl} alt="" className={`${size} flex-none rounded-full object-cover`} />;
   }
   return (
     <span
+      aria-hidden="true"
       className={`${size} inline-flex flex-none items-center justify-center rounded-full bg-gradient-to-b from-onair-viewer to-onair-viewer-deep text-sm font-extrabold text-white-body`}
     >
       {(user.displayName || '?').charAt(0).toUpperCase()}

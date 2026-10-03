@@ -102,6 +102,11 @@ describe('nextStreamLabel', () => {
     expect(nextStreamLabel({ day: 'MONDAY', time: '5:00 PM - 11:00 PM' })).toBe('MON 5:00 PM');
   });
 
+  test('an en or em dash splits the range like a hyphen', () => {
+    expect(nextStreamLabel({ day: 'MONDAY', time: '5:00 PM – 11:00 PM EST' })).toBe('MON 5:00 PM EST');
+    expect(nextStreamLabel({ day: 'MONDAY', time: '5:00 PM—11:00 PM EST' })).toBe('MON 5:00 PM EST');
+  });
+
   test('a single time that already carries its zone', () => {
     expect(nextStreamLabel({ day: 'THURSDAY', time: '9 PM EST' })).toBe('THU 9 PM EST');
   });

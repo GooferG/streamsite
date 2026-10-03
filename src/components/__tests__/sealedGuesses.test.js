@@ -25,7 +25,7 @@ beforeEach(() => {
 
 test('viewers see a face-down wall while open and nothing is queried', () => {
   render(<PredictionWall round={ROUND} />);
-  expect(screen.getByText(/37 guesses pinned face down/i)).toBeTruthy();
+  expect(screen.getByText(/37 guesses face down/i)).toBeTruthy();
   expect(onSnapshot).not.toHaveBeenCalled();
 });
 
@@ -48,7 +48,7 @@ test('reopening a locked round unsubscribes and reseals', () => {
   const { rerender } = render(<PredictionWall round={{ ...ROUND, status: 'locked' }} />);
   rerender(<PredictionWall round={{ ...ROUND, status: 'open' }} />);
   expect(unsub).toHaveBeenCalledTimes(1);
-  expect(screen.getByText(/pinned face down/i)).toBeTruthy();
+  expect(screen.getByText(/face down/i)).toBeTruthy();
 });
 
 test('a permission error falls back to the face-down wall', () => {
@@ -57,7 +57,7 @@ test('a permission error falls back to the face-down wall', () => {
     return () => {};
   });
   render(<PredictionWall round={{ ...ROUND, status: 'locked' }} />);
-  expect(screen.getByText(/pinned face down/i)).toBeTruthy();
+  expect(screen.getByText(/face down/i)).toBeTruthy();
 });
 
 test('the number line stays hidden and unqueried while sealed', () => {

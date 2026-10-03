@@ -2,17 +2,11 @@ import { Trophy, Ticket } from 'lucide-react';
 import { formatMoney } from '../utils/money';
 import { roundCurrency } from '../utils/predictionRound';
 import { winnerPrizeLabel } from '../utils/predictionRewards';
-
-const PLACE_LABEL = { 1: '1ST', 2: '2ND', 3: '3RD' };
-const PLACE_COLOR = {
-  1: 'text-orange-admin border-orange-admin/60 bg-orange-admin/10',
-  2: 'text-white-body border-white/45 bg-white/5',
-  3: 'text-emerald-signal border-emerald-signal/50 bg-emerald-signal/5',
-};
+import { placeLabel, placeTone } from '../utils/predictionPlaces';
 
 function WinnerCard({ winner, round }) {
-  const tone = PLACE_COLOR[winner.place] || PLACE_COLOR[1];
-  const label = PLACE_LABEL[winner.place] || `${winner.place}TH`;
+  const tone = placeTone(winner.place);
+  const label = placeLabel(winner.place);
   return (
     <div className={`relative border-2 px-5 py-5 ${tone}`}>
       <span className="absolute -top-3 left-3 px-2 py-0.5 bg-zinc-broadcast border-2 border-current text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
@@ -37,7 +31,7 @@ function WinnerCard({ winner, round }) {
           >
             {winner.displayName || winner.twitchName}
           </p>
-          <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/55 font-mono mt-0.5 truncate">
+          <p className="text-[0.625rem] font-bold tracking-eyebrow-md uppercase text-white/55 font-mono mt-0.5">
             {typeof winner.payoutGuess === 'number' ? (
               <>
                 guess {formatMoney(winner.payoutGuess, roundCurrency(round))}

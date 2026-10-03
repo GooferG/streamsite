@@ -67,14 +67,14 @@ test('OBS overlay routes never run it', () => {
   expect(onSnapshot).not.toHaveBeenCalled();
 });
 
-test('staff subscribe to live giveaways and recent rounds', () => {
+test('staff subscribe to live giveaways, recent rounds and pending redemptions', () => {
   mockData.giveaways = [
     { id: 'g2', status: 'open' },
     { id: 'g1', status: 'rolling', winnerTwitchId: 'tw', rolledAt: at(1) },
   ];
   mockData.hunts = [{ id: 'r1', status: 'locked', acceptPredictions: true }];
   mount();
-  expect(onSnapshot.mock.calls.map(([path]) => path).sort()).toEqual(['giveaways', 'hunts']);
+  expect(onSnapshot.mock.calls.map(([path]) => path).sort()).toEqual(['giveaways', 'hunts', 'redemptions']);
   expect(latest.enabled).toBe(true);
   expect(latest.giveaway.id).toBe('g1');
   expect(latest.activeRound.id).toBe('r1');
@@ -132,4 +132,99 @@ test('pushWarning adds a warning, dismissWarning removes it', () => {
   expect(latest.warnings.map((w) => w.message)).toEqual(['Auto-roll failed: X']);
   act(() => latest.dismissWarning(latest.warnings[0].id));
   expect(latest.warnings).toEqual([]);
+});
+
+const STORE_KEY = 'goofer:control-room';
+const stored = () => JSON.parse(localStorage.getItem(STORE_KEY));
+
+test('a first run counts the redemption backlog as seen', () => {
+  mockData.redemptions = [
+    { id: 'r2', createdAt: at(2000) },
+    { id: 'r1', createdAt: at(1000) },
+  ];
+  mount();
+  expect(latest.redemptions.map((r) => r.id)).toEqual(['r2', 'r1']);
+  expect(latest.redeem).toEqual({ pending: 2, unseen: 0, capped: false });
+  expect(stored().redeemSeenAt).toBe(2000);
+});
+
+test('a newer redemption is unseen until the tab marks it seen', () => {
+  let push;
+  mockData.redemptions = [{ id: 'r1', createdAt: at(1000) }];
+  const base = onSnapshot.getMockImplementation();
+  onSnapshot.mockImplementation((path, next, error) => {
+    if (path === 'redemptions') push = next;
+    return base(path, next, error);
+  });
+  mount();
+  act(() =>
+    push({
+      docs: [
+        { id: 'r2', data: () => ({ createdAt: at(3000) }) },
+        { id: 'r1', data: () => ({ createdAt: at(1000) }) },
+      ],
+    })
+  );
+  expect(latest.redeem).toEqual({ pending: 2, unseen: 1, capped: false });
+  act(() => latest.markRedeemSeen(3000));
+  expect(latest.redeem.unseen).toBe(0);
+  act(() => latest.markRedeemSeen(500));
+  expect(stored().redeemSeenAt).toBe(3000);
+});
+
+test('a browser that already tracks redemptions keeps its mark', () => {
+  localStorage.setItem(STORE_KEY, JSON.stringify({ redeemSeenAt: 1500 }));
+  mockData.redemptions = [
+    { id: 'r2', createdAt: at(2000) },
+    { id: 'r1', createdAt: at(1000) },
+  ];
+  mount();
+  expect(latest.redeem.unseen).toBe(1);
+});
+
+test('an empty queue baselines to now', () => {
+  const now = jest.spyOn(Date, 'now').mockReturnValue(5000);
+  try {
+    mount();
+    expect(stored().redeemSeenAt).toBe(5000);
+  } finally {
+    now.mockRestore();
+  }
+});
+
+test('a full feed is flagged as capped', () => {
+  mockData.redemptions = Array.from({ length: 50 }, (_, i) => ({ id: `r${i}`, createdAt: at(1000 + i) }));
+  mount();
+  expect(latest.redeem.capped).toBe(true);
+});
+
+test('a redemptions feed error counts as lost data', () => {
+  const base = onSnapshot.getMockImplementation();
+  onSnapshot.mockImplementation((path, next, error) => {
+    if (path === 'redemptions') {
+      error(new Error('denied'));
+      return () => {};
+    }
+    return base(path, next, error);
+  });
+  mount();
+  expect(latest.dataLost).toBe(true);
+});
+
+test('the redeem filter persists and ignores unknown values', () => {
+  mount();
+  act(() => latest.setRedeemFilter('payouts'));
+  expect(latest.prefs.redeemFilter).toBe('payouts');
+  act(() => latest.setRedeemFilter('nope'));
+  expect(latest.prefs.redeemFilter).toBe('payouts');
+  expect(stored().redeemFilter).toBe('payouts');
+});
+
+test('resize actions store the size, and reset clears it', () => {
+  mount();
+  act(() => latest.panelActions.resizeTo({ x: 10, y: 80 }, { w: 500, h: null }));
+  act(() => latest.panelActions.setDockW(600));
+  expect(latest.panel).toMatchObject({ rect: { x: 10, y: 80 }, size: { w: 500, h: null }, dockW: 600 });
+  act(() => latest.panelActions.resetPosition());
+  expect(latest.panel).toMatchObject({ mode: 'float', rect: null, size: null, dockW: null });
 });

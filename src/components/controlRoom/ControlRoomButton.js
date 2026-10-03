@@ -1,9 +1,11 @@
 import { MonitorPlay } from 'lucide-react';
+import { FOCUS, MONO } from '../onAir/classes';
 
 const STATUS_LABEL = { open: 'Live', rolling: 'Rolling', playing: 'Playing', closed: 'Closed' };
 
 // Nav shortcut into the control room. Shows the running giveaway's entry
-// count so the operator can see it's live without opening anything.
+// count so the operator can see it's live without opening anything. On Air:
+// neutral when idle, signal (open) while a giveaway runs, never orange.
 export default function ControlRoomButton({ giveaway, onClick }) {
   const label = giveaway ? STATUS_LABEL[giveaway.status] || 'Live' : null;
   return (
@@ -13,22 +15,17 @@ export default function ControlRoomButton({ giveaway, onClick }) {
       data-control-room-button=""
       aria-keyshortcuts="`"
       title={giveaway ? `Giveaway ${label.toLowerCase()}: ${giveaway.prize}` : 'Open the control room'}
-      className={`inline-flex items-center gap-1.5 px-2.5 py-1 border transition-colors duration-150 whitespace-nowrap ${
+      className={`${MONO} inline-flex h-[34px] items-center gap-2 whitespace-nowrap rounded-onair-control px-3 text-[0.625rem] font-bold tracking-[0.2em] transition-colors duration-150 motion-reduce:transition-none ${FOCUS} ${
         giveaway
-          ? 'border-emerald-signal/50 bg-emerald-signal/10 text-emerald-signal hover:bg-emerald-signal/20'
-          : 'border-orange-admin/30 text-orange-admin/90 hover:bg-orange-admin/10 hover:text-orange-admin'
+          ? 'bg-onair-signal/[0.14] text-onair-signal-light hover:bg-onair-signal/20'
+          : 'bg-white/[0.07] text-onair-ink-2 hover:bg-white/[0.12]'
       }`}
     >
-      <MonitorPlay size={12} aria-hidden="true" />
-      <span className="sr-only lg:not-sr-only text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-        Control room
-      </span>
+      <MonitorPlay size={14} aria-hidden="true" />
+      <span className="sr-only xl:not-sr-only">Control room</span>
       {giveaway && (
-        <span className="inline-flex items-center gap-1 pl-1.5 ml-0.5 border-l border-emerald-signal/30 text-[0.625rem] font-bold font-mono tabular-nums">
-          <span className="relative flex w-1.5 h-1.5" aria-hidden="true">
-            <span className="absolute inset-0 rounded-full bg-emerald-signal motion-safe:animate-ping opacity-60" />
-            <span className="relative w-1.5 h-1.5 rounded-full bg-emerald-signal" />
-          </span>
+        <span className="inline-flex items-center gap-1.5 tabular-nums">
+          <span className="h-1.5 w-1.5 rounded-full bg-onair-signal" aria-hidden="true" />
           {giveaway.entryCount ?? 0}
           <span className="sr-only"> entries, {label}</span>
         </span>

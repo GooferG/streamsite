@@ -145,9 +145,9 @@ This system explicitly rejects: generic Twitch-purple panel templates (the gradi
 **Key Characteristics:**
 
 - Always-on dark surface with tinted depth, never `#000`.
-- Emerald and purple two-role accent system. Red and orange are reserved.
-- Glow-and-glass depth instead of shadows. Backdrop-blur is purposeful, never default.
-- Tracking-wider uppercase labels and 900-weight display headers. Long-form copy stays warm and lowercase.
+- Colour roles come from On Air (§7) on the nav and every migrated surface: teal signal for live and open state, orange for the winner, purple for you and Twitch actions, red for the LIVE light and losses. Legacy surfaces keep the emerald and purple two-role system (§2), with red and orange reserved there.
+- Depth comes from §7 on On Air surfaces: an inset top highlight over a drop shadow, with glow kept for the LIVE light, the winner and you. Legacy surfaces keep glow-and-glass depth with no shadows (§4), and backdrop blur stays purposeful there.
+- Type comes from §7 on On Air surfaces: Bricolage Grotesque for display and UI, JetBrains Mono for tracked uppercase labels, sized on the §7 scale. Legacy surfaces keep tracking-wider uppercase labels and 900-weight display headers (§3). Long-form copy stays warm and lowercase everywhere.
 - Marketing and tools sit on the same brand. The register shift between them is visible but never absolute.
 
 ## 2. Colors

@@ -1,6 +1,9 @@
+import { NAV_H } from '../nav/navMetrics';
+
+export { NAV_H }; // the nav bar's height; ControlRoom imports it from here
+
 export const PANEL_W = 380;
 export const DOCK_W = 400;
-export const NAV_H = 57; // matches the nav bar (the mobile drawer uses top-[57px])
 export const EDGE = 16;
 export const SNAP = 24;
 export const DOCK_ZONE = 48;

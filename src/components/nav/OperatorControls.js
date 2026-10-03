@@ -48,6 +48,7 @@ export default function OperatorControls({ isAdmin }) {
             as="button"
             type="button"
             {...popover.triggerProps}
+            data-nav-popover=""
             aria-label="OP: operator menu"
             className={`cursor-pointer ${FOCUS}`}
           />

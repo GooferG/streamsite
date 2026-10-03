@@ -78,10 +78,13 @@ export default function Navigation({ isLive = false, viewerCount = null, statusR
 
   return (
     <>
+      {/* z-50 sits under the control room panel (z-[65]) so its modals cover
+          the bar; while a nav menu is open the bar lifts to z-[70] so the
+          menu opens over the panel. */}
       <nav
         aria-label="Site"
         style={{ height: NAV_H }}
-        className="fixed inset-x-0 top-0 z-50 flex items-center gap-3 bg-gradient-to-b from-onair-bezel-top to-onair-bezel-bottom px-4 font-onair shadow-onair-bar sm:px-6 lg:gap-4 lg:px-[22px]"
+        className="fixed inset-x-0 top-0 z-50 [&:has([data-nav-popover][aria-expanded=true])]:z-[70] flex items-center gap-3 bg-gradient-to-b from-onair-bezel-top to-onair-bezel-bottom px-4 font-onair shadow-onair-bar sm:px-6 lg:gap-4 lg:px-[22px]"
       >
         <Wordmark live={statusReady && isLive} />
 

@@ -76,6 +76,23 @@ test('identity: signed out, viewer, staff, admin', () => {
   expect(within(bar()).queryByRole('button', { name: /Account:/ })).toBeNull();
 });
 
+test('the bar rises above the control room panel only while a menu is open', () => {
+  arm({ twitchUser: VIEWER });
+  const first = renderAt('/');
+  expect(bar().className).toContain('z-50');
+  expect(bar().className).toContain('[&:has([data-nav-popover][aria-expanded=true])]:z-[70]');
+  expect(within(bar()).getByRole('button', { name: 'Gamba channels' }).hasAttribute('data-nav-popover')).toBe(true);
+  expect(within(bar()).getByRole('button', { name: 'Account: vonbrandt' }).hasAttribute('data-nav-popover')).toBe(true);
+  first.unmount();
+
+  arm({ currentUser: { email: 'luimeneghim@gmail.com' }, isStaff: true });
+  renderAt('/');
+  expect(within(bar()).getByRole('button', { name: 'OP: operator menu' }).hasAttribute('data-nav-popover')).toBe(true);
+  // Only the three disclosures: the sheet's menu button doesn't lift the bar.
+  expect(bar().querySelectorAll('[data-nav-popover]')).toHaveLength(2);
+  expect(menuButton().hasAttribute('data-nav-popover')).toBe(false);
+});
+
 test('no live or off-air status until the first poll succeeds', () => {
   renderAt('/schedule', { statusReady: false, isLive: true, viewerCount: 50 });
   expect(screen.queryByText(/Live/)).toBeNull();

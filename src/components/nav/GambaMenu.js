@@ -63,6 +63,7 @@ export default function GambaMenu({ current }) {
         type="button"
         {...popover.triggerProps}
         onClick={onCaret}
+        data-nav-popover=""
         aria-label="Gamba channels"
         className={`inline-flex h-8 w-8 items-center justify-center rounded-onair-tile text-onair-ink-5 transition-colors duration-150 hover:text-onair-ink-1 motion-reduce:transition-none ${FOCUS}`}
       >

@@ -42,6 +42,7 @@ export default function AccountMenu() {
       <button
         type="button"
         {...popover.triggerProps}
+        data-nav-popover=""
         aria-label={`Account: ${twitchUser.displayName}`}
         className={`flex rounded-full ${FOCUS}`}
       >

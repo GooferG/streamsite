@@ -51,14 +51,64 @@ test('hover opens it; leaving closes it after the grace delay', () => {
   fireEvent.mouseEnter(wrap);
   expect(caret().getAttribute('aria-expanded')).toBe('true');
   fireEvent.mouseLeave(wrap);
-  act(() => jest.advanceTimersByTime(100));
+  act(() => jest.advanceTimersByTime(230));
   expect(caret().getAttribute('aria-expanded')).toBe('true');
   act(() => jest.advanceTimersByTime(30));
   expect(caret().getAttribute('aria-expanded')).toBe('false');
 });
 
+test('a caret click on a menu hover opened keeps it open', () => {
+  renderAt('/', undefined);
+  fireEvent.mouseEnter(caret().parentElement);
+  fireEvent.click(caret());
+  expect(caret().getAttribute('aria-expanded')).toBe('true');
+});
+
+test('a tap (mouseenter, then click) leaves the menu open', () => {
+  renderAt('/', undefined);
+  fireEvent.mouseEnter(caret().parentElement);
+  fireEvent.mouseDown(caret());
+  fireEvent.mouseUp(caret());
+  fireEvent.click(caret());
+  expect(caret().getAttribute('aria-expanded')).toBe('true');
+});
+
+test('a pinned menu stays open when the mouse leaves', () => {
+  jest.useFakeTimers();
+  renderAt('/', undefined);
+  const wrap = caret().parentElement;
+  fireEvent.mouseEnter(wrap);
+  fireEvent.click(caret());
+  fireEvent.mouseLeave(wrap);
+  act(() => jest.advanceTimersByTime(300));
+  expect(caret().getAttribute('aria-expanded')).toBe('true');
+});
+
+test('a second caret click closes a pinned menu', () => {
+  renderAt('/', undefined);
+  fireEvent.mouseEnter(caret().parentElement);
+  fireEvent.click(caret());
+  fireEvent.click(caret());
+  expect(caret().getAttribute('aria-expanded')).toBe('false');
+  fireEvent.click(caret());
+  expect(caret().getAttribute('aria-expanded')).toBe('true');
+});
+
+test('the caret is at least a 24px target', () => {
+  renderAt('/', undefined);
+  expect(caret().className).toContain('h-8 w-8');
+  expect(caret().className).not.toContain('p-1');
+});
+
 test('picking a channel closes the menu', () => {
   renderAt('/', undefined);
+  fireEvent.click(caret());
+  fireEvent.click(screen.getByRole('link', { name: /4-2 Hunts/ }));
+  expect(caret().getAttribute('aria-expanded')).toBe('false');
+});
+
+test('the Now row closes the menu even though the path does not change', () => {
+  renderAt('/gamba/hunts', 'true');
   fireEvent.click(caret());
   fireEvent.click(screen.getByRole('link', { name: /4-2 Hunts/ }));
   expect(caret().getAttribute('aria-expanded')).toBe('false');

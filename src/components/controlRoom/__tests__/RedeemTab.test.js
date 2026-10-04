@@ -97,6 +97,20 @@ test('Refund needs a second press within 4s', async () => {
   expect(sentBody(0)).toEqual({ id: 'r1', action: 'cancel', note: null });
 });
 
+test('a prize that cost nothing offers Cancel, not Refund', async () => {
+  show();
+  const row = rowOf('Sunday · 1st place');
+  expect(within(row).queryByRole('button', { name: 'Refund' })).toBeNull();
+  fireEvent.click(within(row).getByRole('button', { name: 'Cancel' }));
+  act(() => {
+    jest.advanceTimersByTime(500);
+  });
+  await act(async () => {
+    fireEvent.click(within(row).getByRole('button', { name: 'Confirm cancel · 4s' }));
+  });
+  expect(sentBody(0)).toEqual({ id: 'r2', action: 'cancel', note: null });
+});
+
 test('a double click on Refund does not confirm it', () => {
   show();
   const row = rowOf('Pick a Slot');

@@ -24,8 +24,9 @@ const ARM_MS = 4000;
 const CONFIRM_GUARD_MS = 400;
 
 // Refund only goes through on a second press inside 4s. The label counts down
-// so the operator can see the window closing.
-function RefundButton({ disabled, onConfirm }) {
+// so the operator can see the window closing. A prize that cost nothing has
+// nothing to refund, so it says Cancel instead.
+function RefundButton({ verb = 'Refund', disabled, onConfirm }) {
   const [armedAt, setArmedAt] = useState(null);
   const armed = armedAt != null;
   const now = useClock({ intervalMs: 250, active: armed });
@@ -57,7 +58,7 @@ function RefundButton({ disabled, onConfirm }) {
       }}
     >
       <Undo2 size={12} aria-hidden="true" />
-      {armed ? `Confirm refund · ${left}s` : 'Refund'}
+      {armed ? `Confirm ${verb.toLowerCase()} · ${left}s` : verb}
     </button>
   );
 }
@@ -107,7 +108,11 @@ function Row({ r, now, open, onToggle, note, onNote, busy, error, onAct }) {
           <Check size={12} aria-hidden="true" />
           {busy === 'fulfill' ? 'Fulfilling…' : 'Fulfill'}
         </button>
-        <RefundButton disabled={!!busy} onConfirm={() => onAct('cancel')} />
+        <RefundButton
+          verb={showsCost(r) ? 'Refund' : 'Cancel'}
+          disabled={!!busy}
+          onConfirm={() => onAct('cancel')}
+        />
       </div>
       {error && (
         <p role="alert" className="mt-1.5 text-xs text-red-destructive">

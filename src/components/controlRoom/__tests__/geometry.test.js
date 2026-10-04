@@ -5,6 +5,7 @@ import {
   clampRect,
   clampSize,
   defaultRect,
+  fitRect,
   gripSide,
   inDockZone,
   nearestCorner,
@@ -102,4 +103,17 @@ test('a width-only resize keeps a height that was already set', () => {
 test('the grip sits in the bottom corner facing the screen centre', () => {
   expect(gripSide({ x: 884, y: 73 }, 380, 1280)).toBe('bl');
   expect(gripSide({ x: 16, y: 73 }, 380, 1280)).toBe('br');
+});
+
+// Where the panel rests: fully inside the window whenever it fits.
+test('fitRect brings a resting panel fully on screen', () => {
+  const auto = { w: 380, h: null };
+  expect(fitRect({ x: 5000, y: 5000 }, auto, view)).toEqual({ x: 900, y: 684 });
+  expect(fitRect({ x: -50, y: 10 }, size, view)).toEqual({ x: 0, y: 57 });
+  expect(fitRect({ x: 100, y: 500 }, size, view)).toEqual({ x: 100, y: 320 });
+  expect(fitRect({ x: 300, y: 200 }, size, view)).toEqual({ x: 300, y: 200 });
+});
+
+test('fitRect keeps the header under the nav when the panel is taller than the window', () => {
+  expect(fitRect({ x: 100, y: 300 }, { w: 380, h: 700 }, view)).toEqual({ x: 100, y: 57 });
 });

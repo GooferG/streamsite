@@ -20,11 +20,19 @@ export default async function handler(req, res) {
 
   try {
     if (action === 'fulfill') {
-      await ref.update({
-        status: 'fulfilled',
-        note: note || null,
-        fulfilledAt: FieldValue.serverTimestamp(),
-        fulfilledBy: admin.email,
+      // Transactional, like cancel: two staff can work the queue at once, and
+      // a blind update would turn a refund that just landed into "fulfilled".
+      await adminDb.runTransaction(async (tx) => {
+        const snap = await tx.get(ref);
+        if (!snap.exists) throw new Error('NOT_FOUND');
+        if (snap.data().status !== 'pending') throw new Error('NOT_PENDING');
+        tx.update(ref, {
+          status: 'fulfilled',
+          // The stored note is the prize label; only a typed note replaces it.
+          ...(note ? { note } : {}),
+          fulfilledAt: FieldValue.serverTimestamp(),
+          fulfilledBy: admin.email,
+        });
       });
       return res.status(200).json({ ok: true });
     }
@@ -37,34 +45,40 @@ export default async function handler(req, res) {
       if (r.status !== 'pending') throw new Error('NOT_PENDING');
 
       const now = FieldValue.serverTimestamp();
+      const cost = Number(r.cost) || 0;
       const userRef = adminDb.collection('users').doc(r.userId);
       const itemRef = adminDb.collection('store_items').doc(r.itemId);
       const ledgerRef = adminDb.collection('ticket_ledger').doc();
 
       const itemSnap = await tx.get(itemRef);
 
-      tx.update(userRef, {
-        tickets: FieldValue.increment(r.cost),
-        totalSpent: FieldValue.increment(-r.cost),
-        updatedAt: now,
-      });
+      // Giveaway and prediction prizes cost nothing, and their winner may
+      // have no user doc yet, so there is nothing to refund.
+      if (cost > 0) {
+        tx.update(userRef, {
+          tickets: FieldValue.increment(cost),
+          totalSpent: FieldValue.increment(-cost),
+          updatedAt: now,
+        });
+        tx.set(ledgerRef, {
+          userId: r.userId,
+          delta: cost,
+          reason: 'refund',
+          refId: id,
+          itemName: r.itemName,
+          createdAt: now,
+        });
+      }
       if (itemSnap.exists) {
         const item = itemSnap.data();
         if (item.stock !== null && item.stock !== undefined) {
           tx.update(itemRef, { stock: FieldValue.increment(1), updatedAt: now });
         }
       }
-      tx.set(ledgerRef, {
-        userId: r.userId,
-        delta: r.cost,
-        reason: 'refund',
-        refId: id,
-        itemName: r.itemName,
-        createdAt: now,
-      });
       tx.update(ref, {
         status: 'cancelled',
-        note: note || null,
+        // The stored note is the prize label; only a typed note replaces it.
+        ...(note ? { note } : {}),
         cancelledAt: now,
         cancelledBy: admin.email,
       });

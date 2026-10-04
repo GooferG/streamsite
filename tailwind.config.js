@@ -267,6 +267,10 @@ module.exports = {
           '0%': { transform: 'translateY(0) rotate(0deg)', opacity: '1' },
           '100%': { transform: 'translateY(72px) rotate(-7deg)', opacity: '0' },
         },
+        // The couch laptop's screensaver: the GG bug drifting corner to corner.
+        // The end offsets match the bug's box in LaptopScreen (24cqw x 10cqw).
+        'onair-bounce-x': { from: { left: '0%' }, to: { left: 'calc(100% - 24cqw)' } },
+        'onair-bounce-y': { from: { top: '0%' }, to: { top: 'calc(100% - 10cqw)' } },
       },
       animation: {
         'slow-zoom': 'slow-zoom 18s ease-in-out infinite',
@@ -288,6 +292,8 @@ module.exports = {
         'onair-ticker': 'onair-ticker 38s linear infinite',
         'onair-pulse': 'onair-pulse 1.4s ease-in-out infinite',
         'onair-tear': 'onair-tear 0.6s cubic-bezier(0.5, 0, 0.75, 0) forwards',
+        'onair-bounce-x': 'onair-bounce-x 7s linear infinite alternate',
+        'onair-bounce-y': 'onair-bounce-y 4.3s linear infinite alternate',
       },
     },
   },

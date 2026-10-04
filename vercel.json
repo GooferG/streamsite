@@ -1,5 +1,18 @@
 {
   "rewrites": [
+    { "source": "/schedule", "destination": "/schedule/index.html" },
+    { "source": "/vods", "destination": "/vods/index.html" },
+    { "source": "/about", "destination": "/about/index.html" },
+    { "source": "/gaming", "destination": "/gaming/index.html" },
+    { "source": "/gear", "destination": "/gear/index.html" },
+    { "source": "/gamba", "destination": "/gamba/index.html" },
+    { "source": "/gamba/leaderboard", "destination": "/gamba/leaderboard/index.html" },
+    { "source": "/gamba/hunts", "destination": "/gamba/hunts/index.html" },
+    { "source": "/gamba/bonus-battle", "destination": "/gamba/bonus-battle/index.html" },
+    { "source": "/gamba/wheel", "destination": "/gamba/wheel/index.html" },
+    { "source": "/store", "destination": "/store/index.html" },
+    { "source": "/giveaway", "destination": "/giveaway/index.html" },
+    { "source": "/suggest", "destination": "/suggest/index.html" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ],
   "crons": [

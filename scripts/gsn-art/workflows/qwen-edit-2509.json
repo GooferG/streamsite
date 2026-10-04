@@ -5,7 +5,7 @@
   "4": { "class_type": "CLIPLoader", "inputs": { "clip_name": "qwen_2.5_vl_7b_fp8_scaled.safetensors", "type": "qwen_image", "device": "default" } },
   "5": { "class_type": "VAELoader", "inputs": { "vae_name": "qwen_image_vae.safetensors" } },
   "6": { "class_type": "LoadImage", "inputs": { "image": "" } },
-  "7": { "class_type": "ImageScaleToTotalPixels", "inputs": { "image": ["6", 0], "upscale_method": "lanczos", "megapixels": 1 } },
+  "7": { "class_type": "ImageScaleToTotalPixels", "inputs": { "image": ["6", 0], "upscale_method": "lanczos", "megapixels": 1, "resolution_steps": 1 } },
   "8": { "class_type": "TextEncodeQwenImageEditPlus", "inputs": { "clip": ["4", 0], "vae": ["5", 0], "image1": ["7", 0], "prompt": "" } },
   "9": { "class_type": "TextEncodeQwenImageEditPlus", "inputs": { "clip": ["4", 0], "vae": ["5", 0], "image1": ["7", 0], "prompt": "" } },
   "10": { "class_type": "VAEEncode", "inputs": { "pixels": ["7", 0], "vae": ["5", 0] } },

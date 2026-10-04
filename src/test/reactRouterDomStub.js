@@ -5,7 +5,7 @@
 // ESM fine — only the Jest environment needs this shim. Mapped in via the
 // `jest.moduleNameMapper` key in package.json.
 //
-// It also provides a minimal in-memory router (MemoryRouter, Link, useNavigate,
+// It also provides a minimal in-memory router (MemoryRouter, Link, useNavigate, Navigate,
 // Routes/Route with exact-path matching) so tests can navigate.
 //
 // Tests that need to control router behavior should `jest.mock('react-router-dom')`
@@ -69,6 +69,15 @@ function useNavigate() {
   return React.useContext(NavigateContext) || (() => {});
 }
 
+// <Navigate to /> moves the in-memory location once, after mount.
+function Navigate({ to }) {
+  const navigate = useNavigate();
+  React.useEffect(() => {
+    navigate(to);
+  }, [navigate, to]);
+  return null;
+}
+
 function Route() {
   return null;
 }
@@ -89,5 +98,6 @@ module.exports = {
   Routes,
   Route,
   useNavigate,
+  Navigate,
   useLocation: () => React.useContext(LocationContext),
 };

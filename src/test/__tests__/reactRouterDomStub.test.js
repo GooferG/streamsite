@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { Link, MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { Link, MemoryRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 
 function Where() {
   return <p data-testid="where">{useLocation().pathname}</p>;
@@ -89,4 +89,19 @@ test('ctrl and meta clicks do not navigate', () => {
 test('useLocation outside a router is /', () => {
   render(<Where />);
   expect(where()).toBe('/');
+});
+
+test('Navigate moves to its target once', () => {
+  function Here() {
+    return <p>at {useLocation().pathname}</p>;
+  }
+  render(
+    <MemoryRouter initialEntries={['/gamba/nope']}>
+      <Routes>
+        <Route path="/gamba/nope" element={<Navigate to="/gamba" replace />} />
+        <Route path="*" element={<Here />} />
+      </Routes>
+    </MemoryRouter>
+  );
+  expect(screen.getByText('at /gamba')).toBeTruthy();
 });

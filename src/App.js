@@ -277,9 +277,10 @@ function StreamingSiteContent() {
           <Route path="/gamba" element={<GambaPage />}>
             <Route path="leaderboard" element={null} />
             <Route path="wheel" element={null} />
-            <Route path="equity" element={null} />
             <Route path="hunts" element={null} />
             <Route path="bonus-battle" element={null} />
+            {/* Unknown tool ids still render GambaPage, which redirects them to the hub. */}
+            <Route path="*" element={null} />
           </Route>
           <Route path="/gaming" element={<GamingPage />} />
           <Route path="/admin" element={<AdminLayout />}>

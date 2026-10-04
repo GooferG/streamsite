@@ -1,9 +1,9 @@
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import HuntsPage from './HuntsPage';
 import Leaderboard from '../components/Leaderboard';
 import GambaGuide from '../components/gamba/GambaGuide';
-import GambaTuner from '../components/gamba/GambaTuner';
+import GambaTuner, { tunedRecently } from '../components/gamba/GambaTuner';
 import { MONO } from '../components/onAir/classes';
 import { channelForPath } from '../data/gambaTools';
 import useTuningPhrase, { TUNING_PHRASES } from '../hooks/useTuningPhrase';
@@ -23,10 +23,24 @@ function ToolLoading({ label }) {
   );
 }
 
+// After a channel change (tuner or listing row) focus lands on the new
+// channel's heading instead of <body>; a fresh visit leaves focus alone. Once
+// per mount, so StrictMode's second effect run can't count its own tuner.
+function useLandOnChannel(heading) {
+  const landed = useRef(false);
+  useEffect(() => {
+    if (landed.current) return;
+    landed.current = true;
+    if (tunedRecently() && heading.current) heading.current.focus({ preventScroll: true });
+  }, [heading]);
+}
+
 // /gamba/*: the tuner, then the hub (no tool id) or the tool. An unknown tool
 // id goes back to the hub.
 export default function GambaPage() {
   const { pathname } = useLocation();
+  const heading = useRef(null);
+  useLandOnChannel(heading);
   const toolId = pathname.split('/')[2] || null;
   const channel = channelForPath(pathname);
   if (toolId && !channel) return <Navigate to="/gamba" replace />;
@@ -34,6 +48,9 @@ export default function GambaPage() {
   return (
     <div className="px-4 pb-16 pt-20 sm:px-6">
       <div className="mx-auto max-w-7xl 2xl:max-w-[1600px]">
+        <h1 ref={heading} tabIndex={-1} className="sr-only">
+          Gamba · {channel.label}
+        </h1>
         <GambaTuner current={channel} />
         <div className="mt-4">
           {!toolId && <GambaGuide />}

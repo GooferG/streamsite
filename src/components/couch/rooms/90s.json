@@ -1,0 +1,33 @@
+{
+  "final": false,
+  "room": {
+    "id": "90s",
+    "screen": "crt",
+    "names": { "tv": "TV", "note": "Note", "laptop": "Laptop", "tapes": "Tapes", "guide": "TV guide", "games": "Games", "remote": "Remote", "photo": "Photo" }
+  },
+  "art": {
+    "width": 1280,
+    "height": 711,
+    "focal": [50.8, 43.4],
+    "plate": { "1280": "/couch/90s/test-room-1280.webp" },
+    "empty": null
+  },
+  "screens": {
+    "tv": [41.37, 31.32, 18.93, 24.21],
+    "laptop": [62.6, 88.9, 7.9, 4.6]
+  },
+  "doors": {
+    "tv": { "rect": [39, 27.5, 23.75, 34.4], "anchor": [50.9, 27.5] },
+    "note": { "rect": [38.2, 24.2, 5.6, 9.6], "anchor": [41, 24.2] },
+    "laptop": { "rect": [62.1, 88.3, 8.9, 5.8], "anchor": [66.5, 88.3] },
+    "tapes": { "rect": [35.4, 68.7, 24, 11.7], "anchor": [41, 68.7] },
+    "guide": { "rect": [43.1, 84.5, 15.65, 10.1], "anchor": [50.9, 84.5] },
+    "games": { "rect": [60.9, 65.8, 7.6, 14.8], "anchor": [64.7, 65.8] },
+    "remote": { "rect": [31.25, 83.8, 11, 9.9], "anchor": [36.7, 83.8] },
+    "photo": { "rect": [17.9, 0, 14.9, 26.4], "anchor": [25.3, 4] }
+  },
+  "window": { "glass": [74.4, 0, 25.6, 56] },
+  "toys": [],
+  "themes": {},
+  "phoneCrop": [30.5, 20, 40, 54]
+}

@@ -186,7 +186,7 @@ function toTape(video, now, timeZone) {
             start: clamp01(m.offset / seconds),
             width: clamp01(m.duration / seconds),
             from: formatCounter(m.offset),
-            to: formatCounter(m.offset + m.duration),
+            to: formatCounter(Math.min(m.offset + m.duration, seconds)),
           }))
         : [],
     marks: [],

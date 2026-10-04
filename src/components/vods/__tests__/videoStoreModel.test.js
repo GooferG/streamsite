@@ -364,3 +364,9 @@ test('promoSpots: the staff pick is the most-watched classic with a name', () =>
   const store = buildStore({ ...F.rich, topClips: [unnamed, ...F.rich.topClips] });
   expect(promoSpots(store).find((s) => s.kicker.startsWith('Staff pick')).title).toBe('What just happened');
 });
+
+test('a muted stretch that runs past the end of the tape reads to the end', () => {
+  const video = { ...F.rich.videos[0], duration: '1h0m0s', muted_segments: [{ offset: 3000, duration: 1200 }] };
+  const tape = buildStore({ ...F.rich, videos: [video] }).byId[video.id];
+  expect(tape.muted).toEqual([{ start: 3000 / 3600, width: 1200 / 3600, from: '0:50:00', to: '1:00:00' }]);
+});

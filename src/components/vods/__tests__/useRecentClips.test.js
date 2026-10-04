@@ -1,12 +1,13 @@
 import { act, render, waitFor } from '@testing-library/react';
 import useRecentClips from '../useRecentClips';
-import { getGameNames, getTwitchAccessToken, getTwitchClipsBetween, getTwitchUserId } from '../../../utils/twitchApi';
+import { dropTwitchToken, getGameNames, getTwitchAccessToken, getTwitchClipsBetween, getTwitchUserId } from '../../../utils/twitchApi';
 
 jest.mock('../../../utils/twitchApi', () => ({
   getTwitchAccessToken: jest.fn(),
   getTwitchUserId: jest.fn(),
   getTwitchClipsBetween: jest.fn(),
   getGameNames: jest.fn(),
+  dropTwitchToken: jest.fn(),
 }));
 
 function Probe({ onValue }) {
@@ -41,6 +42,7 @@ test('a failed fetch leaves an empty list', async () => {
   await waitFor(() => expect(getTwitchClipsBetween).toHaveBeenCalled());
   await act(async () => {});
   expect(value).toEqual([]);
+  expect(dropTwitchToken).toHaveBeenCalled();
 });
 
 test('leaving the page before the clips land sets nothing', async () => {

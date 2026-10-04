@@ -1,4 +1,4 @@
-import { getTwitchAccessToken, getTwitchClipsBetween, getTwitchUserId, getTwitchVideos, resetTwitchApiCache } from '../twitchApi';
+import { dropTwitchToken, getTwitchAccessToken, getTwitchClipsBetween, getTwitchUserId, getTwitchVideos, resetTwitchApiCache } from '../twitchApi';
 
 const realFetch = global.fetch;
 
@@ -74,4 +74,65 @@ test('the user id is looked up once', async () => {
   expect(await getTwitchUserId('tok')).toBe('42');
   expect(await getTwitchUserId('tok')).toBe('42');
   expect(global.fetch).toHaveBeenCalledTimes(1);
+});
+
+test('dropping the token makes the next call fetch a fresh one', async () => {
+  global.fetch.mockResolvedValue(tokenResponse('abc'));
+  await getTwitchAccessToken();
+  dropTwitchToken();
+  await getTwitchAccessToken();
+  expect(global.fetch).toHaveBeenCalledTimes(2);
+});
+
+test('a hung token request times out after 10s and is not cached', async () => {
+  jest.useFakeTimers();
+  global.fetch.mockImplementationOnce(
+    (url, { signal }) => new Promise((resolve, reject) => signal.addEventListener('abort', () => reject(new Error('aborted'))))
+  );
+  const first = getTwitchAccessToken();
+  const settled = expect(first).rejects.toThrow('aborted');
+  jest.advanceTimersByTime(10000);
+  await settled;
+  global.fetch.mockResolvedValueOnce(tokenResponse('again'));
+  expect(await getTwitchAccessToken()).toBe('again');
+  expect(global.fetch).toHaveBeenCalledTimes(2);
+});
+
+test('a hung user lookup times out after 10s and is retried', async () => {
+  jest.useFakeTimers();
+  global.fetch.mockImplementationOnce(
+    (url, { signal }) => new Promise((resolve, reject) => signal.addEventListener('abort', () => reject(new Error('aborted'))))
+  );
+  const first = getTwitchUserId('tok');
+  const settled = expect(first).rejects.toThrow('aborted');
+  jest.advanceTimersByTime(10000);
+  await settled;
+  global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [{ id: '7' }] }) });
+  expect(await getTwitchUserId('tok')).toBe('7');
+});
+
+test('a missing user id throws and is not cached', async () => {
+  global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [] }) });
+  await expect(getTwitchUserId('tok')).rejects.toThrow('twitch-user');
+  global.fetch.mockResolvedValueOnce({ ok: true, json: async () => ({ data: [{ id: '9' }] }) });
+  expect(await getTwitchUserId('tok')).toBe('9');
+  expect(global.fetch).toHaveBeenCalledTimes(2);
+});
+
+test.each([
+  ['a real 5011271s expires_in', 5011271],
+  ['a missing expires_in', undefined],
+])('%s caps the lifetime at an hour', async (name, expires) => {
+  jest.useFakeTimers();
+  jest.setSystemTime(new Date('2026-10-04T12:00:00Z'));
+  global.fetch.mockResolvedValue(
+    expires === undefined ? { ok: true, status: 200, json: async () => ({ access_token: 'abc' }) } : tokenResponse('abc', expires)
+  );
+  await getTwitchAccessToken();
+  jest.setSystemTime(new Date('2026-10-04T12:59:00Z'));
+  await getTwitchAccessToken();
+  expect(global.fetch).toHaveBeenCalledTimes(1);
+  jest.setSystemTime(new Date('2026-10-04T13:01:00Z'));
+  await getTwitchAccessToken();
+  expect(global.fetch).toHaveBeenCalledTimes(2);
 });

@@ -275,3 +275,29 @@ test('no spots and not loading: no TV', () => {
   const { container } = render(<InStoreTv spots={[]} onOpen={() => {}} />);
   expect(container.innerHTML).toBe('');
 });
+
+test('a preload carries the next spot srcset and sizes', () => {
+  const spots = [SPOTS[1], SPOTS[0]];
+  const spy = jest.spyOn(window, 'Image');
+  try {
+    render(<InStoreTv spots={spots} onOpen={() => {}} />);
+    const img = spy.mock.results.map((r) => r.value).find((v) => v.src === SPOTS[0].cover);
+    expect(img.srcset).toBe(SPOTS[0].coverSet);
+    expect(img.sizes).toBe('(min-width: 640px) 55vw, 100vw');
+  } finally {
+    spy.mockRestore();
+  }
+});
+
+test('a paused reel preloads nothing', () => {
+  const spy = jest.spyOn(window, 'Image');
+  try {
+    render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
+    spy.mockClear();
+    fireEvent.click(tv().getByRole('button', { name: 'Pause the reel' }));
+    tick();
+    expect(spy).not.toHaveBeenCalled();
+  } finally {
+    spy.mockRestore();
+  }
+});

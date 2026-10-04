@@ -18,6 +18,7 @@ import { TwitchAuthProvider } from './contexts/TwitchAuthContext';
 import { ControlRoomProvider } from './contexts/ControlRoomContext';
 import StaffLayer from './components/controlRoom/StaffLayer';
 import {
+  dropTwitchToken,
   getTwitchAccessToken,
   getTwitchUserId,
   getTwitchClips,
@@ -148,6 +149,7 @@ function StreamingSiteContent() {
         console.log('App.js Debug - isLive set to:', !!streamInfo);
       } catch (error) {
         console.error('Error initializing Twitch API:', error);
+        dropTwitchToken();
         setLoading(false);
       }
     };

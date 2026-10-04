@@ -7,6 +7,8 @@ import { FOCUS, MONO } from '../onAir/classes';
 import { prefersReducedMotion } from '../onAir/useChannelSwitch';
 import { pickedBy } from './videoStoreModel';
 
+const COVER_SIZES = '(min-width: 640px) 55vw, 100vw';
+
 // How long each spot stays on the in-store TV.
 export const SPOT_MS = 6000;
 
@@ -43,7 +45,7 @@ function Spot({ spot, viewerName, onOpen, still }) {
             key={spot.key}
             src={spot.cover}
             srcSet={spot.coverSet || undefined}
-            sizes="(min-width: 640px) 55vw, 100vw"
+            sizes={COVER_SIZES}
             alt=""
             decoding="async"
             className={`h-full w-full object-cover motion-safe:animate-slow-zoom ${still ? '[animation-play-state:paused]' : ''}`}
@@ -149,6 +151,8 @@ export default function InStoreTv({ spots = [], loading = false, viewerName = nu
     if (!next || !next.cover) return;
     const img = new Image();
     img.decoding = 'async';
+    img.sizes = COVER_SIZES;
+    if (next.coverSet) img.srcset = next.coverSet;
     img.src = next.cover;
   }, [playing, i, count]);
 

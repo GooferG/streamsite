@@ -8,16 +8,34 @@ const TOKEN_MARGIN_MS = 5 * 60 * 1000;
 let tokenCache = null;
 let userIdCache = null;
 
-export function resetTwitchApiCache() {
+// After a failed poll the token may have been revoked: mint a fresh one next time.
+export function dropTwitchToken() {
   tokenCache = null;
+}
+
+export function resetTwitchApiCache() {
+  dropTwitchToken();
   userIdCache = null;
+}
+
+// A hung request would otherwise be shared by every caller forever.
+const REQUEST_TIMEOUT_MS = 10 * 1000;
+
+async function fetchWithTimeout(url, options = {}) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 export function getTwitchAccessToken() {
   if (tokenCache && (tokenCache.expiresAt === null || tokenCache.expiresAt > Date.now())) return tokenCache.promise;
   const entry = { promise: null, expiresAt: null };
   entry.promise = (async () => {
-    const response = await fetch('/api/twitch-token', { method: 'POST' });
+    const response = await fetchWithTimeout('/api/twitch-token', { method: 'POST' });
     if (!response.ok) throw new Error(`twitch-token ${response.status}`);
     const data = await response.json();
     if (!data || !data.access_token) throw new Error(`twitch-token ${response.status}`);
@@ -38,14 +56,16 @@ export function getTwitchAccessToken() {
 export function getTwitchUserId(accessToken) {
   if (userIdCache) return userIdCache;
   const promise = (async () => {
-    const response = await fetch(`https://api.twitch.tv/helix/users?login=${TWITCH_USERNAME}`, {
+    const response = await fetchWithTimeout(`https://api.twitch.tv/helix/users?login=${TWITCH_USERNAME}`, {
       headers: {
         'Client-ID': TWITCH_CLIENT_ID,
         Authorization: `Bearer ${accessToken}`,
       },
     });
     const data = await response.json();
-    return data.data[0]?.id;
+    const id = data.data && data.data[0] && data.data[0].id;
+    if (!id) throw new Error('twitch-user');
+    return id;
   })();
   userIdCache = promise;
   promise.catch(() => {

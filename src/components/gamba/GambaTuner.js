@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { FOCUS, MONO } from '../onAir/classes';
@@ -9,11 +9,12 @@ const COUNT = GAMBA_CHANNELS.length;
 const needleLeft = (i) => `${((i + 0.5) / COUNT) * 100}%`;
 const wrap = (i) => GAMBA_CHANNELS[(i + COUNT) % COUNT];
 
-// Where the needle last rested and when that tuner unmounted. App.js remounts
-// the routes on every pathname change (ErrorBoundary key), so a channel change
-// inside Gamba unmounts one tuner and mounts the next moments later: the new
-// one slides from the old channel. A visit from another page minutes later
-// starts in place.
+// Where the needle last rested and when that tuner unmounted (`at` is null
+// while a tuner is on screen). App.js remounts the routes on every pathname
+// change (ErrorBoundary key), so a channel change inside Gamba renders the new
+// page while the old tuner is still mounted, then unmounts it: the new needle
+// slides from the old channel. A visit from another page minutes later starts
+// in place.
 const RECENT_MS = 1500;
 let memory = { index: null, at: 0 };
 
@@ -22,31 +23,27 @@ export function resetTunerMemory() {
   memory = { index: null, at: 0 };
 }
 
-// True when a tuner unmounted under RECENT_MS ago: the user just changed
-// channels inside Gamba. Read it in a mount effect, not during render: the old
-// tuner's cleanup runs after the new page renders, before its effects.
+// True while a tuner is on screen or under RECENT_MS after one unmounted: a
+// page rendering now is a channel change inside Gamba. Read it during render
+// (a state initializer): by the new page's effects its own tuner is mounted.
 export function tunedRecently() {
-  return memory.index != null && Date.now() - memory.at < RECENT_MS;
+  return memory.index != null && (memory.at == null || Date.now() - memory.at < RECENT_MS);
 }
 
 function useNeedle(index) {
-  const [at, setAt] = useState(index);
-  const resting = useRef(index);
-  resting.current = index;
-  const placed = useRef(false);
+  // The start position is right on the first render, so the needle never
+  // paints at its new channel and corrects (a later style read would make the
+  // correction animate from the wrong end).
+  const [at, setAt] = useState(() => (tunedRecently() && !prefersReducedMotion() ? memory.index : index));
 
-  // Layout effects: the old tuner's layout cleanup has already run, and moving
-  // the needle back to its channel lands before the first paint. The ref keeps
-  // StrictMode's second mount from undoing the first.
+  // Same effect for mount and cleanup, so the old tuner's cleanup (deletions
+  // run first) never overwrites the new tuner's mark.
   useLayoutEffect(() => {
-    if (!placed.current) {
-      placed.current = true;
-      if (tunedRecently() && !prefersReducedMotion()) setAt(memory.index);
-    }
+    memory = { index, at: null };
     return () => {
-      memory = { index: resting.current, at: Date.now() };
+      memory = { index, at: Date.now() };
     };
-  }, []);
+  }, [index]);
 
   // Two frames: the start position paints before the transition target is set.
   useEffect(() => {

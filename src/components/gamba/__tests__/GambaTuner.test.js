@@ -1,3 +1,4 @@
+import { useLayoutEffect } from 'react';
 import { act, render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import GambaTuner, { resetTunerMemory, tunedRecently } from '../GambaTuner';
@@ -101,6 +102,37 @@ test('a channel change inside Gamba: the needle starts on the old channel and sl
   expect(needle().style.left).toBe('90%');
 });
 
+test('the start position is right on the first commit, before any later layout read', () => {
+  // A later layout effect reading the needle stands in for the browser
+  // computing styles mid-commit: a needle corrected after commit would
+  // transition from the wrong end.
+  const seen = [];
+  function Probe() {
+    useLayoutEffect(() => {
+      seen.push(document.querySelector('[data-testid="tuner-needle"]').style.left);
+    }, []);
+    return null;
+  }
+  renderTuner('hunts').unmount();
+  render(
+    <MemoryRouter initialEntries={['/gamba/wheel']}>
+      <GambaTuner current={at('wheel')} />
+      <Probe />
+    </MemoryRouter>
+  );
+  expect(seen).toEqual(['50%']);
+});
+
+test('App renders the new page before the old tuner unmounts: the new needle still starts on the old channel', () => {
+  renderTuner('hunts');
+  const next = render(
+    <MemoryRouter initialEntries={['/gamba/wheel']}>
+      <GambaTuner current={at('wheel')} />
+    </MemoryRouter>
+  );
+  expect(next.container.querySelector('[data-testid="tuner-needle"]').style.left).toBe('50%');
+});
+
 test('a return visit long after the tuner went away starts in place', async () => {
   const setNow = clockAt(10000);
   const first = renderTuner('hunts');
@@ -113,11 +145,14 @@ test('a return visit long after the tuner went away starts in place', async () =
   expect(needle().style.left).toBe('90%');
 });
 
-test('tunedRecently: only within 1500ms of the last unmount', () => {
+test('tunedRecently: while a tuner is on screen, then only within 1500ms of its unmount', () => {
   const setNow = clockAt(10000);
   expect(tunedRecently()).toBe(false);
   const first = renderTuner('hunts');
-  expect(tunedRecently()).toBe(false);
+  setNow(10000 + 60000);
+  // Still on screen: a page rendering now is a channel change in progress.
+  expect(tunedRecently()).toBe(true);
+  setNow(10000);
   first.unmount();
   setNow(10000 + 1499);
   expect(tunedRecently()).toBe(true);

@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import HuntsPage from './HuntsPage';
 import Leaderboard from '../components/Leaderboard';
@@ -30,15 +30,14 @@ export function ToolLoading({ label }) {
 }
 
 // After a channel change (tuner or listing row) focus lands on the new
-// channel's heading instead of <body>; a fresh visit leaves focus alone. Once
-// per mount, so StrictMode's second effect run can't count its own tuner.
+// channel's heading instead of <body>; a fresh visit leaves focus alone.
+// Decided at first render, while the old page's tuner is still mounted (by
+// this page's effects its own tuner would count).
 function useLandOnChannel(heading) {
-  const landed = useRef(false);
+  const [landing] = useState(tunedRecently);
   useEffect(() => {
-    if (landed.current) return;
-    landed.current = true;
-    if (tunedRecently() && heading.current) heading.current.focus({ preventScroll: true });
-  }, [heading]);
+    if (landing && heading.current) heading.current.focus({ preventScroll: true });
+  }, [landing, heading]);
 }
 
 // /gamba/*: the tuner, then the hub (no tool id) or the tool. An unknown tool

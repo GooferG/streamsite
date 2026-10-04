@@ -5,7 +5,7 @@ import {
   useNavigate,
   useLocation,
 } from 'react-router-dom';
-import Navigation from './components/Navigation';
+import Navigation from './components/nav/Navigation';
 import SiteFooter from './components/SiteFooter';
 import GrainOverlay from './components/GrainOverlay';
 import AdminLayout from './components/AdminLayout';
@@ -85,6 +85,9 @@ function StreamingSiteContent() {
   const [clips, setClips] = useState([]);
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
+  // True once a Twitch poll has succeeded, so the nav never claims "off air"
+  // when it simply couldn't reach Twitch.
+  const [statusReady, setStatusReady] = useState(false);
   // Decided once per page load; see utils/introMode for the rules.
   const [intro] = useState(() => {
     const reduced =
@@ -100,9 +103,6 @@ function StreamingSiteContent() {
   });
   const [showTVIntro, setShowTVIntro] = useState(intro.mode !== 'none');
   const [signalLocking, setSignalLocking] = useState(false);
-
-  // Derive current page id from URL for nav highlighting
-  const currentPage = location.pathname.split('/').filter(Boolean)[0] || 'home';
 
   useEffect(() => {
     const initTwitch = async () => {
@@ -139,6 +139,7 @@ function StreamingSiteContent() {
         setClips(enrichedClips);
         setVideos(enrichedVideos);
         setIsLive(!!streamInfo);
+        setStatusReady(true);
         setStreamData(streamInfo);
         setChannelData({ ...channelInfo, followers: followersCount });
         setLoading(false);
@@ -228,14 +229,13 @@ function StreamingSiteContent() {
 
       <GrainOverlay />
 
-      <Navigation
-        currentPage={currentPage}
-        setPage={(id) => navigate(id === 'home' ? '/' : `/${id}`)}
-      />
+      <Navigation isLive={isLive} viewerCount={streamData?.viewer_count ?? null} statusReady={statusReady} />
 
       <StaffLayer isLive={isLive} streamData={streamData} pathname={location.pathname} />
 
       <main
+        id="main"
+        tabIndex={-1}
         className={`transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'} ${signalLocking ? 'motion-safe:animate-signal-lock' : ''}`}
       >
         <ErrorBoundary key={location.pathname}>

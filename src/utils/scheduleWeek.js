@@ -39,3 +39,30 @@ export function orderByWeek(schedule) {
     (a, b) => WEEK_ORDER.indexOf(a.day) - WEEK_ORDER.indexOf(b.day)
   );
 }
+
+// The next scheduled stream from `now` forward (today included), skipping days
+// marked off. Null when nothing is scheduled. Shared by HomeHero and the nav.
+export function nextScheduledStream(schedule, now = new Date()) {
+  if (!schedule || schedule.length === 0) return null;
+  const today = now.getDay();
+  for (let i = 0; i < 7; i += 1) {
+    const target = (today + i) % 7;
+    const stream = schedule.find((s) => DAY_INDEX[s.day] === target && s.status !== 'off');
+    if (stream) return stream;
+  }
+  return null;
+}
+
+// "MON 5:00 PM EST" for the nav's off-air readout: the day, the start of the
+// time range and the zone the range ends in (AM/PM is not a zone).
+export function nextStreamLabel(stream) {
+  if (!stream) return null;
+  const day = dayAbbrev(stream.day);
+  const time = (stream.time || '').trim();
+  if (!time) return day;
+  // The range may be written with a hyphen, an en dash or an em dash.
+  const start = time.split(/\s*[-–—]\s*/)[0];
+  const last = time.split(/\s+/).pop();
+  const zone = /^[A-Z]{2,4}$/.test(last) && !/^(AM|PM)$/.test(last) ? last : null;
+  return zone && !start.endsWith(zone) ? `${day} ${start} ${zone}` : `${day} ${start}`;
+}

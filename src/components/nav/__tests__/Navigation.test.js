@@ -1,0 +1,187 @@
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { MemoryRouter, Route, Routes } from 'react-router-dom';
+import Navigation from '../Navigation';
+import { useTwitchAuth } from '../../../contexts/TwitchAuthContext';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useControlRoom } from '../../../contexts/ControlRoomContext';
+import { useSchedule } from '../../../hooks/useSchedule';
+
+jest.mock('../../../contexts/TwitchAuthContext', () => ({ useTwitchAuth: jest.fn() }));
+jest.mock('../../../contexts/AuthContext', () => ({ useAuth: jest.fn() }));
+jest.mock('../../../contexts/ControlRoomContext', () => ({ useControlRoom: jest.fn() }));
+jest.mock('../../../hooks/useSchedule', () => ({ useSchedule: jest.fn() }));
+
+const VIEWER = { displayName: 'vonbrandt', profileImageUrl: null };
+
+function arm({ twitchUser = null, currentUser = null, isStaff = false } = {}) {
+  useTwitchAuth.mockReturnValue({ twitchUser, loading: false, loginWithTwitch: jest.fn(), logout: jest.fn() });
+  useAuth.mockReturnValue({ currentUser, isStaff, logout: jest.fn() });
+  useControlRoom.mockReturnValue({ enabled: isStaff, giveaway: null, panelActions: { toggle: jest.fn(), open: jest.fn() } });
+  useSchedule.mockReturnValue({ schedule: [{ day: 'MONDAY', time: '5:00 PM - 11:00 PM EST', status: 'regular' }] });
+}
+
+function renderAt(path, props = {}) {
+  return render(
+    <MemoryRouter initialEntries={[path]}>
+      <Navigation isLive={false} viewerCount={null} statusReady {...props} />
+      <Routes>
+        <Route path="/admin" element={<p>admin page</p>} />
+        <Route path="*" element={null} />
+      </Routes>
+    </MemoryRouter>
+  );
+}
+
+const bar = () => screen.getByRole('navigation', { name: 'Site' });
+// The bar's toggle (the open sheet has its own Close menu button).
+const menuButton = () => within(bar()).getByRole('button', { name: /^(Open|Close) menu$/ });
+
+beforeEach(() => arm());
+
+test('the first stop in the nav skips to the content', () => {
+  renderAt('/schedule');
+  const first = bar().querySelector('a[href], button');
+  expect(first.textContent).toBe('Skip to content');
+  expect(first.getAttribute('href')).toBe('#main');
+  expect(first.className).toContain('sr-only');
+  expect(first.className).toContain('focus:not-sr-only');
+});
+
+test('the menu button is a 44px target', () => {
+  renderAt('/');
+  expect(menuButton().className).toContain('h-11 w-11');
+});
+
+test('eight coded channels; Home is the current page on /', () => {
+  renderAt('/');
+  const links = within(bar()).getAllByRole('link').filter((a) => /^0\d/.test(a.textContent));
+  expect(links.map((a) => a.textContent)).toEqual([
+    '01Home', '02Schedule', '03Vods', '04Gamba', '05Gaming', '06Store', '07Giveaway', '08About',
+  ]);
+  expect(links[0].getAttribute('aria-current')).toBe('page');
+});
+
+test('inside /gamba the Gamba link is the current section', () => {
+  renderAt('/gamba/hunts');
+  expect(within(bar()).getByRole('link', { name: /^04\s*Gamba$/ }).getAttribute('aria-current')).toBe('true');
+});
+
+test('identity: signed out, viewer, staff, admin', () => {
+  const { unmount } = renderAt('/');
+  expect(within(bar()).getByRole('button', { name: 'Sign in' })).toBeTruthy();
+  unmount();
+
+  arm({ twitchUser: VIEWER });
+  const second = renderAt('/');
+  expect(within(bar()).getByRole('button', { name: 'Account: vonbrandt' })).toBeTruthy();
+  expect(within(bar()).queryByRole('button', { name: /Control room/ })).toBeNull();
+  second.unmount();
+
+  arm({ twitchUser: VIEWER, isStaff: true });
+  const third = renderAt('/');
+  expect(within(bar()).getByRole('button', { name: /Control room/ })).toBeTruthy();
+  expect(within(bar()).getByRole('button', { name: 'Account: vonbrandt' })).toBeTruthy();
+  third.unmount();
+
+  arm({ currentUser: { email: 'luimeneghim@gmail.com' }, isStaff: true });
+  renderAt('/');
+  expect(within(bar()).getByRole('button', { name: /Control room/ })).toBeTruthy();
+  expect(within(bar()).getByRole('button', { name: 'OP: operator menu' })).toBeTruthy();
+  expect(within(bar()).queryByRole('button', { name: /Account:/ })).toBeNull();
+});
+
+test('the bar rises above the control room panel only while a menu is open', () => {
+  arm({ twitchUser: VIEWER });
+  const first = renderAt('/');
+  expect(bar().className).toContain('z-50');
+  expect(bar().className).toContain('[&:has([data-nav-popover][aria-expanded=true])]:z-[70]');
+  expect(within(bar()).getByRole('button', { name: 'Gamba channels' }).hasAttribute('data-nav-popover')).toBe(true);
+  expect(within(bar()).getByRole('button', { name: 'Account: vonbrandt' }).hasAttribute('data-nav-popover')).toBe(true);
+  first.unmount();
+
+  arm({ currentUser: { email: 'luimeneghim@gmail.com' }, isStaff: true });
+  renderAt('/');
+  expect(within(bar()).getByRole('button', { name: 'OP: operator menu' }).hasAttribute('data-nav-popover')).toBe(true);
+  // Only the three disclosures: the sheet's menu button doesn't lift the bar.
+  expect(bar().querySelectorAll('[data-nav-popover]')).toHaveLength(2);
+  expect(menuButton().hasAttribute('data-nav-popover')).toBe(false);
+});
+
+test('no live or off-air status until the first poll succeeds', () => {
+  renderAt('/schedule', { statusReady: false, isLive: true, viewerCount: 50 });
+  expect(screen.queryByText(/Live/)).toBeNull();
+  expect(screen.queryByText(/Off air/)).toBeNull();
+  expect(document.querySelector('[data-led]').className).not.toContain('shadow-onair-led');
+});
+
+test('live: the LED glows and the tally shows', () => {
+  renderAt('/schedule', { isLive: true, viewerCount: 1204 });
+  expect(document.querySelector('[data-led]').className).toContain('shadow-onair-led');
+  expect(within(bar()).getByRole('link', { name: 'Live now, 1,204 watching' })).toBeTruthy();
+});
+
+test('the menu button opens the sheet; navigating closes it and returns focus', () => {
+  renderAt('/');
+  const sheet = document.getElementById(menuButton().getAttribute('aria-controls'));
+  expect(sheet.hasAttribute('inert')).toBe(true);
+  fireEvent.click(menuButton());
+  expect(menuButton().getAttribute('aria-expanded')).toBe('true');
+  expect(sheet.hasAttribute('inert')).toBe(false);
+  fireEvent.click(within(sheet).getByRole('link', { name: /02\s*Schedule/ }));
+  expect(menuButton().getAttribute('aria-expanded')).toBe('false');
+  expect(sheet.hasAttribute('inert')).toBe(true);
+  expect(document.activeElement).toBe(menuButton());
+  expect(document.body.style.overflow).toBe('');
+});
+
+describe('reaching lg', () => {
+  const realMatchMedia = window.matchMedia;
+  let listeners;
+  let lg;
+
+  beforeEach(() => {
+    listeners = new Set();
+    lg = {
+      matches: false,
+      addEventListener: jest.fn((type, fn) => listeners.add(fn)),
+      removeEventListener: jest.fn((type, fn) => listeners.delete(fn)),
+    };
+    window.matchMedia = jest.fn(() => lg);
+  });
+
+  afterEach(() => {
+    window.matchMedia = realMatchMedia;
+  });
+
+  test('closes the sheet (and unlocks scroll) when the viewport reaches lg', () => {
+    renderAt('/');
+    fireEvent.click(menuButton());
+    expect(menuButton().getAttribute('aria-expanded')).toBe('true');
+    expect(window.matchMedia).toHaveBeenCalledWith('(min-width: 1024px)');
+    act(() => listeners.forEach((fn) => fn({ matches: true })));
+    expect(menuButton().getAttribute('aria-expanded')).toBe('false');
+    expect(document.body.style.overflow).toBe('');
+  });
+
+  test('stops listening on unmount', () => {
+    const { unmount } = renderAt('/');
+    fireEvent.click(menuButton());
+    expect(listeners.size).toBe(1);
+    unmount();
+    expect(listeners.size).toBe(0);
+  });
+});
+
+test('five quick clicks on the wordmark open /admin', () => {
+  renderAt('/');
+  const mark = screen.getByRole('link', { name: 'GooferG home' });
+  for (let i = 0; i < 5; i += 1) fireEvent.click(mark);
+  expect(screen.getByText('admin page')).toBeTruthy();
+});
+
+test('no orange in the nav, for any identity', () => {
+  arm({ currentUser: { email: 'luimeneghim@gmail.com' }, isStaff: true });
+  const { container } = renderAt('/', { isLive: true, viewerCount: 9 });
+  fireEvent.click(menuButton());
+  expect(container.innerHTML).not.toMatch(/orange|onair-winner/);
+});

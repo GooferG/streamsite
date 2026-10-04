@@ -254,6 +254,12 @@ test('playerSrc: VODs start where you seek, clips use the clip embed', () => {
   );
 });
 
+test('byId has no prototype, so ids like constructor find nothing', () => {
+  const { byId } = buildStore(F.rich);
+  expect(byId.constructor).toBeUndefined();
+  expect(Object.getPrototypeOf(byId)).toBeNull();
+});
+
 test('an empty archive builds an empty store', () => {
   expect(buildStore({ now: FIXTURE_NOW, timeZone: AZ })).toEqual({
     shelves: [],

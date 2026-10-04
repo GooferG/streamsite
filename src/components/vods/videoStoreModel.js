@@ -297,7 +297,7 @@ export function buildStore({ videos = [], topClips = [], recentClips = [], now, 
     tape.marks = clipMarks(tape, clips);
     tape.stickers = tapeStickers(tape, i === 0);
   });
-  const byId = {};
+  const byId = Object.create(null);
   for (const item of [...tapes, ...clips]) byId[item.id] = item;
   return {
     shelves: weekShelves(tapes, now, timeZone),

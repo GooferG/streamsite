@@ -75,7 +75,7 @@ export default function VideoStoreFront({
 
   useEffect(() => {
     if (pending && store.byId[pending]) {
-      setRental({ id: pending, at: null });
+      setRental({ id: pending, at: null, n: 0 });
       setPending(null);
     }
   }, [pending, store]);
@@ -90,12 +90,12 @@ export default function VideoStoreFront({
 
   const open = (id) => {
     setPending(null);
-    setRental({ id, at: null });
+    setRental({ id, at: null, n: 0 });
     onTapeChange(id);
   };
-  const seek = (at) => setRental((r) => (r ? { ...r, at } : r));
+  const seek = (at) => setRental((r) => (r ? { ...r, at, n: r.n + 1 } : r));
   const switchTo = (id, at) => {
-    setRental({ id, at });
+    setRental((r) => ({ id, at, n: (r ? r.n : 0) + 1 }));
     onTapeChange(id);
   };
   const close = useCallback(() => {
@@ -166,7 +166,7 @@ export default function VideoStoreFront({
       </footer>
 
       {item && (
-        <RentalCounter item={item} at={rental.at} viewerName={viewerName} onSeek={seek} onSwitch={switchTo} onClose={close} />
+        <RentalCounter item={item} at={rental.at} seekNo={rental.n} viewerName={viewerName} onSeek={seek} onSwitch={switchTo} onClose={close} />
       )}
     </div>
   );

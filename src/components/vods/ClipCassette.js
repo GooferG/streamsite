@@ -30,7 +30,7 @@ export default function ClipCassette({ clip, viewerName, showYear = false, onOpe
         </div>
         <div className="mt-1.5 flex items-center justify-between">
           <span className={`${MONO} text-[0.625rem] tracking-[0.15em] text-onair-ink-4`}>{clip.length}</span>
-          <span className={`${MONO} text-[0.625rem] tracking-[0.15em] text-onair-ink-4`}>{clip.views} views</span>
+          <span className={`${MONO} text-[0.625rem] tracking-[0.15em] text-onair-ink-4`}>{clip.views} {clip.viewCount === 1 ? 'view' : 'views'}</span>
         </div>
       </div>
       <p className="mt-2 line-clamp-2 break-words text-[0.875rem] font-bold leading-snug text-onair-ink-1">{clip.label}</p>

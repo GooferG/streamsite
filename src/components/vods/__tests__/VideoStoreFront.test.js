@@ -176,6 +176,26 @@ test('a deep link waits for clips that load late', () => {
   expect(screen.getByRole('dialog', { name: 'goofer voice' })).toBeTruthy();
 });
 
+test('an id that is an Object.prototype key is ignored like any unknown id', () => {
+  for (const id of ['constructor', '__proto__', 'toString', 'hasOwnProperty']) {
+    const { unmount } = renderStore('rich', { initialTapeId: id, viewerName: 'someone' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    unmount();
+  }
+});
+
+test('pressing the current mark again restarts the player', () => {
+  renderStore('rich');
+  fireEvent.click(screen.getByRole('button', { name: SEP30_BOX }));
+  const mark = () => within(screen.getByRole('dialog')).getByRole('button', { name: 'Jump to 3:57:20, 5 scat? pants off' });
+  fireEvent.click(mark());
+  const first = screen.getByRole('dialog').querySelector('iframe');
+  fireEvent.click(mark());
+  const second = screen.getByRole('dialog').querySelector('iframe');
+  expect(second).not.toBe(first);
+  expect(second.getAttribute('src')).toMatch(/&time=3h57m20s$/);
+});
+
 test('a poll refresh keeps the tape playing', () => {
   const { rerender } = render(<VideoStoreFront {...F.rich} />);
   fireEvent.click(screen.getByRole('button', { name: SEP30_BOX }));

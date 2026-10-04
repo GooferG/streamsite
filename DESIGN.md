@@ -310,7 +310,7 @@ Components unique to a streaming-channel hub. Their visual weight pulls more fro
 
 ## 7. On Air (site language)
 
-On Air is the softer broadcast look that replaces the hard-lined boxes: rounded, layered surfaces with inset highlights and drop shadows, a TV monitor stage, a perforated prediction slip. It started on the Hunts tab (`/gamba/hunts`) and is now the site's language: the nav runs it on every route, the store (`/store`, the Goofer Shopping Network) and the schedule (`/schedule`, the Goofer Guide), the video store (`/vods`, Goofer Video) are built on it, and other surfaces migrate one at a time by using the `onair` tokens and the primitives in `src/components/onAir/`. Until a page migrates, the seam between its legacy content and the On Air chrome is expected.
+On Air is the softer broadcast look that replaces the hard-lined boxes: rounded, layered surfaces with inset highlights and drop shadows, a TV monitor stage, a perforated prediction slip. It started on the Hunts tab (`/gamba/hunts`) and is now the site's language: the nav runs it on every route, the store (`/store`, the Goofer Shopping Network), the schedule (`/schedule`, the Goofer Guide) and the video store (`/vods`, Goofer Video) are built on it, and other surfaces migrate one at a time by using the `onair` tokens and the primitives in `src/components/onAir/`. Until a page migrates, the seam between its legacy content and the On Air chrome is expected.
 
 ### Tokens
 
@@ -354,7 +354,7 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 
 - **A late-night rental store.** `/vods` is Goofer Video: a lightbox sign (the `h1`), aisle signs that jump to New releases, Fresh picks and Cult classics, then the shelves. It has no bezel or monitor, so it doesn't repeat the Gamba hub or the guide.
 - **Shelves.** VODs are portrait clamshells on one shelf per week (Monday to Sunday, the viewer's calendar). The sleeve holds the 16:9 thumbnail in a photo window, the cleaned title on a marker label, the catalogue number and weekday on the spine, and the tape stock (`T-120 · EP`) and length in mono. Clips are landscape camcorder cases with a "Picked by" index card; Cult classics sit behind one paper divider per game. Below `md` a shelf scrolls sideways; from `md` it wraps, with the lip under every row.
-- **Stickers.** At most two per box: New release, Due back (within 7 days of Twitch's 60-day expiry), N clips inside. Paper stock with paper ink. Nothing on the floor glows.
+- **Stickers.** At most two per box: New release, Due back (within 7 days of Twitch's 60-day expiry), N clips inside. Stickers are paper, signal or loss stock with paper ink. Only the OPEN light and your own "Picked by you" card glow.
 - **The OPEN light** is the page's LIVE light: the red `StatusLight` while live, an unlit "After hours" off air, nothing before the first Twitch poll.
 - **The rental counter.** One click plays a tape in an overlay with the back of its box beside it. The tape timeline marks each clip at its offset, and a mark seeks the VOD. A clip's back links to its tape while the VOD is in the archive. Focus is trapped and goes back to the box.
 - **The marker.** `font-onair-marker` is for labels, index cards and the sign-off: 15px or larger, never for data. Dates, times, lengths and counts stay mono.

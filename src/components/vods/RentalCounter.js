@@ -108,7 +108,7 @@ function ClipBack({ clip, viewerName, onSwitch }) {
 // beside it (below it on phones). Owns Escape, the focus trap, the scroll lock
 // and handing focus back to whatever opened it; VideoStoreFront owns which
 // tape and where it starts.
-export default function RentalCounter({ item, at, viewerName, onSeek, onSwitch, onClose }) {
+export default function RentalCounter({ item, at, seekNo = 0, viewerName, onSeek, onSwitch, onClose }) {
   const panelRef = useRef(null);
   const closeRef = useRef(null);
 
@@ -192,7 +192,7 @@ export default function RentalCounter({ item, at, viewerName, onSeek, onSwitch, 
           <div className="min-w-0">
             <div className="relative aspect-video overflow-hidden rounded-onair-inner bg-onair-surface-4 shadow-onair-screen">
               <iframe
-                key={src}
+                key={`${src}#${seekNo}`}
                 src={src}
                 title={`${isVod ? item.title : item.label} on the Twitch player`}
                 className="absolute inset-0 h-full w-full"

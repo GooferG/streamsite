@@ -42,6 +42,13 @@ test('a cassette credits whoever clipped it, with its year in the classics', () 
   expect(onOpen).toHaveBeenCalledWith('GeniusSmokyOpossumFrankerZ');
 });
 
+test('a clip watched once says 1 view', () => {
+  const clip = { ...store.byId.GeniusSmokyOpossumFrankerZ, viewCount: 1, views: '1' };
+  render(<ClipCassette clip={clip} viewerName={null} onOpen={() => {}} />);
+  expect(screen.getByText('1 view')).toBeTruthy();
+  expect(screen.queryByText('1 views')).toBeNull();
+});
+
 test('your own clip reads Picked by you', () => {
   render(<ClipCassette clip={store.byId.GeniusSmokyOpossumFrankerZ} viewerName="moogle_cat" onOpen={() => {}} />);
   expect(screen.getByText('Picked by you').getAttribute('data-you')).toBe('true');

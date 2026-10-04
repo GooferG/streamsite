@@ -20,29 +20,28 @@ export default function TapeTimeline({ tape, at, onSeek }) {
             style={{ left: `${m.start * 100}%`, width: `${m.width * 100}%` }}
           />
         ))}
-        <ul aria-label="Clip marks">
-          {tape.marks.map((m) => {
-            const current = at === m.offset;
-            return (
-              <li key={m.clip.id}>
-                <button
-                  type="button"
-                  aria-label={`Jump to ${m.at}, ${m.clip.label}`}
-                  aria-current={current ? 'true' : undefined}
-                  onClick={() => onSeek(m.offset)}
-                  className={`absolute inset-y-0 flex w-6 -translate-x-1/2 justify-center ${FOCUS}`}
-                  style={{ left: `${m.position * 100}%` }}
-                >
-                  <span aria-hidden="true" className={`my-1.5 w-[3px] rounded-full ${current ? 'bg-onair-signal' : 'bg-onair-ink-3'}`} />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+        {tape.marks.length > 0 && (
+          <ul aria-label="Clip marks">
+            {tape.marks.map((m) => {
+              const current = at === m.offset;
+              return (
+                <li key={m.clip.id}>
+                  <button
+                    type="button"
+                    aria-label={`Jump to ${m.at}, ${m.clip.label}`}
+                    aria-current={current ? 'true' : undefined}
+                    onClick={() => onSeek(m.offset)}
+                    className={`absolute inset-y-0 flex w-6 -translate-x-1/2 justify-center ${FOCUS}`}
+                    style={{ left: `${m.position * 100}%` }}
+                  >
+                    <span aria-hidden="true" className={`my-1.5 w-[3px] rounded-full ${current ? 'bg-onair-signal' : 'bg-onair-ink-3'}`} />
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
       </div>
-      {tape.marks.length === 0 && (
-        <p className={`${MONO} mt-2 text-[0.6875rem] tracking-[0.2em] text-onair-ink-5`}>No clips on this tape yet</p>
-      )}
     </div>
   );
 }

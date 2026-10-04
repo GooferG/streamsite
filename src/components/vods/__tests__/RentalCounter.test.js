@@ -49,7 +49,8 @@ test('clip marks and the clip list both seek', () => {
 test('muted stretches show as static, and a tape nobody clipped says so', () => {
   const { dialog } = renderCounter({ item: OCT1 });
   expect(dialog().querySelectorAll('[data-muted]')).toHaveLength(1);
-  expect(within(dialog()).getByText('No clips on this tape yet')).toBeTruthy();
+  expect(within(dialog()).queryByText('No clips on this tape yet')).toBeNull();
+  expect(within(dialog()).queryByRole('list', { name: 'Clip marks' })).toBeNull();
   expect(within(dialog()).getByText('Nobody clipped this one yet.')).toBeTruthy();
 });
 

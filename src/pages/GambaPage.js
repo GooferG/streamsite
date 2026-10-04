@@ -1,8 +1,8 @@
 import { lazy, Suspense } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import HuntsPage from './HuntsPage';
 import Leaderboard from '../components/Leaderboard';
-import GambaHub from '../components/GambaHub';
+import GambaGuide from '../components/gamba/GambaGuide';
 import GambaTuner from '../components/gamba/GambaTuner';
 import { MONO } from '../components/onAir/classes';
 import { channelForPath } from '../data/gambaTools';
@@ -27,7 +27,6 @@ function ToolLoading({ label }) {
 // id goes back to the hub.
 export default function GambaPage() {
   const { pathname } = useLocation();
-  const navigate = useNavigate();
   const toolId = pathname.split('/')[2] || null;
   const channel = channelForPath(pathname);
   if (toolId && !channel) return <Navigate to="/gamba" replace />;
@@ -37,7 +36,7 @@ export default function GambaPage() {
       <div className="mx-auto max-w-7xl 2xl:max-w-[1600px]">
         <GambaTuner current={channel} />
         <div className="mt-4">
-          {!toolId && <GambaHub setPage={(id) => navigate(`/${id}`)} />}
+          {!toolId && <GambaGuide />}
           {toolId === 'leaderboard' && <Leaderboard />}
           {toolId === 'hunts' && <HuntsPage />}
           {toolId === 'bonus-battle' && (

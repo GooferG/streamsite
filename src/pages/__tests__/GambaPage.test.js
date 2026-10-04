@@ -7,7 +7,7 @@ jest.mock('../HuntsPage', () => () => <p>hunts tool</p>);
 jest.mock('../../components/Leaderboard', () => () => <p>leaderboard tool</p>);
 jest.mock('../../components/BonusBattle', () => () => <p>battle tool</p>);
 jest.mock('../../components/SlotPicker', () => () => <p>picker tool</p>);
-jest.mock('../../components/GambaHub', () => () => <p>gamba hub</p>);
+jest.mock('../../components/gamba/GambaGuide', () => () => <p>gamba hub</p>);
 
 function renderAt(path) {
   return render(

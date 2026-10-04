@@ -185,8 +185,8 @@ export function homeWeekday(now) {
   return wall(toMs(now), HOME_ZONE).weekday;
 }
 
-// The calendar day an instant falls on in `zone`, as a day count. Only the
-// difference between two of these means anything.
+// The calendar day an instant falls on in `zone`, as days since 1970-01-01
+// (day 0 was a Thursday). Goofer Video's week shelves rely on that base.
 export function calendarDay(now, zone) {
   const w = wall(toMs(now), zone);
   return Date.UTC(w.y, w.m, w.d) / 86400000;

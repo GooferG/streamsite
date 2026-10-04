@@ -12,12 +12,17 @@ const DIRS = [
   'src/components/schedule',
   'src/components/nav',
   'src/components/gamba',
+  'src/components/vods',
 ];
 // Nav chrome that lives outside the nav folder, scanned with the nav (the Gamba tuner is chrome too).
 const CONTROL_ROOM_BUTTON = 'src/components/controlRoom/ControlRoomButton.js';
 const FILES = [CONTROL_ROOM_BUTTON];
 // Fixture data and the per-slot tile tints are the recorded raw-colour exceptions.
-const RAW_COLOUR_EXEMPT = ['src/components/hunts/huntFixtures.js', 'src/components/store/storeFixtures.js'];
+const RAW_COLOUR_EXEMPT = [
+  'src/components/hunts/huntFixtures.js',
+  'src/components/store/storeFixtures.js',
+  'src/components/vods/videoStoreFixtures.js',
+];
 
 const read = (rel) => [rel, fs.readFileSync(path.join(ROOT, rel), 'utf8')];
 
@@ -78,6 +83,7 @@ test('Tokens: no raw colours or bare radii in the Hunts, Store, schedule, nav an
         (rel.startsWith('src/components/hunts/') ||
           rel.startsWith('src/components/store/') ||
           rel.startsWith('src/components/schedule/') ||
+          rel.startsWith('src/components/vods/') ||
           isNavChrome(rel)) &&
         !RAW_COLOUR_EXEMPT.includes(rel),
     })
@@ -118,4 +124,42 @@ test('Tokens: the nav bar shadow is a boxShadow token, not a radius', () => {
 
 test('Roles: the nav and Gamba chrome carry no orange (inside On Air orange is the winner)', () => {
   expect(offenders(/orange|onair-winner/, { only: isNavChrome })).toEqual([]);
+});
+
+const isVods = (rel) => rel.startsWith('src/components/vods/');
+
+function srcFiles(dir) {
+  return fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }).flatMap((d) => {
+    const rel = `${dir}/${d.name}`;
+    if (d.isDirectory()) return d.name === '__tests__' ? [] : srcFiles(rel);
+    return d.name.endsWith('.js') ? [rel] : [];
+  });
+}
+
+function contrast(a, b) {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+test('Type: the marker face is Goofer Video only', () => {
+  const outside = srcFiles('src')
+    .filter((rel) => !isVods(rel))
+    .filter((rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8').includes('font-onair-marker'));
+  expect(outside).toEqual([]);
+});
+
+test('Type: marker text is 15px or larger, its size set on the same line', () => {
+  expect(
+    offenders(/font-onair-marker(?!.*text-\[(0\.9375|1\.0625|1\.25|1\.375|1\.5|1\.875|3\.75)rem\])/, { only: isVods })
+  ).toEqual([]);
+});
+
+test('Tokens: Goofer Video radii are tokens, never arbitrary values', () => {
+  expect(offenders(/rounded-\[/, { only: isVods })).toEqual([]);
+});
+
+test('Readable Labels: paper ink holds 7:1 on label stock and 4.5:1 on the signal and loss stickers', () => {
+  expect(contrast(onair.paper.ink, onair.paper.DEFAULT)).toBeGreaterThanOrEqual(7);
+  expect(contrast(onair.paper.ink, onair.signal.DEFAULT)).toBeGreaterThanOrEqual(4.5);
+  expect(contrast(onair.paper.ink, onair.loss)).toBeGreaterThanOrEqual(4.5);
 });

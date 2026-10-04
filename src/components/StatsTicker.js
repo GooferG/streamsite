@@ -86,7 +86,7 @@ export default function StatsTicker({ channelData, streamData, isLive, clips, vi
   const items = useMemo(() => {
     const followers = channelData?.followers != null ? formatCount(channelData.followers) : null;
     const clipCount = formatListCount(clips);
-    const vodCount = formatListCount(videos);
+    const vodCount = formatListCount(videos, 100);
 
     let lastLive = null;
     if (isLive) {

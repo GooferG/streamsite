@@ -22,7 +22,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
+    "build": "react-scripts build && node scripts/share/write-pages.js",
     "share:shots": "node scripts/share/shoot.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject"

@@ -17,6 +17,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { TwitchAuthProvider } from './contexts/TwitchAuthContext';
 import { ControlRoomProvider } from './contexts/ControlRoomContext';
 import StaffLayer from './components/controlRoom/StaffLayer';
+import { PAGE_LOADERS } from './routes/loaders';
 import {
   dropTwitchToken,
   getTwitchAccessToken,
@@ -39,10 +40,10 @@ import {
 // staff. Secondary public pages split per route. HomePage + GambaPage stay eager (landing paint / GambaPage
 // already code-splits its own heavy children). TVStaticIntro is eager too: it
 // is a few KB of raw WebGL and has to cover the very first paint.
-const SchedulePage = lazy(() => import('./pages/SchedulePage'));
-const VodsPage = lazy(() => import('./pages/VodsPage'));
-const AboutPage = lazy(() => import('./pages/AboutPage'));
-const GamingPage = lazy(() => import('./pages/GamingPage'));
+const SchedulePage = lazy(PAGE_LOADERS.schedule);
+const VodsPage = lazy(PAGE_LOADERS.vods);
+const AboutPage = lazy(PAGE_LOADERS.about);
+const GamingPage = lazy(PAGE_LOADERS.gaming);
 const GearPage = lazy(() => import('./pages/Gear'));
 const GearInteractive = lazy(() => import('./pages/GearInteractive'));
 const AdminHubPage = lazy(() => import('./pages/AdminHubPage'));
@@ -55,8 +56,8 @@ const AdminGiveawaysPage = lazy(() => import('./pages/AdminGiveawaysPage'));
 const AdminHuntsPage = lazy(() => import('./pages/AdminHuntsPage'));
 const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
 const AdminModeratorsPage = lazy(() => import('./pages/AdminModeratorsPage'));
-const StorePage = lazy(() => import('./pages/StorePage'));
-const GiveawayPage = lazy(() => import('./pages/GiveawayPage'));
+const StorePage = lazy(PAGE_LOADERS.store);
+const GiveawayPage = lazy(PAGE_LOADERS.giveaway);
 const MyAccountPage = lazy(() => import('./pages/MyAccountPage'));
 const TwitchCallbackPage = lazy(() => import('./pages/TwitchCallbackPage'));
 const DiscordCallbackPage = lazy(() => import('./pages/DiscordCallbackPage'));

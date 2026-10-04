@@ -14,11 +14,17 @@ const SlotPicker = lazy(() => import('../components/SlotPicker'));
 const BonusBattle = lazy(() => import('../components/BonusBattle'));
 
 // While a tool chunk loads: its own label, then the broadcast tuning phrases.
-function ToolLoading({ label }) {
+// Screen readers hear the label once; the rotating phrase is set dressing.
+export function ToolLoading({ label }) {
   const phrase = useTuningPhrase(true, [label, ...TUNING_PHRASES]);
   return (
     <div className="px-4 py-16 text-center">
-      <p className={`${MONO} text-[0.625rem] font-bold tracking-[0.25em] text-onair-ink-4 motion-safe:animate-pulse`}>{phrase}</p>
+      <p role="status" className="sr-only">
+        {label}
+      </p>
+      <p aria-hidden="true" className={`${MONO} text-xs font-bold tracking-[0.25em] text-onair-ink-3 motion-safe:animate-pulse`}>
+        {phrase}
+      </p>
     </div>
   );
 }

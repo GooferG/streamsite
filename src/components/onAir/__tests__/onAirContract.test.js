@@ -82,8 +82,11 @@ test('Type: every mono label in the nav and Gamba chrome sets its tracking (0.15
   expect(offenders(/\$\{MONO\}(?!.*tracking-\[)/, { only: isNavChrome })).toEqual([]);
 });
 
-test('Type: the nav and Gamba chrome stay on the §7 scale (no text-base or text-lg)', () => {
-  expect(offenders(/\btext-(base|lg)\b/, { only: isNavChrome })).toEqual([]);
+// The shared monitor screen (the Hunts monitor and the Gamba featured monitor) is held to it too.
+const MONITOR_STAGE = 'src/components/hunts/MonitorStage.js';
+
+test('Type: the nav and Gamba chrome and the monitor screen stay on the §7 scale (no text-base or text-lg)', () => {
+  expect(offenders(/\btext-(base|lg)\b/, { only: (rel) => isNavChrome(rel) || rel === MONITOR_STAGE })).toEqual([]);
 });
 
 test('Roles: orange stays off the open slip', () => {

@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { MemoryRouter, useLocation } from 'react-router-dom';
-import GambaPage from '../GambaPage';
+import GambaPage, { ToolLoading } from '../GambaPage';
 import { resetTunerMemory } from '../../components/gamba/GambaTuner';
 
 jest.mock('../HuntsPage', () => () => <p>hunts tool</p>);
@@ -49,6 +49,21 @@ test('/gamba/hunts shows the tuner on CH 02 above the Hunts tool', () => {
 test('lazy tools load behind the On Air loading line', async () => {
   renderAt('/gamba/wheel');
   expect(await screen.findByText('picker tool')).toBeTruthy();
+});
+
+// ToolLoading directly: React.lazy resolves once per module, so only the first
+// render of a tool in this file would show the fallback.
+test('the loading line is announced once; the rotating phrase is hidden from screen readers', () => {
+  render(<ToolLoading label="Tuning slot signal…" />);
+  const status = screen.getByRole('status');
+  expect(status.textContent).toBe('Tuning slot signal…');
+  expect(status.className).toContain('sr-only');
+  const phrase = screen.getAllByText('Tuning slot signal…').find((el) => el !== status);
+  expect(phrase.getAttribute('aria-hidden')).toBe('true');
+  expect(phrase.className).toContain('text-xs');
+  expect(phrase.className).toContain('text-onair-ink-3');
+  expect(phrase.className).toContain('motion-safe:animate-pulse');
+  expect(phrase.className).not.toContain('text-[0.625rem]');
 });
 
 test('an unknown tool id redirects to the hub', () => {

@@ -47,7 +47,7 @@ export function SideStats({ items }) {
         {items.map((s) => (
           <div key={s.label} className="flex items-baseline gap-1.5 text-sm text-onair-ink-5">
             <dt>{s.label}</dt>
-            <dd className="text-lg font-bold tabular-nums text-onair-ink-1">{s.value}</dd>
+            <dd className="text-xl font-bold tabular-nums text-onair-ink-1">{s.value}</dd>
           </div>
         ))}
       </dl>

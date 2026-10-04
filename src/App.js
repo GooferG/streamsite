@@ -264,7 +264,7 @@ function StreamingSiteContent() {
               />
             }
           />
-          <Route path="/schedule" element={<SchedulePage />} />
+          <Route path="/schedule" element={<SchedulePage isLive={isLive} stream={streamData} />} />
           <Route
             path="/vods"
             element={

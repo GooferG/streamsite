@@ -84,7 +84,9 @@ test('fulfil on a redemption that is gone answers NOT_FOUND', async () => {
   expect(__fake.read('redemptions/nope')).toBeUndefined();
 });
 
-test('a fulfil and a refund at once: one wins, and the tickets match the outcome', async () => {
+// Not a regression guard for the fulfil fix (the old blind update could win
+// this race too); it checks the two never disagree about the tickets.
+test('a fulfil and a refund at once leave the tickets consistent', async () => {
   __fake.seed('redemptions/r1', STORE_ORDER);
   __fake.seed('users/tw1', { tickets: 0, totalSpent: 1500 });
   const [a, b] = await Promise.all([
@@ -116,4 +118,15 @@ test('cancelling a zero-cost prize needs no user doc and writes no ledger row', 
   expect(__fake.read('redemptions/r2')).toMatchObject({ status: 'cancelled', cancelledBy: 'owner@test' });
   expect(__fake.read('users/tw9')).toBeUndefined();
   expect(__fake.paths('ticket_ledger')).toEqual([]);
+});
+
+// The stored note is the prize label ("$50 cash", a giveaway's prize note).
+// Handling a row without typing a note must not erase what was owed.
+test('fulfil or cancel without a note keeps the prize label', async () => {
+  __fake.seed('redemptions/r2', { ...PRIZE, note: '$50 cash' });
+  __fake.seed('redemptions/r3', { ...PRIZE, note: 'Gates of Olympus' });
+  await call({ id: 'r2', action: 'fulfill' });
+  await call({ id: 'r3', action: 'cancel' });
+  expect(__fake.read('redemptions/r2')).toMatchObject({ status: 'fulfilled', note: '$50 cash' });
+  expect(__fake.read('redemptions/r3')).toMatchObject({ status: 'cancelled', note: 'Gates of Olympus' });
 });

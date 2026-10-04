@@ -28,7 +28,8 @@ export default async function handler(req, res) {
         if (snap.data().status !== 'pending') throw new Error('NOT_PENDING');
         tx.update(ref, {
           status: 'fulfilled',
-          note: note || null,
+          // The stored note is the prize label; only a typed note replaces it.
+          ...(note ? { note } : {}),
           fulfilledAt: FieldValue.serverTimestamp(),
           fulfilledBy: admin.email,
         });
@@ -76,7 +77,8 @@ export default async function handler(req, res) {
       }
       tx.update(ref, {
         status: 'cancelled',
-        note: note || null,
+        // The stored note is the prize label; only a typed note replaces it.
+        ...(note ? { note } : {}),
         cancelledAt: now,
         cancelledBy: admin.email,
       });

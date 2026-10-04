@@ -15,7 +15,7 @@ const ROUND = (status) => ({
 const HUNTS = (over = {}) => ({ live: null, recent: [], loading: false, error: null, ...over });
 const BOARD = {
   players: [{ maskedUsername: 'ab***z', wagered: 41203, prize: 2000 }, { maskedUsername: 'kr***9', wagered: 34333, prize: 1000 }],
-  prizePool: 5000, periodLabel: 'OCTOBER', endsAt: 1, isLoading: false, error: null,
+  prizePool: 5000, periodLabel: 'OCTOBER 2026', endsAt: 1, isLoading: false, error: null,
 };
 
 function show(props) {
@@ -67,6 +67,13 @@ test('leaderboard: pool, leader, resets clock, standings chyron and the standing
   expect(screen.getByText('ab***z · $41,203')).toBeTruthy();
   expect(screen.getAllByText(/1 ab\*\*\*z \$41,203/).length).toBeGreaterThan(0);
   expect(screen.getByRole('link', { name: 'View standings' }).getAttribute('href')).toBe('/gamba/leaderboard');
+});
+
+test('leaderboard: the channel line is just the channel; the period is the hero label', () => {
+  show({ featured: 'leaderboard', feature: null });
+  expect(screen.getByText('CH 01 · Leaderboard')).toBeTruthy();
+  expect(screen.queryByText(/Leaderboard · OCTOBER/)).toBeNull();
+  expect(screen.getByText('OCTOBER 2026')).toBeTruthy();
 });
 
 test('leaderboard: a new month shows a dash for the pool', () => {

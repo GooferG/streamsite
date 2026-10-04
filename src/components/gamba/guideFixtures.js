@@ -12,7 +12,7 @@ const BOARD = {
     { maskedUsername: 'xi***r', wagered: 12010, prize: 100 },
   ],
   prizePool: 5000,
-  periodLabel: 'OCTOBER',
+  periodLabel: 'OCTOBER 2026',
   endsAt: NOW + 27 * 86400000 + 4 * 3600000,
   isLoading: false,
   error: null,

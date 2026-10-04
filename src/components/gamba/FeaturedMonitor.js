@@ -182,7 +182,7 @@ export default function FeaturedMonitor({ featured, feature, leaderboard, resets
       label="Featured channel"
       tint="neutral"
       status={null}
-      channel={`${CH.leaderboard} · Leaderboard${facts.period ? ` · ${facts.period}` : ''}`}
+      channel={`${CH.leaderboard} · Leaderboard`}
       clock={clock}
       channelKey={ready ? 'leaderboard' : null}
       readout={{ channel: CH.leaderboard, label: facts.noSignal ? 'No signal' : 'Standings', tone: 'muted' }}

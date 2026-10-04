@@ -26,8 +26,9 @@ function passthrough({ children }) {
   return React.createElement(React.Fragment, null, children);
 }
 
-const DEFAULT_LOCATION = { pathname: '/', search: '', hash: '', state: null };
+const DEFAULT_LOCATION = { pathname: '/', search: '', hash: '', state: null, key: 'default' };
 const LocationContext = React.createContext(DEFAULT_LOCATION);
+const NavigationTypeContext = React.createContext('POP');
 
 function parseTo(to) {
   const path = typeof to === 'string' ? to : (to && to.pathname) || '/';
@@ -37,17 +38,40 @@ function parseTo(to) {
 
 const NavigateContext = React.createContext(null);
 
-// In-memory router: location lives in state, seeded from `initialEntries[0]`.
+// In-memory router with a history stack: navigate(to, { state, replace })
+// pushes or replaces, navigate(-1) pops. Location carries state and a key.
 function MemoryRouter({ children, initialEntries }) {
-  const [location, setLocation] = React.useState(() => parseTo(initialEntries && initialEntries[0]));
-  const navigate = React.useCallback((to) => {
-    if (typeof to === 'number') return;
-    setLocation(parseTo(to));
+  const keys = React.useRef(0);
+  const [hist, setHist] = React.useState(() => ({
+    entries: [parseTo(initialEntries && initialEntries[0])],
+    index: 0,
+    action: 'POP',
+  }));
+  const navigate = React.useCallback((to, opts = {}) => {
+    setHist((h) => {
+      if (typeof to === 'number') {
+        const index = Math.max(0, Math.min(h.entries.length - 1, h.index + to));
+        return { ...h, index, action: 'POP' };
+      }
+      keys.current += 1;
+      const entry = { ...parseTo(to), state: opts.state ?? null, key: `k${keys.current}` };
+      if (opts.replace) {
+        const entries = h.entries.slice();
+        entries[h.index] = entry;
+        return { entries, index: h.index, action: 'REPLACE' };
+      }
+      const entries = [...h.entries.slice(0, h.index + 1), entry];
+      return { entries, index: entries.length - 1, action: 'PUSH' };
+    });
   }, []);
   return React.createElement(
     NavigateContext.Provider,
     { value: navigate },
-    React.createElement(LocationContext.Provider, { value: location }, children),
+    React.createElement(
+      NavigationTypeContext.Provider,
+      { value: hist.action },
+      React.createElement(LocationContext.Provider, { value: hist.entries[hist.index] }, children)
+    )
   );
 }
 
@@ -100,4 +124,5 @@ module.exports = {
   useNavigate,
   Navigate,
   useLocation: () => React.useContext(LocationContext),
+  useNavigationType: () => React.useContext(NavigationTypeContext),
 };

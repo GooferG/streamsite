@@ -1,5 +1,5 @@
-import { fireEvent, render, screen } from '@testing-library/react';
-import { Link, MemoryRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { Link, MemoryRouter, Navigate, Route, Routes, useLocation, useNavigate, useNavigationType } from 'react-router-dom';
 
 function Where() {
   return <p data-testid="where">{useLocation().pathname}</p>;
@@ -104,4 +104,31 @@ test('Navigate moves to its target once', () => {
     </MemoryRouter>
   );
   expect(screen.getByText('at /gamba')).toBeTruthy();
+});
+
+let nav;
+function Probe() {
+  const loc = useLocation();
+  const type = useNavigationType();
+  nav = useNavigate();
+  return <p data-testid="probe">{`${loc.pathname}|${JSON.stringify(loc.state)}|${type}|${loc.key}`}</p>;
+}
+const probe = () => screen.getByTestId('probe').textContent;
+
+test('push carries state and a fresh key; back pops to the previous entry', () => {
+  render(<MemoryRouter initialEntries={['/']}><Probe /></MemoryRouter>);
+  expect(probe()).toBe('/|null|POP|default');
+  act(() => nav('/vods', { state: { from: 'tapes' } }));
+  expect(probe()).toBe('/vods|{"from":"tapes"}|PUSH|k1');
+  act(() => nav(-1));
+  expect(probe()).toBe('/|null|POP|default');
+});
+
+test('replace swaps the current entry', () => {
+  render(<MemoryRouter initialEntries={['/']}><Probe /></MemoryRouter>);
+  act(() => nav('/', { state: { watch: true } }));
+  act(() => nav('/', { replace: true, state: null }));
+  expect(probe()).toBe('/|null|REPLACE|k2');
+  act(() => nav(-1));
+  expect(probe()).toBe('/|null|POP|default');
 });

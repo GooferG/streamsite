@@ -15,6 +15,10 @@ TV studio set, hard key light, deep shadows, warm practical lights glowing in
 the background, set lit in dark teal and plum, light VHS grain, slight
 chromatic bleed, analog video softness, no text, no letters, no logos, no watermark"
 
+Goofer Video (/vods) swaps the set for a rental store:
+
+VIDEO_STYLE = "1990s late-night video rental store interior, shot on a camcorder, buzzing fluorescent tube lights, deep shadows, wire racks of blank unlabeled black VHS boxes, a counter with a beige CRT television and a cash register, set lit in dark teal and plum with warm practical light, light VHS grain, slight chromatic bleed, analog video softness, no text, no letters, no logos, no signs, no watermark"
+
 ## What shipped
 
 Z-Image Turbo renders use `workflows/zimage-turbo.json` with the prompt
@@ -30,6 +34,8 @@ followed by ", " + STYLE. Qwen edits use `workflows/qwen-edit-2509.json` with
 | `operator-standby.webp` | Qwen edit of the call pose, seed 2: "Keep the same person, outfit, desk, framing and lighting. The handset is back on its cradle on the desk; they sit waiting with the headset on, one hand resting near the phone, looking toward the camera with a deadpan, slightly bored expression." | 480×600 |
 | `operator-shrug.webp` | Qwen edit of the call pose, seed 3: "Keep the same person, outfit, desk, framing and lighting. The handset is back on its cradle; they shrug with both palms turned up and an apologetic, deadpan face, looking toward the camera." | 480×600 |
 | `ident.webp` | Z-Image, 1600×896, seed 2: "an empty 1990s TV home shopping studio set at night, a round velvet product pedestal centre stage under a single spotlight, a desk with a row of beige telephones to one side, haze in the air, wide shot, no people" | 1600×900 |
+| `video/clerk-restock.webp` | Z-Image, 960×1200, seed 1: "waist-up portrait of an invented late-night video rental store clerk, a person in their twenties with a deadpan, sleepy expression and messy hair, wearing a faded staff vest over a band t-shirt, carrying a tall stack of blank black VHS tapes against their chest, standing between the shelves" + ", " + VIDEO_STYLE | 480×600 |
+| `video/clerk-asleep.webp` | Qwen edit of the restock pose, seed 3: "Keep the same person, outfit, store, framing and lighting. They are now asleep behind the store counter, head resting on folded arms next to a beige CRT television and a cash register, the stack of tapes set down beside them." | 480×600 |
 
 Item art budget is 120 KB, operator 60 KB, ident 150 KB; `to_webp.py` steps
 the quality down until a file fits.

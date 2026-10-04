@@ -59,7 +59,7 @@ The owner wants home to be the most distinctive page on the site, not a restyle.
 ### Doors
 
 | Order | Object | Link (plain click plays the camera) | Shows on home |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | 1 | TV | live: `https://twitch.tv/GooferG` (plain click = watch inside the TV); off air: `/vods` | the reel, or the live preview |
 | 2 | Sticky note on the TV (only while a giveaway is open) | `/giveaway` | the keyword, handwritten |
 | 3 | Laptop | `/gamba/hunts` while a hunt is live or a round is open/locked, else `/gamba` | hunt / round / screensaver |
@@ -77,7 +77,7 @@ The owner wants home to be the most distinctive page on the site, not a restyle.
 ### Sentences (examples; final copy lives in the model and follows PRODUCT.md's voice rules)
 
 | Door | State | Teaser | Sentence |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | TV | waiting for Twitch | Tuning in | Checking whether Goofer's on. |
 | TV | live | On now · 214 | Goofer's live right now. Lean in to watch. |
 | TV | off air, next known | Back Mon 11 AM | Off the air. Back Monday at 11 AM for Bonus Hunt Time! |
@@ -153,7 +153,7 @@ The doors render as an ordered list of links (the order above) with their senten
 ## Data (`useCouchData.js`)
 
 | Need | Source | Cost on home |
-|---|---|---|
+| --- | --- | --- |
 | Live state, preview, viewers, newest VOD, clips, last streamed category | App's 120 s Twitch poll (props, incl. `statusReady` and `channelData.game_name`) | none new |
 | Next show | `useSchedule` + `upNext` (`scheduleTime.js`) | already site-wide |
 | Hunt live / recent hunts | `useCommunityHunts` (server-cached 30 s) | one 60 s poll |
@@ -258,7 +258,7 @@ One branch, `feat/couch-home`, one PR. Build order, with owner checkpoints (✋)
 **Risks:**
 
 | Risk | Mitigation |
-|---|---|
+| --- | --- |
 | Art takes several rounds | Code runs on the test plate until the final art lands |
 | SAM 3 access is slow | BiRefNet ToonOut on crops |
 | The zoom janks on phones | One layer, transforms only, perf pass on a phone profile, shorter move if needed |

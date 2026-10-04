@@ -106,3 +106,39 @@ test('a returning user keeps every field and gets a fresh profile', async () => 
     createdAt: 'long ago',
   });
 });
+
+// A watch-time payout can write watchMinutes between login's read and its
+// write. Login must not reset it to the starter value of 0.
+test('a payout that lands mid-login is never overwritten', async () => {
+  __fake.seed('users/tw1', { tickets: 150, totalEarned: 150, updatedAt: 'then' });
+  const realCollection = __fake.db.collection;
+  let landed = false;
+  const spy = jest.spyOn(__fake.db, 'collection').mockImplementation((name) => {
+    const col = realCollection(name);
+    if (name !== 'users') return col;
+    return {
+      ...col,
+      doc: (id) => {
+        const ref = col.doc(id);
+        return {
+          ...ref,
+          get: async () => {
+            const snap = await ref.get();
+            if (!landed) {
+              landed = true;
+              await realCollection('users').doc(id).set({ watchMinutes: 45 }, { merge: true });
+            }
+            return snap;
+          },
+        };
+      },
+    };
+  });
+  try {
+    const res = await login();
+    expect(res.statusCode).toBe(200);
+    expect(__fake.read('users/tw1')).toMatchObject({ tickets: 150, watchMinutes: 45, twitchName: 'viewer' });
+  } finally {
+    spy.mockRestore();
+  }
+});

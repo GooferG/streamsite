@@ -46,24 +46,25 @@ export default async function handler(req, res) {
   // Upsert users/{twitchId}. Profile fields refresh on every login. Starter
   // fields are written once: on first login, or later for a doc made
   // elsewhere first (a prediction settle credits tickets with set+merge).
+  // One transaction, so a watch-time payout landing between the read and the
+  // write is never reset to a starter default.
   const userRef = adminDb.collection('users').doc(twitchUser.id);
-  const existing = await userRef.get();
   const profile = {
     twitchName: twitchUser.login,
     displayName: twitchUser.display_name,
     profileImageUrl: twitchUser.profile_image_url || null,
     updatedAt: FieldValue.serverTimestamp(),
   };
-  const starter = missingStarterFields(
-    existing.exists ? existing.data() : {},
-    twitchUser.id,
-    FieldValue.serverTimestamp()
-  );
-  if (!existing.exists) {
-    await userRef.set({ ...starter, ...profile });
-  } else {
-    await userRef.update({ ...starter, ...profile });
-  }
+  await adminDb.runTransaction(async (tx) => {
+    const existing = await tx.get(userRef);
+    const starter = missingStarterFields(
+      existing.exists ? existing.data() : {},
+      twitchUser.id,
+      FieldValue.serverTimestamp()
+    );
+    if (!existing.exists) tx.set(userRef, { ...starter, ...profile });
+    else tx.update(userRef, { ...starter, ...profile });
+  });
 
   // Watch time earned before they had an account. Never block login on it.
   let banked = null;

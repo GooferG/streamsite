@@ -310,7 +310,7 @@ Components unique to a streaming-channel hub. Their visual weight pulls more fro
 
 ## 7. On Air (site language)
 
-On Air is the softer broadcast look that replaces the hard-lined boxes: rounded, layered surfaces with inset highlights and drop shadows, a TV monitor stage, a perforated prediction slip. It started on the Hunts tab (`/gamba/hunts`) and is now the site's language: the nav runs it on every route, the store (`/store`, the Goofer Shopping Network) and the schedule (`/schedule`, the Goofer Guide) are built on it, and other surfaces migrate one at a time by using the `onair` tokens and the primitives in `src/components/onAir/`. Until a page migrates, the seam between its legacy content and the On Air chrome is expected.
+On Air is the softer broadcast look that replaces the hard-lined boxes: rounded, layered surfaces with inset highlights and drop shadows, a TV monitor stage, a perforated prediction slip. It started on the Hunts tab (`/gamba/hunts`) and is now the site's language: the nav runs it on every route, the store (`/store`, the Goofer Shopping Network) and the schedule (`/schedule`, the Goofer Guide), the video store (`/vods`, Goofer Video) are built on it, and other surfaces migrate one at a time by using the `onair` tokens and the primitives in `src/components/onAir/`. Until a page migrates, the seam between its legacy content and the On Air chrome is expected.
 
 ### Tokens
 
@@ -318,13 +318,14 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 
 - **Colour roles:** `onair-signal` (#3ee0bf) is the signal: open, live state, positive result. `onair-winner` (#ff6a1a family) is the result moment. `onair-viewer` (#9146ff family) is "you" and Twitch actions. `onair-live` (#d83a1c) is the LIVE tally light only. `onair-loss` (#ff6b6b) is negative results and errors.
 - **Surfaces:** `onair-surface-1…4` step from #17151b to #0f0e12, `onair-surface-raised` (#3a3540) for the REPLAY pill; `onair-bezel-*` for the monitor frame; `onair-ticket-top/mid/bottom` for the slip.
+- **Paper:** `onair-paper` (label stock) and `onair-paper-ink` (the ink on it, about 13:1). Stickers use `onair-signal` and `onair-loss` as stock with paper ink. Goofer Video only.
 - **Inks on colour:** `onair-screen-ink` / `-screen-dim` (warm CRT label tints, both at least as light as ink-5), `onair-winner-ink` (dark text on orange), `onair-winner-pale` (≥100x multipliers), `onair-viewer-ink` / `-viewer-muted` (text on the purple slip).
 - **Ink:** `onair-ink-1…7`, #ece8e1 down to #4a4550.
-- **Radii:** bezel 36, screen 26, card 24, row 18, inner 16, control 14, tile 10.
+- **Radii:** bezel 36, screen 26, card 24, row 18, inner 16, control 14, tile 10, case 6 and label 3 (Goofer Video's tape box and its labels).
 - **Depth:** `shadow-onair-card` and `shadow-onair-row` for resting surfaces; `shadow-onair-lit-winner` / `-lit-viewer` for lit rows and cards; `-well` for sunken fields, `-raised` for buttons, `-ticket` / `-ticket-top` for the slip.
 - **Glow tokens** (only for what may glow): `shadow-onair-live`, `-led` (on air only), `-winner-ring`, `-winner-chip`, `-dot-winner`, `-dot-viewer`.
 - **Pattern:** `bg-onair-track` is the meter's dotted track.
-- **Type:** `font-onair` (Bricolage Grotesque 500/700/800 — no 600 is loaded) for display and UI; `font-onair-mono` (JetBrains Mono 400/600/700) uppercase with 0.15–0.35em tracking for labels and data. Scale: 96 / 60 / 30 / 24 / 22 / 20 / 17 / 15 / 14 / 13 / 12 / 11 / 10; nothing below 10px. Display figures may shrink below the scale to fit their box (container-fitted, 2rem floor for the hero), with a currency code set at half size beside the figure.
+- **Type:** `font-onair` (Bricolage Grotesque 500/700/800 — no 600 is loaded) for display and UI; `font-onair-mono` (JetBrains Mono 400/600/700) uppercase with 0.15–0.35em tracking for labels and data; `font-onair-marker` (Permanent Marker 400) for Goofer Video's handwritten labels and index cards only. Scale: 96 / 60 / 30 / 24 / 22 / 20 / 17 / 15 / 14 / 13 / 12 / 11 / 10; nothing below 10px. Display figures may shrink below the scale to fit their box (container-fitted, 2rem floor for the hero), with a currency code set at half size beside the figure.
 
 ### Navigation
 
@@ -348,6 +349,16 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 - **The grid.** Days are rows, today first; hours run across on the viewer's clock, an hour either side of the week's slots. A show sits at its start and runs its length; with no end time it runs three hours and its surface fades out (the text never fades). Off days are a faint `bg-onair-track` band. Below `md` each day is its own row with a thin time bar.
 - **Lit and now.** The lit block is the slot in the promo box. Today's row carries a plain signal NOW line behind the blocks; it doesn't glow.
 - **Two clocks.** Times are the viewer's; Goofer's Arizona time sits beside them in small mono wherever they differ.
+
+### Video store
+
+- **A late-night rental store.** `/vods` is Goofer Video: a lightbox sign (the `h1`), aisle signs that jump to New releases, Fresh picks and Cult classics, then the shelves. It has no bezel or monitor, so it doesn't repeat the Gamba hub or the guide.
+- **Shelves.** VODs are portrait clamshells on one shelf per week (Monday to Sunday, the viewer's calendar). The sleeve holds the 16:9 thumbnail in a photo window, the cleaned title on a marker label, the catalogue number and weekday on the spine, and the tape stock (`T-120 · EP`) and length in mono. Clips are landscape camcorder cases with a "Picked by" index card; Cult classics sit behind one paper divider per game. Below `md` a shelf scrolls sideways; from `md` it wraps, with the lip under every row.
+- **Stickers.** At most two per box: New release, Due back (within 7 days of Twitch's 60-day expiry), N clips inside. Paper stock with paper ink. Nothing on the floor glows.
+- **The OPEN light** is the page's LIVE light: the red `StatusLight` while live, an unlit "After hours" off air, nothing before the first Twitch poll.
+- **The rental counter.** One click plays a tape in an overlay with the back of its box beside it. The tape timeline marks each clip at its offset, and a mark seeks the VOD. A clip's back links to its tape while the VOD is in the archive. Focus is trapped and goes back to the box.
+- **The marker.** `font-onair-marker` is for labels, index cards and the sign-off: 15px or larger, never for data. Dates, times, lengths and counts stay mono.
+- **The clerk is set dressing.** The night clerk (`public/gsn/video/`) appears only in the loading and empty states, always `aria-hidden`, and bows out when its art is missing.
 
 ### Named Rules
 

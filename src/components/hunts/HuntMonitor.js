@@ -1,13 +1,12 @@
 import Monitor from '../onAir/Monitor';
 import Chip from '../onAir/Chip';
-import { MONO } from '../onAir/classes';
 import { fitFigure } from '../onAir/fit';
 import { formatMoney } from '../../utils/money';
 import { formatMultiplier } from '../../utils/huntFormat';
 import { formatAvg, formatAvgFigure, signedMoney, winnerPrizeText } from './huntStats';
 import { entryName } from './huntBoard';
 import HuntMeter from './HuntMeter';
-import MoneyFigure, { fitTextFor } from './MoneyFigure';
+import { Chips, Eyebrow, Hero, HeroRow, Question, Stage } from './MonitorStage';
 import ViewerAvatar from './ViewerAvatar';
 import { GAMBA_TOOLS, channelLabel } from '../../data/gambaTools';
 
@@ -23,77 +22,6 @@ const SCREENS = {
   settled: { tint: 'winner', status: 'replay', tag: 'Final', tone: 'winner', readout: { channel: CH, label: 'Entries closed', tone: 'muted' } },
   offair: { tint: 'neutral', status: 'replay', tag: 'Off air', tone: 'muted', readout: { channel: CH, label: 'No round', tone: 'muted' } },
 };
-
-const EYEBROW = { signal: 'text-onair-signal', winner: 'text-onair-winner-warm', muted: 'text-onair-ink-4' };
-const HERO = { ink: 'text-onair-ink-1', loss: 'text-onair-loss', signal: 'text-onair-signal-light' };
-
-function Eyebrow({ tone, children }) {
-  return (
-    <p className={`${MONO} text-[0.6875rem] tracking-[0.3em] [overflow-wrap:anywhere] sm:text-xs ${EYEBROW[tone]}`}>
-      {children}
-    </p>
-  );
-}
-
-function Question({ children }) {
-  return <h2 className="text-[1.375rem] font-bold tracking-[-0.01em] text-onair-ink-3 sm:text-3xl">{children}</h2>;
-}
-
-// The hero figure fills its share of the screen (2–6rem). A currency code is
-// set at half size beside the figure, so "ARS 1,850,000.00" fits a phone.
-function Hero({ text, suffix = null, label, tone = 'ink' }) {
-  return (
-    <div className="flex min-w-0 max-w-full flex-col items-center gap-1.5">
-      <p
-        className={`whitespace-nowrap font-extrabold leading-[0.9] tracking-[-0.03em] tabular-nums ${HERO[tone]}`}
-        style={{ fontSize: fitFigure(`${fitTextFor(text)}${suffix || ''}`, { min: 2, max: 6 }) }}
-      >
-        <MoneyFigure text={text} symbolClassName="align-[0.5em] text-[0.45em]" />
-        {suffix && <span className="text-[0.58em] text-onair-signal-light">{suffix}</span>}
-      </p>
-      {label && <p className={`${MONO} text-[0.6875rem] tracking-[0.25em] text-onair-ink-5`}>{label}</p>}
-    </div>
-  );
-}
-
-function SideStats({ items }) {
-  if (!items.length) return null;
-  return (
-    <>
-      <span className="hidden h-[84px] w-px bg-white/10 sm:block" aria-hidden="true" />
-      <dl className="flex flex-wrap justify-center gap-x-5 gap-y-2 sm:flex-col sm:items-start sm:gap-2 sm:pb-1">
-        {items.map((s) => (
-          <div key={s.label} className="flex items-baseline gap-1.5 text-sm text-onair-ink-5">
-            <dt>{s.label}</dt>
-            <dd className="text-lg font-bold tabular-nums text-onair-ink-1">{s.value}</dd>
-          </div>
-        ))}
-      </dl>
-    </>
-  );
-}
-
-function HeroRow({ hero, side }) {
-  return (
-    <div className="mt-1 flex w-full flex-col items-center gap-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-center sm:gap-7">
-      {hero}
-      <SideStats items={side} />
-    </div>
-  );
-}
-
-function Chips({ children }) {
-  return <div className="mt-1.5 flex flex-wrap justify-center gap-2.5">{children}</div>;
-}
-
-function Stage({ eyebrow, children }) {
-  return (
-    <div className="flex flex-col items-center gap-3 pb-1.5 pt-6 text-center sm:pt-[30px]">
-      {eyebrow}
-      {children}
-    </div>
-  );
-}
 
 // Open hero: required avg, else the start cost as break-even, else nothing.
 function openHero(stats, money) {

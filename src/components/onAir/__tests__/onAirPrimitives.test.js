@@ -64,3 +64,22 @@ test('Chip has a small size and a loss tone', () => {
   expect(chip.className).toContain('text-onair-loss');
   expect(chip.className).not.toContain('px-4');
 });
+
+test('OnAirButton can render as another element (a router Link) without a type', () => {
+  function FakeLink({ to, children, ...rest }) {
+    return (
+      <a href={to} {...rest}>
+        {children}
+      </a>
+    );
+  }
+  render(
+    <OnAirButton as={FakeLink} to="/gamba/hunts" variant="viewer">
+      Get your guess in
+    </OnAirButton>
+  );
+  const link = screen.getByRole('link', { name: 'Get your guess in' });
+  expect(link.getAttribute('href')).toBe('/gamba/hunts');
+  expect(link.hasAttribute('type')).toBe(false);
+  expect(link.className).toContain('from-onair-viewer');
+});

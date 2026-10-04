@@ -5,8 +5,8 @@ const path = require('path');
 const config = require('../../../../tailwind.config.js');
 
 const ROOT = path.resolve(__dirname, '../../../..');
-const DIRS = ['src/components/onAir', 'src/components/hunts', 'src/components/store', 'src/components/nav'];
-// Nav chrome that lives outside the nav folder, scanned with the nav.
+const DIRS = ['src/components/onAir', 'src/components/hunts', 'src/components/store', 'src/components/nav', 'src/components/gamba'];
+// Nav chrome that lives outside the nav folder, scanned with the nav (the Gamba tuner is chrome too).
 const CONTROL_ROOM_BUTTON = 'src/components/controlRoom/ControlRoomButton.js';
 const FILES = [CONTROL_ROOM_BUTTON];
 // Fixture data and the per-slot tile tints are the recorded raw-colour exceptions.
@@ -26,7 +26,8 @@ function sources() {
   ];
 }
 
-const isNavChrome = (rel) => rel.startsWith('src/components/nav/') || rel === CONTROL_ROOM_BUTTON;
+const isNavChrome = (rel) =>
+  rel.startsWith('src/components/nav/') || rel.startsWith('src/components/gamba/') || rel === CONTROL_ROOM_BUTTON;
 
 function offenders(pattern, { only = () => true } = {}) {
   return sources()
@@ -63,7 +64,7 @@ test('Type: nothing below the 10px floor, no unloaded 600 weight, mono tracking 
   expect(offenders(/text-\[0\.5625rem\]|font-semibold|tracking-\[0\.1[0-4]em\]/)).toEqual([]);
 });
 
-test('Tokens: no raw colours or bare radii in the Hunts, Store and nav components', () => {
+test('Tokens: no raw colours or bare radii in the Hunts, Store, nav and Gamba components', () => {
   expect(
     offenders(/rgba\(|#[0-9a-fA-F]{6}\b|\brounded\b(?!-)/, {
       only: (rel) =>
@@ -77,12 +78,15 @@ test('Scope: the control room button is scanned as nav chrome', () => {
   expect(sources().map(([rel]) => rel)).toContain(CONTROL_ROOM_BUTTON);
 });
 
-test('Type: every mono label in the nav sets its tracking (0.15em or more) on the same line', () => {
+test('Type: every mono label in the nav and Gamba chrome sets its tracking (0.15em or more) on the same line', () => {
   expect(offenders(/\$\{MONO\}(?!.*tracking-\[)/, { only: isNavChrome })).toEqual([]);
 });
 
-test('Type: the nav stays on the §7 scale (no text-base or text-lg)', () => {
-  expect(offenders(/\btext-(base|lg)\b/, { only: isNavChrome })).toEqual([]);
+// The shared monitor screen (the Hunts monitor and the Gamba featured monitor) is held to it too.
+const MONITOR_STAGE = 'src/components/hunts/MonitorStage.js';
+
+test('Type: the nav and Gamba chrome and the monitor screen stay on the §7 scale (no text-base or text-lg)', () => {
+  expect(offenders(/\btext-(base|lg)\b/, { only: (rel) => isNavChrome(rel) || rel === MONITOR_STAGE })).toEqual([]);
 });
 
 test('Roles: orange stays off the open slip', () => {
@@ -102,6 +106,6 @@ test('Tokens: the nav bar shadow is a boxShadow token, not a radius', () => {
   expect(config.theme.extend.borderRadius['onair-bar']).toBeUndefined();
 });
 
-test('Roles: the nav carries no orange (inside On Air orange is the winner)', () => {
+test('Roles: the nav and Gamba chrome carry no orange (inside On Air orange is the winner)', () => {
   expect(offenders(/orange|onair-winner/, { only: isNavChrome })).toEqual([]);
 });

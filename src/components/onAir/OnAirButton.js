@@ -20,14 +20,15 @@ const SIZES = {
 const DISABLED =
   'disabled:cursor-not-allowed disabled:bg-none disabled:bg-white/[0.08] disabled:text-onair-ink-5 disabled:shadow-none disabled:hover:brightness-100 aria-disabled:cursor-not-allowed aria-disabled:bg-none aria-disabled:bg-white/[0.08] aria-disabled:text-onair-ink-5 aria-disabled:shadow-none aria-disabled:hover:brightness-100';
 
-export default function OnAirButton({ variant = 'viewer', size = 'md', type = 'button', className = '', children, ...rest }) {
+export default function OnAirButton({ as: Tag = 'button', variant = 'viewer', size = 'md', type = 'button', className = '', children, ...rest }) {
+  const typeProp = Tag === 'button' ? { type } : {};
   return (
-    <button
-      type={type}
+    <Tag
+      {...typeProp}
       className={`inline-flex items-center justify-center gap-2 rounded-onair-control font-bold transition-[filter,background-color] duration-150 ${SIZES[size]} ${VARIANTS[variant]} ${DISABLED} ${FOCUS} ${className}`}
       {...rest}
     >
       {children}
-    </button>
+    </Tag>
   );
 }

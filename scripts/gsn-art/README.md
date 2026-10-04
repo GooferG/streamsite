@@ -19,6 +19,16 @@ Goofer Video (/vods) swaps the set for a rental store:
 
 VIDEO_STYLE = "1990s late-night video rental store interior, shot on a camcorder, buzzing fluorescent tube lights, deep shadows, wire racks of blank unlabeled black VHS boxes, a counter with a beige CRT television and a cash register, set lit in dark teal and plum with warm practical light, light VHS grain, slight chromatic bleed, analog video softness, no text, no letters, no logos, no signs, no watermark"
 
+### Cartoon redraw
+
+Goofer Video's clerk is the first piece in the site's new early-2000s adult-cable cartoon direction. It was made by redrawing a photoreal render with the Qwen edit model, using this prompt:
+
+> Redraw this entire image as a crude early-2000s American late-night adult cable cartoon. Keep the same composition, pose, stack of tapes, shelves, CRT and counter. Make the clerk an ugly cartoon man: bulbous nose, tiny black dot eyes, heavy unibrow, stubble, slouched, dead-eyed deadpan expression. Extremely simple flat shapes, flat solid colors with no shading or gradients, clean medium-weight black outlines, minimal detail, stiff low-budget limited-animation look, muted sickly palette of olive, dull teal, faded plum and beige. Not anime, not cute, not 3D. No text, no letters, no logos.
+
+Rules: describe traits, never name a show, studio or character; flat fills, no shading, clean black outlines, muted palette; no lettering.
+
+The GSN art (operator, items, ident) is due to be redrawn the same way in a follow-up, so the site ends up with one style.
+
 ## What shipped
 
 Z-Image Turbo renders use `workflows/zimage-turbo.json` with the prompt
@@ -34,8 +44,8 @@ followed by ", " + STYLE. Qwen edits use `workflows/qwen-edit-2509.json` with
 | `operator-standby.webp` | Qwen edit of the call pose, seed 2: "Keep the same person, outfit, desk, framing and lighting. The handset is back on its cradle on the desk; they sit waiting with the headset on, one hand resting near the phone, looking toward the camera with a deadpan, slightly bored expression." | 480×600 |
 | `operator-shrug.webp` | Qwen edit of the call pose, seed 3: "Keep the same person, outfit, desk, framing and lighting. The handset is back on its cradle; they shrug with both palms turned up and an apologetic, deadpan face, looking toward the camera." | 480×600 |
 | `ident.webp` | Z-Image, 1600×896, seed 2: "an empty 1990s TV home shopping studio set at night, a round velvet product pedestal centre stage under a single spotlight, a desk with a row of beige telephones to one side, haze in the air, wide shot, no people" | 1600×900 |
-| `video/clerk-restock.webp` | Z-Image, 960×1200, seed 1: "waist-up portrait of an invented late-night video rental store clerk, a person in their twenties with a deadpan, sleepy expression and messy hair, wearing a faded staff vest over a band t-shirt, carrying a tall stack of blank black VHS tapes against their chest, standing between the shelves" + ", " + VIDEO_STYLE | 480×600 |
-| `video/clerk-asleep.webp` | Qwen edit of the restock pose, seed 3: "Keep the same person, outfit, store, framing and lighting. They are now asleep behind the store counter, head resting on folded arms next to a beige CRT television and a cash register, the stack of tapes set down beside them." | 480×600 |
+| `video/clerk-restock.webp` | 1. Z-Image, 960×1200, seed 1: "waist-up portrait of an invented late-night video rental store clerk, a person in their twenties with a deadpan, sleepy expression and messy hair, wearing a faded staff vest over a band t-shirt, carrying a tall stack of blank black VHS tapes against their chest, standing between the shelves" + ", " + VIDEO_STYLE → 2. Qwen edit (cartoon redraw), seed 3: "Redraw this entire image as a crude early-2000s American late-night adult cable cartoon. Keep the same composition, pose, stack of tapes, shelves, CRT and counter. Make the clerk an ugly cartoon man: bulbous nose, tiny black dot eyes, heavy unibrow, stubble, slouched, dead-eyed deadpan expression. Extremely simple flat shapes, flat solid colors with no shading or gradients, clean medium-weight black outlines, minimal detail, stiff low-budget limited-animation look, muted sickly palette of olive, dull teal, faded plum and beige. Not anime, not cute, not 3D. No text, no letters, no logos." | 480×600 |
+| `video/clerk-asleep.webp` | Qwen edit of the cartoon restock pose, seed 1: "Keep the same cartoon man, art style, outfit, outlines, flat colors, palette and store exactly. He is now asleep behind the store counter, head resting on folded arms next to a beige CRT television and a cash register, the stack of tapes set down flat on the counter beside him, mouth slightly open, dead-eyed even while asleep. Flat solid colors, no shading, clean black outlines. No text, no letters, no logos." | 480×600 |
 
 Item art budget is 120 KB, operator 60 KB, ident 150 KB; `to_webp.py` steps
 the quality down until a file fits.

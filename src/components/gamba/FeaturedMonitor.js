@@ -9,7 +9,7 @@ import { formatClock } from '../hunts/huntTime';
 import { formatMoney } from '../../utils/money';
 import { huntTypeLabel } from '../../utils/huntFormat';
 import { GAMBA_TOOLS, channelLabel } from '../../data/gambaTools';
-import { leaderboardFacts, progressModel } from './guide';
+import { leaderboardFacts, progressModel, roundTitle } from './guide';
 
 // The guide's featured monitor (spec Part 4): one Monitor that shows Hunts
 // while it is on air and the leaderboard otherwise. One instance, so the
@@ -98,7 +98,7 @@ function PreHuntScreen({ feature, money }) {
       <Hero text={money(stats.startCost)} label="Break-even" />
     ) : null;
   return (
-    <Stage eyebrow={<Eyebrow tone="signal">{round.title} · {feature.mode === 'open' ? 'Predictions open' : 'Entries closed'}</Eyebrow>}>
+    <Stage eyebrow={<Eyebrow tone="signal">{roundTitle(round)} · {feature.mode === 'open' ? 'Predictions open' : 'Entries closed'}</Eyebrow>}>
       <Question>What does the hunt pay?</Question>
       {hero && <HeroRow hero={hero} side={[]} />}
       <Chips>

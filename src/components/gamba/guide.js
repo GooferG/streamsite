@@ -19,20 +19,27 @@ export function pickFeatured({ hunts, round }) {
   return liveHuntOf(hunts) || isActive(round) ? 'hunts' : 'leaderboard';
 }
 
+// A round with no title still reads as something.
+export const roundTitle = (round) => (round && round.title) || 'Prediction round';
+
 // What the hunt screen talks about: the live hunt (kind 'live'), else the
-// active round before its hunt starts (kind 'prehunt').
+// active round before its hunt starts (kind 'prehunt'). A live hunt only takes
+// its cost and currency from the round when the round snapshots that hunt; a
+// round open for another hunt still sets the mode, chip and call to action.
 export function huntFeature({ hunts, round }) {
   const live = liveHuntOf(hunts);
   const active = isActive(round);
   const activeRound = active ? round : null;
-  const hunt = live || (active ? tabHuntRef(round, live, hunts && hunts.recent).summary : null);
-  const snap = activeRound && activeRound.bonusHuntSnapshot;
+  const ref = active ? tabHuntRef(round, live, hunts && hunts.recent) : null;
+  const hunt = live || (ref ? ref.summary : null);
+  const figuresRound = live && !(ref && ref.isLive) ? null : activeRound;
+  const snap = figuresRound && figuresRound.bonusHuntSnapshot;
   return {
     kind: live ? 'live' : 'prehunt',
     mode: active ? huntMode(round) : 'offair',
     round: activeRound,
     hunt,
-    stats: huntStats(hunt, activeRound),
+    stats: huntStats(hunt, figuresRound),
     currency: (hunt && hunt.currency) || (snap && snap.currency) || null,
     guessCount: activeRound ? activeRound.entryCount || 0 : 0,
     prize: activeRound ? topPrizeText(activeRound) : null,
@@ -81,7 +88,7 @@ function roundNext(feature) {
   return 'No round open';
 }
 
-function huntsRow(featured, feature, hunts) {
+function huntsRow(featured, feature, hunts, roundError) {
   if (featured === 'hunts' && feature.kind === 'live') {
     const { stats, hunt } = feature;
     const parts = [`${huntTypeLabel(hunt.huntType)} hunt`];
@@ -91,19 +98,21 @@ function huntsRow(featured, feature, hunts) {
   }
   if (featured === 'hunts') {
     const state = feature.mode === 'open' ? 'Predictions open' : 'Entries closed';
-    return { now: `${feature.round.title} · ${state}`, next: `${plural(feature.guessCount, 'guess', 'guesses')} in`, lit: true, live: false, tone: null };
+    return { now: `${roundTitle(feature.round)} · ${state}`, next: `${plural(feature.guessCount, 'guess', 'guesses')} in`, lit: true, live: false, tone: null };
   }
   if (hunts.loading) return { now: 'Tuning…', next: '—', lit: false, live: false, tone: null };
+  // A failed round read can't promise there is no round.
+  const next = roundError ? 'No signal' : 'No round open';
   const last = (hunts.recent || [])[0];
   if (!last) {
     return hunts.error
       ? { now: 'No signal', next: '—', lit: false, live: false, tone: null }
-      : { now: 'No hunts yet', next: 'No round open', lit: false, live: false, tone: null };
+      : { now: 'No hunts yet', next, lit: false, live: false, tone: null };
   }
   const result = profitLoss(last);
   return {
     now: result != null ? `Last hunt ${signedMoney(result, last.currency)}` : 'Last hunt',
-    next: 'No round open',
+    next,
     lit: false,
     live: false,
     tone: result == null ? null : result < 0 ? 'loss' : 'signal',
@@ -115,14 +124,14 @@ const STATIC_ROWS = {
   wheel: 'Spin up a random slot to play next.',
 };
 
-export function guideRows({ featured, feature, hunts, leaderboard, resets }) {
+export function guideRows({ featured, feature, hunts, leaderboard, resets, roundError = null }) {
   const lb = leaderboardFacts(leaderboard);
   return GAMBA_TOOLS.map((tool) => {
     const head = { id: tool.id, channel: channelLabel(tool), label: tool.label, path: tool.path };
     if (tool.id === 'leaderboard') {
       return { ...head, now: leaderboardRow(lb, featured), next: resets || '—', lit: false, live: false, tone: null };
     }
-    if (tool.id === 'hunts') return { ...head, ...huntsRow(featured, feature, hunts || {}) };
+    if (tool.id === 'hunts') return { ...head, ...huntsRow(featured, feature, hunts || {}, roundError) };
     return { ...head, now: STATIC_ROWS[tool.id], next: 'Any time', lit: false, live: false, tone: null };
   });
 }

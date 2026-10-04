@@ -60,6 +60,11 @@ test('pre-hunt: the question, no LIVE light, guess call to action', () => {
   expect(screen.getByRole('link', { name: 'Get your guess in' })).toBeTruthy();
 });
 
+test('pre-hunt: an untitled round reads as a prediction round', () => {
+  show({ featured: 'hunts', feature: huntFeature({ hunts: HUNTS(), round: { ...ROUND('open'), title: '' } }) });
+  expect(screen.getByText('Prediction round · Predictions open')).toBeTruthy();
+});
+
 test('leaderboard: pool, leader, resets clock, standings chyron and the standings link', () => {
   show({ featured: 'leaderboard', feature: null });
   expect(screen.getByText(/CH 01 · Leaderboard/)).toBeTruthy();

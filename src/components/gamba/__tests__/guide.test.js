@@ -68,6 +68,20 @@ describe('huntFeature', () => {
     const f = huntFeature({ hunts: HUNTS({ live: LIVE_HUNT }), round: ROUND('settled') });
     expect(f).toMatchObject({ kind: 'live', mode: 'offair', round: null, guessCount: 0, prize: null });
   });
+  test('live hunt with a round open for a different hunt: the live hunt keeps its own figures', () => {
+    const other = ROUND('open', { bonusHuntSnapshot: { huntId: 'h3', totalCost: 999, currency: 'ARS', bonusCount: 12 } });
+    const f = huntFeature({ hunts: HUNTS({ live: LIVE_HUNT, recent: [{ id: 'h3', pot: 999, currency: 'ARS' }] }), round: other });
+    expect(f).toMatchObject({ kind: 'live', mode: 'open', guessCount: 6, currency: null });
+    expect(f.round).toBe(other);
+    expect(f.stats.startCost).toBe(2421.82);
+    expect(f.stats.bonusCount).toBe(4);
+  });
+  test('live hunt with a round that snapshots it: cost and currency from the round', () => {
+    const own = ROUND('open', { bonusHuntSnapshot: { huntId: 'h9', totalCost: 2500, currency: 'ARS', bonusCount: 4 } });
+    const f = huntFeature({ hunts: HUNTS({ live: LIVE_HUNT }), round: own });
+    expect(f.stats.startCost).toBe(2500);
+    expect(f.currency).toBe('ARS');
+  });
   test('open round before the hunt starts', () => {
     const f = huntFeature({ hunts: HUNTS(), round: ROUND('open') });
     expect(f).toMatchObject({ kind: 'prehunt', mode: 'open' });
@@ -154,6 +168,20 @@ describe('guideRows', () => {
       next: 'No round open',
     });
     expect(rows({ ...base, hunts: HUNTS({ recent: [loss] }), featured: 'leaderboard', feature: null }).hunts).toMatchObject({ now: 'Last hunt −$60.00', tone: 'loss' });
+  });
+
+  test('off air with the round read failing: the next column says No signal', () => {
+    const win = { id: 'a', pot: 100, totalWon: 150, currency: null };
+    expect(rows({ ...base, hunts: HUNTS({ recent: [win] }), roundError: 'x', featured: 'leaderboard', feature: null }).hunts).toMatchObject({
+      now: 'Last hunt +$50.00',
+      next: 'No signal',
+    });
+    expect(rows({ ...base, hunts: HUNTS(), roundError: 'x', featured: 'leaderboard', feature: null }).hunts.next).toBe('No signal');
+  });
+
+  test('an untitled round reads as a prediction round', () => {
+    const feature = huntFeature({ hunts: HUNTS(), round: ROUND('open', { title: '' }) });
+    expect(rows({ ...base, featured: 'hunts', feature }).hunts.now).toBe('Prediction round · Predictions open');
   });
 
   test('hunts read failed with nothing cached: No signal', () => {

@@ -12,7 +12,7 @@ export function GuideView({ data, now }) {
   const featured = pickFeatured(data);
   const feature = featured === 'hunts' ? huntFeature(data) : null;
   const resets = formatResets(data.countdown);
-  const rows = guideRows({ featured, feature, hunts: data.hunts, leaderboard: data.leaderboard, resets });
+  const rows = guideRows({ featured, feature, hunts: data.hunts, leaderboard: data.leaderboard, resets, roundError: data.roundError });
   const ready = !data.hunts.loading && data.round !== undefined && !data.leaderboard.isLoading;
   return (
     <div className="font-onair">

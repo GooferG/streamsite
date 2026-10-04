@@ -35,6 +35,16 @@ test('off-air fixture: the leaderboard holds the monitor, nothing lit', () => {
     .forEach((a) => expect(a.getAttribute('data-lit')).toBeNull());
 });
 
+test('a failed round read reaches the Hunts row', () => {
+  const data = { ...GUIDE_FIXTURES.offair, roundError: 'permission-denied' };
+  render(
+    <MemoryRouter>
+      <GuideView data={data} now={data.now} />
+    </MemoryRouter>
+  );
+  expect(listings().getByRole('link', { name: /CH 02\s*Hunts/ }).textContent).toContain('No signal');
+});
+
 test('no-leaderboard fixture: No signal on the monitor', () => {
   view('noleaderboard');
   expect(screen.getByRole('heading', { name: 'No signal' })).toBeTruthy();

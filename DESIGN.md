@@ -130,6 +130,8 @@ components:
 
 # Design System: GooferG Live
 
+> **On Air (§7) is the site's design language.** Sections 2–6 describe the legacy system that brand pages, `/admin` and the Leaderboard, Bonus Battle and Slot Picker tools still use until each one migrates. On those legacy surfaces only, the legacy colour roles (orange = admin, red = destructive) apply.
+
 ## 1. Overview
 
 **Creative North Star: "The Late-Night Channel"**
@@ -143,9 +145,9 @@ This system explicitly rejects: generic Twitch-purple panel templates (the gradi
 **Key Characteristics:**
 
 - Always-on dark surface with tinted depth, never `#000`.
-- Emerald and purple two-role accent system. Red and orange are reserved.
-- Glow-and-glass depth instead of shadows. Backdrop-blur is purposeful, never default.
-- Tracking-wider uppercase labels and 900-weight display headers. Long-form copy stays warm and lowercase.
+- Colour roles come from On Air (§7) on the nav and every migrated surface: teal signal for live and open state, orange for the winner, purple for you and Twitch actions, red for the LIVE light and losses. Legacy surfaces keep the emerald and purple two-role system (§2), with red and orange reserved there.
+- Depth comes from §7 on On Air surfaces: an inset top highlight over a drop shadow, with glow kept for the LIVE light, the winner and you. Legacy surfaces keep glow-and-glass depth with no shadows (§4), and backdrop blur stays purposeful there.
+- Type comes from §7 on On Air surfaces: Bricolage Grotesque for display and UI, JetBrains Mono for tracked uppercase labels, sized on the §7 scale. Legacy surfaces keep tracking-wider uppercase labels and 900-weight display headers (§3). Long-form copy stays warm and lowercase everywhere.
 - Marketing and tools sit on the same brand. The register shift between them is visible but never absolute.
 
 ## 2. Colors
@@ -184,7 +186,7 @@ A tinted-dark palette with two semantic accents. Everything sits on the `from-zi
 
 ## 3. Typography
 
-**Display Font:** `ui-sans-serif, system-ui, sans-serif`. The site uses the OS sans (SF on Mac, Segoe on Windows). It never ships a webfont. The system stack is the chosen typography for this brand, treated as a first-class commitment.
+**Display Font (legacy):** `ui-sans-serif, system-ui, sans-serif` on surfaces not yet migrated. On Air surfaces use Bricolage Grotesque and JetBrains Mono (§7), loaded once in `public/index.html`.
 **Body Font:** `-apple-system, BlinkMacSystemFont, Segoe UI, Roboto` (system body stack from `src/index.css`).
 **Label/Mono Font:** `source-code-pro, Menlo, Monaco, Consolas, monospace` (the global `code` fallback).
 
@@ -212,13 +214,13 @@ This system has **no box shadows**. Depth comes from three sources, in order of 
 
 1. **Tonal layering on the body gradient.** Surfaces float on top of `from-zinc-950 via-emerald-950 to-purple-950` using `bg-zinc-900` / `bg-zinc-800` and translucent overlays (`bg-white/5`, `bg-emerald-500/10`). The tint of the underlying gradient bleeds through.
 2. **Glow halos.** Large `blur-3xl` discs of `bg-emerald-500/20` and `bg-purple-500/20` positioned behind the hero, animated with the `glow` keyframe (`opacity 0.5↔0.8`, `blur 20px↔30px`, 8–10s ease loop). They suggest a CRT bloom.
-3. **Glass surfaces.** Top nav and mobile drawer use `backdrop-blur-xl` with `bg-black/20` or `bg-zinc-950/80` and a 1px emerald-tinted border. Glass is purposeful in this system. It lets the gradient and grain show through the nav. It is never a decorative default on every card.
+3. **Glass surfaces.** The nav side sheet's scrim (`bg-black/60 backdrop-blur-sm`) and the LIVE pill over media use backdrop blur. Glass is purposeful in this system. It lets the gradient and grain show through the scrim. It is never a decorative default on every card.
 
 ### Named Rules
 
 **The No-Shadow Rule.** `box-shadow` does not appear on cards, buttons, or surfaces. If something needs to feel lifted, use a glow halo behind it or a tonal step up (`bg-zinc-900` → `bg-zinc-800`). Drop shadows read SaaS. This site reads cable.
 
-**The Purposeful Glass Rule.** `backdrop-blur` is for surfaces the gradient must show through: top nav, mobile menu drawer, the LIVE pill over the hero video region. It is not the default for cards, modals, or list items.
+**The Purposeful Glass Rule.** `backdrop-blur` is for surfaces the gradient must show through: the nav side sheet's scrim, the LIVE pill over the hero video region. It is not the default for cards, modals, or list items.
 
 ## 5. Components
 
@@ -251,8 +253,7 @@ This system has **no box shadows**. Depth comes from three sources, in order of 
 
 ### Navigation
 
-- **Top nav:** Fixed, `backdrop-blur-xl bg-black/20`, `border-b border-emerald-500/10`. Nav items use label typography (uppercase, tracking-wider, 700 weight). Default is `text-white/60`; active is `text-emerald-400`; hover grows an underline (`h-0.5 bg-gradient-to-r from-emerald-400 to-purple-400`) from `w-0` to `w-full` over 300ms. Admin nav item swaps emerald for orange (active state and underline gradient).
-- **Mobile drawer:** `from-zinc-950 to-emerald-950/50` vertical gradient surface, `backdrop-blur-xl`, slide-in from right. Nav items are full-width rounded-lg pills, emerald-tinted when active.
+The nav is On Air; see §7 "Navigation". The legacy glass bar and drawer are retired.
 
 ### Signature: The Live Indicator
 
@@ -291,25 +292,25 @@ Components unique to a streaming-channel hub. Their visual weight pulls more fro
 
 ### Don't
 
-- **Don't** use gradient text (`bg-clip-text` + `bg-gradient-to-*`). It's the SaaS-landing tell PRODUCT.md rejects. *Known violations to revisit: hero wordmark on `HomePage.js:198,202` ("GOOFER" / "LIVE"); nav logo on `Navigation.js:32` ("GooferG").*
+- **Don't** use gradient text (`bg-clip-text` + `bg-gradient-to-*`). It's the SaaS-landing tell PRODUCT.md rejects. *Known violations to revisit: hero wordmark on `HomePage.js:198,202` ("GOOFER" / "LIVE").*
 - **Don't** ship a SaaS landing template. No hero stat plus 3-card grid plus gradient text plus "trusted by" row. The home page is a channel feed.
 - **Don't** drift toward Twitch-corporate purple. The gradient must stay tinted (`from-zinc-950 via-emerald-950 to-purple-950`). Avoid using `purple-500` as a flat fill across whole surfaces. If a surface looks like a stock Twitch panel, it's wrong.
 - **Don't** add casino chrome to `/gamba`. No gold-on-black, no slot-machine bevels, no glossy "JACKPOT" treatments. The gamba section is a streamer's tracker.
 - **Don't** add cyberpunk drift: neon green on flat `#000`, glitch text, Blade Runner palettes. The dark gradient flirts with this lane. Stay on the warm and grimy side.
 - **Don't** use `box-shadow` on cards, buttons, or surfaces. Depth comes from tonal layering and glow halos. Shadows read SaaS.
-- **Don't** use glassmorphism (`backdrop-blur`) as a default. It belongs on three surfaces: top nav, mobile drawer, the LIVE pill over media. Anywhere else, justify it.
+- **Don't** use glassmorphism (`backdrop-blur`) as a default. It belongs on two surfaces: the nav side sheet's scrim and the LIVE pill over media. Anywhere else, justify it.
 - **Don't** use `border-left` or `border-right` greater than 1px as a colored side-stripe accent. Use a full border, a tonal background, or a leading icon.
 - **Don't** introduce middle font weights (500, 600). The system is 300 / 400 / 700 / 900 with intentional gaps.
-- **Don't** import a webfont. No Google Fonts, no `@font-face`, no `next/font`. The system stack is the chosen typography for this brand. Treat it as a first-class commitment.
+- **Don't** load fonts beyond the two On Air families (Bricolage Grotesque 500/700/800, JetBrains Mono 400/600/700) and the legacy Anton display face, all in `public/index.html`.
 - **Don't** soften the Chyron Rule for "readability" or "modernity." Tracking-wider uppercase labels are the cable-broadcast tell, and that tell is the brand.
 - **Don't** use em dashes in copy. Commas, colons, semicolons, periods, or parentheses instead.
 - **Don't** use "X, not Y" parallelism in copy. Constructions like "features, not bugs" or "an extension of the broadcast, not a press kit" are forbidden. State what something is on its own terms.
 - **Don't** use AI-tell vocabulary: leverage, harness, utilize, seamless, robust, cutting-edge, unlock, delve, navigate (as a verb meaning "deal with"), elevate, empower, foster, streamline, holistic, synergy, ecosystem (outside literal tech context).
 - **Don't** nest cards. For sub-sections inside a card, step the background tonally (`bg-zinc-900` → `bg-zinc-800`).
 
-## 7. On Air (pilot: /gamba/hunts, /store)
+## 7. On Air (site language)
 
-On Air is the softer broadcast look replacing the hard-lined boxes: rounded, layered surfaces with inset highlights and drop shadows, a TV monitor stage, a perforated prediction slip. It pilots on the Hunts tab (`/gamba/hunts`) and the store (`/store`, the Goofer Shopping Network); other surfaces opt in one at a time by using the `onair` tokens and the primitives in `src/components/onAir/`. Until the global nav migrates, the seam between the system-font nav and On Air content is expected.
+On Air is the softer broadcast look that replaces the hard-lined boxes: rounded, layered surfaces with inset highlights and drop shadows, a TV monitor stage, a perforated prediction slip. It started on the Hunts tab (`/gamba/hunts`) and is now the site's language: the nav runs it on every route, the store (`/store`, the Goofer Shopping Network) is built on it, and other surfaces migrate one at a time by using the `onair` tokens and the primitives in `src/components/onAir/`. Until a page migrates, the seam between its legacy content and the On Air chrome is expected.
 
 ### Tokens
 
@@ -324,6 +325,16 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 - **Glow tokens** (only for what may glow): `shadow-onair-live`, `-led` (on air only), `-winner-ring`, `-winner-chip`, `-dot-winner`, `-dot-viewer`.
 - **Pattern:** `bg-onair-track` is the meter's dotted track.
 - **Type:** `font-onair` (Bricolage Grotesque 500/700/800 — no 600 is loaded) for display and UI; `font-onair-mono` (JetBrains Mono 400/600/700) uppercase with 0.15–0.35em tracking for labels and data. Scale: 96 / 60 / 30 / 24 / 22 / 20 / 17 / 15 / 14 / 13 / 12 / 11 / 10; nothing below 10px. Display figures may shrink below the scale to fit their box (container-fitted, 2rem floor for the hero), with a currency code set at half size beside the figure.
+
+### Navigation
+
+- **The bar is the TV's bezel.** Fixed, 57px (`NAV_H` in `src/components/nav/navMetrics.js`), bezel gradient with `shadow-onair-bar`, no border.
+- **Channels.** Pages carry codes 01–08 (Home … About), shown as mono chyron labels from `xl`; labels only from `lg`; below `lg` the side sheet. Gamba (04) lists its tools as subchannels `4-0 … 4-4` in the nav; inside `/gamba` they read `CH 00 … CH 04`.
+- **Active.** Teal text on a faint teal wash (`aria-current="page"`, or `"true"` for a section). No underline.
+- **Power LED and tally.** The LED is set dressing and glows only while live. Live shows the red `StatusLight` tally with the viewer count; off air shows a dim readout with the next scheduled stream. Neither appears until a Twitch poll has succeeded.
+- **Menus** are disclosures (`onAir/Popover`), not `role="menu"`.
+- **No orange in the nav.** The operator's controls are neutral (the OP badge, the control room button); a running giveaway shows in signal teal.
+- **Side sheet.** Slides in from the right under the bar, rounded on its leading edge, `inert` while closed. While open it traps Tab focus and closes on Escape, scrim click, navigation or sign out.
 
 ### Named Rules
 

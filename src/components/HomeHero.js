@@ -1,24 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Eye, Clock, PlayCircle, Film } from 'lucide-react';
 import { useSchedule } from '../hooks/useSchedule';
+import { nextScheduledStream } from '../utils/scheduleWeek';
+import { formatViewerCount } from '../utils/viewers';
 import { getGameCover } from '../utils/igdbApi';
 import { SOCIAL_LINKS } from '../constants';
-
-const DAYS_OF_WEEK = [
-  'SUNDAY',
-  'MONDAY',
-  'TUESDAY',
-  'WEDNESDAY',
-  'THURSDAY',
-  'FRY-DAY',
-  'SATURDAY',
-];
-
-function formatViewerCount(n) {
-  if (n == null) return null;
-  if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
-  return String(n);
-}
 
 function resolveTwitchThumbnail(url) {
   if (!url) return null;
@@ -393,16 +379,7 @@ export default function HomeHero({
   const [gameCover, setGameCover] = useState(null);
   const [centerVisible, setCenterVisible] = useState(false);
 
-  const nextStream = useMemo(() => {
-    if (!schedule || schedule.length === 0) return null;
-    const today = new Date().getDay();
-    for (let i = 0; i < 7; i += 1) {
-      const dayName = DAYS_OF_WEEK[(today + i) % 7];
-      const stream = schedule.find((s) => s.day === dayName);
-      if (stream && stream.status !== 'off') return stream;
-    }
-    return null;
-  }, [schedule]);
+  const nextStream = useMemo(() => nextScheduledStream(schedule), [schedule]);
 
   useEffect(() => {
     let cancelled = false;

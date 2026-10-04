@@ -5,21 +5,28 @@ const path = require('path');
 const config = require('../../../../tailwind.config.js');
 
 const ROOT = path.resolve(__dirname, '../../../..');
-const DIRS = ['src/components/onAir', 'src/components/hunts', 'src/components/store'];
+const DIRS = ['src/components/onAir', 'src/components/hunts', 'src/components/store', 'src/components/nav'];
+// Nav chrome that lives outside the nav folder, scanned with the nav.
+const CONTROL_ROOM_BUTTON = 'src/components/controlRoom/ControlRoomButton.js';
+const FILES = [CONTROL_ROOM_BUTTON];
 // Fixture data and the per-slot tile tints are the recorded raw-colour exceptions.
 const RAW_COLOUR_EXEMPT = ['src/components/hunts/huntFixtures.js', 'src/components/store/storeFixtures.js'];
 
+const read = (rel) => [rel, fs.readFileSync(path.join(ROOT, rel), 'utf8')];
+
 function sources() {
-  return DIRS.flatMap((dir) =>
-    fs
-      .readdirSync(path.join(ROOT, dir))
-      .filter((f) => f.endsWith('.js'))
-      .map((f) => {
-        const rel = `${dir}/${f}`;
-        return [rel, fs.readFileSync(path.join(ROOT, rel), 'utf8')];
-      })
-  );
+  return [
+    ...DIRS.flatMap((dir) =>
+      fs
+        .readdirSync(path.join(ROOT, dir))
+        .filter((f) => f.endsWith('.js'))
+        .map((f) => read(`${dir}/${f}`))
+    ),
+    ...FILES.map(read),
+  ];
 }
+
+const isNavChrome = (rel) => rel.startsWith('src/components/nav/') || rel === CONTROL_ROOM_BUTTON;
 
 function offenders(pattern, { only = () => true } = {}) {
   return sources()
@@ -56,14 +63,26 @@ test('Type: nothing below the 10px floor, no unloaded 600 weight, mono tracking 
   expect(offenders(/text-\[0\.5625rem\]|font-semibold|tracking-\[0\.1[0-4]em\]/)).toEqual([]);
 });
 
-test('Tokens: no raw colours or bare radii in the Hunts and Store components', () => {
+test('Tokens: no raw colours or bare radii in the Hunts, Store and nav components', () => {
   expect(
     offenders(/rgba\(|#[0-9a-fA-F]{6}\b|\brounded\b(?!-)/, {
       only: (rel) =>
-        (rel.startsWith('src/components/hunts/') || rel.startsWith('src/components/store/')) &&
+        (rel.startsWith('src/components/hunts/') || rel.startsWith('src/components/store/') || isNavChrome(rel)) &&
         !RAW_COLOUR_EXEMPT.includes(rel),
     })
   ).toEqual([]);
+});
+
+test('Scope: the control room button is scanned as nav chrome', () => {
+  expect(sources().map(([rel]) => rel)).toContain(CONTROL_ROOM_BUTTON);
+});
+
+test('Type: every mono label in the nav sets its tracking (0.15em or more) on the same line', () => {
+  expect(offenders(/\$\{MONO\}(?!.*tracking-\[)/, { only: isNavChrome })).toEqual([]);
+});
+
+test('Type: the nav stays on the §7 scale (no text-base or text-lg)', () => {
+  expect(offenders(/\btext-(base|lg)\b/, { only: isNavChrome })).toEqual([]);
 });
 
 test('Roles: orange stays off the open slip', () => {
@@ -76,4 +95,13 @@ test('Roles: orange stays off the open slip', () => {
 
 test('Glow Means Something: data dots never use decoration-only ink-7', () => {
   expect(offenders(/bg-onair-ink-7/, { only: (rel) => rel.endsWith('HuntMeter.js') })).toEqual([]);
+});
+
+test('Tokens: the nav bar shadow is a boxShadow token, not a radius', () => {
+  expect(config.theme.extend.boxShadow['onair-bar']).toBe('inset 0 1px 0 rgba(255,255,255,.09), inset 0 -2px 0 rgba(0,0,0,.6)');
+  expect(config.theme.extend.borderRadius['onair-bar']).toBeUndefined();
+});
+
+test('Roles: the nav carries no orange (inside On Air orange is the winner)', () => {
+  expect(offenders(/orange|onair-winner/, { only: isNavChrome })).toEqual([]);
 });

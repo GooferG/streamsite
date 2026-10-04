@@ -9,12 +9,13 @@ import { entryName } from './huntBoard';
 import HuntMeter from './HuntMeter';
 import MoneyFigure, { fitTextFor } from './MoneyFigure';
 import ViewerAvatar from './ViewerAvatar';
+import { GAMBA_TOOLS, channelLabel } from '../../data/gambaTools';
 
 // The Hunts tab's stage: one screen per mode on the On Air Monitor (spec
 // "What each mode shows"). Screen content is the size container for the
 // fitted hero; --hero-share shrinks the hero when side stats join its row.
 
-const CH = 'CH 02';
+const CH = channelLabel(GAMBA_TOOLS.find((t) => t.id === 'hunts'));
 const SCREENS = {
   tuning: { tint: 'neutral', status: null, readout: { channel: CH, label: 'Tuning', tone: 'muted' } },
   open: { tint: 'signal', status: 'live', tag: 'Open', tone: 'signal', readout: { channel: CH, label: 'Entries open', tone: 'signal' } },

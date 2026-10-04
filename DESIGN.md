@@ -336,6 +336,12 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 - **No orange in the nav.** The operator's controls are neutral (the OP badge, the control room button); a running giveaway shows in signal teal.
 - **Side sheet.** Slides in from the right under the bar, rounded on its leading edge, `inert` while closed. While open it traps Tab focus and closes on Escape, scrim click, navigation or sign out.
 
+### Gamba tuner and guide
+
+- **The tuner is labelled channels under a tuning band.** The segments are real links; the band and needle are set dressing. The needle slides about 300ms from the previous channel and jumps under reduced motion. ◀ ▶ step through the channels and wrap. Below `md` the stepper and a "CH 02 Hunts · 3 of 5" readout carry it.
+- **The hub is the guide channel.** One featured monitor: Hunts while a hunt is live or a round is open or locked, the leaderboard otherwise. The channel-change static plays when the takeover starts or ends, never on first load.
+- **What's on.** One link row per tool. The lit row is the channel on the monitor; only the LIVE light glows.
+
 ### Named Rules
 
 **Depth, Not Borders.** On Air surfaces get an inset top highlight plus a drop shadow. No 1px border boxes around surfaces. Hairlines are allowed only as dividers inside one surface (table rows, the recap stat strip, the rule between the hero and its side stats), and a 1px inset edge highlight counts as depth, not a border. Form fields are the exception: a field keeps a visible resting boundary (about 3:1) so it reads as a field.

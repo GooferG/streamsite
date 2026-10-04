@@ -271,7 +271,8 @@ export default function ControlRoom({ isLive = false }) {
           if (d.fromDock) {
             if (!shouldUndock(d.startX, e.clientX)) return;
             d.fromDock = false;
-            d.size = { w: floatSize.w, h: d.size.h };
+            // The docked height isn't the floating one; the drop measures again.
+            d.size = { w: floatSize.w, h: floatSize.h ?? FALLBACK_H };
             d.offX = Math.min(d.offX, floatSize.w - 24);
             const next = clampRect({ x: e.clientX - d.offX, y: e.clientY - d.offY }, d.size, view);
             setDragRect(next);
@@ -286,17 +287,19 @@ export default function ControlRoom({ isLive = false }) {
           const d = dragRef.current;
           clearDrag();
           if (!d || d.fromDock) return;
-          // The drag may pass the edge; the drop settles fully on screen.
-          const at = fitRect({ x: e.clientX - d.offX, y: e.clientY - d.offY }, d.size, view);
           if (inDockZone(e.clientX, view.vw)) {
             flipRectRef.current = rootRef.current?.getBoundingClientRect() || null;
             const floatRect = fitRect(d.startRect, d.size, view);
             panelActions.moveTo(floatRect, nearestCorner(floatRect, d.size, view));
             panelActions.dock();
-          } else {
-            const snapped = snapToCorner(at, d.size, view);
-            panelActions.moveTo(snapped.rect, snapped.corner || nearestCorner(snapped.rect, d.size, view));
+            return;
           }
+          // The drag may pass the edge; the drop settles fully on screen, sized
+          // as the panel is now (one pulled off the dock is no longer dock height).
+          const size = { w: d.size.w, h: rootRef.current?.getBoundingClientRect().height || d.size.h };
+          const at = fitRect({ x: e.clientX - d.offX, y: e.clientY - d.offY }, size, view);
+          const snapped = snapToCorner(at, size, view);
+          panelActions.moveTo(snapped.rect, snapped.corner || nearestCorner(snapped.rect, size, view));
         },
         onLostPointerCapture: clearDrag,
       };

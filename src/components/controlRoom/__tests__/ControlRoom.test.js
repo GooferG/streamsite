@@ -245,7 +245,9 @@ test('the pill shows live state and reopens the panel', () => {
 });
 
 // Review Focus 2: a stale saved position is clamped on screen (jsdom is 1024×768).
-test('a saved position off screen comes back fully on screen', () => {
+// An auto-height panel is only known to its header at render: x fits whole,
+// y keeps the header on screen.
+test('a saved position off screen comes back on screen', () => {
   show({ panel: { rect: { x: 5000, y: 5000 } } });
   const dialog = screen.getByRole('dialog', { name: 'Control room' });
   expect(dialog.style.left).toBe('644px');
@@ -263,13 +265,33 @@ test('a drag can pass the edge, but the drop settles fully on screen', () => {
   show();
   const dialog = screen.getByRole('dialog', { name: 'Control room' });
   // jsdom measures the panel at 0,0, so the grab offset is the pointer itself.
-  firePointer('pointerdown', screen.getByText('LIVE'), { clientX: 700, clientY: 80 });
-  firePointer('pointermove', screen.getByText('LIVE'), { clientX: 1600, clientY: 150 });
-  expect(dialog.style.left).toBe('900px');
-  firePointer('pointerup', screen.getByText('LIVE'), { clientX: 1600, clientY: 150 });
-  const [rect] = cr.panelActions.moveTo.mock.calls[0];
-  expect(rect.x).toBeGreaterThanOrEqual(0);
-  expect(rect.x + 380).toBeLessThanOrEqual(1024);
+  // 960 is short of the dock zone (the last 48px of 1024).
+  firePointer('pointerdown', screen.getByText('LIVE'), { clientX: 10, clientY: 80 });
+  firePointer('pointermove', screen.getByText('LIVE'), { clientX: 960, clientY: 300 });
+  expect(dialog.style.left).toBe('950px');
+  firePointer('pointerup', screen.getByText('LIVE'), { clientX: 960, clientY: 300 });
+  expect(cr.panelActions.dock).not.toHaveBeenCalled();
+  expect(cr.panelActions.moveTo).toHaveBeenCalledWith({ x: 644, y: 220 }, expect.any(String));
+});
+
+test('pulling the panel off the dock drops it where it was let go', () => {
+  // Measured docked at pointerdown (full height), floating at the drop.
+  const docked = { x: 624, y: 57, left: 624, top: 57, width: 400, height: 711, right: 1024, bottom: 768 };
+  const floating = { x: 0, y: 0, left: 0, top: 0, width: 380, height: 237, right: 380, bottom: 237 };
+  const rects = jest
+    .spyOn(Element.prototype, 'getBoundingClientRect')
+    .mockReturnValueOnce(docked)
+    .mockReturnValue(floating);
+  try {
+    show({ panel: { mode: 'dock', restoreTo: 'dock' } });
+    firePointer('pointerdown', screen.getByText('LIVE'), { clientX: 700, clientY: 80 });
+    firePointer('pointermove', screen.getByText('LIVE'), { clientX: 500, clientY: 600 });
+    expect(cr.panelActions.undock).toHaveBeenCalled();
+    firePointer('pointerup', screen.getByText('LIVE'), { clientX: 500, clientY: 600 });
+    expect(cr.panelActions.moveTo).toHaveBeenCalledWith({ x: 424, y: 531 }, expect.any(String));
+  } finally {
+    rects.mockRestore();
+  }
 });
 
 test('a new pick opens a minimized panel on the Giveaway tab', () => {

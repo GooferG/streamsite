@@ -4,7 +4,7 @@
 
 **Goal:** Rebuild home (`/`) as "the couch": an illustrated living room where every object is a link that the camera zooms into, with a TV reel, a gamba laptop, a phone layout, an intro pull-back and the art and reel pipelines behind them.
 
-**Architecture:** A site-level `CameraProvider` (outside the per-route `ErrorBoundary`) owns the static overlay and the camera moves (Web Animations API, transforms only). The couch follows the repo's pure-model pattern: `couchCopy.js` + `couchModel.js` turn one plain input object into doors, TV, laptop and reel state; presentational components render that; `Couch.js` wires the camera; `useCouchData.js` gathers live data; `couchFixtures.js` feeds dev fixtures and tests. Art positions come from a generated `couchLayout.json`.
+**Architecture:** A site-level `CameraProvider` (outside the per-route `ErrorBoundary`) owns the static overlay and the camera moves (Web Animations API, transforms only). The couch follows the repo's pure-model pattern: `couchCopy.js` + `couchModel.js` turn one plain input object into doors, TV, laptop and reel state; presentational components render that; `Couch.js` wires the camera; `useCouchData.js` gathers live data; `couchFixtures.js` feeds dev fixtures and tests. Art positions come from the room's generated layout (`src/components/couch/rooms/90s.json`); rooms, seasonal themes, toys and the window are data in that layout, behaviour stays in code.
 
 **Tech Stack:** React 19, react-router-dom 7 (declarative), CRA 5 / Jest (react-router mapped to `src/test/reactRouterDomStub.js`), Tailwind 3 with the `onair` tokens, Firebase Firestore, Vercel functions, ComfyUI (local, for art), ffmpeg (local, for the reel).
 
@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Branch `feat/couch-home`. **Nothing is pushed and no PR opens until the owner has play-tested on localhost (`npm start`, http://localhost:3000) and signed off** (Task 21).
+- Branch `feat/couch-home`. **Nothing is pushed and no PR opens until the owner has play-tested on localhost (`npm start`, http://localhost:3000) and signed off** (Task 24).
 - Other sessions switch branches in this checkout: every commit command checks the branch first: `[ "$(git branch --show-current)" = feat/couch-home ] && git commit …`.
 - Commit messages: short imperative, `feat(home): …` / `test(home): …` / `docs(home): …`. **Never** add `Co-Authored-By` or any Claude attribution.
 - Copy follows PRODUCT.md voice rules: no em dashes, no "X, not Y", sentence case, none of the listed AI-tell words.
@@ -21,6 +21,8 @@
 - `font-onair-marker` only at 15px or larger, size set on the same line, using one of `text-[0.9375rem]`, `text-[1.0625rem]`, `text-[1.25rem]`.
 - Only the TV casts light, and only while live. Glow tokens (`shadow-onair-live`, `-led`, …) only through `StatusLight`.
 - Every animation is `motion-safe:` or gated on `prefersReducedMotion()`.
+- Toys and dressing are `aria-hidden`, pointer and touch only, never in the tab order and never on a door. Toys light themselves only (art plus an opacity flicker), never with a glow token.
+- Room art lives in `public/couch/<room>/` (today `90s`); its layout in `src/components/couch/rooms/<room>.json`.
 - At most two new Firestore listeners on home (the prediction round and the live giveaway), each `limit(1)`.
 - Budgets: plate 1280/1920/2560 at most 90/150/250 KB; cutouts at most 40 KB; reel loop at most 600 KB; reel (AV1 + posters) at most 4 MB; posters at most 30 KB.
 - Fixtures load only behind `process.env.NODE_ENV !== 'production'` (webpack drops them).
@@ -49,7 +51,10 @@
 | `src/components/camera/CameraStatic.js` | Full-viewport static under the nav |
 | `src/components/camera/useDoor.js` | Link props: native modifier clicks, camera on plain click, prefetch on intent |
 | `src/components/couch/couchCopy.js` | Every sentence and the time/money words |
-| `src/components/couch/couchLayout.json` / `couchLayout.js` | Measured art positions and layout helpers |
+| `src/components/couch/rooms/90s.json` / `couchLayout.js` | The room: measured positions, names, screen skin, window, toys, theme art; layout helpers |
+| `src/components/couch/themes.js`, `Dressing.js` | Theme calendar, copy and art lookup; theme dressing layers |
+| `src/components/couch/Toy.js`, `RoomToys.js` | Pokeable toys |
+| `src/components/couch/moon.js`, `RoomWindow.js` | Tonight's moon; the window's night, blinds and window toys |
 | `src/components/couch/couchModel.js` | `buildCouch(input)` and its pieces |
 | `src/components/couch/couchFixtures.js` | Dev fixtures (also the tests' inputs) |
 | `src/components/couch/reel.js`, `useTvReel.js` | Reel order and mode; manifest fetch |
@@ -1381,33 +1386,38 @@ git add src/components/couch/couchCopy.js src/components/couch/__tests__/couchCo
 ### Task 8: Layout file on the test plate
 
 **Files:**
-- Create: `src/components/couch/couchLayout.json`, `src/components/couch/couchLayout.js`, `public/couch/test-room-1280.webp`
+- Create: `src/components/couch/rooms/90s.json`, `src/components/couch/couchLayout.js`, `public/couch/90s/test-room-1280.webp`
 - Test: `src/components/couch/__tests__/couchLayout.test.js`
 
 **Interfaces:**
-- Produces: `LAYOUT` (the JSON: `{ final, art: { width, height, focal, plate, empty }, screens: { tv, laptop }, doors: { [id]: { rect, anchor, cutout?, cases? } }, phoneCrop }`, all positions `[x, y, w, h]` or `[x, y]` in percent of the art), `SAFE`, `ART_ASPECT`, `DOOR_IDS`, `insideSafe(rect)`, `plateSrc(plateMap)`, `plateSrcSet(plateMap)`, `pctStyle(rect)`, `within(outer, inner)`, `cropStyle(rect)`, `rectAspect(rect)`, `center(rect)`.
+- Produces: `ROOMS`, `ROOM_ID`, `ROOM` (`{ id, screen, names }`), `SCREEN_CLASS`, `LAYOUT` (the room JSON: `{ final, room, art: { width, height, focal, plate, empty }, screens: { tv, laptop }, doors: { [id]: { rect, anchor, cutout?, cases? } }, window: { glass, blinds?, cord?, skyline? }, toys: [], themes: {}, phoneCrop }`, all positions `[x, y, w, h]` or `[x, y]` in percent of the art), `SAFE`, `ART_ASPECT`, `DOOR_IDS`, `insideSafe(rect)`, `plateSrc(plateMap)`, `plateSrcSet(plateMap)`, `pctStyle(rect)`, `within(outer, inner)`, `cropStyle(rect)`, `rectAspect(rect)`, `center(rect)`.
 
 - [ ] **Step 1: Make the temporary plate**
 
-The test render from brainstorming is at `C:/Users/luizm/AppData/Local/Temp/claude/c--Users-luizm-Desktop-Software-Engineer-StreamingSite/a9759305-9106-4f56-a326-bc6d0d6c6fe3/scratchpad/couch/room-cartoon-1.png` (1368×760). If it is gone, re-run the Z-Image + Qwen commands in `scripts/gsn-art/README.md` with the prompts from Task 18 Step 1 and take any seed.
+The test render from brainstorming is at `C:/Users/luizm/AppData/Local/Temp/claude/c--Users-luizm-Desktop-Software-Engineer-StreamingSite/a9759305-9106-4f56-a326-bc6d0d6c6fe3/scratchpad/couch/room-cartoon-1.png` (1368×760). If it is gone, re-run the Z-Image + Qwen commands in `scripts/gsn-art/README.md` with the prompts from Task 21 Step 1 and take any seed.
 
 ```bash
-mkdir -p public/couch
-python scripts/gsn-art/to_webp.py "<path>/room-cartoon-1.png" public/couch/test-room-1280.webp 1280 711 120
+mkdir -p public/couch/90s
+python scripts/gsn-art/to_webp.py "<path>/room-cartoon-1.png" public/couch/90s/test-room-1280.webp 1280 711 120
 ```
 
-Expected: `public/couch/test-room-1280.webp: 1280x711 q.. ..KB`.
+Expected: `public/couch/90s/test-room-1280.webp: 1280x711 q.. ..KB`.
 
-- [ ] **Step 2: Write `couchLayout.json` (measured on the test render; laptop, remote and photo borrow the phone, controller and poster)**
+- [ ] **Step 2: Write `src/components/couch/rooms/90s.json` (measured on the test render; laptop, remote and photo borrow the phone, controller and poster)**
 
 ```json
 {
   "final": false,
+  "room": {
+    "id": "90s",
+    "screen": "crt",
+    "names": { "tv": "TV", "note": "Note", "laptop": "Laptop", "tapes": "Tapes", "guide": "TV guide", "games": "Games", "remote": "Remote", "photo": "Photo" }
+  },
   "art": {
     "width": 1280,
     "height": 711,
     "focal": [50.8, 43.4],
-    "plate": { "1280": "/couch/test-room-1280.webp" },
+    "plate": { "1280": "/couch/90s/test-room-1280.webp" },
     "empty": null
   },
   "screens": {
@@ -1424,6 +1434,9 @@ Expected: `public/couch/test-room-1280.webp: 1280x711 q.. ..KB`.
     "remote": { "rect": [31.25, 83.8, 11, 9.9], "anchor": [36.7, 83.8] },
     "photo": { "rect": [17.9, 0, 14.9, 26.4], "anchor": [25.3, 4] }
   },
+  "window": { "glass": [74.4, 0, 25.6, 56] },
+  "toys": [],
+  "themes": {},
   "phoneCrop": [30.5, 20, 40, 54]
 }
 ```
@@ -1433,7 +1446,7 @@ Expected: `public/couch/test-room-1280.webp: 1280x711 q.. ..KB`.
 ```js
 import fs from 'fs';
 import path from 'path';
-import { DOOR_IDS, LAYOUT, center, cropStyle, insideSafe, plateSrc, plateSrcSet, within } from '../couchLayout';
+import { DOOR_IDS, LAYOUT, ROOM, SCREEN_CLASS, center, cropStyle, insideSafe, plateSrc, plateSrcSet, within } from '../couchLayout';
 
 const PUBLIC = path.resolve(__dirname, '../../../../public');
 
@@ -1447,13 +1460,23 @@ test('every door has a rect and an anchor, and both screens exist', () => {
   expect(LAYOUT.phoneCrop).toHaveLength(4);
 });
 
+// Every '/couch/…' string anywhere in the layout: plates, cutouts, toys, window, themes.
+const srcs = (node) => {
+  if (typeof node === 'string') return node.startsWith('/couch/') ? [node] : [];
+  return node && typeof node === 'object' ? Object.values(node).flatMap(srcs) : [];
+};
+
 test('every image the layout names is in public/', () => {
-  const files = [
-    ...Object.values(LAYOUT.art.plate),
-    ...Object.values(LAYOUT.art.empty || {}),
-    ...DOOR_IDS.map((id) => LAYOUT.doors[id].cutout).filter(Boolean),
-  ];
-  for (const f of files) expect(fs.existsSync(path.join(PUBLIC, f))).toBe(true);
+  const files = srcs(LAYOUT);
+  expect(files.length).toBeGreaterThan(0);
+  for (const f of files) expect([f, fs.existsSync(path.join(PUBLIC, f))]).toEqual([f, true]);
+});
+
+test('the room names its objects, its screen skin and its window', () => {
+  expect(ROOM.id).toBe('90s');
+  expect(SCREEN_CLASS).toBe('couch-crt');
+  for (const id of DOOR_IDS) expect(typeof ROOM.names[id]).toBe('string');
+  expect(LAYOUT.window.glass).toHaveLength(4);
 });
 
 test('the final art keeps every door inside the safe area', () => {
@@ -1478,15 +1501,21 @@ test('helpers', () => {
 - [ ] **Step 5: Write `couchLayout.js`**
 
 ```js
-import layout from './couchLayout.json';
+import room90s from './rooms/90s.json';
 
-// Where everything sits in the art, in percent of the plate (spec rule: Art Is
-// Measured). The art step writes couchLayout.json from the masks; nothing is
+// Where everything sits in the art, in percent of the plate (spec rules: Art
+// Is Measured, Rooms Are Swappable). A room is its art plus this measured
+// layout: the art step writes rooms/<id>.json from the masks and nothing is
 // hand-tuned in components. `final` is false while the page runs on the test
 // plate, so the safe-area check waits for the real art.
-export const LAYOUT = layout;
+export const ROOMS = { '90s': room90s };
+export const ROOM_ID = '90s';
+export const LAYOUT = ROOMS[ROOM_ID];
+export const ROOM = LAYOUT.room;
+// The screens' dressing for this room's era (couch-crt for the 90s).
+export const SCREEN_CLASS = `couch-${ROOM.screen}`;
 export const SAFE = { x: [12.5, 87.5], y: [12, 88] };
-export const ART_ASPECT = layout.art.width / layout.art.height;
+export const ART_ASPECT = LAYOUT.art.width / LAYOUT.art.height;
 export const DOOR_IDS = ['tv', 'note', 'laptop', 'tapes', 'guide', 'games', 'remote', 'photo'];
 
 export function insideSafe([x, y, w, h]) {
@@ -1523,7 +1552,7 @@ export function cropStyle([x, y, w, h]) {
 }
 
 // A rect's width / height in the art's pixels.
-export const rectAspect = ([, , w, h]) => (w * layout.art.width) / (h * layout.art.height);
+export const rectAspect = ([, , w, h]) => (w * LAYOUT.art.width) / (h * LAYOUT.art.height);
 
 export const center = ([x, y, w, h]) => [x + w / 2, y + h / 2];
 ```
@@ -1533,7 +1562,7 @@ export const center = ([x, y, w, h]) => [x + w / 2, y + h / 2];
 - [ ] **Step 7: Commit**
 
 ```bash
-git add src/components/couch/couchLayout.json src/components/couch/couchLayout.js src/components/couch/__tests__/couchLayout.test.js public/couch/test-room-1280.webp
+git add src/components/couch/rooms/90s.json src/components/couch/couchLayout.js src/components/couch/__tests__/couchLayout.test.js public/couch/90s/test-room-1280.webp
 [ "$(git branch --show-current)" = feat/couch-home ] && git commit -m "feat(home): couch layout on the test plate"
 ```
 
@@ -1823,6 +1852,7 @@ import { huntMode, huntStats } from '../hunts/huntStats';
 import { showTitle } from '../schedule/scheduleModel';
 import { cleanTitle, parseDuration } from '../vods/videoStoreModel';
 import { COPY, dayWord, lengthWords, untilWords, whenAired } from './couchCopy';
+import { ROOM } from './couchLayout';
 
 // The couch's state from one plain input (spec: Model). Pure.
 //
@@ -1868,12 +1898,13 @@ export function laptopState({ hunts, round, lastHunt, leaderboardEndsAt, now }) 
   const feature = huntFeature({ hunts, round });
   if (feature.kind === 'live' && feature.hunt) {
     const s = feature.stats;
-    return { mode: 'hunt', opened: s.openedCount, total: s.bonusCount, back: s.wonSoFar, currency: feature.currency };
+    // Money builders get real numbers only (a missing one would print an em dash).
+    return { mode: 'hunt', opened: s.openedCount, total: s.bonusCount, back: s.wonSoFar ?? 0, currency: feature.currency };
   }
   const mode = huntMode(round);
   if (mode === 'open' || mode === 'locked') return { mode, guesses: feature.guessCount };
   const resetsIn = leaderboardEndsAt != null && leaderboardEndsAt > now ? leaderboardEndsAt - now : null;
-  const last = lastHunt
+  const last = lastHunt && Number.isFinite(Number(lastHunt.totalWon))
     ? { paid: lastHunt.totalWon, start: lastHunt.pot, currency: lastHunt.currency || null, best: bestHit(lastHunt) }
     : null;
   return { mode: 'idle', resetsIn, last };
@@ -1979,12 +2010,15 @@ export function buildCouch(input) {
 
   const doors = DOOR_ORDER.filter((id) => copy[id]).map((id) => {
     const destination = id === 'tv' && state === 'live' ? 'the stream' : DESTINATION[id];
+    // The room names its objects ("Tapes" in the 90s room); COPY's kicker is the fallback.
+    const kicker = (ROOM.names && ROOM.names[id]) || copy[id].kicker;
     return {
       id,
       href: href[id],
       ...copy[id],
+      kicker,
       destination,
-      label: `${copy[id].kicker}: ${copy[id].sentence} Opens ${destination}.`,
+      label: `${kicker}: ${copy[id].sentence} Opens ${destination}.`,
       lit: (id === 'tv' && state === 'live') || (id === 'laptop' && laptop.mode !== 'idle') || id === 'note',
       sticker: id === 'tapes' && isNewTape(newest, input.lastVisit, input.now) ? 'new' : null,
     };
@@ -2270,6 +2304,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { MONO } from '../onAir/classes';
 import StaticNoise from '../onAir/StaticNoise';
 import StatusLight from '../onAir/StatusLight';
+import { SCREEN_CLASS } from './couchLayout';
 import { SEGMENT_MS, STATIC_MS } from './reel';
 
 // The couch's TV (spec: The TV). It sits in the art's screen rectangle and
@@ -2425,7 +2460,7 @@ export default function CouchTv({ tv, items, mode, flipTo = null, onAutoplayBloc
           <StaticNoise className="couch-flip-static absolute inset-0" testId="tv-flip-static" />
         </>
       )}
-      <span className="couch-crt pointer-events-none absolute inset-0" />
+      <span className={`${SCREEN_CLASS} pointer-events-none absolute inset-0`} />
     </div>
   );
 }
@@ -2522,6 +2557,7 @@ test('idle without a reset shows only the bug', () => {
 ```js
 import { MONO } from '../onAir/classes';
 import { money, plural, shortUntil } from './couchCopy';
+import { SCREEN_CLASS } from './couchLayout';
 
 // The laptop on the coffee table (spec: The laptop). On Air readouts only,
 // never casino imagery. It turns on during a hunt but never glows.
@@ -2589,7 +2625,7 @@ export default function LaptopScreen({ laptop }) {
       {laptop.mode === 'hunt' && <Hunt laptop={laptop} />}
       {(laptop.mode === 'open' || laptop.mode === 'locked') && <Round laptop={laptop} />}
       {laptop.mode === 'idle' && <Screensaver laptop={laptop} />}
-      <span className="couch-crt pointer-events-none absolute inset-0" />
+      <span className={`${SCREEN_CLASS} pointer-events-none absolute inset-0`} />
     </div>
   );
 }
@@ -2664,7 +2700,7 @@ test('a plain click hands the door to onDoor; a ctrl-click stays native', () => 
 test('labels show the teaser; the plate and screens render', () => {
   render(<Room />);
   expect(screen.getByText('Back tomorrow 11:00 AM')).toBeTruthy();
-  expect(screen.getByTestId('couch-stage').querySelector('img').getAttribute('src')).toBe('/couch/test-room-1280.webp');
+  expect(screen.getByTestId('couch-stage').querySelector('img').getAttribute('src')).toBe('/couch/90s/test-room-1280.webp');
   expect(screen.getByTestId('couch-tv')).toBeTruthy();
   expect(screen.getByTestId('laptop-screen')).toBeTruthy();
 });
@@ -3927,20 +3963,815 @@ git add src/pages/HomePage.js src/pages/__tests__/HomePage.test.js src/App.js sr
 
 ---
 
-### Task 18: ✋ The art (owner picks at each step)
+### Task 18: Themes
+
+**Files:**
+- Create: `src/components/couch/themes.js`, `src/components/couch/Dressing.js`
+- Modify: `src/components/couch/couchModel.js` (theme in, `theme` out, theme cards first), `src/components/couch/couchFixtures.js` (`theme: null` in BASE, a `halloween` fixture), `src/components/couch/useCouchData.js` (theme from the calendar and `?theme=`), `src/components/couch/CouchFront.js` (dressing in the room, theme bug to the laptop), `src/components/couch/TvCrop.js` (dressing in the crop), `src/components/couch/LaptopScreen.js` (`bug` prop)
+- Test: `src/components/couch/__tests__/themes.test.js`
+
+**Interfaces:**
+- Consumes: `LAYOUT`, `pctStyle`, `within` (Task 8); `buildCouch`, `COUCH_FIXTURES` (Task 9); `LaptopScreen` (Task 12); `CouchFront`, `TvCrop` (Tasks 13–14); `toCouchInput`, `useCouchData` (Task 15); `HOME_ZONE` (`src/utils/scheduleTime.js`).
+- Produces: `THEMES`, `themeFor(now, override = null) → id | null`, `readThemeOverride() → string | null`, `themeArt(layout, theme) → object | null` (themes.js); `Dressing({ layers, frame = null })` (default export); model input `theme`, output `couch.theme`; `LaptopScreen({ laptop, bug = null })`; `TvCrop` gains a `theme` prop.
+
+- [ ] **Step 1: Write the failing test** (`src/components/couch/__tests__/themes.test.js`)
+
+```js
+import { render, screen } from '@testing-library/react';
+import Dressing from '../Dressing';
+import LaptopScreen from '../LaptopScreen';
+import { buildCouch } from '../couchModel';
+import { COUCH_FIXTURES as F } from '../couchFixtures';
+import { THEMES, themeArt, themeFor } from '../themes';
+import { toCouchInput } from '../useCouchData';
+
+const at = (iso) => Date.parse(iso);
+
+test('Halloween runs through October on the Arizona calendar', () => {
+  expect(themeFor(at('2026-10-15T12:00:00Z'))).toBe('halloween');
+  expect(themeFor(at('2026-11-01T06:00:00Z'))).toBe('halloween'); // Oct 31, 11 PM in Arizona
+  expect(themeFor(at('2026-11-01T08:00:00Z'))).toBeNull(); // Nov 1, 1 AM in Arizona
+  expect(themeFor(at('2026-09-30T12:00:00Z'))).toBeNull();
+});
+
+test('an override previews a theme or switches it off', () => {
+  expect(themeFor(at('2026-03-01T12:00:00Z'), 'halloween')).toBe('halloween');
+  expect(themeFor(at('2026-10-15T12:00:00Z'), 'none')).toBeNull();
+  expect(themeFor(at('2026-10-15T12:00:00Z'), 'nope')).toBe('halloween');
+});
+
+test('themeArt reads a theme from a room layout', () => {
+  const layout = { themes: { halloween: { dressing: [] } } };
+  expect(themeArt(layout, 'halloween')).toEqual({ dressing: [] });
+  expect(themeArt(layout, null)).toBeNull();
+  expect(themeArt({}, 'halloween')).toBeNull();
+});
+
+test('a theme leads the TV reel with its card and travels on the couch', () => {
+  const c = buildCouch(F.halloween.input);
+  expect(c.theme).toBe('halloween');
+  expect(c.tv.cards[0]).toEqual(THEMES.halloween.cards[0]);
+  expect(c.tv.cards).toHaveLength(4);
+  expect(buildCouch(F.offair.input).theme).toBeNull();
+});
+
+test('toCouchInput carries the theme', () => {
+  const base = { schedule: { schedule: [], loading: false }, round: { round: null }, leaderboard: {}, hunts: {} };
+  expect(toCouchInput({ ...base, theme: 'halloween' }).theme).toBe('halloween');
+  expect(toCouchInput(base).theme).toBeNull();
+});
+
+test('dressing layers are decorative and placed in percent, inside a frame when given', () => {
+  const { container } = render(<Dressing layers={[{ id: 'cobweb', src: '/c.webp', rect: [10, 20, 30, 40] }]} frame={[0, 0, 50, 50]} />);
+  const img = container.querySelector('img[data-dressing="cobweb"]');
+  expect(img.getAttribute('aria-hidden')).toBe('true');
+  expect(img.className).toMatch(/pointer-events-none/);
+  expect(img.style.left).toBe('20%');
+  expect(img.style.width).toBe('60%');
+});
+
+test('no layers, no dressing', () => {
+  const { container } = render(<Dressing layers={null} />);
+  expect(container.innerHTML).toBe('');
+});
+
+test('the laptop screensaver shows the theme bug', () => {
+  render(<LaptopScreen laptop={{ mode: 'idle', resetsIn: null, last: null }} bug="/couch/90s/halloween/bug.webp" />);
+  expect(screen.getByTestId('laptop-screen').querySelector('img').getAttribute('src')).toBe('/couch/90s/halloween/bug.webp');
+  expect(screen.queryByText('GG')).toBeNull();
+});
+```
+
+- [ ] **Step 2: Run it to see it fail** → `npm test -- --watchAll=false --testPathPattern=couch/__tests__/themes` → FAIL.
+
+- [ ] **Step 3: Write `themes.js`**
+
+```js
+import { HOME_ZONE } from '../../utils/scheduleTime';
+
+// Seasonal themes (spec: Themes). A theme dresses the room: its calendar and
+// copy live here, its art in the room's layout under themes.<id>.
+export const THEMES = {
+  halloween: {
+    months: [9], // October (0-based), on Goofer's Arizona calendar
+    cards: [{ kicker: 'Spooky season', text: 'The couch is haunted until Halloween.' }],
+  },
+};
+
+// The theme for `now`, unless `override` names one; 'none' switches themes off.
+export function themeFor(now, override = null) {
+  if (override === 'none') return null;
+  if (override && THEMES[override]) return override;
+  const month = Number(new Intl.DateTimeFormat('en-US', { month: 'numeric', timeZone: HOME_ZONE }).format(now)) - 1;
+  return Object.keys(THEMES).find((id) => THEMES[id].months.includes(month)) || null;
+}
+
+// ?theme=<id> previews a theme in any build; ?theme=none switches it off.
+export function readThemeOverride() {
+  try {
+    return new URLSearchParams(window.location.search).get('theme');
+  } catch {
+    return null;
+  }
+}
+
+export const themeArt = (layout, theme) => (theme && layout && layout.themes && layout.themes[theme]) || null;
+```
+
+- [ ] **Step 4: Write `Dressing.js`**
+
+```js
+import { pctStyle, within } from './couchLayout';
+
+// A theme's dressing over the room (spec: Themes): decorative layers with no
+// pointer events, positioned in percent of the art (or of `frame`, a rect of
+// the art, inside the phone's TV crop).
+export default function Dressing({ layers, frame = null }) {
+  if (!layers || !layers.length) return null;
+  return layers.map((layer) => (
+    <img
+      key={layer.id}
+      src={layer.src}
+      alt=""
+      aria-hidden="true"
+      draggable={false}
+      data-dressing={layer.id}
+      className="pointer-events-none absolute select-none"
+      style={pctStyle(frame ? within(frame, layer.rect) : layer.rect)}
+    />
+  ));
+}
+```
+
+- [ ] **Step 5: Thread the theme through the model, fixtures and data**
+
+In `couchModel.js`: add `import { THEMES } from './themes';`; in `buildCouch`, add `const theme = input.theme && THEMES[input.theme] ? input.theme : null;` and change the cards to
+
+```js
+  const cards =
+    state === 'offair'
+      ? [
+          ...(theme ? THEMES[theme].cards : []),
+          { kicker: 'Off air', text: copy.tv.sentence },
+          { kicker: 'Tapes', text: copy.tapes.sentence },
+          { kicker: 'Laptop', text: copy.laptop.sentence },
+        ]
+      : [];
+```
+
+and add `theme,` to the returned object. Document `theme: id | null` in the input comment.
+
+In `couchFixtures.js`: add `theme: null,` to `BASE` and `halloween: { input: { ...BASE, theme: 'halloween' } },` to `COUCH_FIXTURES`. Update the HomePage fixture comment in `src/pages/HomePage.js` to list `halloween`.
+
+In `useCouchData.js`: import `{ readThemeOverride, themeFor }` from `./themes`; in `toCouchInput` add `theme: p.theme ?? null,`; in `useCouchData` pass `theme: themeFor(now, readThemeOverride())` into `toCouchInput`.
+
+- [ ] **Step 6: Dress the room, the crop and the laptop**
+
+`LaptopScreen.js`: the default export takes `{ laptop, bug = null }` and passes `bug` to `Screensaver`, which renders, inside the bouncing span, `{bug ? <img src={bug} alt="" className="h-full w-full object-contain" /> : 'GG'}`.
+
+`CouchFront.js` (Room): add imports `Dressing` and `{ themeArt }` from `./themes`; compute `const art = themeArt(LAYOUT, couch.theme);`; render `<Dressing layers={art && art.dressing} />` right after the plate `<img>`; pass `bug={art && art.laptopBug}` to `LaptopScreen`; pass `theme={couch.theme}` to `TvCrop` in the phone branch.
+
+`TvCrop.js`: accept `theme`; compute `const art = themeArt(LAYOUT, theme);`; render `<Dressing layers={art && art.dressing} frame={crop} />` right after the crop's plate `<img>`.
+
+- [ ] **Step 7: Run tests** → `npm test -- --watchAll=false --testPathPattern="couch/"` → PASS (all couch suites).
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add src/components/couch src/pages/HomePage.js
+[ "$(git branch --show-current)" = feat/couch-home ] && git commit -m "feat(home): seasonal themes dress the couch"
+```
+
+---
+
+### Task 19: Toys
+
+**Files:**
+- Create: `src/components/couch/Toy.js`, `src/components/couch/RoomToys.js`
+- Modify: `src/components/couch/themes.js` (`roomToys`), `src/components/couch/couchLayout.js` (`intersects`), `src/components/couch/__tests__/couchLayout.test.js` (no toy or dressing on a door), `tailwind.config.js` (`couch-wiggle`, `couch-drop`, `couch-pop`, `couch-flicker`), `src/components/couch/CouchFront.js` (toys in the room), `src/components/couch/TvCrop.js` (toy stills in the crop)
+- Test: `src/components/couch/__tests__/Toy.test.js`
+
+**Interfaces:**
+- Consumes: `pctStyle`, `LAYOUT`, `DOOR_IDS` (Task 8); `themeArt` (Task 18); `prefersReducedMotion`.
+- Produces: `Toy({ toy })` (default) and `TOY_MS`; `RoomToys({ toys })`; `roomToys(layout, theme) → toy[]`; `intersects(a, b) → boolean`. A toy is `{ id, effect: 'toggle' | 'light' | 'wiggle' | 'drop' | 'pop', rect, art: { idle, active?, extra? } }`.
+
+- [ ] **Step 1: Write the failing tests**
+
+`src/components/couch/__tests__/Toy.test.js`:
+
+```js
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import RoomToys from '../RoomToys';
+import Toy, { TOY_MS } from '../Toy';
+import { roomToys } from '../themes';
+
+const LAMP = { id: 'lamp', effect: 'toggle', rect: [5, 10, 10, 30], art: { idle: '/lamp-on.webp', active: '/lamp-off.webp' } };
+const PUMPKIN = { id: 'pumpkin', effect: 'light', rect: [60, 50, 6, 8], art: { idle: '/p.webp', active: '/p-lit.webp' } };
+const CAN = { id: 'can', effect: 'pop', rect: [70, 80, 3, 6], art: { idle: '/can.webp' } };
+const toyEl = (c, id) => c.querySelector(`[data-toy="${id}"]`);
+const pic = (el) => el.querySelector('img').getAttribute('src');
+
+beforeEach(() => jest.useFakeTimers());
+afterEach(() => {
+  jest.useRealTimers();
+  delete window.matchMedia;
+});
+
+test('a toy is decorative: hidden from screen readers and out of the tab order', () => {
+  const { container } = render(<Toy toy={LAMP} />);
+  const el = toyEl(container, 'lamp');
+  expect(el.getAttribute('aria-hidden')).toBe('true');
+  expect(el.getAttribute('tabindex')).toBeNull();
+  expect(container.querySelector('button, a')).toBeNull();
+});
+
+test('the lamp toggles between its two pictures', () => {
+  const { container } = render(<Toy toy={LAMP} />);
+  const el = toyEl(container, 'lamp');
+  fireEvent.pointerDown(el);
+  expect(pic(el)).toBe('/lamp-off.webp');
+  fireEvent.pointerDown(el);
+  expect(pic(el)).toBe('/lamp-on.webp');
+});
+
+test('the pumpkin lights up, then dies down', () => {
+  const { container } = render(<Toy toy={PUMPKIN} />);
+  const el = toyEl(container, 'pumpkin');
+  fireEvent.pointerDown(el);
+  expect(el.getAttribute('data-on')).toBe('true');
+  expect(pic(el)).toBe('/p-lit.webp');
+  act(() => jest.advanceTimersByTime(TOY_MS.light));
+  expect(el.getAttribute('data-on')).toBe('false');
+  expect(pic(el)).toBe('/p.webp');
+});
+
+test('under reduced motion the pumpkin still lights; a one-shot just resets', () => {
+  window.matchMedia = jest.fn().mockReturnValue({ matches: true });
+  const { container } = render(
+    <>
+      <Toy toy={PUMPKIN} />
+      <Toy toy={CAN} />
+    </>
+  );
+  fireEvent.pointerDown(toyEl(container, 'pumpkin'));
+  fireEvent.pointerDown(toyEl(container, 'can'));
+  act(() => jest.advanceTimersByTime(0));
+  expect(toyEl(container, 'pumpkin').getAttribute('data-on')).toBe('true');
+  expect(toyEl(container, 'can').getAttribute('data-on')).toBe('false');
+});
+
+test('a can with no extra picture fizzes', () => {
+  const { container } = render(<Toy toy={CAN} />);
+  fireEvent.pointerDown(toyEl(container, 'can'));
+  expect(screen.getByTestId('toy-bubbles')).toBeTruthy();
+});
+
+test('roomToys adds the theme toys to the room toys', () => {
+  const layout = { toys: [LAMP], themes: { halloween: { toys: [PUMPKIN] } } };
+  expect(roomToys(layout, 'halloween').map((t) => t.id)).toEqual(['lamp', 'pumpkin']);
+  expect(roomToys(layout, null).map((t) => t.id)).toEqual(['lamp']);
+  expect(roomToys({}, null)).toEqual([]);
+});
+
+test('RoomToys renders nothing without toys', () => {
+  const { container } = render(<RoomToys toys={[]} />);
+  expect(container.innerHTML).toBe('');
+});
+```
+
+Append to `src/components/couch/__tests__/couchLayout.test.js` (and import `intersects`):
+
+```js
+test('intersects', () => {
+  expect(intersects([0, 0, 10, 10], [5, 5, 10, 10])).toBe(true);
+  expect(intersects([0, 0, 10, 10], [10, 0, 5, 5])).toBe(false);
+});
+
+test('in the final art no toy or dressing sits on a door', () => {
+  if (!LAYOUT.final) return;
+  const items = [
+    ...(LAYOUT.toys || []),
+    ...Object.values(LAYOUT.themes || {}).flatMap((t) => [...(t.toys || []), ...(t.dressing || [])]),
+  ];
+  for (const item of items) {
+    for (const id of DOOR_IDS) expect([item.id, id, intersects(item.rect, LAYOUT.doors[id].rect)]).toEqual([item.id, id, false]);
+  }
+});
+```
+
+- [ ] **Step 2: Run them to see them fail** → `npm test -- --watchAll=false --testPathPattern="Toy.test|couchLayout"` → FAIL.
+
+- [ ] **Step 3: Add the keyframes to `tailwind.config.js`** (next to the other `onair-*` and `couch-*` entries)
+
+```js
+        // Couch toys (spec: Toys). Transform and opacity only.
+        'couch-wiggle': {
+          '0%,100%': { transform: 'rotate(0deg)' },
+          '20%': { transform: 'rotate(-4deg)' },
+          '40%': { transform: 'rotate(4deg)' },
+          '60%': { transform: 'rotate(-3deg)' },
+          '80%': { transform: 'rotate(2deg)' },
+        },
+        'couch-drop': { '0%,100%': { transform: 'translateY(0)' }, '40%,60%': { transform: 'translateY(160%)' } },
+        'couch-pop': {
+          '0%': { transform: 'translateY(0) scale(0.6)', opacity: '0' },
+          '30%': { opacity: '1' },
+          '100%': { transform: 'translateY(-140%) scale(1)', opacity: '0' },
+        },
+        'couch-flicker': { '0%,100%': { opacity: '1' }, '20%': { opacity: '0.82' }, '45%': { opacity: '1' }, '70%': { opacity: '0.88' } },
+```
+
+```js
+        'couch-wiggle': 'couch-wiggle 0.6s ease-in-out',
+        'couch-drop': 'couch-drop 2.4s ease-in-out',
+        'couch-pop': 'couch-pop 0.9s ease-out forwards',
+        'couch-flicker': 'couch-flicker 0.5s steps(2) infinite',
+```
+
+- [ ] **Step 4: Write `Toy.js`**
+
+```js
+import { useEffect, useRef, useState } from 'react';
+import { prefersReducedMotion } from '../onAir/useChannelSwitch';
+import { pctStyle } from './couchLayout';
+
+// A toy (spec: Toys): poke it and it reacts; it goes nowhere. Pointer and
+// touch only, so it is hidden from screen readers and never in the tab order.
+// It lights itself at most (a lit pumpkin is art), never the room.
+export const TOY_MS = { light: 4000, wiggle: 600, drop: 2400, pop: 900 };
+const MOTION = {
+  light: 'motion-safe:animate-couch-flicker',
+  wiggle: 'motion-safe:animate-couch-wiggle',
+  drop: 'motion-safe:animate-couch-drop',
+};
+const THREAD = 'before:absolute before:bottom-full before:left-1/2 before:h-[300%] before:w-px before:bg-onair-ink-5';
+
+function Bubbles() {
+  return (
+    <span className="pointer-events-none absolute bottom-full left-[30%] h-[60%] w-[40%] motion-safe:animate-couch-pop" data-testid="toy-bubbles">
+      <span className="absolute bottom-0 left-0 h-1.5 w-1.5 rounded-full bg-onair-paper/80" />
+      <span className="absolute bottom-[30%] left-[45%] h-1 w-1 rounded-full bg-onair-paper/70" />
+      <span className="absolute bottom-[60%] right-0 h-1.5 w-1.5 rounded-full bg-onair-paper/60" />
+    </span>
+  );
+}
+
+export default function Toy({ toy }) {
+  const [on, setOn] = useState(false);
+  const [run, setRun] = useState(0);
+  const timer = useRef(null);
+  useEffect(() => () => clearTimeout(timer.current), []);
+
+  const poke = () => {
+    if (toy.effect === 'toggle') {
+      setOn((v) => !v);
+      return;
+    }
+    clearTimeout(timer.current);
+    setOn(true);
+    setRun((n) => n + 1);
+    const ms = toy.effect === 'light' || !prefersReducedMotion() ? TOY_MS[toy.effect] || 800 : 0;
+    timer.current = setTimeout(() => setOn(false), ms);
+  };
+
+  const art = toy.art || {};
+  const src = on && art.active ? art.active : art.idle;
+  const moving = on && MOTION[toy.effect] ? MOTION[toy.effect] : '';
+  return (
+    <span
+      aria-hidden="true"
+      data-toy={toy.id}
+      data-on={on ? 'true' : 'false'}
+      onPointerDown={poke}
+      className="pointer-events-auto absolute cursor-pointer select-none"
+      style={pctStyle(toy.rect)}
+    >
+      <span key={run} className={`absolute inset-0 ${toy.effect === 'drop' ? THREAD : ''} ${moving}`}>
+        {src && <img src={src} alt="" draggable={false} className="pointer-events-none h-full w-full" />}
+      </span>
+      {on && toy.effect === 'pop' &&
+        (art.extra ? (
+          <img key={`x-${run}`} src={art.extra} alt="" className="pointer-events-none absolute bottom-full left-1/4 h-1/2 w-1/2 motion-safe:animate-couch-pop" />
+        ) : (
+          <Bubbles key={`b-${run}`} />
+        ))}
+    </span>
+  );
+}
+```
+
+- [ ] **Step 5: Write `RoomToys.js`, `roomToys` and `intersects`**
+
+`RoomToys.js`:
+
+```js
+import Toy from './Toy';
+
+// The room's toys (spec: Toys). They sit under the doors' labels and never on
+// a door; the layer itself takes no pointer events, each toy does.
+export default function RoomToys({ toys }) {
+  if (!toys || !toys.length) return null;
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0" data-testid="room-toys">
+      {toys.map((toy) => (
+        <Toy key={toy.id} toy={toy} />
+      ))}
+    </div>
+  );
+}
+```
+
+Append to `themes.js`:
+
+```js
+// The room's toys plus the theme's (spec: Toys).
+export const roomToys = (layout, theme) => [...((layout && layout.toys) || []), ...((themeArt(layout, theme) || {}).toys || [])];
+```
+
+Append to `couchLayout.js`:
+
+```js
+export const intersects = ([ax, ay, aw, ah], [bx, by, bw, bh]) => ax < bx + bw && bx < ax + aw && ay < by + bh && by < ay + ah;
+```
+
+- [ ] **Step 6: Put the toys in the room and the crop**
+
+`CouchFront.js` (Room): import `RoomToys` and `roomToys`; render `<RoomToys toys={roomToys(LAYOUT, couch.theme)} />` right after `<Dressing … />` (before `RoomDoors`, so labels stay on top and the dim covers toys like the rest of the room).
+
+`TvCrop.js`: the crop is one link, so toys inside it are still pictures. Change its dressing line to
+
+```js
+      <Dressing
+        layers={[
+          ...((art && art.dressing) || []),
+          ...roomToys(LAYOUT, theme)
+            .filter((t) => t.art && t.art.idle)
+            .map((t) => ({ id: `toy-${t.id}`, src: t.art.idle, rect: t.rect })),
+        ]}
+        frame={crop}
+      />
+```
+
+- [ ] **Step 7: Run tests** → `npm test -- --watchAll=false --testPathPattern="couch/"` and `--testPathPattern=onAirContract` → PASS.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add src/components/couch tailwind.config.js
+[ "$(git branch --show-current)" = feat/couch-home ] && git commit -m "feat(home): toys to poke in the room"
+```
+
+---
+
+### Task 20: The window
+
+**Files:**
+- Create: `src/components/couch/moon.js`, `src/components/couch/RoomWindow.js`
+- Modify: `tailwind.config.js` (`couch-twinkle`, `couch-blink`, `couch-shoot`, `couch-cross`), `src/index.css` (the night's colours), `src/components/couch/CouchFront.js` (outside behind the plate, blinds and hit areas in front), `src/components/couch/Couch.js` (pass `now`)
+- Test: `src/components/couch/__tests__/RoomWindow.test.js`
+
+**Interfaces:**
+- Consumes: `LAYOUT.window` (`{ glass, blinds?: { src, rect }, cord?, skyline?: { src, rect } }`), `pctStyle`, `within`, `ART_ASPECT` (Task 8); `themeArt` (Task 18).
+- Produces: `moonPhase(now) → 0..1`, `moonPath(phase, r = 50) → svg path` (moon.js); `useWindowState()`, `WindowOutside({ win, state, now, theme, witch })`, `WindowFront({ win, state, theme, aspect })`, `moonBox(glass, harvest, aspect)`, `MOON`, `HARVEST` (RoomWindow.js); `CouchFront` gains a `now` prop.
+
+- [ ] **Step 1: Write the failing test** (`src/components/couch/__tests__/RoomWindow.test.js`)
+
+```js
+import { fireEvent, render, screen } from '@testing-library/react';
+import { WindowFront, WindowOutside, moonBox, useWindowState } from '../RoomWindow';
+import { moonPath, moonPhase } from '../moon';
+
+const WIN = {
+  glass: [70, 10, 20, 40],
+  blinds: { src: '/blinds.webp', rect: [69, 8, 22, 30] },
+  cord: [90, 20, 1, 15],
+  skyline: { src: '/sky.webp', rect: [70, 38, 20, 12] },
+};
+const NEW_MOON = Date.UTC(2000, 0, 6, 18, 14);
+const ECLIPSE = Date.UTC(2000, 0, 21, 4, 40); // a full moon (the total lunar eclipse of January 2000)
+
+function Window({ theme = null, now = ECLIPSE, witch }) {
+  const state = useWindowState();
+  return (
+    <div>
+      <WindowOutside win={WIN} state={state} now={now} theme={theme} witch={witch} />
+      <WindowFront win={WIN} state={state} theme={theme} aspect={16 / 9} />
+    </div>
+  );
+}
+const toy = (c, id) => c.querySelector(`[data-toy="${id}"]`);
+
+test('moonPhase: a known new moon, half a month later, and a known full moon', () => {
+  expect(moonPhase(NEW_MOON)).toBeCloseTo(0, 5);
+  expect(moonPhase(NEW_MOON + 14.765294 * 86400000)).toBeCloseTo(0.5, 3);
+  expect(Math.abs(moonPhase(ECLIPSE) - 0.5)).toBeLessThan(0.03);
+});
+
+test('moonPath draws new, half and full moons', () => {
+  expect(moonPath(0)).toBe('M 50 0 A 50 50 0 0 1 50 100 A 50 50 0 0 0 50 0 Z');
+  expect(moonPath(0.25)).toBe('M 50 0 A 50 50 0 0 1 50 100 A 0 50 0 0 0 50 0 Z');
+  expect(moonPath(0.5)).toBe('M 50 0 A 50 50 0 0 0 50 100 A 50 50 0 0 0 50 0 Z');
+  expect(moonPath(0.75)).toBe('M 50 0 A 50 50 0 0 0 50 100 A 0 50 0 0 0 50 0 Z');
+});
+
+test("the outside shows tonight's moon, stars and the skyline, all decorative", () => {
+  const { container } = render(<Window />);
+  const out = screen.getByTestId('window-outside');
+  expect(out.getAttribute('aria-hidden')).toBe('true');
+  expect(screen.getByTestId('window-moon').getAttribute('data-phase')).toBe('0.49');
+  expect(out.querySelectorAll('.couch-star').length).toBeGreaterThan(5);
+  expect(out.querySelector('img').getAttribute('src')).toBe('/sky.webp');
+  expect(screen.queryByTestId('window-bats')).toBeNull();
+  expect(container.querySelectorAll('[aria-hidden="true"][data-toy]').length).toBe(3);
+});
+
+test('tapping the sky sends a shooting star; tapping the moon makes it wink', () => {
+  const { container } = render(<Window />);
+  fireEvent.pointerDown(toy(container, 'sky'));
+  expect(screen.getByTestId('window-shooting')).toBeTruthy();
+  fireEvent.pointerDown(toy(container, 'moon'));
+  expect(screen.getByTestId('window-moon').getAttribute('class')).toMatch(/animate-couch-blink/);
+});
+
+test('the cord rolls the blinds up and down', () => {
+  const { container } = render(<Window />);
+  fireEvent.pointerDown(toy(container, 'cord'));
+  expect(screen.getByTestId('window-blinds').getAttribute('data-up')).toBe('true');
+  fireEvent.pointerDown(toy(container, 'cord'));
+  expect(screen.getByTestId('window-blinds').getAttribute('data-up')).toBe('false');
+});
+
+test('Halloween: a harvest moon, bats, and every third moon tap a witch', () => {
+  const { container } = render(<Window theme="halloween" witch="/witch.webp" />);
+  expect(screen.getByTestId('window-moon').getAttribute('data-phase')).toBe('0.50');
+  expect(screen.getByTestId('window-bats')).toBeTruthy();
+  const moon = toy(container, 'moon');
+  fireEvent.pointerDown(moon);
+  fireEvent.pointerDown(moon);
+  expect(screen.queryByTestId('window-witch')).toBeNull();
+  fireEvent.pointerDown(moon);
+  expect(screen.getByTestId('window-witch').getAttribute('src')).toBe('/witch.webp');
+});
+
+test('moonBox is square on screen', () => {
+  const [x, y, w, h] = moonBox([70, 10, 20, 40], false, 16 / 9);
+  expect(x).toBeCloseTo(82, 5);
+  expect(y).toBeCloseTo(28.4, 5);
+  expect(w).toBeCloseTo(3.6, 5);
+  expect(h).toBeCloseTo((3.6 * 16) / 9, 5);
+});
+
+test('no glass, no window', () => {
+  function Bare() {
+    const state = useWindowState();
+    return <WindowOutside win={{}} state={state} now={ECLIPSE} />;
+  }
+  const { container } = render(<Bare />);
+  expect(container.innerHTML).toBe('');
+});
+```
+
+- [ ] **Step 2: Run it to see it fail** → `npm test -- --watchAll=false --testPathPattern=RoomWindow` → FAIL.
+
+- [ ] **Step 3: Write `moon.js`**
+
+```js
+// Tonight's moon (spec: The window). Pure.
+const SYNODIC_DAYS = 29.530588853;
+const NEW_MOON = Date.UTC(2000, 0, 6, 18, 14); // a known new moon
+
+// 0 new, 0.25 first quarter, 0.5 full, 0.75 last quarter.
+export function moonPhase(now) {
+  const days = (now - NEW_MOON) / 86400000;
+  return (((days / SYNODIC_DAYS) % 1) + 1) % 1;
+}
+
+const round2 = (n) => Math.round(n * 100) / 100;
+
+// The lit part of a moon of radius r in a 2r × 2r box, as an SVG path: the lit
+// limb (right while waxing, left while waning), then the terminator, an
+// ellipse that bulges toward the lit side for a crescent and away for a gibbous.
+export function moonPath(phase, r = 50) {
+  const p = ((phase % 1) + 1) % 1;
+  const waxing = p < 0.5;
+  const k = Math.cos(2 * Math.PI * p);
+  const rx = round2(Math.abs(k) * r);
+  const limb = waxing ? 1 : 0;
+  const terminator = waxing === k > 0 ? 0 : 1;
+  return `M ${r} 0 A ${r} ${r} 0 0 ${limb} ${r} ${2 * r} A ${rx} ${r} 0 0 ${terminator} ${r} 0 Z`;
+}
+```
+
+- [ ] **Step 4: Write `RoomWindow.js`**
+
+```js
+import { useCallback, useRef, useState } from 'react';
+import { pctStyle, within } from './couchLayout';
+import { moonPath, moonPhase } from './moon';
+
+// The window (spec: The window). The glass is transparent in the room's art:
+// WindowOutside renders behind the plate, WindowFront (the blinds and the toy
+// hit areas) in front of it. Always night; pointer and touch only; silent; it
+// lights nothing in the room.
+const STARS = [[8, 12], [18, 30], [27, 8], [39, 22], [52, 10], [61, 34], [73, 18], [86, 9], [92, 28], [14, 46], [47, 44], [80, 40]];
+// The moon's box in percent of the glass; the harvest moon is bigger.
+export const MOON = { x: 60, y: 46, w: 18 };
+export const HARVEST = { x: 52, y: 40, w: 30 };
+const BAT = 'M0 5 Q3 0 6 4 Q8 2 10 4 Q12 2 14 4 Q17 0 20 5 Q15 4 12 7 Q10 5 8 7 Q5 4 0 5 Z';
+
+// The moon's hit box in percent of the art: square on screen, so its height is
+// its width times the art's aspect.
+export function moonBox([gx, gy, gw, gh], harvest, aspect) {
+  const m = harvest ? HARVEST : MOON;
+  const w = (m.w / 100) * gw;
+  return [gx + (m.x / 100) * gw, gy + (m.y / 100) * gh, w, w * aspect];
+}
+
+export function useWindowState() {
+  const [wink, setWink] = useState(0);
+  const [shooting, setShooting] = useState(0);
+  const [witch, setWitch] = useState(0);
+  const [blindsUp, setBlindsUp] = useState(false);
+  const taps = useRef(0);
+  const pokeMoon = useCallback((halloween) => {
+    setWink((n) => n + 1);
+    taps.current += 1;
+    if (halloween && taps.current % 3 === 0) setWitch((n) => n + 1);
+  }, []);
+  const pokeSky = useCallback(() => setShooting((n) => n + 1), []);
+  const pullCord = useCallback(() => setBlindsUp((v) => !v), []);
+  return { wink, shooting, witch, blindsUp, pokeMoon, pokeSky, pullCord };
+}
+
+export function WindowOutside({ win, state, now, theme, witch = null }) {
+  if (!win || !win.glass) return null;
+  const harvest = theme === 'halloween';
+  const phase = harvest ? 0.5 : moonPhase(now);
+  const m = harvest ? HARVEST : MOON;
+  return (
+    <div aria-hidden="true" data-testid="window-outside" className="couch-sky pointer-events-none absolute overflow-hidden" style={pctStyle(win.glass)}>
+      {STARS.map(([x, y], i) => (
+        <span
+          key={i}
+          className="couch-star absolute h-[3px] w-[3px] rounded-full motion-safe:animate-couch-twinkle"
+          style={{ left: `${x}%`, top: `${y}%`, animationDelay: `${(i % 5) * 0.7}s` }}
+        />
+      ))}
+      <svg
+        key={`moon-${state.wink}`}
+        viewBox="0 0 100 100"
+        data-testid="window-moon"
+        data-phase={phase.toFixed(2)}
+        className={`absolute ${state.wink ? 'motion-safe:animate-couch-blink' : ''}`}
+        style={{ left: `${m.x}%`, top: `${m.y}%`, width: `${m.w}%` }}
+      >
+        <circle cx="50" cy="50" r="50" className="couch-moon-dark" />
+        <path d={moonPath(phase)} className={harvest ? 'couch-moon couch-moon--harvest' : 'couch-moon'} />
+      </svg>
+      {state.shooting ? (
+        <span key={`star-${state.shooting}`} data-testid="window-shooting" className="couch-shooting absolute left-[8%] top-[16%] h-[2px] w-[22%] motion-safe:animate-couch-shoot" />
+      ) : null}
+      <span className="couch-plane absolute top-[24%] h-[3px] w-[3px] rounded-full motion-safe:animate-couch-cross" />
+      {harvest && (
+        <span data-testid="window-bats" className="absolute top-[30%] flex w-[30%] gap-[6%] motion-safe:animate-couch-cross" style={{ animationDuration: '31s' }}>
+          {[0, 1, 2, 3].map((i) => (
+            <svg key={i} viewBox="0 0 20 8" className="couch-bat w-1/4" style={{ marginTop: `${(i % 2) * 6}%` }}>
+              <path d={BAT} />
+            </svg>
+          ))}
+        </span>
+      )}
+      {harvest && witch && state.witch ? (
+        <img
+          key={`witch-${state.witch}`}
+          src={witch}
+          alt=""
+          data-testid="window-witch"
+          className="absolute top-[20%] w-[22%] motion-safe:animate-couch-cross"
+          style={{ animationDuration: '4s', animationIterationCount: 1 }}
+        />
+      ) : null}
+      {win.skyline && <img src={win.skyline.src} alt="" className="absolute" style={pctStyle(within(win.glass, win.skyline.rect))} />}
+    </div>
+  );
+}
+
+export function WindowFront({ win, state, theme, aspect }) {
+  if (!win || !win.glass) return null;
+  const halloween = theme === 'halloween';
+  return (
+    <>
+      {win.blinds && (
+        <span aria-hidden="true" className="pointer-events-none absolute overflow-hidden" style={pctStyle(win.blinds.rect)}>
+          <img
+            src={win.blinds.src}
+            alt=""
+            data-testid="window-blinds"
+            data-up={state.blindsUp ? 'true' : 'false'}
+            className={`h-full w-full origin-top transition-transform duration-500 ease-out motion-reduce:transition-none ${state.blindsUp ? 'scale-y-[0.18]' : ''}`}
+          />
+        </span>
+      )}
+      <span aria-hidden="true" data-toy="sky" onPointerDown={state.pokeSky} className="absolute z-[3] cursor-pointer" style={pctStyle(win.glass)} />
+      <span
+        aria-hidden="true"
+        data-toy="moon"
+        onPointerDown={() => state.pokeMoon(halloween)}
+        className="absolute z-[3] cursor-pointer rounded-full"
+        style={pctStyle(moonBox(win.glass, halloween, aspect))}
+      />
+      {win.cord && <span aria-hidden="true" data-toy="cord" onPointerDown={state.pullCord} className="absolute z-[3] cursor-pointer" style={pctStyle(win.cord)} />}
+    </>
+  );
+}
+```
+
+- [ ] **Step 5: Keyframes and colours**
+
+`tailwind.config.js` keyframes:
+
+```js
+        // The couch window (spec: The window).
+        'couch-twinkle': { '0%,100%': { opacity: '0.85' }, '50%': { opacity: '0.35' } },
+        'couch-blink': { '0%,100%': { transform: 'scaleY(1)' }, '45%,55%': { transform: 'scaleY(0.12)' } },
+        'couch-shoot': {
+          from: { transform: 'translate(0, 0)', opacity: '0' },
+          '15%': { opacity: '1' },
+          to: { transform: 'translate(320%, 160%)', opacity: '0' },
+        },
+        'couch-cross': { '0%': { left: '-35%' }, '60%,100%': { left: '110%' } },
+```
+
+and animations:
+
+```js
+        'couch-twinkle': 'couch-twinkle 3.2s ease-in-out infinite',
+        'couch-blink': 'couch-blink 0.7s ease-in-out',
+        'couch-shoot': 'couch-shoot 0.9s ease-out forwards',
+        'couch-cross': 'couch-cross 60s linear infinite',
+```
+
+Append to `src/index.css`:
+
+```css
+/* The couch window's night (DESIGN.md §7, The couch). */
+.couch-sky {
+  background: linear-gradient(180deg, #0b1020 0%, #18213a 60%, #2a2440 100%);
+}
+.couch-star {
+  background: #f1ead8;
+}
+.couch-moon-dark {
+  fill: #2b3046;
+}
+.couch-moon {
+  fill: #efe6c8;
+}
+.couch-moon--harvest {
+  fill: #f0a050;
+}
+.couch-shooting {
+  background: linear-gradient(90deg, transparent, #f1ead8);
+}
+.couch-plane {
+  background: #e05a4a;
+}
+.couch-bat {
+  fill: #0b0a10;
+}
+```
+
+- [ ] **Step 6: Put the window in the room**
+
+`CouchFront.js` (Room): import `{ WindowFront, WindowOutside, useWindowState }` and `ART_ASPECT`; take a `now` prop; `const win = useWindowState();`. In the stage, render `<WindowOutside win={LAYOUT.window} state={win} now={now} theme={couch.theme} witch={art && art.witch} />` **before** the plate `<img>` (the glass is transparent, so the night shows through), and `<WindowFront win={LAYOUT.window} state={win} theme={couch.theme} aspect={ART_ASPECT} />` right after `<RoomToys … />`.
+
+`Couch.js`: pass `now={input.now}` to `CouchFront`.
+
+- [ ] **Step 7: Run tests** → `npm test -- --watchAll=false --testPathPattern="couch/|onAirContract"` → PASS.
+
+- [ ] **Step 8: Commit**
+
+```bash
+git add src/components/couch tailwind.config.js src/index.css
+[ "$(git branch --show-current)" = feat/couch-home ] && git commit -m "feat(home): a window onto the night, with the moon to poke"
+```
+
+---
+
+### Task 21: ✋ The art (owner picks at each step)
 
 **Files:**
 - Create: `scripts/couch-art/comfy-tools.mjs`, `scripts/couch-art/frame.py`, `scripts/couch-art/measure.py`
-- Modify: `scripts/gsn-art/README.md` (a "The couch" section), `src/components/couch/couchLayout.json` (generated, `final: true`)
-- Create (generated): `public/couch/room-{1280,1920,2560}.webp`, `empty-{…}.webp`, `cut-{tapes,guide,laptop,games,remote,photo}.webp`
-- Delete: `public/couch/test-room-1280.webp`
+- Modify: `scripts/gsn-art/README.md` (a "The couch" section), `src/components/couch/rooms/90s.json` (generated, `final: true`)
+- Create (generated), all in `public/couch/90s/`: `room-{1280,1920,2560}.webp` and `empty-{…}.webp` (glass transparent), `cut-{tapes,guide,laptop,games,remote,photo}.webp`, `toy-{lamp,lamp-off,controller,can}.webp`, `blinds.webp`, `skyline.webp`, `halloween/{cobweb,bats-paper,pumpkin,pumpkin-lit,spider,candy,witch}.webp`
+- Delete: `public/couch/90s/test-room-1280.webp`
 - Test: `src/components/couch/__tests__/couchLayout.test.js` (unchanged; the safe-area test now runs)
 
 Work in a scratch folder `W=<scratchpad>/couch-art` with `masks/` inside. ComfyUI Desktop must be running on :8000 (the owner opens it).
 
 - [ ] **Step 1: Base renders.** Prompt (one line):
 
-`a cramped 1990s living room late at night seen from just behind a couch, a large chunky beige CRT television with a rabbit-ear antenna on a low wooden TV stand in the centre of the frame, filling about a third of the frame width, facing the camera straight on, the television screen dark grey, blank and matte, a VCR and a short stack of black VHS tapes on the stand's open lower shelf, three plain game cases standing upright on the shelf with their blank fronts facing the camera, a low wooden coffee table across the foreground with an open silver laptop whose blank screen faces the camera, a folded TV listings magazine and a TV remote control lying apart from each other, an empty picture frame hanging on the wall to the left of the television, a floor lamp glowing on the left, a window with half-closed blinds and night outside on the right, every object inside the central area of the frame with clear space between the objects, straight-on eye-level framing, wide shot, 1990s home video still, shot on a camcorder, a dim room at night lit by a warm floor lamp and the cool glow of the television, set lit in dark teal and plum with warm practical light, light VHS grain, slight chromatic bleed, analog video softness, no people, no text, no letters, no logos, no watermark`
+`a cramped 1990s living room late at night seen from just behind a couch, a large chunky beige CRT television with a rabbit-ear antenna on a low wooden TV stand in the centre of the frame, filling about a third of the frame width, facing the camera straight on, the television screen dark grey, blank and matte, a VCR and a short stack of black VHS tapes on the stand's open lower shelf, three plain game cases standing upright on the shelf with their blank fronts facing the camera, a low wooden coffee table across the foreground with an open silver laptop whose blank screen faces the camera, a folded TV listings magazine, a TV remote control, a game controller and a soda can lying apart from each other, an empty picture frame hanging on the wall to the left of the television, a floor lamp glowing on the left, a window with half-closed blinds and night outside on the right wall, its glass seen straight on, every object inside the central area of the frame with clear space between the objects, straight-on eye-level framing, wide shot, 1990s home video still, shot on a camcorder, a dim room at night lit by a warm floor lamp and the cool glow of the television, set lit in dark teal and plum with warm practical light, light VHS grain, slight chromatic bleed, analog video softness, no people, no text, no letters, no logos, no watermark`
 
 ```bash
 for s in 1 2 3 4; do node scripts/gsn-art/render.mjs scripts/gsn-art/workflows/zimage-turbo.json "$W/base-$s.png" --prompt "<prompt>" --width 1600 --height 896 --seed $s; done
@@ -4116,9 +4947,41 @@ $T "$W/masks/games.png" "game cases"
 $T "$W/masks/case.png" "game case" --separate
 $T "$W/masks/remote.png" "remote control"
 $T "$W/masks/photo.png" "picture frame"
+$T "$W/masks/window-glass.png" "window glass"
+$T "$W/masks/blinds.png" "window blinds"
+$T "$W/masks/cord.png" "blinds pull cord"
+$T "$W/masks/lamp.png" "floor lamp"
+$T "$W/masks/controller.png" "game controller"
+$T "$W/masks/can.png" "soda can"
 ```
 
 Rename the `case-N.png` files left to right as `case-1.png … case-3.png`. Open each mask and check it covers its object (raise or lower `--threshold` and rerun if not). Fallback for any object SAM 3 misses: crop around it and run the RMBG node pack's BiRefNet (`BiRefNet_toonout`) in the ComfyUI UI, then paste the mask back at full size.
+
+- [ ] **Step 5b: The variants, the Halloween set and the night outside.** Every image from here is upscaled like the plate (`comfy-tools.mjs upscale`, then resized to 2560 wide) before it is masked or measured.
+
+```bash
+Q="node scripts/gsn-art/render.mjs scripts/gsn-art/workflows/qwen-edit-2511.json"
+Z="node scripts/gsn-art/render.mjs scripts/gsn-art/workflows/zimage-turbo.json"
+mkdir -p "$W/halloween/masks"
+$Q "$W/lamp-off.png" --image "$W/plate.png" --seed 1 --prompt "Keep everything exactly the same. The floor lamp is switched off: its shade is plain and unlit. Flat solid colors, clean black outlines. No text, no letters."
+for s in 1 2; do $Q "$W/halloween/plate-$s.png" --image "$W/plate.png" --seed $s --prompt "Keep everything exactly the same and in the same place, and add Halloween decorations in the same flat cartoon style: an unlit carved jack-o'-lantern on the TV stand beside the television, fake cobwebs in the top corner of the window frame, black paper bat cutouts taped on the wall, a bowl of candy on the coffee table, a small cartoon spider hanging from the cobweb on a thread. Keep every new decoration clear of the television, the tapes, the game cases, the laptop, the magazine, the remote and the picture frame. No text, no letters."; done
+```
+
+**Show the owner `lamp-off.png` and the two Halloween plates and wait for the picks.** Save the picked one as `$W/halloween/plate.png`, then:
+
+```bash
+$Q "$W/halloween/pumpkin-lit.png" --image "$W/halloween/plate.png" --seed 1 --prompt "Keep everything exactly the same. The jack-o'-lantern's carved eyes and mouth glow bright orange from a candle inside. Flat solid colors, clean black outlines. No text."
+H="node scripts/couch-art/comfy-tools.mjs mask $W/halloween/plate.png"
+$H "$W/halloween/masks/cobweb.png" "cobweb"
+$H "$W/halloween/masks/bats-paper.png" "paper bats on the wall"
+$H "$W/halloween/masks/pumpkin.png" "jack-o'-lantern"
+$H "$W/halloween/masks/spider.png" "spider"
+$H "$W/halloween/masks/candy.png" "bowl of candy"
+$Z "$W/skyline-base.png" --width 1600 --height 400 --seed 1 --prompt "a wide flat strip of a Phoenix suburb skyline at night in silhouette: saguaro cacti, a palm tree, a streetlight and a low flat-roofed house with one small window, dark navy shapes on a plain white background, side view, no text, no letters"
+$Z "$W/halloween/witch-base.png" --width 1024 --height 640 --seed 1 --prompt "a witch flying on a broomstick seen from the side, a flat black silhouette on a plain white background, no text, no letters"
+```
+
+Redraw the skyline and the witch with the cartoon redraw prompt from Step 2 (`$Q … --image <base>`), then remove their white backgrounds with the RMBG node pack's `BiRefNetRMBG` (model `BiRefNet_toonout`) in the ComfyUI UI and save them as transparent PNGs: `$W/skyline.png` and `$W/halloween/witch.png`. **Show the owner the lit pumpkin, the skyline and the witch.**
 
 - [ ] **Step 6: The empty room**
 
@@ -4126,7 +4989,7 @@ Rename the `case-N.png` files left to right as `case-1.png … case-3.png`. Open
 python -c "
 from PIL import Image, ImageChops, ImageFilter
 import glob
-ms=[Image.open(p).convert('L') for p in glob.glob(r'$W/masks/*.png') if not any(k in p for k in ('screen-','case-','frame-inner','tv.png'))]
+ms=[Image.open(p).convert('L') for p in glob.glob(r'$W/masks/*.png') if not any(k in p for k in ('screen-','case-','frame-inner','tv.png','window-glass','cord'))]
 u=ms[0]
 for m in ms[1:]: u=ImageChops.lighter(u,m)
 u.filter(ImageFilter.MaxFilter(9)).save(r'$W/masks/union.png')"
@@ -4138,16 +5001,22 @@ Check `empty.png`: the objects are gone and the wall, floor, stand and table con
 - [ ] **Step 7: Write `scripts/couch-art/measure.py`**
 
 ```python
-"""Turn the picked plate and its masks into the couch's assets and layout.
+"""Turn the picked room art and its masks into the couch's assets and layout.
 
-usage: python scripts/couch-art/measure.py <work-dir>
+usage: python scripts/couch-art/measure.py <work-dir> [room-id]
 
-<work-dir> holds plate.png (2560 wide), empty.png (same size) and masks/:
-  tv tapes guide laptop games remote photo .png   (white = the object)
-  screen-tv.png screen-laptop.png                 (the blank screens)
-  case-1.png … case-3.png                         (game case fronts, left to right; optional)
-Writes public/couch/room-*.webp, empty-*.webp, cut-*.webp and
-src/components/couch/couchLayout.json (final: true).
+<work-dir> holds (see the art task in the plan), every image 2560 wide:
+  plate.png, empty.png              the room, and the room with every door object,
+                                    toy and the blinds erased
+  masks/<door>.png                  tv tapes guide laptop games remote photo (white = object)
+  masks/screen-tv.png, screen-laptop.png, window-glass.png, blinds.png, cord.png (optional)
+  masks/case-1.png … case-3.png     game case fronts, left to right (optional)
+  masks/lamp.png, controller.png, can.png   the room's toys
+  lamp-off.png                      the plate with the lamp switched off
+  skyline.png                       the night skyline strip, transparent background (optional)
+  halloween/ (optional)             plate.png, pumpkin-lit.png, witch.png (transparent) and
+                                    masks/cobweb.png, bats-paper.png, pumpkin.png, spider.png, candy.png
+Writes public/couch/<room>/… and src/components/couch/rooms/<room>.json (final: true).
 """
 import json
 import os
@@ -4157,16 +5026,22 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-PUB = os.path.join(ROOT, "public", "couch")
-LAYOUT = os.path.join(ROOT, "src", "components", "couch", "couchLayout.json")
 DOORS = ["tv", "tapes", "guide", "laptop", "games", "remote", "photo"]
 CUT = ["tapes", "guide", "laptop", "games", "remote", "photo"]
 WIDTHS = {1280: 90, 1920: 150, 2560: 250}
 CUT_KB = 40
+NAMES = {"tv": "TV", "note": "Note", "laptop": "Laptop", "tapes": "Tapes", "guide": "TV guide", "games": "Games", "remote": "Remote", "photo": "Photo"}
+TOYS = [("lamp", "toggle"), ("controller", "wiggle"), ("can", "pop")]
+HALLOWEEN_DRESSING = ["cobweb", "bats-paper"]
+HALLOWEEN_TOYS = [("pumpkin", "light"), ("spider", "drop"), ("candy", "pop")]
+
+
+def load_mask(path, size):
+    return Image.open(path).convert("L").resize(size)
 
 
 def bbox(mask):
-    a = np.array(mask.convert("L")) > 127
+    a = np.array(mask) > 127
     ys, xs = np.nonzero(a)
     if not len(xs):
         raise SystemExit("empty mask")
@@ -4176,6 +5051,7 @@ def bbox(mask):
 
 
 def webp(img, out, max_kb):
+    os.makedirs(os.path.dirname(out), exist_ok=True)
     for quality in range(86, 39, -4):
         img.save(out, "WEBP", quality=quality, method=6)
         kb = os.path.getsize(out) / 1024
@@ -4183,6 +5059,17 @@ def webp(img, out, max_kb):
             break
     print(f"{out}: {img.size[0]}x{img.size[1]} q{quality} {kb:.0f} KB" + ("" if kb <= max_kb else " (OVER BUDGET)"))
     return kb <= max_kb
+
+
+def cutout(img, mask, rect, out, max_kb=CUT_KB):
+    W, H = img.size
+    box = (round(rect[0] * W / 100), round(rect[1] * H / 100), round((rect[0] + rect[2]) * W / 100), round((rect[1] + rect[3]) * H / 100))
+    piece = img.crop(box).convert("RGBA")
+    piece.putalpha(mask.crop(box).filter(ImageFilter.GaussianBlur(0.6)))
+    target = max(1, round(rect[2] / 100 * 1920))
+    if piece.width > target:
+        piece = piece.resize((target, round(piece.height * target / piece.width)), Image.LANCZOS)
+    return webp(piece, out, max_kb)
 
 
 def phone_crop(a, b, W, H, pad=4.0):
@@ -4199,47 +5086,126 @@ def phone_crop(a, b, W, H, pad=4.0):
     return [round(x0, 2), round(y0, 2), round(w, 2), round(h, 2)]
 
 
-def main(work):
+def main(work, room="90s"):
+    pub = os.path.join(ROOT, "public", "couch", room)
+    layout_path = os.path.join(ROOT, "src", "components", "couch", "rooms", f"{room}.json")
+
+    def url(name):
+        return f"/couch/{room}/{name}"
+
     plate = Image.open(os.path.join(work, "plate.png")).convert("RGB")
-    empty = Image.open(os.path.join(work, "empty.png")).convert("RGB").resize(plate.size)
     W, H = plate.size
-    os.makedirs(PUB, exist_ok=True)
+    size = (W, H)
+    empty = Image.open(os.path.join(work, "empty.png")).convert("RGB").resize(size)
+
+    def mask(name):
+        return load_mask(os.path.join(work, "masks", f"{name}.png"), size)
+
+    def has_mask(name):
+        return os.path.exists(os.path.join(work, "masks", f"{name}.png"))
+
     ok = True
+
+    # The glass is transparent in both plates, so the night shows through.
+    glass_mask = mask("window-glass")
+    alpha = Image.eval(glass_mask, lambda v: 0 if v > 127 else 255)
+    plate_a, empty_a = plate.convert("RGBA"), empty.convert("RGBA")
+    plate_a.putalpha(alpha)
+    empty_a.putalpha(alpha)
     plate_map, empty_map = {}, {}
     for w, kb in WIDTHS.items():
-        size = (w, round(w * H / W))
-        ok &= webp(plate.resize(size, Image.LANCZOS), os.path.join(PUB, f"room-{w}.webp"), kb)
-        ok &= webp(empty.resize(size, Image.LANCZOS), os.path.join(PUB, f"empty-{w}.webp"), kb)
-        plate_map[str(w)], empty_map[str(w)] = f"/couch/room-{w}.webp", f"/couch/empty-{w}.webp"
+        dims = (w, round(w * H / W))
+        ok &= webp(plate_a.resize(dims, Image.LANCZOS), os.path.join(pub, f"room-{w}.webp"), kb)
+        ok &= webp(empty_a.resize(dims, Image.LANCZOS), os.path.join(pub, f"empty-{w}.webp"), kb)
+        plate_map[str(w)], empty_map[str(w)] = url(f"room-{w}.webp"), url(f"empty-{w}.webp")
 
-    mask = lambda name: Image.open(os.path.join(work, "masks", f"{name}.png")).convert("L").resize((W, H))
     doors = {}
     for d in DOORS:
         m = mask(d)
         rect = bbox(m)
         entry = {"rect": rect, "anchor": [round(rect[0] + rect[2] / 2, 2), rect[1]]}
         if d in CUT:
-            box = (round(rect[0] * W / 100), round(rect[1] * H / 100), round((rect[0] + rect[2]) * W / 100), round((rect[1] + rect[3]) * H / 100))
-            cut = plate.crop(box).convert("RGBA")
-            cut.putalpha(m.crop(box).filter(ImageFilter.GaussianBlur(0.6)))
-            target = max(1, round(rect[2] / 100 * 1920))
-            if cut.width > target:
-                cut = cut.resize((target, round(cut.height * target / cut.width)), Image.LANCZOS)
-            ok &= webp(cut, os.path.join(PUB, f"cut-{d}.webp"), CUT_KB)
-            entry["cutout"] = f"/couch/cut-{d}.webp"
+            ok &= cutout(plate, m, rect, os.path.join(pub, f"cut-{d}.webp"))
+            entry["cutout"] = url(f"cut-{d}.webp")
         doors[d] = entry
-
     tv = doors["tv"]["rect"]
     note = [round(tv[0] + tv[2] * 0.04, 2), round(tv[1] + tv[3] * 0.04, 2), round(tv[2] * 0.2, 2), round(tv[3] * 0.24, 2)]
     doors["note"] = {"rect": note, "anchor": [round(note[0] + note[2] / 2, 2), note[1]]}
-    cases = [bbox(mask(f"case-{i}")) for i in (1, 2, 3) if os.path.exists(os.path.join(work, "masks", f"case-{i}.png"))]
+    cases = [bbox(mask(f"case-{i}")) for i in (1, 2, 3) if has_mask(f"case-{i}")]
     if cases:
         doors["games"]["cases"] = cases
-
     screens = {k: bbox(mask(f"screen-{k}")) for k in ("tv", "laptop")}
+
+    # The window: the glass, the blinds (cut from the plate), the cord, the skyline.
+    glass = bbox(glass_mask)
+    blinds_mask = mask("blinds")
+    blinds_rect = bbox(blinds_mask)
+    ok &= cutout(plate, blinds_mask, blinds_rect, os.path.join(pub, "blinds.webp"), 60)
+    window = {"glass": glass, "blinds": {"src": url("blinds.webp"), "rect": blinds_rect}}
+    if has_mask("cord"):
+        window["cord"] = bbox(mask("cord"))
+    sky_path = os.path.join(work, "skyline.png")
+    if os.path.exists(sky_path):
+        sky = Image.open(sky_path).convert("RGBA")
+        sky_w = max(1, round(glass[2] / 100 * 1920))
+        sky = sky.resize((sky_w, round(sky.height * sky_w / sky.width)), Image.LANCZOS)
+        sky_h = round(100 * sky.height / (1920 * H / W), 2)  # its height in percent of the art
+        ok &= webp(sky, os.path.join(pub, "skyline.webp"), CUT_KB)
+        window["skyline"] = {"src": url("skyline.webp"), "rect": [glass[0], round(glass[1] + glass[3] - sky_h, 2), glass[2], sky_h]}
+
+    # The room's toys, cut from the plate; the lamp's off state from lamp-off.png.
+    lamp_off = Image.open(os.path.join(work, "lamp-off.png")).convert("RGB").resize(size)
+    toys = []
+    for name, effect in TOYS:
+        m = mask(name)
+        rect = bbox(m)
+        ok &= cutout(plate, m, rect, os.path.join(pub, f"toy-{name}.webp"))
+        art = {"idle": url(f"toy-{name}.webp")}
+        if name == "lamp":
+            ok &= cutout(lamp_off, m, rect, os.path.join(pub, "toy-lamp-off.webp"))
+            art["active"] = url("toy-lamp-off.webp")
+        toys.append({"id": name, "effect": effect, "rect": rect, "art": art})
+
+    # Halloween: dressing and toys cut from the Halloween plate.
+    themes = {}
+    hw = os.path.join(work, "halloween")
+    if os.path.isdir(hw):
+        hplate = Image.open(os.path.join(hw, "plate.png")).convert("RGB").resize(size)
+        lit = Image.open(os.path.join(hw, "pumpkin-lit.png")).convert("RGB").resize(size)
+
+        def hmask(name):
+            return load_mask(os.path.join(hw, "masks", f"{name}.png"), size)
+
+        dressing = []
+        for name in HALLOWEEN_DRESSING:
+            m = hmask(name)
+            rect = bbox(m)
+            ok &= cutout(hplate, m, rect, os.path.join(pub, "halloween", f"{name}.webp"))
+            dressing.append({"id": name, "src": url(f"halloween/{name}.webp"), "rect": rect})
+        htoys = []
+        for name, effect in HALLOWEEN_TOYS:
+            m = hmask(name)
+            rect = bbox(m)
+            ok &= cutout(hplate, m, rect, os.path.join(pub, "halloween", f"{name}.webp"))
+            art = {"idle": url(f"halloween/{name}.webp")}
+            if name == "pumpkin":
+                ok &= cutout(lit, m, rect, os.path.join(pub, "halloween", "pumpkin-lit.webp"))
+                art["active"] = url("halloween/pumpkin-lit.webp")
+            htoys.append({"id": name, "effect": effect, "rect": rect, "art": art})
+        # The unlit pumpkin doubles as the laptop's screensaver bug.
+        theme = {"dressing": dressing, "toys": htoys, "laptopBug": url("halloween/pumpkin.webp")}
+        witch_path = os.path.join(hw, "witch.png")
+        if os.path.exists(witch_path):
+            witch = Image.open(witch_path).convert("RGBA")
+            witch = witch.resize((400, round(witch.height * 400 / witch.width)), Image.LANCZOS)
+            ok &= webp(witch, os.path.join(pub, "halloween", "witch.webp"), CUT_KB)
+            theme["witch"] = url("halloween/witch.webp")
+        themes["halloween"] = theme
+
     s = screens["tv"]
     layout = {
         "final": True,
+        "room": {"id": room, "screen": "crt", "names": NAMES},
         "art": {
             "width": W,
             "height": H,
@@ -4249,44 +5215,47 @@ def main(work):
         },
         "screens": screens,
         "doors": doors,
+        "window": window,
+        "toys": toys,
+        "themes": themes,
         "phoneCrop": phone_crop(tv, doors["tapes"]["rect"], W, H),
     }
-    with open(LAYOUT, "w") as f:
+    with open(layout_path, "w") as f:
         json.dump(layout, f, indent=2)
         f.write("\n")
-    print(f"wrote {LAYOUT}")
+    print(f"wrote {layout_path}")
     if not ok:
         raise SystemExit("some files are over budget")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1])
+    main(*sys.argv[1:3])
 ```
 
 - [ ] **Step 8: Generate, clean up and test**
 
 ```bash
-python scripts/couch-art/measure.py "$W"
-git rm -q public/couch/test-room-1280.webp
+python scripts/couch-art/measure.py "$W" 90s
+git rm -q public/couch/90s/test-room-1280.webp
 npm test -- --watchAll=false --testPathPattern="couchLayout|CouchFront|CouchPhone|Couch.test"
 ```
 
-Expected: every file within budget; the layout tests pass, including the safe-area test. If a door falls outside the safe area, the art must change (Step 1 or 2 again), not the test. If `CouchFront` tests assert the old plate path (`/couch/test-room-1280.webp`), change that assertion to `/couch/empty-1920.webp` (the room now draws the empty plate under the cutouts).
+Expected: every file within budget; the layout tests pass, including the safe-area test. If a door falls outside the safe area, the art must change (Step 1 or 2 again), not the test. If `CouchFront` tests assert the old plate path (`/couch/90s/test-room-1280.webp`), change that assertion to `/couch/90s/empty-1920.webp` (the room now draws the empty plate under the cutouts).
 
 - [ ] **Step 9: Record the art.** Append a "The couch" section to `scripts/gsn-art/README.md`: the base prompt, the redraw prompt, the portrait prompt, the picked seeds and models, the mask prompts, the erase method used, and the commands from Steps 3–8. Add the rule: "The owner's own likeness is allowed in the couch's picture frame, with the owner's consent (2026-10-04); no other real people."
 
-- [ ] **Step 10: ✋ Owner review** in `npm start` → `http://localhost:3000/?fixture=offair` (and `live`, `giveaway`, phone view). Fix what the owner flags.
+- [ ] **Step 10: ✋ Owner review** in `npm start` → `http://localhost:3000/?fixture=offair` (and `live`, `giveaway`, `halloween`, `?theme=none`, phone view). Poke every toy and the window (moon, sky, cord). Fix what the owner flags.
 
 - [ ] **Step 11: Commit**
 
 ```bash
-git add scripts/couch-art public/couch src/components/couch/couchLayout.json scripts/gsn-art/README.md src/components/couch/__tests__
+git add scripts/couch-art public/couch src/components/couch/rooms/90s.json scripts/gsn-art/README.md src/components/couch/__tests__
 [ "$(git branch --show-current)" = feat/couch-home ] && git commit -m "feat(home): the couch art, cutouts and measured layout"
 ```
 
 ---
 
-### Task 19: ✋ The TV reel
+### Task 22: ✋ The TV reel
 
 **Files:**
 - Create: `scripts/tv-reel/build.mjs`, `scripts/tv-reel/reel.json`
@@ -4391,7 +5360,7 @@ git add scripts/tv-reel/build.mjs scripts/tv-reel/reel.json package.json .gitign
 
 ---
 
-### Task 20: Clean-up, rules and docs
+### Task 23: Clean-up, rules and docs
 
 **Files:**
 - Delete: `src/components/HomeHero.js`, `HomeLeaderboardCallout.js`, `HomeGambaTools.js`, `StatsTicker.js`, `SignOff.js`, `SteamGames.jsx`, `SectionHeader.js`, `SectionDivider.js`, `ClipCard.js`, `VideoModal.js`, `src/hooks/useVideoModal.js`, their tests under `__tests__/`, and `public/site_banner_v2.png`
@@ -4427,6 +5396,9 @@ Run: `npm test -- --watchAll=false --testPathPattern=onAirContract` → PASS. Fi
 - **The camera.** A plain click zooms the room into the object (about 650 ms), the channel-change static covers the cut, the page tunes in. Back pulls the camera out to the couch. On phones a tile's art grows to fill the screen instead.
 - **The TV** plays the reel off air (loops or stills, with station-break cards), the live preview while live, and the stream inside the TV when clicked. **The laptop** shows the hunt, the prediction round, or a bouncing GG screensaver.
 - **Phones** see a 4:3 crop of the TV above "On the coffee table" tiles. With no art, every door is a tile.
+- **Themes** dress the room on a calendar in `themes.js` (Halloween is October); `?theme=<id>` previews one and `?theme=none` turns it off.
+- **Toys** react to a poke and go nowhere: the lamp toggles, the controller rumbles, the can fizzes; Halloween adds the jack-o'-lantern, the spider and the candy bowl. Silent; under reduced motion they switch art without moving.
+- **The window** shows an always-night outside behind transparent glass: tonight's real moon phase, stars, a Phoenix skyline and a plane; the moon winks, the sky throws a shooting star, the cord rolls the blinds. Halloween brings a harvest moon, bats and a witch.
 ```
 
 and to "### Named Rules":
@@ -4438,13 +5410,19 @@ and to "### Named Rules":
 
 **Only The TV Casts Light.** The room is dim; the TV lights it only while live. The laptop screen turns on during a hunt but never glows.
 
-**Art Is Measured.** Couch positions come from `couchLayout.json`, written by `scripts/couch-art/measure.py` from the masks; components never hand-tune a coordinate.
+**Art Is Measured.** Couch positions come from the room's layout (`src/components/couch/rooms/<id>.json`), written by `scripts/couch-art/measure.py` from the masks; components never hand-tune a coordinate.
+
+**Rooms Are Swappable.** A room is its art plus its measured layout (names, screen skin, window, toys, theme art). Behaviour lives in code; a new era is a new folder and layout file.
+
+**Toys Light Themselves.** A toy may light itself while you play with it (a lit pumpkin is art with an opacity flicker); it never uses a glow token and lights nothing around it. Only the TV lights the room.
+
+**Dressing Never Covers A Door.** Theme dressing and toys are decorative (`aria-hidden`, pointer and touch only, never in the tab order) and never sit on a door or a label; the layout test enforces it.
 ```
 
 - [ ] **Step 4: CLAUDE.md.**
   - In "Routing & Shell", replace the HomePage notes with: "`/` is the couch (`src/components/couch/`, wired by `HomePage`): an illustrated room whose objects are links; the site camera (`src/components/camera/CameraProvider.js`, mounted in `App.js` above the per-route `ErrorBoundary`) zooms into a door, cuts to static and swaps the page; Back pulls back. Dev: `/?fixture=offair|live|giveaway|hunt|round|late|loading|noart|empty`. Lazy pages load through `src/routes/loaders.js` so doors can prefetch."
   - Under Commands add: "`npm run tv:reel` — encodes the couch TV's loops from `scripts/tv-reel/source/` (gitignored, clips the owner downloads) per `scripts/tv-reel/reel.json` into `public/tv/reel/` (needs ffmpeg). Commit the outputs."
-  - Under Gotchas add a "Couch" entry: art in `public/couch/` from `scripts/couch-art/` (ComfyUI-RMBG SAM 3 masks, LaMa erase, 4x-AnimeSharp, `measure.py` writes `couchLayout.json`, `final: true` enables the safe-area test); `useCouchData` adds two one-doc listeners (prediction round, live giveaway); `/api/steam-games` is CDN-cached 30 min and proxied to the deployed site in dev; the router test stub keeps history and `useNavigationType`.
+  - Under Gotchas add a "Couch" entry: art in `public/couch/` from `scripts/couch-art/` (ComfyUI-RMBG SAM 3 masks, LaMa erase, 4x-AnimeSharp, `measure.py` writes `src/components/couch/rooms/<room>.json`, `final: true` enables the safe-area and toy-placement tests; themes in `themes.js`, preview with `?theme=`); `useCouchData` adds two one-doc listeners (prediction round, live giveaway); `/api/steam-games` is CDN-cached 30 min and proxied to the deployed site in dev; the router test stub keeps history and `useNavigationType`.
 
 - [ ] **Step 5: Spec status.** Change the spec's `**Status:**` line to `Approved (spec review 2026-10-04)`.
 
@@ -4470,7 +5448,7 @@ git add -A src DESIGN.md CLAUDE.md docs public/share/home.jpg public/site_banner
 
 ---
 
-### Task 21: ✋ Reviews, the owner's localhost play-test, then the PR
+### Task 24: ✋ Reviews, the owner's localhost play-test, then the PR
 
 - [ ] **Step 1: Motion review.** Invoke the `review-animations` skill on `src/components/camera/` and `src/components/couch/` (the camera move, the reel cuts, the screensaver, the label reveal). Apply the fixes it confirms, test, commit (`fix(home): …`).
 
@@ -4478,7 +5456,7 @@ git add -A src DESIGN.md CLAUDE.md docs public/share/home.jpg public/site_banner
 
 - [ ] **Step 3: Performance review.** Dispatch the `performance-benchmarker` agent: phone-class CPU, the plate's LCP with `fetchPriority="high"`, the stage transform at 60 fps, reel bytes, the extra listeners. Apply confirmed fixes, test, commit.
 
-- [ ] **Step 4: ✋ Owner play-test on localhost.** Start `npm start` for the owner and hand over the checklist: every door (mouse, keyboard, touch), Back after each, the remote, live watch mode (if live, or `?fixture=live`), the giveaway note, phone layout, reduced motion, a first visit (clear site data) with the intro pull-back and the welcome card. Fix everything the owner finds, re-run the suite and build after each batch, and repeat until the owner signs off. **Do not push before the sign-off.**
+- [ ] **Step 4: ✋ Owner play-test on localhost.** Start `npm start` for the owner and hand over the checklist: every door (mouse, keyboard, touch), Back after each, the remote, live watch mode (if live, or `?fixture=live`), the giveaway note, phone layout, reduced motion, a first visit (clear site data) with the intro pull-back and the welcome card, every toy and the window (moon, sky, cord), and Halloween on and off (`?theme=halloween`, `?theme=none`). Fix everything the owner finds, re-run the suite and build after each batch, and repeat until the owner signs off. **Do not push before the sign-off.**
 
 - [ ] **Step 5: Push and open the PR** (only after the sign-off):
 

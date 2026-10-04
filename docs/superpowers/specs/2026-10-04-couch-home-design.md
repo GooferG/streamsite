@@ -47,6 +47,7 @@ The owner wants home to be the most distinctive page on the site, not a restyle.
 9. **Kept from today:** the first-visit welcome card. **Cut:** hero, leaderboard band, gamba tools strip, latest VOD and clips sections, Steam strip, stats ticker, sign-off.
 10. **No animation library to start.** The camera uses the Web Animations API. GSAP (free, CJS-friendly) only if sequencing outgrows it. Lenis, Rive, Lottie, react-router's `viewTransition` and React's `<ViewTransition>` are out.
 11. **A cartoon of the owner** hangs in the photo frame (About door). The owner supplies a stream still or a selfie; only the cartoon is committed.
+12. **Added during the build (2026-10-04): rooms, themes, toys and the window** (see that section). The room's art and layout are one swappable *room* (`90s` today); seasonal themes dress the room (Halloween ships now); toys are pointer-only easter eggs; the window shows a live night outside.
 
 ## The room
 
@@ -219,6 +220,63 @@ The doors render as an ordered list of links (the order above) with their senten
 - **The cartoon owner:** a Qwen redraw from a photo the owner supplies (stream still or selfie), same cartoon prompt traits. The source photo stays out of the repo. The art README's "no real people's likenesses" rule gets an owner-consent exception for the owner's own likeness.
 - **The reel and the GSN ident** reuse existing assets (`public/gsn/ident.webp`).
 - **Already installed for this:** ComfyUI-RMBG 3.2.0 (with `decord` and the SAM 3 dependencies), BiRefNet ToonOut, 4x-AnimeSharp, Qwen-Image-Edit-2511 fp8mixed with its 4-step Lightning LoRA (`scripts/gsn-art/workflows/qwen-edit-2511.json`).
+
+## Rooms, themes, toys and the window (added 2026-10-04)
+
+### Rooms
+
+- The art and its measured layout form a **room**: `src/components/couch/rooms/<id>.json` with its art in `public/couch/<id>/`. Today there is one, `90s`, picked by `ROOM_ID` in `couchLayout.js`; there is no switcher.
+- A room declares its object names (the label kickers: "Tapes", "TV guide"…), its screen skin (`crt`, the class `couch-crt`), its window, its toys and its themes' art. A future era (modern, futuristic) is a new folder and layout file; the doors, destinations, camera, model and screens don't change.
+
+### Themes
+
+- A theme dresses the room; it never replaces it. `themes.js` holds each theme's calendar (Goofer's Arizona calendar) and copy; the room's layout holds that theme's art.
+- **Halloween**, October 1 to 31:
+  - dressing: cobwebs and paper bats on the wall (nothing on a door, so no extra tape on the stack);
+  - toys: a jack-o'-lantern, a spider on the cobweb, a candy bowl;
+  - the window: an orange harvest moon and a bat flock, plus a witch on a broom (art) that a moon tap sometimes sends across;
+  - a pumpkin in place of the GG bug on the laptop's screensaver;
+  - a "Spooky season" station-break card first in the TV reel.
+- `?theme=<id>` previews a theme and `?theme=none` turns it off, in any build.
+- Dressing is decorative (`aria-hidden`, no pointer events), never covers a door or a label, and is at most 40 KB a layer. On phones the TV crop shows whatever dressing and toys fall inside it, as still pictures.
+
+### Toys
+
+- A toy reacts when you poke it and goes nowhere. Effects:
+  - `toggle`: the lamp clicks off and on;
+  - `light`: the jack-o'-lantern's face lights and flickers for a few seconds;
+  - `wiggle`: the controller rumbles;
+  - `drop`: the spider drops on its thread and climbs back;
+  - `pop`: a candy pops out, the soda can fizzes.
+- Pointer and touch only: `aria-hidden`, never in the tab order, a pointer cursor and no hover label. Never on top of a door. Silent. Under reduced motion a toy switches its art without moving.
+- **Toys light themselves only.** A lit pumpkin is art (its face drawn lit) with an opacity flicker; it never uses a glow token and lights nothing around it. The TV is still the only thing that lights the room.
+- The objects a toy animates are erased from the empty room, like the doors' objects, so a moving toy never shows a copy of itself underneath.
+
+### The window
+
+- The window's glass is transparent in the room's art; the outside is HTML behind it and the blinds a layer in front.
+- It is always night outside:
+  - tonight's real moon phase, computed from the date;
+  - a few twinkling stars;
+  - a flat Phoenix skyline strip (saguaros, a palm, a streetlight, a neighbour's house);
+  - a plane blinking across now and then.
+- Window toys: tap the moon and it winks, tap the sky for a shooting star, tap the blinds cord to roll the blinds up or down.
+- The outside casts no light into the room. All its motion is transforms and opacity, `motion-safe` only.
+
+### Art additions
+
+The art step adds:
+- the window: the glass mask (made transparent in the room and the empty room), the blinds cutout and the cord's hit area, the skyline strip;
+- the base toys: the lamp on and off, the controller, the soda can;
+- the Halloween set: a Halloween version of the room for the dressing and toy cutouts, the lit pumpkin, the spider, the witch and the laptop bug.
+
+`measure.py` writes the `room`, `window`, `toys` and `themes` blocks of the room's layout.
+
+### Rules added to DESIGN.md §7
+
+- **Toys Light Themselves.**
+- **Dressing Never Covers A Door.**
+- **Rooms Are Swappable:** art and positions live in the room's layout, behaviour lives in code.
 
 ## Share card
 

@@ -245,11 +245,31 @@ test('the pill shows live state and reopens the panel', () => {
 });
 
 // Review Focus 2: a stale saved position is clamped on screen (jsdom is 1024×768).
-test('a saved position off screen comes back on screen', () => {
+test('a saved position off screen comes back fully on screen', () => {
   show({ panel: { rect: { x: 5000, y: 5000 } } });
   const dialog = screen.getByRole('dialog', { name: 'Control room' });
-  expect(dialog.style.left).toBe('976px');
+  expect(dialog.style.left).toBe('644px');
   expect(dialog.style.top).toBe('732px');
+});
+
+test('a wide panel saved on a bigger window fits this one', () => {
+  show({ panel: { rect: { x: 678, y: 73 }, size: { w: 720, h: null } } });
+  const dialog = screen.getByRole('dialog', { name: 'Control room' });
+  expect(dialog.style.width).toBe('720px');
+  expect(dialog.style.left).toBe('304px');
+});
+
+test('a drag can pass the edge, but the drop settles fully on screen', () => {
+  show();
+  const dialog = screen.getByRole('dialog', { name: 'Control room' });
+  // jsdom measures the panel at 0,0, so the grab offset is the pointer itself.
+  firePointer('pointerdown', screen.getByText('LIVE'), { clientX: 700, clientY: 80 });
+  firePointer('pointermove', screen.getByText('LIVE'), { clientX: 1600, clientY: 150 });
+  expect(dialog.style.left).toBe('900px');
+  firePointer('pointerup', screen.getByText('LIVE'), { clientX: 1600, clientY: 150 });
+  const [rect] = cr.panelActions.moveTo.mock.calls[0];
+  expect(rect.x).toBeGreaterThanOrEqual(0);
+  expect(rect.x + 380).toBeLessThanOrEqual(1024);
 });
 
 test('a new pick opens a minimized panel on the Giveaway tab', () => {

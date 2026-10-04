@@ -69,12 +69,25 @@ export function defaultRect(vw, w = PANEL_W) {
   return { x: Math.max(EDGE, vw - w - EDGE), y: NAV_H + EDGE };
 }
 
-// Keeps at least GRAB px of the header on screen sideways and the whole header
-// on screen vertically, so the panel can always be dragged back.
+// During a drag: keeps at least GRAB px of the header on screen sideways and
+// the whole header on screen vertically, so the panel follows the pointer
+// past the edge and can always be dragged back.
 export function clampRect(rect, size, view) {
   return {
     x: Math.min(Math.max(rect.x, GRAB - size.w), view.vw - GRAB),
     y: Math.min(Math.max(rect.y, NAV_H), view.vh - HEADER_H),
+  };
+}
+
+// At rest (after a drop, on open, after a window resize): the whole panel
+// inside the window when it fits. x runs from 0 to the window width minus the
+// panel's; y from under the nav to the window bottom minus the panel's height,
+// or the header's while the height is auto and unknown.
+export function fitRect(rect, size, view) {
+  const h = Number.isFinite(size.h) ? size.h : HEADER_H;
+  return {
+    x: Math.min(Math.max(rect.x, 0), Math.max(0, view.vw - size.w)),
+    y: Math.min(Math.max(rect.y, NAV_H), Math.max(NAV_H, view.vh - h)),
   };
 }
 

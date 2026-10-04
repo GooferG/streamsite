@@ -8,6 +8,7 @@ import {
   clampRect,
   clampSize,
   defaultRect,
+  fitRect,
   gripSide,
   inDockZone,
   nearestCorner,
@@ -285,10 +286,11 @@ export default function ControlRoom({ isLive = false }) {
           const d = dragRef.current;
           clearDrag();
           if (!d || d.fromDock) return;
-          const at = clampRect({ x: e.clientX - d.offX, y: e.clientY - d.offY }, d.size, view);
+          // The drag may pass the edge; the drop settles fully on screen.
+          const at = fitRect({ x: e.clientX - d.offX, y: e.clientY - d.offY }, d.size, view);
           if (inDockZone(e.clientX, view.vw)) {
             flipRectRef.current = rootRef.current?.getBoundingClientRect() || null;
-            const floatRect = clampRect(d.startRect, d.size, view);
+            const floatRect = fitRect(d.startRect, d.size, view);
             panelActions.moveTo(floatRect, nearestCorner(floatRect, d.size, view));
             panelActions.dock();
           } else {
@@ -327,7 +329,7 @@ export default function ControlRoom({ isLive = false }) {
   const rect =
     dragRect ||
     resize?.rect ||
-    clampRect(panel.rect || defaultRect(view.vw, floatSize.w), { w: floatSize.w, h: FALLBACK_H }, view);
+    fitRect(panel.rect || defaultRect(view.vw, floatSize.w), floatSize, view);
   let style;
   if (narrow) style = { left: 0, right: 0, bottom: 0, maxHeight: '75vh' };
   else if (docked) style = { top: NAV_H, right: 0, bottom: 0, width: dockW };

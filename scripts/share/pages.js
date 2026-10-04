@@ -22,7 +22,7 @@ const SHARE_PAGES = [
     id: 'vods',
     path: '/vods',
     title: 'Vods · GooferG',
-    description: 'Past broadcasts and the best clips, for when you missed it.',
+    description: 'Goofer Video. Every stream from the last 60 days on the shelf, and the clips chat kept.',
   },
   {
     id: 'about',

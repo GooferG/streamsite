@@ -66,11 +66,12 @@ Pure CommonJS module.
 
 - `applyShareMeta(html, meta)` where `meta` is
   `{ title, description, url, image, imageWidth, imageHeight }`. Replaces the
-  `<title>` text and the `content` of: `description`, `og:title`,
+  `content` of: `description`, `og:title`,
   `og:description`, `og:url`, `og:image`, `og:image:secure_url`,
   `og:image:width`, `og:image:height`, `og:image:alt`, `twitter:title`,
   `twitter:description`, `twitter:image`, `twitter:image:alt`. Values are
-  HTML-escaped (`&`, `"`, `<`, `>`).
+  HTML-escaped (`&`, `"`, `<`, `>`). `<title>` is left alone: crawlers read
+  `og:title`, and a per-page `<title>` would go stale after in-app navigation.
 - Throws, naming the tag, if any expected tag is missing from the template, so
   template drift fails the build instead of shipping a half-filled card.
 - Also exports `SITE_URL = 'https://goofer.tv'` and the capture size
@@ -136,8 +137,8 @@ No collisions: `public/about/` and `public/brand/` contain only images.
 
 `src/__tests__/sharePages.test.js` (Jest, loads the CommonJS modules):
 
-- `applyShareMeta` sets every listed tag and the `<title>`; escapes `&` and
-  quotes; throws on a missing tag.
+- `applyShareMeta` sets every listed tag and leaves `<title>` alone; escapes
+  `&` and quotes; throws on a missing tag.
 - Page ids and paths are unique; home is `/`.
 - Every non-root page has a `vercel.json` rewrite to `<path>/index.html` that
   comes before the catch-all.

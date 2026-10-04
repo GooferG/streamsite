@@ -2,7 +2,8 @@
 // write-pages.js stamps each one's og:/twitter: tags into build/<path>/index.html,
 // and each needs a screenshot at public/share/<id>.jpg (npm run share:shots).
 // Adding a page: list it here, add its vercel.json rewrite above the catch-all,
-// then shoot it. Unlisted routes get the home card.
+// then shoot it. Removing or renaming one: remove or rename its rewrite too
+// (the build fails on a mismatch). Unlisted routes get the home card.
 // settleMs / waitFor are capture hints for shoot.js.
 const SHARE_PAGES = [
   {

@@ -12,6 +12,35 @@ function imageVersion(file) {
   return crypto.createHash('sha1').update(fs.readFileSync(file)).digest('hex').slice(0, 8);
 }
 
+// What's wrong with vercel.json's rewrites for these pages: each non-root page
+// needs `path -> path/index.html` above the SPA catch-all, and no rewrite may
+// point at a page this script doesn't generate (that path would 404 for real
+// visitors). Checked at build time because Jest doesn't gate deploys.
+function rewriteProblems(rewrites, pages = SHARE_PAGES) {
+  const catchAll = rewrites.findIndex((r) => r.destination === '/index.html');
+  if (catchAll === -1) return ['vercel.json has no catch-all rewrite to /index.html'];
+
+  const problems = [];
+  pages
+    .filter((page) => page.path !== '/')
+    .forEach((page) => {
+      const target = `${page.path}/index.html`;
+      const i = rewrites.findIndex((r) => r.source === page.path && r.destination === target);
+      if (i === -1 || i > catchAll) {
+        problems.push(`${page.path} has no rewrite to ${target} above the catch-all`);
+      }
+    });
+
+  const paths = new Set(pages.map((page) => page.path));
+  rewrites
+    .filter((r) => r.destination !== '/index.html' && r.destination.endsWith('/index.html'))
+    .filter((r) => !paths.has(r.destination.slice(0, -'/index.html'.length)))
+    .forEach((r) => {
+      problems.push(`${r.source} rewrites to ${r.destination}, which is not a share page`);
+    });
+  return problems;
+}
+
 function writeSharePages(buildDir, pages = SHARE_PAGES) {
   // Read once up front: the home card overwrites index.html.
   const template = fs.readFileSync(path.join(buildDir, 'index.html'), 'utf8');
@@ -46,6 +75,9 @@ function writeSharePages(buildDir, pages = SHARE_PAGES) {
 
 if (require.main === module) {
   try {
+    const vercel = JSON.parse(fs.readFileSync(path.resolve(__dirname, '../../vercel.json'), 'utf8'));
+    const problems = rewriteProblems(vercel.rewrites || []);
+    if (problems.length) throw new Error(`vercel.json: ${problems.join('; ')}`);
     const written = writeSharePages(path.resolve(__dirname, '../../build'));
     console.log(`share pages: wrote ${written.length} cards`);
   } catch (err) {
@@ -54,4 +86,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { writeSharePages };
+module.exports = { rewriteProblems, writeSharePages };

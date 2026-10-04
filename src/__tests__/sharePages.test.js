@@ -4,7 +4,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { writeSharePages } from '../../scripts/share/write-pages';
+import { rewriteProblems, writeSharePages } from '../../scripts/share/write-pages';
 import { SHARE_PAGES } from '../../scripts/share/pages';
 import vercel from '../../vercel.json';
 
@@ -71,28 +71,37 @@ describe('writeSharePages', () => {
   });
 });
 
-describe('repo wiring', () => {
-  const { rewrites } = vercel;
-  const catchAll = rewrites.findIndex((r) => r.destination === '/index.html');
+describe('rewriteProblems', () => {
+  const CATCH_ALL = { source: '/((?!api/).*)', destination: '/index.html' };
+  const BOARD = { source: '/gamba/leaderboard', destination: '/gamba/leaderboard/index.html' };
 
-  test('every non-root share page has a rewrite above the catch-all', () => {
-    expect(catchAll).toBeGreaterThan(-1);
-    const wrong = SHARE_PAGES.filter((p) => p.path !== '/')
-      .filter((p) => {
-        const i = rewrites.findIndex((r) => r.source === p.path);
-        return i === -1 || i > catchAll || rewrites[i].destination !== `${p.path}/index.html`;
-      })
-      .map((p) => p.path);
-    expect(wrong).toEqual([]);
+  test('a matching rewrite set has no problems', () => {
+    expect(rewriteProblems([BOARD, CATCH_ALL], PAGES)).toEqual([]);
   });
 
-  test('no rewrite points at a share page that is not generated', () => {
-    const paths = new Set(SHARE_PAGES.map((p) => p.path));
-    const stale = rewrites
-      .filter((r, i) => i !== catchAll && r.destination.endsWith('/index.html'))
-      .filter((r) => !paths.has(r.destination.replace(/\/index\.html$/, '')))
-      .map((r) => r.source);
-    expect(stale).toEqual([]);
+  test('names a page whose rewrite is missing or below the catch-all', () => {
+    const problem = '/gamba/leaderboard has no rewrite to /gamba/leaderboard/index.html above the catch-all';
+    expect(rewriteProblems([CATCH_ALL], PAGES)).toEqual([problem]);
+    expect(rewriteProblems([CATCH_ALL, BOARD], PAGES)).toEqual([problem]);
+  });
+
+  test('names a rewrite to a page that is not generated', () => {
+    const shop = { source: '/shop', destination: '/shop/index.html' };
+    expect(rewriteProblems([BOARD, shop, CATCH_ALL], PAGES)).toEqual([
+      '/shop rewrites to /shop/index.html, which is not a share page',
+    ]);
+  });
+
+  test('a missing catch-all is a problem', () => {
+    expect(rewriteProblems([BOARD], PAGES)).toEqual([
+      'vercel.json has no catch-all rewrite to /index.html',
+    ]);
+  });
+});
+
+describe('repo wiring', () => {
+  test('vercel.json rewrites match the share pages', () => {
+    expect(rewriteProblems(vercel.rewrites, SHARE_PAGES)).toEqual([]);
   });
 
   test('every share page has its screenshot', () => {

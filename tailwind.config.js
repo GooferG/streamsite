@@ -83,6 +83,8 @@ module.exports = {
           },
           screen: { ink: '#c9a993', dim: '#9a8b82' },
           ticket: { top: '#2a1d3d', mid: '#231933', bottom: '#17121f' },
+          // Goofer Video's label stock and the ink printed on it (DESIGN.md §7, Video store).
+          paper: { DEFAULT: '#ece3cf', ink: '#231c17' },
         },
       },
       fontFamily: {
@@ -94,6 +96,8 @@ module.exports = {
         rajdhani: ['Rajdhani', 'sans-serif'],
         onair: ['"Bricolage Grotesque"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
         'onair-mono': ['"JetBrains Mono"', 'source-code-pro', 'Menlo', 'Consolas', 'monospace'],
+        // Goofer Video's handwritten labels and index cards only (DESIGN.md §7).
+        'onair-marker': ['"Permanent Marker"', '"Bricolage Grotesque"', 'cursive'],
       },
       letterSpacing: {
         'eyebrow-xs': '0.15em',
@@ -116,6 +120,9 @@ module.exports = {
         'onair-inner': '16px',
         'onair-control': '14px',
         'onair-tile': '10px',
+        // Goofer Video: the VHS box, and its labels, stickers and photo windows.
+        'onair-case': '6px',
+        'onair-label': '3px',
       },
       boxShadow: {
         'onair-bezel':

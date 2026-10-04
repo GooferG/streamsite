@@ -2,6 +2,7 @@ import { adminDb, FieldValue } from '../_lib/firebaseAdmin.js';
 import { applyCors, requireAdmin } from '../_lib/verifyAuth.js';
 import { sendChannelMessage } from '../_lib/twitchChat.js';
 import { normalizeKeyword } from '../_lib/giveawayKeyword.js';
+import { payoutRedemptionUpdate } from '../_lib/giveawayPayout.js';
 
 // Substitute template tokens in announcement text. Unknown tokens are
 // left intact so the admin sees something is off.
@@ -623,18 +624,28 @@ export default async function handler(req, res) {
       const buy = winner.buyAmount ?? g.buyAmount ?? null;
 
       // The redemption is what gets paid out, so it carries the real number.
+      // Bonus wins are paid on the spot, so the first payout also fulfils a
+      // pending redemption. Best effort: a failure never fails the payout.
       if (winner.redemptionId) {
         const parts = [g.prize];
         if (winner.slotName) parts.push(winner.slotName);
         parts.push(`paid ${formatMoney(amount)}`);
+        const redemptionRef = adminDb.collection('redemptions').doc(winner.redemptionId);
         await adminDb
-          .collection('redemptions')
-          .doc(winner.redemptionId)
-          .update({
-            itemName: parts.join(' · '),
-            payout: amount,
-            buyAmount: buy,
-            slotName: winner.slotName || null,
+          .runTransaction(async (tx) => {
+            const snap = await tx.get(redemptionRef);
+            if (!snap.exists) return;
+            tx.update(
+              redemptionRef,
+              payoutRedemptionUpdate(snap.data(), {
+                itemName: parts.join(' · '),
+                payout: amount,
+                buyAmount: buy,
+                slotName: winner.slotName,
+                actor: admin.email,
+                now: FieldValue.serverTimestamp(),
+              })
+            );
           })
           .catch((err) => console.error('redemption payout update failed', err));
       }

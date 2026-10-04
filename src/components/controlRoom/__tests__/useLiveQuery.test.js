@@ -62,3 +62,15 @@ test('a good snapshot after an error clears it', () => {
   expect(result.current.error).toBe(false);
   expect(result.current.docs).toEqual([{ id: 'b' }]);
 });
+
+test('ready turns on with the first good snapshot', () => {
+  let next;
+  onSnapshot.mockImplementation((_q, n) => {
+    next = n;
+    return () => {};
+  });
+  const { result } = renderHook(() => useLiveQuery(() => 'q', true));
+  expect(result.current.ready).toBe(false);
+  act(() => next(snap([])));
+  expect(result.current.ready).toBe(true);
+});

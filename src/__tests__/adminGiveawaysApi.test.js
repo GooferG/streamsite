@@ -127,3 +127,80 @@ test('two rolls at once: exactly one pick lands, the other gets ROLL_RACE', asyn
   const winner = [a, b].find((r) => r.statusCode === 200).body.winner.twitchId;
   expect(__fake.read('giveaways/g1').winnerTwitchId).toBe(winner);
 });
+
+function seedPlaying(redemption) {
+  seedGiveaway('g1', {
+    status: 'playing',
+    kind: 'bonus',
+    prize: '$100 bonus buy',
+    title: 'Sunday',
+    buyAmount: 100,
+    announcePayout: false,
+    winners: [{ twitchId: 'tw1', displayName: 'TW1', redemptionId: 'red1', buyAmount: 100, slotName: 'Gates' }],
+    playing: { twitchId: 'tw1' },
+  });
+  if (redemption) {
+    __fake.seed('redemptions/red1', { kind: 'giveaway', cost: 0, itemName: '$100 bonus buy', ...redemption });
+  }
+}
+
+test('logging a payout fulfils the pending redemption with the real win', async () => {
+  seedPlaying({ status: 'pending' });
+  const res = await call({ action: 'payout', id: 'g1', amount: 450 });
+  expect(res.statusCode).toBe(200);
+  const r = __fake.read('redemptions/red1');
+  expect(r).toMatchObject({
+    status: 'fulfilled',
+    fulfilledBy: 'owner@test',
+    payout: 450,
+    itemName: '$100 bonus buy · Gates · paid $450',
+  });
+  expect(r.fulfilledAt.toMillis()).toBe(1000000);
+});
+
+test('a payout correction updates the amount without re-fulfilling', async () => {
+  seedPlaying({ status: 'fulfilled', fulfilledBy: 'mod:bean', fulfilledAt: 'earlier' });
+  await call({ action: 'payout', id: 'g1', amount: 500 });
+  expect(__fake.read('redemptions/red1')).toMatchObject({
+    status: 'fulfilled',
+    fulfilledBy: 'mod:bean',
+    fulfilledAt: 'earlier',
+    payout: 500,
+  });
+});
+
+test('a cancelled redemption stays cancelled when a payout is logged', async () => {
+  seedPlaying({ status: 'cancelled' });
+  await call({ action: 'payout', id: 'g1', amount: 450 });
+  const r = __fake.read('redemptions/red1');
+  expect(r.status).toBe('cancelled');
+  expect(r.payout).toBe(450);
+  expect(r.fulfilledAt).toBeUndefined();
+});
+
+test('a missing redemption is left alone', async () => {
+  seedPlaying(null);
+  const res = await call({ action: 'payout', id: 'g1', amount: 450 });
+  expect(res.statusCode).toBe(200);
+  expect(__fake.read('redemptions/red1')).toBeUndefined();
+});
+
+test('a failed redemption write never fails the payout', async () => {
+  seedPlaying({ status: 'pending' });
+  const real = __fake.db.runTransaction;
+  const tx = jest
+    .spyOn(__fake.db, 'runTransaction')
+    .mockImplementationOnce(real)
+    .mockImplementationOnce(() => Promise.reject(new Error('quota')));
+  const error = jest.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    const res = await call({ action: 'payout', id: 'g1', amount: 450 });
+    expect(res.statusCode).toBe(200);
+    expect(__fake.read('giveaways/g1').winners[0].payout).toBe(450);
+    expect(__fake.read('redemptions/red1').status).toBe('pending');
+    expect(error).toHaveBeenCalledWith('redemption payout update failed', expect.any(Error));
+  } finally {
+    tx.mockRestore();
+    error.mockRestore();
+  }
+});

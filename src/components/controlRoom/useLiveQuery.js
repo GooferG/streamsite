@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { onSnapshot } from 'firebase/firestore';
 
-const EMPTY = { docs: [], error: false, gaveUp: false };
+const EMPTY = { docs: [], error: false, gaveUp: false, ready: false };
 
 // A live Firestore query that survives blips: on error it resubscribes every
 // retryMs, and after maxRetries failures in a row it stops ("reload to
@@ -24,7 +24,7 @@ export function useLiveQuery(makeQuery, enabled, { retryMs = 5000, maxRetries = 
       makeRef.current(),
       (snap) => {
         failures.current = 0;
-        setState({ docs: snap.docs.map((d) => ({ id: d.id, ...d.data() })), error: false, gaveUp: false });
+        setState({ docs: snap.docs.map((d) => ({ id: d.id, ...d.data() })), error: false, gaveUp: false, ready: true });
       },
       () => {
         failures.current += 1;

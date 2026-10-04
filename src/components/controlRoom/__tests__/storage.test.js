@@ -51,3 +51,27 @@ test('blocked storage never throws', () => {
 test('only float and dock count as open', () => {
   expect(['closed', 'pill', 'float', 'dock'].map(isOpenMode)).toEqual([false, false, true, true]);
 });
+
+test('size, dock width and redeem prefs round-trip', () => {
+  const value = {
+    ...DEFAULT_STORE,
+    tab: 'redeem',
+    size: { w: 500, h: null },
+    dockW: 480,
+    redeemSeenAt: 1_700_000_000_000,
+    redeemFilter: 'payouts',
+  };
+  writeStore(value);
+  expect(readStore()).toEqual(value);
+});
+
+test('sizes outside the limits are pulled back in', () => {
+  expect(sanitizeStore({ size: { w: 2000, h: 50 }, dockW: 5000 })).toMatchObject({ size: { w: 720, h: 240 }, dockW: 720 });
+  expect(sanitizeStore({ size: { w: 100, h: null }, dockW: 10 })).toMatchObject({ size: { w: 320, h: null }, dockW: 320 });
+});
+
+test('broken size and redeem fields fall back', () => {
+  expect(sanitizeStore({ size: 'big', dockW: 'wide', redeemSeenAt: -5, redeemFilter: 'payout' })).toEqual(DEFAULT_STORE);
+  expect(sanitizeStore({ size: { w: '400', h: 300 } }).size).toBeNull();
+  expect(sanitizeStore({ size: { w: 400, h: 'tall' } }).size).toEqual({ w: 400, h: null });
+});

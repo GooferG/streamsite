@@ -30,15 +30,24 @@ export function pillState({ giveaway = null, round = null, warnings = [], dataLo
   return { label: 'CONTROL ROOM', tone: tone('idle') };
 }
 
-export function tallies({ isLive, giveaway, activeRound }) {
-  return { live: !!isLive, gvw: !!giveaway, prd: !!activeRound };
+export function tallies({ isLive, giveaway, activeRound, redeem }) {
+  return { live: !!isLive, gvw: !!giveaway, prd: !!activeRound, red: (redeem && redeem.pending) || 0 };
 }
 
 // Tab LEDs: off when idle, on while the tool runs, pulsing when it needs you.
-export function tabLeds({ giveaway, activeRound }) {
+// Redemptions pulse only for orders this browser hasn't had on screen yet.
+export function tabLeds({ giveaway, activeRound, redeem }) {
   let gvw = 'off';
   if (giveaway) gvw = giveaway.status === 'rolling' && !pickConfirmed(giveaway) ? 'pulse' : 'on';
   let prd = 'off';
   if (activeRound) prd = activeRound.status === 'locked' ? 'pulse' : 'on';
-  return { giveaway: gvw, predict: prd };
+  let red = 'off';
+  if (redeem && redeem.pending > 0) red = redeem.unseen > 0 ? 'pulse' : 'on';
+  return { giveaway: gvw, predict: prd, redeem: red };
+}
+
+// The pill's redemption chip, or null when nothing is pending.
+export function pillCounter(redeem) {
+  if (!redeem || !(redeem.pending > 0)) return null;
+  return { label: `RED ${redeem.pending}`, pulse: redeem.unseen > 0 };
 }

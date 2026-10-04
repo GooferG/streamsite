@@ -11,6 +11,12 @@ import { useWarnings } from '../components/controlRoom/useWarnings';
 import { useLiveQuery } from '../components/controlRoom/useLiveQuery';
 import { isOpenMode, readStore, writeStore } from '../components/controlRoom/storage';
 import {
+  FILTERS as REDEEM_FILTERS,
+  QUEUE_CAP,
+  newestAt,
+  unseenCount,
+} from '../components/controlRoom/redemptions';
+import {
   LIVE_GIVEAWAY_STATUSES,
   activeRoundOf,
   controlRoomAllowed,
@@ -34,8 +40,15 @@ const giveawaysQuery = () =>
     fLimit(5)
   );
 const roundsQuery = () => query(collection(db, 'hunts'), orderBy('createdAt', 'desc'), fLimit(3));
+const redemptionsQuery = () =>
+  query(
+    collection(db, 'redemptions'),
+    where('status', '==', 'pending'),
+    orderBy('createdAt', 'desc'),
+    fLimit(QUEUE_CAP)
+  );
 
-// Live giveaway + prediction state and the timer engine for staff, on every
+// Live giveaway, prediction and redemption state and the timer engine for staff, on every
 // route (so /admin and the floating panel share one engine), plus the panel's
 // per-browser state. Timers only fire in the tab that holds the driver lock.
 export function ControlRoomProvider({ children }) {
@@ -45,8 +58,10 @@ export function ControlRoomProvider({ children }) {
 
   const giveawaysFeed = useLiveQuery(giveawaysQuery, enabled);
   const roundsFeed = useLiveQuery(roundsQuery, enabled);
+  const redemptionsFeed = useLiveQuery(redemptionsQuery, enabled);
   const giveaways = giveawaysFeed.docs;
   const rounds = roundsFeed.docs;
+  const redemptions = redemptionsFeed.docs;
 
   const { isDriver } = useDriverLock(enabled);
   const armed = enabled && isDriver;
@@ -66,6 +81,16 @@ export function ControlRoomProvider({ children }) {
   }, [enabled, store]);
   const [ducked, setDucked] = useState(false);
 
+  // The first good snapshot on a browser that has never tracked redemptions
+  // counts everything already waiting as seen, so a backlog never pulses.
+  const redeemReady = enabled && redemptionsFeed.ready;
+  useEffect(() => {
+    if (!redeemReady) return;
+    setStore((s) =>
+      s.redeemSeenAt != null ? s : { ...s, redeemSeenAt: newestAt(redemptions) ?? Date.now() }
+    );
+  }, [redeemReady, redemptions]);
+
   const panelActions = useMemo(() => {
     const remember = (s) => (isOpenMode(s.mode) ? s.mode : s.restoreTo);
     return {
@@ -80,12 +105,35 @@ export function ControlRoomProvider({ children }) {
       undock: (rect) => setStore((s) => ({ ...s, mode: 'float', restoreTo: 'float', rect: rect || s.rect })),
       moveTo: (rect, corner) => setStore((s) => ({ ...s, rect, corner: corner || s.corner })),
       setTab: (tab) => setStore((s) => ({ ...s, tab })),
+      resizeTo: (rect, size) => setStore((s) => ({ ...s, rect, size })),
+      setDockW: (dockW) => setStore((s) => ({ ...s, dockW })),
       resetPosition: () =>
-        setStore((s) => ({ ...s, mode: 'float', restoreTo: 'float', rect: null, corner: 'tr' })),
+        setStore((s) => ({
+          ...s,
+          mode: 'float',
+          restoreTo: 'float',
+          rect: null,
+          corner: 'tr',
+          size: null,
+          dockW: null,
+        })),
     };
   }, []);
   const setStage = useCallback((on) => setStore((s) => ({ ...s, stage: !!on })), []);
   const setHideLiveBadge = useCallback((on) => setStore((s) => ({ ...s, hideLiveBadge: !!on })), []);
+
+  // The Redeem tab calls this while it's on screen. The mark only moves forward.
+  const markRedeemSeen = useCallback(
+    (ms) =>
+      setStore((s) =>
+        Number.isFinite(ms) && (s.redeemSeenAt == null || ms > s.redeemSeenAt) ? { ...s, redeemSeenAt: ms } : s
+      ),
+    []
+  );
+  const setRedeemFilter = useCallback(
+    (filter) => setStore((s) => (REDEEM_FILTERS.includes(filter) ? { ...s, redeemFilter: filter } : s)),
+    []
+  );
 
   const value = {
     enabled,
@@ -94,8 +142,16 @@ export function ControlRoomProvider({ children }) {
     rounds,
     activeRound: activeRoundOf(rounds),
     latestRound,
-    dataLost: giveawaysFeed.error || roundsFeed.error,
-    dataGaveUp: giveawaysFeed.gaveUp || roundsFeed.gaveUp,
+    dataLost: giveawaysFeed.error || roundsFeed.error || redemptionsFeed.error,
+    dataGaveUp: giveawaysFeed.gaveUp || roundsFeed.gaveUp || redemptionsFeed.gaveUp,
+    redemptions,
+    redeem: {
+      pending: redemptions.length,
+      unseen: unseenCount(redemptions, store.redeemSeenAt),
+      capped: redemptions.length >= QUEUE_CAP,
+    },
+    markRedeemSeen,
+    setRedeemFilter,
     isDriver: armed,
     announce,
     results,
@@ -108,9 +164,11 @@ export function ControlRoomProvider({ children }) {
       rect: store.rect,
       corner: store.corner,
       tab: store.tab,
+      size: store.size,
+      dockW: store.dockW,
     },
     panelActions,
-    prefs: { stage: store.stage, hideLiveBadge: store.hideLiveBadge },
+    prefs: { stage: store.stage, hideLiveBadge: store.hideLiveBadge, redeemFilter: store.redeemFilter },
     setStage,
     setHideLiveBadge,
     ducked,

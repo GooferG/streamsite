@@ -1,4 +1,4 @@
-import { pillState, tabLeds, tallies } from '../panelStatus';
+import { pillCounter, pillState, tabLeds, tallies } from '../panelStatus';
 
 const NOW = 1_700_000_000_000;
 const at = (ms) => ({ toMillis: () => ms });
@@ -35,8 +35,22 @@ test('warnings or lost data turn the tone red', () => {
 });
 
 test('tallies and tab LEDs', () => {
-  expect(tallies({ isLive: true, giveaway: null, activeRound: { status: 'open' } })).toEqual({ live: true, gvw: false, prd: true });
-  expect(tabLeds({ giveaway: null, activeRound: null })).toEqual({ giveaway: 'off', predict: 'off' });
-  expect(tabLeds({ giveaway: { status: 'open' }, activeRound: { status: 'locked' } })).toEqual({ giveaway: 'on', predict: 'pulse' });
+  expect(tallies({ isLive: true, giveaway: null, activeRound: { status: 'open' } })).toEqual({ live: true, gvw: false, prd: true, red: 0 });
+  expect(tabLeds({ giveaway: null, activeRound: null })).toEqual({ giveaway: 'off', predict: 'off', redeem: 'off' });
+  expect(tabLeds({ giveaway: { status: 'open' }, activeRound: { status: 'locked' } })).toEqual({ giveaway: 'on', predict: 'pulse', redeem: 'off' });
   expect(tabLeds({ giveaway: { status: 'rolling', winnerTwitchId: 'tw', winners: [] }, activeRound: null }).giveaway).toBe('pulse');
+});
+
+test('redemptions: the tally counts, the LED pulses only while something is unseen', () => {
+  expect(tallies({ redeem: { pending: 3, unseen: 0 } }).red).toBe(3);
+  expect(tabLeds({ redeem: { pending: 3, unseen: 0 } }).redeem).toBe('on');
+  expect(tabLeds({ redeem: { pending: 3, unseen: 1 } }).redeem).toBe('pulse');
+  expect(tabLeds({ redeem: { pending: 0, unseen: 0 } }).redeem).toBe('off');
+});
+
+test('the pill counter shows only when something is pending', () => {
+  expect(pillCounter(undefined)).toBeNull();
+  expect(pillCounter({ pending: 0, unseen: 0 })).toBeNull();
+  expect(pillCounter({ pending: 2, unseen: 0 })).toEqual({ label: 'RED 2', pulse: false });
+  expect(pillCounter({ pending: 2, unseen: 1 })).toEqual({ label: 'RED 2', pulse: true });
 });

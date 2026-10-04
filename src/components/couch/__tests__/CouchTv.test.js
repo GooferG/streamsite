@@ -49,7 +49,7 @@ test('stills mode shows a loop as its poster', () => {
 });
 
 test('video mode plays muted and reports a refused autoplay', async () => {
-  HTMLMediaElement.prototype.play = jest.fn(() => Promise.reject(new Error('NotAllowedError')));
+  HTMLMediaElement.prototype.play = jest.fn(() => Promise.reject(Object.assign(new Error('blocked'), { name: 'NotAllowedError' })));
   const onBlocked = jest.fn();
   render(<CouchTv tv={OFF} items={[VIDEO]} mode="video" onAutoplayBlocked={onBlocked} />);
   const video = screen.getByTestId('tv-video');
@@ -57,6 +57,35 @@ test('video mode plays muted and reports a refused autoplay', async () => {
   expect(video.querySelectorAll('source')).toHaveLength(2);
   await act(async () => {});
   expect(onBlocked).toHaveBeenCalled();
+});
+
+test('an aborted play is not a refused autoplay', async () => {
+  HTMLMediaElement.prototype.play = jest.fn(() => Promise.reject(Object.assign(new Error('x'), { name: 'AbortError' })));
+  const onBlocked = jest.fn();
+  render(<CouchTv tv={OFF} items={[VIDEO]} mode="video" onAutoplayBlocked={onBlocked} />);
+  await act(async () => {});
+  expect(onBlocked).not.toHaveBeenCalled();
+});
+
+test('a refusal is reported once even with an inline callback', async () => {
+  HTMLMediaElement.prototype.play = jest.fn(() => Promise.reject(Object.assign(new Error('b'), { name: 'NotAllowedError' })));
+  const onBlocked = jest.fn();
+  const ui = () => <CouchTv tv={OFF} items={[VIDEO]} mode="video" onAutoplayBlocked={() => onBlocked()} />;
+  const { rerender } = render(ui());
+  await act(async () => {});
+  rerender(ui());
+  await act(async () => {});
+  expect(onBlocked).toHaveBeenCalledTimes(1);
+});
+
+test('items vanishing mid-switch and returning does not crash', () => {
+  const { rerender } = render(<CouchTv tv={OFF} items={[STILL, CARD]} mode="stills" segmentMs={1000} />);
+  act(() => jest.advanceTimersByTime(1000));
+  expect(screen.getByTestId('tv-switch')).toBeTruthy();
+  rerender(<CouchTv tv={OFF} items={[]} mode="stills" segmentMs={1000} />);
+  act(() => jest.advanceTimersByTime(STATIC_MS * 2));
+  rerender(<CouchTv tv={OFF} items={[STILL, CARD]} mode="stills" segmentMs={1000} />);
+  expect(screen.getByTestId('tv-still').getAttribute('src')).toBe('/a.jpg');
 });
 
 test('the remote flips the screen to the GSN ident', () => {

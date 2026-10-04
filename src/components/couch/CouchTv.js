@@ -24,7 +24,7 @@ function useTabHidden() {
 function Card({ item }) {
   return (
     <div className="flex h-full w-full flex-col justify-center bg-onair-surface-4 px-[8cqw]" data-testid="tv-card">
-      <span className={`${MONO} text-[3.4cqw] tracking-[0.22em] text-onair-signal`}>{item.kicker}</span>
+      <span className={`${MONO} text-[max(10px,3.4cqw)] tracking-[0.22em] text-onair-signal`}>{item.kicker}</span>
       <span className="mt-[2.5cqw] font-onair text-[7cqw] font-extrabold leading-[1.05] tracking-[-0.02em] text-onair-ink-1">
         {item.text}
       </span>
@@ -43,7 +43,12 @@ function Video({ item, hidden, onEnded, onBlocked }) {
       return;
     }
     const playing = v.play();
-    if (playing && typeof playing.catch === 'function') playing.catch(() => onBlocked && onBlocked());
+    if (playing && typeof playing.catch === 'function') {
+      // An AbortError is our own pause or item swap, not a refusal.
+      playing.catch((e) => {
+        if (e && e.name === 'NotAllowedError') onBlocked();
+      });
+    }
   }, [item.id, hidden, onBlocked]);
   return (
     <video
@@ -80,7 +85,12 @@ function Reel({ items, mode, segmentMs, onBlocked }) {
   }, [items.length]);
 
   useEffect(() => {
-    if (!switching) return undefined;
+    setIndex(0);
+    setSwitching(false);
+  }, [items.length]);
+
+  useEffect(() => {
+    if (!switching || !items.length) return undefined;
     const t = setTimeout(() => {
       setIndex((i) => (i + 1) % items.length);
       setSwitching(false);
@@ -104,7 +114,7 @@ function Reel({ items, mode, segmentMs, onBlocked }) {
       <>
         {still && <Still src={still.kind === 'video' ? still.poster : still.src} moving={false} />}
         {card && (
-          <span className="absolute inset-x-0 bottom-0 bg-onair-surface-4/90 px-[5cqw] py-[3cqw] font-onair text-[5cqw] font-bold leading-tight text-onair-ink-1">
+          <span className="absolute inset-x-0 bottom-0 bg-onair-surface-4/90 px-[5cqw] py-[3cqw] font-onair text-[max(10px,5cqw)] font-bold leading-tight text-onair-ink-1">
             {card.text}
           </span>
         )}
@@ -134,7 +144,7 @@ function LivePreview({ tv }) {
       <span className="absolute left-[4cqw] top-[4cqw]">
         <StatusLight status="live">{tv.viewers != null ? `Live · ${tv.viewers}` : 'Live'}</StatusLight>
       </span>
-      <span className="absolute bottom-[4cqw] right-[4cqw] rounded-onair-tile bg-onair-signal px-[3cqw] py-[1.6cqw] font-onair text-[3.6cqw] font-bold text-onair-surface-4">
+      <span className="absolute bottom-[4cqw] right-[4cqw] rounded-onair-tile bg-onair-signal px-[3cqw] py-[1.6cqw] font-onair text-[max(10px,3.6cqw)] font-bold text-onair-surface-4">
         Watch here
       </span>
     </>
@@ -142,6 +152,15 @@ function LivePreview({ tv }) {
 }
 
 export default function CouchTv({ tv, items, mode, flipTo = null, onAutoplayBlocked, segmentMs = SEGMENT_MS }) {
+  // Report a refused autoplay at most once per mount, whatever the parent passes.
+  const blockedRef = useRef(onAutoplayBlocked);
+  blockedRef.current = onAutoplayBlocked;
+  const reported = useRef(false);
+  const reportBlocked = useCallback(() => {
+    if (reported.current) return;
+    reported.current = true;
+    if (blockedRef.current) blockedRef.current();
+  }, []);
   return (
     <div
       className="relative h-full w-full overflow-hidden bg-onair-surface-4"
@@ -151,7 +170,7 @@ export default function CouchTv({ tv, items, mode, flipTo = null, onAutoplayBloc
     >
       {tv.state === 'waiting' && <StaticNoise className="absolute inset-0" testId="tv-static" />}
       {tv.state === 'live' && <LivePreview tv={tv} />}
-      {tv.state === 'offair' && <Reel items={items} mode={mode} segmentMs={segmentMs} onBlocked={onAutoplayBlocked} />}
+      {tv.state === 'offair' && <Reel items={items} mode={mode} segmentMs={segmentMs} onBlocked={reportBlocked} />}
       {flipTo === 'gsn' && (
         <>
           <img src={GSN_IDENT} alt="" className="absolute inset-0 h-full w-full object-cover" data-testid="tv-flip" />

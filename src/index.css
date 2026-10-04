@@ -91,3 +91,19 @@ body.brand-route {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* The camera's cut (src/components/camera). */
+.camera-static-in {
+  animation: camera-static-in 120ms ease-out both;
+}
+.camera-static-out {
+  animation: camera-static-out 300ms ease-in both;
+}
+@keyframes camera-static-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes camera-static-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}

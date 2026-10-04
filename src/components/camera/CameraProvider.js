@@ -112,13 +112,21 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
 
     // Zoom `el` from rest to `zoom`, bring the static up near the end, wait for
     // the page chunk (bounded), then run `go` under the static and tune in.
-    async function zoomAndCut(el, zoom, duration, load, go) {
+    // If the viewer navigates elsewhere meanwhile (the nav stays usable under
+    // the static), the move is dropped: no `go`, no stale door; `skipped` cleans up.
+    async function zoomAndCut(el, zoom, duration, load, go, skipped) {
+      const key = locationRef.current.key;
       const zooming = move(el, REST, zoom, duration, EASE_IN);
       await wait(t.cut);
       setStaticPhase('in');
       await Promise.all([zooming, wait(t.staticIn)]);
       await Promise.race([load, wait(t.maxHold)]);
-      go();
+      if (locationRef.current.key === key) {
+        go();
+      } else {
+        lastDoor.current = null;
+        if (skipped) skipped();
+      }
       await tuneIn();
     }
 
@@ -201,7 +209,7 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
           await zoomAndCut(ghostRef.current, zoom, t.grow, load, () => {
             navigate(href);
             setGhost(null);
-          });
+          }, () => setGhost(null));
         } finally {
           finish();
         }

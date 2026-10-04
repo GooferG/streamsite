@@ -105,3 +105,19 @@ test('growFrom grows a ghost, navigates and removes it', async () => {
   expect(where()).toBe('/vods|null');
   expect(screen.queryByTestId('camera-ghost')).toBeNull();
 });
+
+test('a move never overrides a navigation made during it', async () => {
+  renderCam({ ...ZERO, zoom: 30, cut: 20 });
+  const stage = document.createElement('div');
+  let move;
+  act(() => {
+    move = cam.goThrough({ stage, zoom: ZOOM, href: '/vods', doorId: 'tapes' });
+  });
+  await act(() => new Promise((resolve) => setTimeout(resolve, 5)));
+  act(() => nav('/schedule'));
+  await act(() => move);
+  expect(where()).toBe('/schedule|null');
+  expect(cam.takeReturn()).toBeNull();
+  expect(cam.busy).toBe(false);
+  expect(screen.queryByTestId('camera-static')).toBeNull();
+});

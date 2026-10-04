@@ -310,7 +310,7 @@ Components unique to a streaming-channel hub. Their visual weight pulls more fro
 
 ## 7. On Air (site language)
 
-On Air is the softer broadcast look that replaces the hard-lined boxes: rounded, layered surfaces with inset highlights and drop shadows, a TV monitor stage, a perforated prediction slip. It started on the Hunts tab (`/gamba/hunts`) and is now the site's language: the nav runs it on every route, the store (`/store`, the Goofer Shopping Network) is built on it, and other surfaces migrate one at a time by using the `onair` tokens and the primitives in `src/components/onAir/`. Until a page migrates, the seam between its legacy content and the On Air chrome is expected.
+On Air is the softer broadcast look that replaces the hard-lined boxes: rounded, layered surfaces with inset highlights and drop shadows, a TV monitor stage, a perforated prediction slip. It started on the Hunts tab (`/gamba/hunts`) and is now the site's language: the nav runs it on every route, the store (`/store`, the Goofer Shopping Network) and the schedule (`/schedule`, the Goofer Guide) are built on it, and other surfaces migrate one at a time by using the `onair` tokens and the primitives in `src/components/onAir/`. Until a page migrates, the seam between its legacy content and the On Air chrome is expected.
 
 ### Tokens
 
@@ -341,6 +341,13 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 - **The tuner is labelled channels under a tuning band.** The segments are real links; the band and needle are set dressing. The needle slides about 300ms from the previous channel and jumps under reduced motion. ◀ ▶ step through the channels and wrap. Below `md` the stepper and a "CH 02 Hunts · 3 of 5" readout carry it.
 - **The hub is the guide channel.** One featured monitor: Hunts while a hunt is live or a round is open or locked, the leaderboard otherwise. The channel-change static plays when the takeover starts or ends, never on first load.
 - **What's on.** One link row per tool. The lit row is the channel on the monitor; only the LIVE light glows.
+
+### Schedule guide
+
+- **A cable guide channel, not a monitor.** `/schedule` reads as an old Prevue-style listings channel so it doesn't repeat the Gamba hub: a promo box (the next slot counting down, the stream while live) beside a station box (the `GG Guide` bug and the viewer's clock), then the grid. No bezel, knobs or chyron.
+- **The grid.** Days are rows, today first; hours run across on the viewer's clock, an hour either side of the week's slots. A show sits at its start and runs its length; with no end time it runs three hours and its surface fades out (the text never fades). Off days are a faint `bg-onair-track` band. Below `md` each day is its own row with a thin time bar.
+- **Lit and now.** The lit block is the slot in the promo box. Today's row carries a plain signal NOW line behind the blocks; it doesn't glow.
+- **Two clocks.** Times are the viewer's; Goofer's Arizona time sits beside them in small mono wherever they differ.
 
 ### Named Rules
 

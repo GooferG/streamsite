@@ -28,8 +28,8 @@ export default function VhsBox({ tape, onOpen }) {
       aria-label={name}
       className={`group block w-full rounded-onair-case text-left ${FOCUS}`}
     >
-      <div className="relative flex aspect-[2/3] overflow-hidden rounded-onair-case bg-gradient-to-b from-onair-surface-1 to-onair-surface-4 shadow-onair-card transition-transform duration-200 motion-safe:group-hover:-translate-y-1 motion-safe:group-focus-visible:-translate-y-1">
-        <div aria-hidden="true" className="flex w-6 shrink-0 flex-col items-center justify-between bg-onair-surface-4 py-2 shadow-onair-row">
+      <div className="relative flex aspect-[2/3] rounded-onair-case bg-gradient-to-b from-onair-surface-1 to-onair-surface-4 shadow-onair-card transition-transform duration-200 motion-safe:group-hover:-translate-y-1 motion-safe:group-focus-visible:-translate-y-1">
+        <div aria-hidden="true" className="flex w-6 shrink-0 flex-col items-center rounded-l-onair-case justify-between bg-onair-surface-4 py-2 shadow-onair-row">
           <span className={`${MONO} text-[0.625rem] tracking-[0.15em] text-onair-ink-4 [writing-mode:vertical-rl]`}>No. {tape.no}</span>
           <span className={`${MONO} text-[0.625rem] font-bold tracking-[0.15em] text-onair-ink-3 [writing-mode:vertical-rl]`}>{tape.weekday}</span>
         </div>

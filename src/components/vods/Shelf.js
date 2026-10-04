@@ -27,7 +27,7 @@ export function Aisle({ id, title, count, children }) {
 // each item carries its own stretch of lip so the lip runs under every row.
 export function Shelf({ label, divider = false, size = 'box', children }) {
   const headingId = useId();
-  const width = size === 'box' ? 'w-[42vw]' : 'w-[64vw]';
+  const width = size === 'box' ? 'w-[46vw]' : 'w-[64vw]';
   const columns =
     size === 'box'
       ? 'md:grid-cols-[repeat(auto-fill,minmax(10.5rem,1fr))]'
@@ -48,14 +48,14 @@ export function Shelf({ label, divider = false, size = 'box', children }) {
       )}
       <ul
         aria-labelledby={headingId}
-        className={`-mx-2 mt-3 flex snap-x snap-mandatory overflow-x-auto pb-2 md:grid md:snap-none md:gap-y-6 md:overflow-visible ${columns}`}
+        className={`-mx-2 mt-3 flex snap-x snap-mandatory overflow-x-auto pb-2 pt-2 md:grid md:snap-none md:gap-y-6 md:overflow-visible md:pt-0 ${columns}`}
       >
         {Children.map(children, (child) => (
-          <li className={`shrink-0 snap-start px-2 md:w-auto ${width}`}>
+          <li className={`flex shrink-0 snap-start flex-col gap-3 px-2 md:w-auto ${width}`}>
             {child}
             <div
               aria-hidden="true"
-              className="-mx-2 mt-3 h-2.5 bg-gradient-to-b from-onair-surface-raised to-onair-surface-4 shadow-onair-card"
+              className="-mx-2 mt-auto h-2.5 bg-gradient-to-b from-onair-surface-raised to-onair-surface-4 shadow-onair-card"
             />
           </li>
         ))}

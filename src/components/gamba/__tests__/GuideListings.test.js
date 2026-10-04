@@ -31,6 +31,14 @@ test('the lit row carries the signal wash and the LIVE light; others rest', () =
   expect(board.textContent).not.toContain('Live');
 });
 
+test('rows go five-column only from lg, with shrinkable tracks', () => {
+  renderRows();
+  const row = screen.getByRole('link', { name: /CH 02\s*Hunts/ });
+  expect(row.className).toContain('lg:grid-cols-[5.5rem_minmax(0,12rem)_minmax(0,1fr)_minmax(0,15rem)_1.5rem]');
+  expect(row.className).not.toMatch(/\bsm:/);
+  row.querySelectorAll('span').forEach((cell) => expect(cell.className).not.toMatch(/\bsm:/));
+});
+
 test('a loss reads in the loss ink', () => {
   renderRows();
   expect(screen.getByText('Last hunt −$60.00').className).toContain('text-onair-loss');

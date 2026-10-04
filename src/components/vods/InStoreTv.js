@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, Pause, Play } from 'lucide-react';
 import Monitor from '../onAir/Monitor';
@@ -33,15 +33,23 @@ function useTabHidden() {
   return hidden;
 }
 
-function Spot({ spot, viewerName, onOpen }) {
+function Spot({ spot, viewerName, onOpen, still }) {
   const facts = spot.kind === 'clip' ? [pickedBy(spot.item, viewerName).text, ...spot.facts] : spot.facts;
   return (
     <div className="mt-4 grid items-center gap-5 sm:mt-5 sm:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] sm:gap-7">
       <div className="relative aspect-video overflow-hidden rounded-onair-inner bg-onair-surface-4 shadow-onair-well">
         {spot.cover ? (
-          <img key={spot.key} src={spot.cover} alt="" className="h-full w-full object-cover motion-safe:animate-slow-zoom" />
+          <img
+            key={spot.key}
+            src={spot.cover}
+            alt=""
+            decoding="async"
+            className={`h-full w-full object-cover motion-safe:animate-slow-zoom ${still ? '[animation-play-state:paused]' : ''}`}
+          />
         ) : (
-          <div data-testid="no-picture" className="h-full bg-onair-track" />
+          <div data-testid="no-picture" className="flex h-full items-center justify-center bg-onair-track">
+            <span className={`${MONO} text-[0.625rem] tracking-[0.15em] text-onair-ink-4`}>No picture</span>
+          </div>
         )}
       </div>
       <div className="min-w-0">
@@ -72,34 +80,53 @@ function Spot({ spot, viewerName, onOpen }) {
 }
 
 // The TV every video store had, playing the store's own trailer reel
-// (DESIGN.md §7, Video store). Stills, not video: every Twitch embed on the
-// channel opens behind Twitch's content gate, so Rent it hands the tape to the
-// rental counter instead. The reel holds while hovered, focused, paused, in a
-// hidden tab, or while the counter is open (`held`); under reduced motion it
-// only moves when asked.
+// (DESIGN.md §7, Video store). Stills only: every Twitch embed on the channel
+// opens behind Twitch's content gate, so Rent it hands the tape to the rental
+// counter. The reel holds while hovered, while keyboard focus is inside it,
+// when paused, in a hidden tab, or while the counter is open (`held`); under
+// reduced motion it only moves when asked. It follows the spot on screen by
+// key, so the list growing or shrinking (going live, recent clips landing)
+// never swaps what the viewer is looking at.
 export default function InStoreTv({ spots = [], loading = false, viewerName = null, onOpen, held = false, interval = SPOT_MS }) {
-  const [index, setIndex] = useState(0);
+  const [pos, setPos] = useState({ key: null, index: 0 });
   const [paused, setPaused] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [reduce] = useState(prefersReducedMotion);
   const hidden = useTabHidden();
+  const boxRef = useRef(null);
+  // Mouse and touch presses focus buttons too; only keyboard focus holds the reel.
+  const pointer = useRef(false);
 
-  const count = spots.length;
-  const i = count ? index % count : 0;
+  const count = loading ? 0 : spots.length;
+  const found = pos.key ? spots.findIndex((s) => s.key === pos.key) : -1;
+  const i = count ? (found >= 0 ? found : Math.min(pos.index, count - 1)) : 0;
+  const spot = count ? spots[i] : null;
   const auto = !reduce && count > 1;
   const playing = auto && !paused && !hovered && !focused && !hidden && !held;
+  const go = (n) => setPos({ key: spots[n].key, index: n });
 
   useEffect(() => {
     if (!playing) return undefined;
-    const t = setTimeout(() => setIndex((i + 1) % count), interval);
+    const t = setTimeout(() => setPos({ key: spots[(i + 1) % count].key, index: (i + 1) % count }), interval);
     return () => clearTimeout(t);
-  }, [playing, i, count, interval]);
+  }, [playing, i, count, interval, spots]);
+
+  // A focused control can leave with its spot (Watch now when the stream
+  // ends); browsers fire no blur for that, so let go of the hold.
+  const spotKey = spot ? spot.key : null;
+  useEffect(() => {
+    if (focused && boxRef.current && !boxRef.current.contains(document.activeElement)) setFocused(false);
+  }, [spotKey, focused]);
 
   if (!loading && count === 0) return null;
 
-  const spot = loading ? null : spots[i];
-  const step = (delta) => setIndex((i + delta + count) % count);
+  const step = (delta) => go((i + delta + count) % count);
+  const toggle = () => {
+    // Play means play, even with keyboard focus still on this button.
+    if (paused) setFocused(false);
+    setPaused((p) => !p);
+  };
   const controls =
     count > 1 ? (
       <div className="flex items-center gap-1.5">
@@ -107,12 +134,7 @@ export default function InStoreTv({ spots = [], loading = false, viewerName = nu
           <ChevronLeft size={16} aria-hidden="true" />
         </button>
         {auto && (
-          <button
-            type="button"
-            aria-label={paused ? 'Play the reel' : 'Pause the reel'}
-            onClick={() => setPaused((p) => !p)}
-            className={`${CONTROL} ${FOCUS}`}
-          >
+          <button type="button" aria-label={paused ? 'Play the reel' : 'Pause the reel'} onClick={toggle} className={`${CONTROL} ${FOCUS}`}>
             {paused ? <Play size={14} aria-hidden="true" /> : <Pause size={14} aria-hidden="true" />}
           </button>
         )}
@@ -124,11 +146,22 @@ export default function InStoreTv({ spots = [], loading = false, viewerName = nu
 
   return (
     <div
+      ref={boxRef}
       data-testid="in-store-tv"
       className="mt-10"
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onFocus={() => setFocused(true)}
+      onPointerDown={() => {
+        pointer.current = true;
+      }}
+      onKeyDown={() => {
+        pointer.current = false;
+      }}
+      onFocus={(e) => {
+        const fromOutside = !e.currentTarget.contains(e.relatedTarget);
+        if (fromOutside && !pointer.current) setFocused(true);
+        pointer.current = false;
+      }}
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false);
       }}
@@ -138,13 +171,16 @@ export default function InStoreTv({ spots = [], loading = false, viewerName = nu
         status={spot && spot.kind === 'live' ? 'live' : null}
         channel="CH 03 · In-store TV"
         clock={spot ? { long: `Spot ${i + 1} of ${count}` } : null}
-        channelKey={spot ? spot.key : null}
+        channelKey={spotKey}
         controls={controls}
         chyron={CHYRON}
       >
         {spot ? (
-          <div data-testid="spot" aria-live={playing ? 'off' : 'polite'}>
-            <Spot spot={spot} viewerName={viewerName} onOpen={onOpen} />
+          <div role="group" aria-roledescription="spot" aria-label={`Spot ${i + 1} of ${count}`}>
+            <p data-testid="spot-announcer" className="sr-only" aria-live={playing ? 'off' : 'polite'}>
+              {`${spot.kicker}: ${spot.title}`}
+            </p>
+            <Spot spot={spot} viewerName={viewerName} onOpen={onOpen} still={!playing} />
           </div>
         ) : (
           <p className={`${MONO} py-16 text-center text-xs tracking-[0.2em] text-onair-screen-ink`}>Tuning in…</p>

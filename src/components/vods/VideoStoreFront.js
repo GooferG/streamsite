@@ -72,6 +72,17 @@ export default function VideoStoreFront({
   );
   const spots = useMemo(() => promoSpots(store, { isLive, stream }), [store, isLive, stream]);
 
+  // Keep focused boxes and jumped-to aisles clear of the nav and the sticky
+  // aisle bar (about 115px together); put the page back as it was on the way out.
+  useEffect(() => {
+    const root = document.documentElement;
+    const prev = root.style.scrollPaddingTop;
+    root.style.scrollPaddingTop = '9rem';
+    return () => {
+      root.style.scrollPaddingTop = prev;
+    };
+  }, []);
+
   // A ?tape= link waits until its tape is in the data (recent clips land a few
   // seconds after App's poll); any tape the viewer opens cancels it.
   const [pending, setPending] = useState(initialTapeId);

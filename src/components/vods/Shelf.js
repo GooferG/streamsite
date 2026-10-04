@@ -2,8 +2,9 @@ import { Children, useId } from 'react';
 import { MONO } from '../onAir/classes';
 import { padCount } from './videoStoreModel';
 
-// An aisle of the store (New releases, Fresh picks, Cult classics). Its
-// heading is the aisle sign's jump target, so it can take focus.
+// An aisle of the store (Fresh picks, New releases, Cult classics). Its
+// heading is the aisle bar's jump target, so it can take focus; the floor's
+// scroll padding keeps it clear of the nav and the bar.
 export function Aisle({ id, title, count, children }) {
   return (
     <section aria-labelledby={id} className="mt-14">
@@ -11,7 +12,7 @@ export function Aisle({ id, title, count, children }) {
         <h2
           id={id}
           tabIndex={-1}
-          className="scroll-mt-36 text-[1.875rem] font-extrabold leading-none tracking-[-0.03em] text-onair-ink-1 outline-none"
+          className="text-[1.875rem] font-extrabold leading-none tracking-[-0.03em] text-onair-ink-1 outline-none"
         >
           {title}
         </h2>

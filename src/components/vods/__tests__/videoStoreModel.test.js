@@ -326,3 +326,39 @@ test('promoSpots: an empty store has no reel unless Goofer is live', () => {
   expect(promoSpots(empty, { isLive: true, stream: LIVE_STREAM }).map((s) => s.kind)).toEqual(['live']);
   expect(promoSpots(buildStore(F.classics)).map((s) => s.kicker)).toEqual(['Now on tape', 'Staff pick · 2018']);
 });
+
+test('promoSpots: while live, the broadcast still recording is not a "Now on tape" spot', () => {
+  const recording = {
+    id: '2890000000',
+    stream_id: 'live-stream',
+    title: `Win Wednesdays 💥 Games and Gamba?  ${TAIL}`,
+    created_at: '2026-10-04T17:00:00Z',
+    duration: '2h0m0s',
+    view_count: 3,
+    thumbnail_url: '',
+    url: 'https://www.twitch.tv/videos/2890000000',
+    muted_segments: null,
+  };
+  const store = buildStore({ ...F.rich, videos: [recording, ...F.rich.videos] });
+  const spots = promoSpots(store, { isLive: true, stream: { ...LIVE_STREAM, id: 'live-stream' } });
+  expect(spots.map((s) => s.key).slice(0, 2)).toEqual(['live', 'vod-2889109731']);
+  expect(promoSpots(store).find((s) => s.kind === 'vod').key).toBe('vod-2890000000');
+});
+
+test('promoSpots: the staff pick is the most-watched classic with a name', () => {
+  const unnamed = {
+    id: 'unnamed-classic',
+    created_at: '2018-02-01T00:00:00Z',
+    duration: 30,
+    view_count: 999,
+    title: `Old stream 💥 tail`,
+    creator_name: 'GooferG',
+    game_name: 'Escape from Tarkov',
+    video_id: '',
+    vod_offset: null,
+    thumbnail_url: 'https://x/t.jpg',
+    url: 'https://x',
+  };
+  const store = buildStore({ ...F.rich, topClips: [unnamed, ...F.rich.topClips] });
+  expect(promoSpots(store).find((s) => s.kicker.startsWith('Staff pick')).title).toBe('What just happened');
+});

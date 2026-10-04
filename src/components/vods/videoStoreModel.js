@@ -163,6 +163,8 @@ function toTape(video, now, timeZone) {
     kind: 'vod',
     id: String(video.id),
     rawTitle: video.title || '',
+    // Set on the broadcast still recording while Goofer is live.
+    streamId: video.stream_id ? String(video.stream_id) : null,
     title: cleanTitle(video.title),
     no: catalogueNo(video.id),
     createdMs,
@@ -312,9 +314,10 @@ export function buildStore({ videos = [], topClips = [], recentClips = [], now, 
 const byViews = (a, b) => b.viewCount - a.viewCount;
 
 // The in-store TV's trailer reel (DESIGN.md §7, Video store): the stream while
-// Goofer is live, then the newest tape, the three most-watched Fresh picks
-// that have a name ("No label" makes a bad ad), and the most-watched Cult
-// classic. Clip facts leave out "Picked by", which depends on the viewer.
+// Goofer is live, then the newest finished tape, the three most-watched Fresh
+// picks that have a name ("No label" makes a bad ad), and the most-watched
+// named Cult classic. Clip facts leave out "Picked by", which depends on the
+// viewer.
 export function promoSpots(store, { isLive = false, stream = null } = {}) {
   const spots = [];
   if (isLive) {
@@ -333,7 +336,10 @@ export function promoSpots(store, { isLive = false, stream = null } = {}) {
       item: null,
     });
   }
-  const newest = store.shelves.length ? store.shelves[0].tapes[0] : null;
+  // While live, Helix lists the broadcast still recording as the newest VOD;
+  // the live spot already covers it.
+  const liveId = isLive && stream && stream.id ? String(stream.id) : null;
+  const newest = store.shelves.flatMap((s) => s.tapes).find((t) => !liveId || t.streamId !== liveId) || null;
   if (newest) {
     spots.push({
       key: `vod-${newest.id}`,
@@ -359,7 +365,11 @@ export function promoSpots(store, { isLive = false, stream = null } = {}) {
     .sort(byViews)
     .slice(0, 3)
     .forEach((clip) => spots.push(clipSpot(clip, 'Fresh pick')));
-  const classic = store.aisles.length ? store.aisles[0].clips[0] : null;
+  const classic =
+    store.aisles
+      .flatMap((a) => a.clips)
+      .filter((c) => !c.unlabeled)
+      .sort(byViews)[0] || null;
   if (classic) spots.push(clipSpot(classic, `Staff pick · ${classic.year.replace('© ', '')}`));
   return spots;
 }

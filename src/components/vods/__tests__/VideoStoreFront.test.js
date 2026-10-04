@@ -244,3 +244,20 @@ test('a tape that leaves the archive closes the counter', () => {
   expect(document.body.style.overflow).toBe('');
   expect(onTapeChange).toHaveBeenLastCalledWith(null);
 });
+
+test('the floor pads scrolling for the nav and the aisle bar, and puts it back on the way out', () => {
+  const { unmount } = renderStore('rich');
+  expect(document.documentElement.style.scrollPaddingTop).toBe('9rem');
+  unmount();
+  expect(document.documentElement.style.scrollPaddingTop).toBe('');
+});
+
+test('while live, the broadcast still recording sits on the shelf but not on the TV', () => {
+  renderStore('live');
+  const tv = within(screen.getByRole('region', { name: 'In-store TV' }));
+  fireEvent.click(tv.getByRole('button', { name: 'Next spot' }));
+  expect(tv.getByText('Now on tape')).toBeTruthy();
+  expect(screen.getByTestId('spot-title').textContent).toBe('Win Wednesdays');
+  expect(tv.getByRole('button', { name: 'Rent it: Win Wednesdays' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: /^Win Wednesdays, Sun, Oct 4/ })).toBeTruthy();
+});

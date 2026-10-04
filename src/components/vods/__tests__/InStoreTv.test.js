@@ -80,22 +80,78 @@ test('hovering or focusing the TV holds the spot', () => {
 test('a hidden tab or an open counter holds the reel', () => {
   const { rerender } = render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
   const hidden = jest.spyOn(document, 'hidden', 'get').mockReturnValue(true);
-  act(() => {
-    document.dispatchEvent(new Event('visibilitychange'));
-  });
+  try {
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    tick();
+    expect(title()).toBe('Win Wednesdays');
+    hidden.mockReturnValue(false);
+    act(() => {
+      document.dispatchEvent(new Event('visibilitychange'));
+    });
+    rerender(<InStoreTv spots={SPOTS} onOpen={() => {}} held />);
+    tick();
+    expect(title()).toBe('Win Wednesdays');
+    rerender(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
+    tick();
+    expect(title()).toBe('Leprecher max ARS');
+  } finally {
+    hidden.mockRestore();
+  }
+});
+
+test('Play restarts the reel even with focus still on the button', () => {
+  render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
+  const toggle = tv().getByRole('button', { name: 'Pause the reel' });
+  act(() => toggle.focus());
+  fireEvent.click(toggle);
   tick();
   expect(title()).toBe('Win Wednesdays');
-  hidden.mockReturnValue(false);
-  act(() => {
-    document.dispatchEvent(new Event('visibilitychange'));
-  });
-  rerender(<InStoreTv spots={SPOTS} onOpen={() => {}} held />);
-  tick();
-  expect(title()).toBe('Win Wednesdays');
-  rerender(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
+  fireEvent.click(tv().getByRole('button', { name: 'Play the reel' }));
+  expect(document.activeElement).toBe(tv().getByRole('button', { name: 'Pause the reel' }));
   tick();
   expect(title()).toBe('Leprecher max ARS');
-  hidden.mockRestore();
+});
+
+test('clicking Next with a mouse does not stall the reel', () => {
+  render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
+  const next = tv().getByRole('button', { name: 'Next spot' });
+  fireEvent.pointerDown(next);
+  act(() => next.focus());
+  fireEvent.click(next);
+  expect(title()).toBe('Leprecher max ARS');
+  tick();
+  expect(title()).toBe('5 scat? pants off');
+});
+
+test('the reel waits behind Tuning in and opens on spot 1 when the floor lands', () => {
+  const { rerender } = render(<InStoreTv loading spots={SPOTS} onOpen={() => {}} />);
+  expect(tv().queryByRole('button', { name: 'Next spot' })).toBeNull();
+  tick(2);
+  rerender(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
+  expect(title()).toBe('Win Wednesdays');
+  expect(tv().getByText('Spot 1 of 5')).toBeTruthy();
+});
+
+test('the spot on screen stays put when the reel gains or loses spots', () => {
+  const { rerender } = render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
+  fireEvent.click(tv().getByRole('button', { name: 'Next spot' }));
+  fireEvent.click(tv().getByRole('button', { name: 'Pause the reel' }));
+  rerender(<InStoreTv spots={LIVE_SPOTS} onOpen={() => {}} />);
+  expect(title()).toBe('Leprecher max ARS');
+  expect(tv().getByText('Spot 3 of 6')).toBeTruthy();
+  rerender(<InStoreTv spots={SPOTS.filter((s) => s.title !== 'Leprecher max ARS')} onOpen={() => {}} />);
+  expect(title()).toBe('5 scat? pants off');
+});
+
+test('each spot is a labelled group, and pausing stills the push-in', () => {
+  render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
+  expect(screen.getByRole('group', { name: 'Spot 1 of 5' })).toBeTruthy();
+  const img = () => tv().getByRole('group').querySelector('img');
+  expect(img().className).not.toContain('[animation-play-state:paused]');
+  fireEvent.click(tv().getByRole('button', { name: 'Pause the reel' }));
+  expect(img().className).toContain('[animation-play-state:paused]');
 });
 
 test('under reduced motion the reel only moves when asked', () => {
@@ -113,11 +169,13 @@ test('under reduced motion the reel only moves when asked', () => {
   }
 });
 
-test('the reel speaks up only when it is not moving on its own', () => {
+test('the reel speaks up only when it is not moving on its own, and only the spot name', () => {
   render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
-  expect(screen.getByTestId('spot').getAttribute('aria-live')).toBe('off');
+  const announcer = screen.getByTestId('spot-announcer');
+  expect(announcer.getAttribute('aria-live')).toBe('off');
+  expect(announcer.textContent).toBe('Now on tape: Win Wednesdays');
   fireEvent.click(tv().getByRole('button', { name: 'Pause the reel' }));
-  expect(screen.getByTestId('spot').getAttribute('aria-live')).toBe('polite');
+  expect(screen.getByTestId('spot-announcer').getAttribute('aria-live')).toBe('polite');
 });
 
 test('Rent it opens the tape on the counter', () => {

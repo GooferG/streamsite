@@ -105,3 +105,54 @@ test('the static plays when the takeover starts, never on first load', () => {
   rerender(view('hunts', true));
   expect(screen.getByTestId('onair-static')).toBeTruthy();
 });
+
+test('a takeover after ready is announced politely; the first ready render says nothing', () => {
+  const hunts = HUNTS({ live: LIVE_HUNT });
+  const feature = huntFeature({ hunts, round: ROUND('open') });
+  const view = (featured, ready) => (
+    <MemoryRouter>
+      <FeaturedMonitor featured={featured} feature={featured === 'hunts' ? feature : null} leaderboard={BOARD} resets={null} now={NOW} ready={ready} />
+    </MemoryRouter>
+  );
+  const { rerender } = render(view('leaderboard', false));
+  const status = screen.getByRole('status');
+  expect(status.className).toContain('sr-only');
+  rerender(view('leaderboard', true));
+  expect(screen.getByRole('status').textContent).toBe('');
+  rerender(view('hunts', true));
+  // The same live region node, now carrying the announcement.
+  expect(screen.getByRole('status')).toBe(status);
+  expect(status.textContent).toBe('Now showing: Hunts');
+  rerender(view('leaderboard', true));
+  expect(screen.getByRole('status').textContent).toBe('Now showing: Leaderboard');
+});
+
+test('first load straight onto Hunts announces nothing', () => {
+  const hunts = HUNTS({ live: LIVE_HUNT });
+  show({ featured: 'hunts', feature: huntFeature({ hunts, round: ROUND('open') }) });
+  expect(screen.getByRole('status').textContent).toBe('');
+});
+
+test('the leaderboard ticker is labelled as the standings ticker', () => {
+  show({ featured: 'leaderboard', feature: null });
+  expect(screen.getByRole('marquee', { name: 'Standings ticker' })).toBeTruthy();
+});
+
+test('notches: unopened ones read in ink-6 and stay visible on phones', () => {
+  const hunts = HUNTS({ live: LIVE_HUNT });
+  show({ featured: 'hunts', feature: huntFeature({ hunts, round: null }) });
+  const notches = screen.getByTestId('hunt-notches');
+  expect(notches.className).toContain('gap-px');
+  expect(notches.className).toContain('sm:gap-1');
+  expect(notches.innerHTML).not.toContain('bg-onair-ink-7');
+  expect(notches.children[1].className).toContain('bg-onair-ink-6');
+});
+
+test('past 60 bonuses the bar track reads in ink-6', () => {
+  const many = Array.from({ length: 61 }, (_, i) => ({ slot: `S${i}`, bet: 1, win: i < 10 ? 5 : null, multiplier: i < 10 ? 5 : null }));
+  const hunts = HUNTS({ live: { ...LIVE_HUNT, bonusCount: 61, bonuses: many } });
+  show({ featured: 'hunts', feature: huntFeature({ hunts, round: null }) });
+  const bar = screen.getByTestId('hunt-progress-bar');
+  expect(bar.className).toContain('bg-onair-ink-6');
+  expect(bar.className).not.toContain('bg-onair-ink-7');
+});

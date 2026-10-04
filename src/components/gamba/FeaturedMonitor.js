@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Monitor from '../onAir/Monitor';
 import Chip from '../onAir/Chip';
@@ -32,21 +33,47 @@ function Cta({ ghost, to, children }) {
   );
 }
 
+const NAMES = { hunts: 'Hunts', leaderboard: 'Leaderboard' };
+
+// Screen readers hear a takeover (Hunts taking the monitor, or handing it
+// back) once the data is ready; never the first load. Same rule as the static.
+function useTakeoverMessage(featured, ready) {
+  const key = ready ? featured : null;
+  const prev = useRef(key);
+  const [message, setMessage] = useState('');
+  useEffect(() => {
+    const from = prev.current;
+    prev.current = key;
+    if (from != null && key != null && from !== key) setMessage(`Now showing: ${NAMES[key]}`);
+  }, [key]);
+  return message;
+}
+
+// The first child in both screens, so React keeps the one live region node.
+function Announcer({ message }) {
+  return (
+    <p role="status" className="sr-only">
+      {message}
+    </p>
+  );
+}
+
 // One notch per bonus (opened in signal-deep), or a bar past 60 bonuses.
-// Set dressing: the opened count is in the hero's label.
+// Set dressing: the opened count is in the hero's label. Unopened notches are
+// non-text data, so ink-6 (ink-7 is decoration only).
 function Progress({ model }) {
   if (!model) return null;
   if (model.style === 'bar') {
     return (
-      <div className="h-2 w-full max-w-xl overflow-hidden rounded-full bg-onair-ink-7" aria-hidden="true">
+      <div className="h-2 w-full max-w-xl overflow-hidden rounded-full bg-onair-ink-6" aria-hidden="true" data-testid="hunt-progress-bar">
         <div className="h-full rounded-full bg-onair-signal-deep" style={{ width: `${(model.opened / model.total) * 100}%` }} />
       </div>
     );
   }
   return (
-    <div className="flex w-full max-w-xl gap-1" aria-hidden="true" data-testid="hunt-notches">
+    <div className="flex w-full max-w-xl gap-px sm:gap-1" aria-hidden="true" data-testid="hunt-notches">
       {Array.from({ length: model.total }, (_, i) => (
-        <span key={i} className={`h-2 flex-1 rounded-full ${i < model.opened ? 'bg-onair-signal-deep' : 'bg-onair-ink-7'}`} />
+        <span key={i} className={`h-2 flex-1 rounded-full ${i < model.opened ? 'bg-onair-signal-deep' : 'bg-onair-ink-6'}`} />
       ))}
     </div>
   );
@@ -144,6 +171,7 @@ function LeaderboardScreen({ facts }) {
 }
 
 export default function FeaturedMonitor({ featured, feature, leaderboard, resets, now, ready }) {
+  const message = useTakeoverMessage(featured === 'hunts' && feature ? 'hunts' : 'leaderboard', ready);
   if (featured === 'hunts' && feature) {
     const money = (v) => formatMoney(v, feature.currency);
     const signed = (v) => signedMoney(v, feature.currency);
@@ -167,6 +195,7 @@ export default function FeaturedMonitor({ featured, feature, leaderboard, resets
         readout={{ channel: CH.hunts, ...tags.readout }}
         chyron={items.length ? { tag: tags.tag, tone: tags.tone, items } : null}
       >
+        <Announcer message={message} />
         <div className="[--hero-share:0.9] sm:[--hero-share:0.55]" style={{ containerType: 'inline-size' }}>
           {feature.kind === 'live' ? <LiveHuntScreen feature={feature} money={money} /> : <PreHuntScreen feature={feature} money={money} />}
         </div>
@@ -186,8 +215,9 @@ export default function FeaturedMonitor({ featured, feature, leaderboard, resets
       clock={clock}
       channelKey={ready ? 'leaderboard' : null}
       readout={{ channel: CH.leaderboard, label: facts.noSignal ? 'No signal' : 'Standings', tone: 'muted' }}
-      chyron={standings.length ? { tag: 'Standings', tone: 'muted', items: standings } : null}
+      chyron={standings.length ? { tag: 'Standings', tone: 'muted', items: standings, label: 'Standings ticker' } : null}
     >
+      <Announcer message={message} />
       <div className="[--hero-share:0.9] sm:[--hero-share:0.55]" style={{ containerType: 'inline-size' }}>
         <LeaderboardScreen facts={facts} />
       </div>

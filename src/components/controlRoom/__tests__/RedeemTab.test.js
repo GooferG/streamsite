@@ -127,6 +127,17 @@ test('pressing Fulfill disarms an armed Refund', () => {
   expect(refund.disabled).toBe(true);
 });
 
+test('a note typed on a collapsed row is not sent with its next action', async () => {
+  show();
+  fireEvent.click(within(rowOf('Pick a Slot')).getByRole('button', { name: /pick a slot/i }));
+  fireEvent.change(screen.getByRole('textbox', { name: 'Note for Pick a Slot' }), { target: { value: 'hidden' } });
+  fireEvent.click(within(rowOf('Roll a blunt')).getByRole('button', { name: /roll a blunt/i }));
+  await act(async () => {
+    fireEvent.click(within(rowOf('Pick a Slot')).getByRole('button', { name: 'Fulfill' }));
+  });
+  expect(sentBody(0)).toEqual({ id: 'r1', action: 'fulfill', note: null });
+});
+
 test('an armed Refund counts down and disarms after 4s', () => {
   show();
   const row = rowOf('Pick a Slot');

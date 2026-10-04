@@ -137,6 +137,18 @@ export default function RedeemTab() {
     if (!ducked && newest != null) markRedeemSeen(newest);
   }, [newest, ducked, markRedeemSeen]);
 
+  // The note belongs to the row it was typed on: leaving that row drops it.
+  const toggle = (id) => {
+    if (openId) {
+      setNotes((n) => {
+        const next = { ...n };
+        delete next[openId];
+        return next;
+      });
+    }
+    setOpenId(openId === id ? null : id);
+  };
+
   const act = async (id, action) => {
     const ok = await run(id, action, notes[id]);
     if (!ok) return;
@@ -179,7 +191,7 @@ export default function RedeemTab() {
               r={r}
               now={now}
               open={openId === r.id}
-              onToggle={() => setOpenId((o) => (o === r.id ? null : r.id))}
+              onToggle={() => toggle(r.id)}
               note={notes[r.id] || ''}
               onNote={(v) => setNotes((n) => ({ ...n, [r.id]: v }))}
               busy={busy[r.id]}

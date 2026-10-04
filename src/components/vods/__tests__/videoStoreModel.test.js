@@ -15,6 +15,7 @@ import {
   parseDuration,
   pickedBy,
   playerSrc,
+  promoSpots,
   tapeStickers,
   tapeStock,
   toTwitchTime,
@@ -268,4 +269,96 @@ test('an empty archive builds an empty store', () => {
     counts: { tapes: 0, fresh: 0, classics: 0, clips: 0 },
     byId: {},
   });
+});
+
+test('covers come at the size asked for', () => {
+  const vod = { thumbnail_url: 'https://x/thumb0-%{width}x%{height}.jpg' };
+  expect(coverUrl(vod, 1280, 720)).toBe('https://x/thumb0-1280x720.jpg');
+  expect(rich.byId['2889109731'].wideCover).toMatch(/thumb0-1280x720\.jpg$/);
+});
+
+const LIVE_STREAM = {
+  title: `Win Wednesdays 💥 Games and Gamba?  ${TAIL}`,
+  game_name: 'Slots',
+  viewer_count: 42,
+  thumbnail_url: 'https://static-cdn.jtvnw.net/previews-ttv/live_user_gooferg-{width}x{height}.jpg',
+};
+
+test('promoSpots: the newest tape, the three most-watched named picks, the top classic', () => {
+  const spots = promoSpots(rich);
+  expect(spots.map((s) => s.kind)).toEqual(['vod', 'clip', 'clip', 'clip', 'clip']);
+  expect(spots[0]).toMatchObject({
+    key: 'vod-2889109731',
+    kicker: 'Now on tape',
+    title: 'Win Wednesdays',
+    facts: ['Thu, Oct 1', '4:37:20', 'T-120 · EP'],
+  });
+  expect(spots[0].cover).toMatch(/thumb0-1280x720\.jpg$/);
+  expect(spots[0].item.id).toBe('2889109731');
+  expect(spots.slice(1, 4).map((s) => [s.kicker, s.title])).toEqual([
+    ['Fresh pick', 'Leprecher max ARS'],
+    ['Fresh pick', '5 scat? pants off'],
+    ['Fresh pick', '500x hit'],
+  ]);
+  expect(spots[1].facts).toEqual(['1:00', '45 views']);
+  expect(spots[4]).toMatchObject({ kicker: 'Staff pick · 2018', title: 'What just happened' });
+  expect(spots.some((s) => s.title.startsWith('No label'))).toBe(false);
+});
+
+test('promoSpots: while live, the stream leads the reel', () => {
+  const spots = promoSpots(rich, { isLive: true, stream: LIVE_STREAM });
+  expect(spots[0]).toMatchObject({
+    key: 'live',
+    kind: 'live',
+    kicker: 'On the air now',
+    title: 'Win Wednesdays',
+    facts: ['Slots', '42 watching'],
+    item: null,
+    cover: 'https://static-cdn.jtvnw.net/previews-ttv/live_user_gooferg-1280x720.jpg',
+  });
+  expect(spots).toHaveLength(6);
+  expect(promoSpots(rich, { isLive: true, stream: null })[0]).toMatchObject({ kind: 'live', title: 'Goofer is live', cover: null, facts: [] });
+});
+
+test('promoSpots: an empty store has no reel unless Goofer is live', () => {
+  const empty = buildStore({ now: FIXTURE_NOW, timeZone: AZ });
+  expect(promoSpots(empty)).toEqual([]);
+  expect(promoSpots(empty, { isLive: true, stream: LIVE_STREAM }).map((s) => s.kind)).toEqual(['live']);
+  expect(promoSpots(buildStore(F.classics)).map((s) => s.kicker)).toEqual(['Now on tape', 'Staff pick · 2018']);
+});
+
+test('promoSpots: while live, the broadcast still recording is not a "Now on tape" spot', () => {
+  const recording = {
+    id: '2890000000',
+    stream_id: 'live-stream',
+    title: `Win Wednesdays 💥 Games and Gamba?  ${TAIL}`,
+    created_at: '2026-10-04T17:00:00Z',
+    duration: '2h0m0s',
+    view_count: 3,
+    thumbnail_url: '',
+    url: 'https://www.twitch.tv/videos/2890000000',
+    muted_segments: null,
+  };
+  const store = buildStore({ ...F.rich, videos: [recording, ...F.rich.videos] });
+  const spots = promoSpots(store, { isLive: true, stream: { ...LIVE_STREAM, id: 'live-stream' } });
+  expect(spots.map((s) => s.key).slice(0, 2)).toEqual(['live', 'vod-2889109731']);
+  expect(promoSpots(store).find((s) => s.kind === 'vod').key).toBe('vod-2890000000');
+});
+
+test('promoSpots: the staff pick is the most-watched classic with a name', () => {
+  const unnamed = {
+    id: 'unnamed-classic',
+    created_at: '2018-02-01T00:00:00Z',
+    duration: 30,
+    view_count: 999,
+    title: `Old stream 💥 tail`,
+    creator_name: 'GooferG',
+    game_name: 'Escape from Tarkov',
+    video_id: '',
+    vod_offset: null,
+    thumbnail_url: 'https://x/t.jpg',
+    url: 'https://x',
+  };
+  const store = buildStore({ ...F.rich, topClips: [unnamed, ...F.rich.topClips] });
+  expect(promoSpots(store).find((s) => s.kicker.startsWith('Staff pick')).title).toBe('What just happened');
 });

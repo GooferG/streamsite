@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { MONO } from '../onAir/classes';
 import useNow from '../hunts/useNow';
-import { buildStore, padCount } from './videoStoreModel';
+import { buildStore, padCount, promoSpots } from './videoStoreModel';
 import StoreSign from './StoreSign';
+import InStoreTv from './InStoreTv';
 import AisleSigns from './AisleSigns';
 import { Aisle, Shelf } from './Shelf';
 import VhsBox from './VhsBox';
@@ -45,15 +46,17 @@ function EmptyFloor() {
 }
 
 // Goofer Video: the /vods floor, composed from raw Helix data (VodsPage wires
-// App's poll and useRecentClips; fixtures feed it in dev and tests). Owns which
-// tape is on the rental counter. `now` and `timeZone` are for fixtures and
-// tests; live, the clock ticks each minute and the zone is the viewer's.
+// App's poll, the live stream and useRecentClips; fixtures feed it in dev and
+// tests). Owns which tape is on the rental counter. `now` and `timeZone` are
+// for fixtures and tests; live, the clock ticks each minute and the zone is
+// the viewer's.
 export default function VideoStoreFront({
   videos = NONE,
   topClips = NONE,
   recentClips = NONE,
   loading = false,
   isLive = false,
+  stream = null,
   statusReady = false,
   viewerName = null,
   now: frozenNow = null,
@@ -67,6 +70,18 @@ export default function VideoStoreFront({
     () => buildStore({ videos, topClips, recentClips, now, timeZone }),
     [videos, topClips, recentClips, now, timeZone]
   );
+  const spots = useMemo(() => promoSpots(store, { isLive, stream }), [store, isLive, stream]);
+
+  // Keep focused boxes and jumped-to aisles clear of the nav and the sticky
+  // aisle bar (about 115px together); put the page back as it was on the way out.
+  useEffect(() => {
+    const root = document.documentElement;
+    const prev = root.style.scrollPaddingTop;
+    root.style.scrollPaddingTop = '9rem';
+    return () => {
+      root.style.scrollPaddingTop = prev;
+    };
+  }, []);
 
   // A ?tape= link waits until its tape is in the data (recent clips land a few
   // seconds after App's poll); any tape the viewer opens cancels it.
@@ -106,9 +121,10 @@ export default function VideoStoreFront({
   const { shelves, fresh, aisles, counts } = store;
   const item = rental ? store.byId[rental.id] : null;
   const empty = !loading && counts.tapes === 0 && counts.clips === 0;
+  // Clips lead: they're the 30-second hook, and the VODs are for catching up.
   const signs = [
-    counts.tapes > 0 && { id: 'new-releases', label: 'New releases', count: counts.tapes },
     counts.fresh > 0 && { id: 'fresh-picks', label: 'Fresh picks', count: counts.fresh },
+    counts.tapes > 0 && { id: 'new-releases', label: 'New releases', count: counts.tapes },
     counts.classics > 0 && { id: 'cult-classics', label: 'Cult classics', count: counts.classics },
   ].filter(Boolean);
 
@@ -116,12 +132,25 @@ export default function VideoStoreFront({
     <div className="font-onair text-onair-ink-1">
       <StoreSign isLive={isLive} statusReady={statusReady} />
 
+      {(loading || spots.length > 0) && (
+        <InStoreTv loading={loading} spots={spots} viewerName={viewerName} onOpen={open} held={!!item} />
+      )}
+
       {loading && <LoadingFloor />}
       {empty && <EmptyFloor />}
 
       {!loading && !empty && (
         <>
           <AisleSigns aisles={signs} />
+          {counts.fresh > 0 && (
+            <Aisle id="fresh-picks" title="Fresh picks" count={counts.fresh}>
+              <Shelf label="Last 60 days" size="clip">
+                {fresh.map((clip) => (
+                  <ClipCassette key={clip.id} clip={clip} viewerName={viewerName} onOpen={open} />
+                ))}
+              </Shelf>
+            </Aisle>
+          )}
           {counts.tapes > 0 && (
             <Aisle id="new-releases" title="New releases" count={counts.tapes}>
               {shelves.map((shelf) => (
@@ -131,15 +160,6 @@ export default function VideoStoreFront({
                   ))}
                 </Shelf>
               ))}
-            </Aisle>
-          )}
-          {counts.fresh > 0 && (
-            <Aisle id="fresh-picks" title="Fresh picks" count={counts.fresh}>
-              <Shelf label="Last 60 days" size="clip">
-                {fresh.map((clip) => (
-                  <ClipCassette key={clip.id} clip={clip} viewerName={viewerName} onOpen={open} />
-                ))}
-              </Shelf>
             </Aisle>
           )}
           {counts.classics > 0 && (

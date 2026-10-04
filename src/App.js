@@ -268,7 +268,7 @@ function StreamingSiteContent() {
           <Route
             path="/vods"
             element={
-              <VodsPage videos={videos} clips={clips} loading={loading} isLive={isLive} statusReady={statusReady} />
+              <VodsPage videos={videos} clips={clips} loading={loading} isLive={isLive} stream={streamData} statusReady={statusReady} />
             }
           />
           <Route path="/gear" element={<GearPage />} />

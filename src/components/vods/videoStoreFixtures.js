@@ -127,7 +127,33 @@ const WITH_MUTED = LIVE_VIDEOS.map((v, i) => (i === 0 ? { ...v, muted_segments: 
 
 export const VIDEO_STORE_FIXTURES = {
   rich: { ...base, videos: WITH_MUTED },
-  live: { ...base, isLive: true },
+  // Live: Helix lists the broadcast still recording (no picture yet) as the
+  // newest VOD, tied to the stream by stream_id.
+  live: {
+    ...base,
+    isLive: true,
+    videos: [
+      {
+        id: '2890000000',
+        stream_id: 'live-stream',
+        title: 'Win Wednesdays 💥 Games and Gamba?  ' + TAIL,
+        created_at: '2026-10-04T17:00:00Z',
+        duration: '2h0m0s',
+        view_count: 3,
+        thumbnail_url: '',
+        url: 'https://www.twitch.tv/videos/2890000000',
+        muted_segments: null,
+      },
+      ...LIVE_VIDEOS,
+    ],
+    stream: {
+      id: 'live-stream',
+      title: 'Win Wednesdays 💥 Games and Gamba?  ' + TAIL,
+      game_name: 'Slots',
+      viewer_count: 42,
+      thumbnail_url: 'https://static-cdn.jtvnw.net/previews-ttv/live_user_gooferg-{width}x{height}.jpg',
+    },
+  },
   // Only clips from the last 60 days: no Cult classics aisle.
   fresh: { ...base, topClips: LIVE_TOP_CLIPS.filter((c) => Date.parse(c.created_at) >= cutoff) },
   // No recent clips at all: no Fresh picks aisle.

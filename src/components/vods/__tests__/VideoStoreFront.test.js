@@ -29,9 +29,36 @@ test('New releases shelves the tapes by week, newest first', () => {
 test('aisle signs carry the counts and hand focus to the aisle', () => {
   renderStore('rich');
   const nav = within(screen.getByRole('navigation', { name: 'Aisles' }));
-  expect(nav.getAllByRole('link').map((a) => a.textContent)).toEqual(['New releases027', 'Fresh picks012', 'Cult classics016']);
+  expect(nav.getAllByRole('link').map((a) => a.textContent)).toEqual(['Fresh picks012', 'New releases027', 'Cult classics016']);
   fireEvent.click(nav.getByRole('link', { name: /^Cult classics/ }));
   expect(document.activeElement).toBe(screen.getByRole('heading', { level: 2, name: 'Cult classics' }));
+});
+
+test('the floor runs TV, Fresh picks, New releases, Cult classics', () => {
+  renderStore('rich');
+  expect(screen.getAllByRole('region').map((r) => r.getAttribute('aria-label') || r.querySelector('h2').textContent)).toEqual([
+    'In-store TV',
+    'Fresh picks',
+    'New releases',
+    'Cult classics',
+  ]);
+});
+
+test('the in-store TV rents its tape on the counter', () => {
+  const onTapeChange = jest.fn();
+  renderStore('rich', { onTapeChange });
+  fireEvent.click(screen.getByRole('button', { name: 'Rent it: Win Wednesdays' }));
+  expect(screen.getByRole('dialog', { name: 'Win Wednesdays' }).querySelector('iframe').getAttribute('src')).toBe(
+    'https://player.twitch.tv/?video=2889109731&parent=localhost&autoplay=true'
+  );
+  expect(onTapeChange).toHaveBeenCalledWith('2889109731');
+});
+
+test('while live the TV leads with the stream', () => {
+  renderStore('live');
+  const tv = within(screen.getByRole('region', { name: 'In-store TV' }));
+  expect(tv.getByText('On the air now')).toBeTruthy();
+  expect(tv.getByRole('link', { name: 'Watch now' }).getAttribute('href')).toBe('/');
 });
 
 test('an aisle with nothing in it is left out, and so is its sign', () => {
@@ -80,9 +107,10 @@ test('stickers: due back as the archive runs out', () => {
   expect(screen.getByText('New release')).toBeTruthy();
 });
 
-test('tapes without a picture show the test card', () => {
+test('tapes without a picture show the test card, on the shelf and on the TV', () => {
   renderStore('nothumb');
-  expect(screen.getAllByTestId('no-picture')).toHaveLength(2);
+  expect(aisle('New releases').getAllByTestId('no-picture')).toHaveLength(2);
+  expect(within(screen.getByRole('region', { name: 'In-store TV' })).getByTestId('no-picture')).toBeTruthy();
 });
 
 test('the OPEN sign is the live light', () => {
@@ -97,6 +125,7 @@ test('loading: blank sleeves and the clerk restocking', () => {
   renderStore('loading');
   expect(screen.getByRole('status').textContent).toBe('Restocking the shelves…');
   expect(screen.getByTestId('clerk-restock')).toBeTruthy();
+  expect(within(screen.getByRole('region', { name: 'In-store TV' })).getByText('Tuning in…')).toBeTruthy();
   expect(screen.queryByRole('navigation', { name: 'Aisles' })).toBeNull();
   expect(screen.queryByText(/clips on the floor/)).toBeNull();
 });
@@ -214,4 +243,21 @@ test('a tape that leaves the archive closes the counter', () => {
   expect(screen.queryByRole('dialog')).toBeNull();
   expect(document.body.style.overflow).toBe('');
   expect(onTapeChange).toHaveBeenLastCalledWith(null);
+});
+
+test('the floor pads scrolling for the nav and the aisle bar, and puts it back on the way out', () => {
+  const { unmount } = renderStore('rich');
+  expect(document.documentElement.style.scrollPaddingTop).toBe('9rem');
+  unmount();
+  expect(document.documentElement.style.scrollPaddingTop).toBe('');
+});
+
+test('while live, the broadcast still recording sits on the shelf but not on the TV', () => {
+  renderStore('live');
+  const tv = within(screen.getByRole('region', { name: 'In-store TV' }));
+  fireEvent.click(tv.getByRole('button', { name: 'Next spot' }));
+  expect(tv.getByText('Now on tape')).toBeTruthy();
+  expect(screen.getByTestId('spot-title').textContent).toBe('Win Wednesdays');
+  expect(tv.getByRole('button', { name: 'Rent it: Win Wednesdays' })).toBeTruthy();
+  expect(screen.getByRole('button', { name: /^Win Wednesdays, Sun, Oct 4/ })).toBeTruthy();
 });

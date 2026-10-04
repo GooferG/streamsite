@@ -307,9 +307,9 @@ Components unique to a streaming-channel hub. Their visual weight pulls more fro
 - **Don't** use AI-tell vocabulary: leverage, harness, utilize, seamless, robust, cutting-edge, unlock, delve, navigate (as a verb meaning "deal with"), elevate, empower, foster, streamline, holistic, synergy, ecosystem (outside literal tech context).
 - **Don't** nest cards. For sub-sections inside a card, step the background tonally (`bg-zinc-900` → `bg-zinc-800`).
 
-## 7. On Air (pilot: /gamba/hunts)
+## 7. On Air (pilot: /gamba/hunts, /store)
 
-On Air is the softer broadcast look replacing the hard-lined boxes: rounded, layered surfaces with inset highlights and drop shadows, a TV monitor stage, a perforated prediction slip. It pilots on the Hunts tab (`/gamba/hunts`); other surfaces opt in one at a time by using the `onair` tokens and the primitives in `src/components/onAir/`. Until the global nav migrates, the seam between the system-font nav and On Air content is expected.
+On Air is the softer broadcast look replacing the hard-lined boxes: rounded, layered surfaces with inset highlights and drop shadows, a TV monitor stage, a perforated prediction slip. It pilots on the Hunts tab (`/gamba/hunts`) and the store (`/store`, the Goofer Shopping Network); other surfaces opt in one at a time by using the `onair` tokens and the primitives in `src/components/onAir/`. Until the global nav migrates, the seam between the system-font nav and On Air content is expected.
 
 ### Tokens
 
@@ -339,4 +339,10 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 
 **Contract Test.** `src/components/onAir/__tests__/onAirContract.test.js` scans the On Air sources for the mechanical rules here (type floor, loaded weights, label inks, raw colours, orange on the slip, data-dot ink). Keep it green; extend it when a rule is added.
 
-**Motion Has An Off Switch.** The channel-change static, knob spin, chyron scroll and LIVE pulse all stop under `prefers-reduced-motion`.
+**Motion Has An Off Switch.** The channel-change static, knob spin, chyron scroll and LIVE pulse all stop under `prefers-reduced-motion`. So do the store's balance roll and torn stub.
+
+**Hold To Spend.** Anything that spends tickets uses `HoldButton`: a 900 ms press-and-hold, with a two-step fallback (a click arms "Press again", a second press confirms within 4 s) for keyboards, screen readers and quick taps. One stray click never spends.
+
+**Art Never Carries Lettering.** Generated art (store item art, the GSN operator, the station ident; `scripts/gsn-art/`) has no text in it. Names, prices and the GSN bug are CSS. Art lives in `public/gsn/`.
+
+**The Operator Is Set Dressing.** GSN's recurring operator appears only in the order moment (standby, on the phone, shrug). Always `aria-hidden`; the visible text says what happened.

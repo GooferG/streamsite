@@ -79,6 +79,13 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // Public order feed for the store chyron (last 8 orders: display name,
+    // item, time). Written by the redeem API after each order.
+    match /store_public/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+
     // Secrets (broadcaster refresh token, etc.) — never client-accessible.
     match /secrets/{id} {
       allow read, write: if false;

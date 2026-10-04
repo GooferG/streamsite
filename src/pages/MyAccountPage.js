@@ -23,24 +23,9 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { db } from '../config/firebase';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
 import { useUserDoc } from '../hooks/useUserDoc';
-import { authedFetch } from '../utils/authedFetch';
-
-const DISCORD_CLIENT_ID = process.env.REACT_APP_DISCORD_CLIENT_ID;
-const DISCORD_REDIRECT_URI =
-  process.env.REACT_APP_DISCORD_REDIRECT_URI ||
-  (typeof window !== 'undefined' ? `${window.location.origin}/discord-callback` : '');
-
-function discordAuthUrl() {
-  if (!DISCORD_CLIENT_ID) return null;
-  const params = new URLSearchParams({
-    client_id: DISCORD_CLIENT_ID,
-    redirect_uri: DISCORD_REDIRECT_URI,
-    response_type: 'code',
-    scope: 'identify guilds',
-    prompt: 'consent',
-  });
-  return `https://discord.com/oauth2/authorize?${params.toString()}`;
-}
+import useDailyDrop, { clockLabel } from '../hooks/useDailyDrop';
+import { discordAuthUrl } from '../utils/discordAuth';
+import { formatMinutes } from '../utils/formatMinutes';
 
 function DiscordLinkPanel({ discordId, discordUsername }) {
   const url = discordAuthUrl();
@@ -159,31 +144,6 @@ function formatTs(ts) {
   });
 }
 
-function formatMinutes(total) {
-  const minutes = Math.max(0, Math.floor(Number(total) || 0));
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h && m) return `${h}h ${m}m`;
-  if (h) return `${h}h`;
-  return `${m}m`;
-}
-
-function useCountdown(targetMs) {
-  const [now, setNow] = useState(() => Date.now());
-  useEffect(() => {
-    if (!targetMs || targetMs <= Date.now()) return undefined;
-    const t = setInterval(() => setNow(Date.now()), 1000);
-    return () => clearInterval(t);
-  }, [targetMs]);
-  if (!targetMs) return null;
-  const diff = targetMs - now;
-  if (diff <= 0) return null;
-  const h = Math.floor(diff / 3600000);
-  const m = Math.floor((diff % 3600000) / 60000);
-  const s = Math.floor((diff % 60000) / 1000);
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
-}
-
 export default function MyAccountPage() {
   const { twitchUser, loginWithTwitch } = useTwitchAuth();
   const { user } = useUserDoc();
@@ -198,10 +158,7 @@ export default function MyAccountPage() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const [ledger, setLedger] = useState([]);
   const [redemptions, setRedemptions] = useState([]);
-  const [claiming, setClaiming] = useState(false);
-  const [claimError, setClaimError] = useState(null);
-  const [cooldownUntil, setCooldownUntil] = useState(null);
-  const countdown = useCountdown(cooldownUntil);
+  const daily = useDailyDrop(user);
 
   useEffect(() => {
     if (!twitchUser?.twitchId) return undefined;
@@ -228,40 +185,6 @@ export default function MyAccountPage() {
       unsubR();
     };
   }, [twitchUser?.twitchId]);
-
-  // Compute initial cooldown from server-side timestamp.
-  useEffect(() => {
-    if (!user?.lastDailyClaimAt) {
-      setCooldownUntil(null);
-      return;
-    }
-    const lastMs = user.lastDailyClaimAt.toMillis
-      ? user.lastDailyClaimAt.toMillis()
-      : new Date(user.lastDailyClaimAt).getTime();
-    const next = lastMs + 22 * 60 * 60 * 1000;
-    setCooldownUntil(next > Date.now() ? next : null);
-  }, [user?.lastDailyClaimAt]);
-
-  const handleClaimDaily = async () => {
-    setClaiming(true);
-    setClaimError(null);
-    try {
-      const res = await authedFetch('/api/me/claim-daily', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) {
-        if (data.error === 'COOLDOWN' && data.nextAt) {
-          setCooldownUntil(data.nextAt);
-          setClaimError('Already claimed — come back later.');
-        } else {
-          setClaimError(data.error || 'Claim failed.');
-        }
-      }
-    } catch (err) {
-      setClaimError('Network error.');
-    } finally {
-      setClaiming(false);
-    }
-  };
 
   if (!twitchUser) {
     return (
@@ -371,24 +294,24 @@ export default function MyAccountPage() {
             </div>
             <button
               type="button"
-              onClick={handleClaimDaily}
-              disabled={claiming || !!cooldownUntil}
+              onClick={daily.claim}
+              disabled={daily.claiming || !!daily.nextAt}
               className="inline-flex items-center gap-2 px-4 py-3 bg-emerald-signal text-zinc-broadcast hover:bg-emerald-bright transition-colors duration-150 disabled:opacity-30 disabled:cursor-not-allowed disabled:bg-white/10 disabled:text-white/40"
             >
               <Gift size={14} aria-hidden="true" />
               <span className="text-[0.625rem] font-bold tracking-eyebrow-lg uppercase font-mono">
-                {claiming
+                {daily.claiming
                   ? 'Claiming…'
-                  : cooldownUntil
-                    ? `Next in ${countdown ?? '—'}`
+                  : daily.nextAt
+                    ? `Next in ${clockLabel(daily.remainingMs)}`
                     : 'Claim daily'}
               </span>
             </button>
           </div>
-          {claimError && (
+          {daily.error && (
             <div className="flex items-center gap-2 px-5 pb-4 -mt-2 text-[0.6875rem] font-bold tracking-eyebrow uppercase text-red-destructive font-mono">
               <AlertCircle size={12} aria-hidden="true" />
-              {claimError}
+              {daily.error}
             </div>
           )}
         </div>

@@ -1,5 +1,6 @@
 import { adminDb, FieldValue } from '../_lib/firebaseAdmin.js';
 import { applyCors, requireAdmin } from '../_lib/verifyAuth.js';
+import { forgetOrder } from '../_lib/storeFeed.js';
 
 export default async function handler(req, res) {
   applyCors(res);
@@ -68,6 +69,7 @@ export default async function handler(req, res) {
         cancelledBy: admin.email,
       });
     });
+    await forgetOrder(adminDb, id);
     return res.status(200).json({ ok: true });
   } catch (err) {
     if (err.message === 'NOT_FOUND') return res.status(404).json({ error: 'NOT_FOUND' });

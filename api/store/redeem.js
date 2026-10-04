@@ -1,5 +1,6 @@
 import { adminDb, FieldValue } from '../_lib/firebaseAdmin.js';
 import { applyCors, requireAuth } from '../_lib/verifyAuth.js';
+import { recordOrder } from '../_lib/storeFeed.js';
 
 export default async function handler(req, res) {
   applyCors(res);
@@ -21,7 +22,7 @@ export default async function handler(req, res) {
   const ledgerRef = adminDb.collection('ticket_ledger').doc();
 
   try {
-    const result = await adminDb.runTransaction(async (tx) => {
+    const { feed, ...result } = await adminDb.runTransaction(async (tx) => {
       const [userSnap, itemSnap] = await Promise.all([tx.get(userRef), tx.get(itemRef)]);
       if (!userSnap.exists) throw new Error('USER_NOT_FOUND');
       if (!itemSnap.exists) throw new Error('ITEM_NOT_FOUND');
@@ -78,9 +79,12 @@ export default async function handler(req, res) {
         redemptionId: redemptionRef.id,
         kind: item.kind,
         status: fulfillImmediately ? 'fulfilled' : 'pending',
+        feed: { name: user.displayName || user.twitchName || null, itemName: item.name },
       };
     });
 
+    // Awaited: a Vercel function may freeze once it has responded.
+    await recordOrder(adminDb, { id: result.redemptionId, ...feed, at: Date.now() });
     return res.status(200).json({ ok: true, ...result });
   } catch (err) {
     const code = err.message;

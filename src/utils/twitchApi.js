@@ -34,9 +34,29 @@ export async function getTwitchClips(accessToken, userId) {
   return data.data || [];
 }
 
+// Clips made between two instants (ISO strings). Helix defaults ended_at to a
+// week after started_at, so /vods always sends both.
+export async function getTwitchClipsBetween(accessToken, userId, startedAt, endedAt, first = 50) {
+  const params = new URLSearchParams({
+    broadcaster_id: userId,
+    first: String(first),
+    started_at: startedAt,
+    ended_at: endedAt,
+  });
+  const response = await fetch(`https://api.twitch.tv/helix/clips?${params}`, {
+    headers: {
+      'Client-ID': TWITCH_CLIENT_ID,
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+  if (!response.ok) throw new Error(`Helix clips ${response.status}`);
+  const data = await response.json();
+  return data.data || [];
+}
+
 export async function getTwitchVideos(accessToken, userId) {
   const response = await fetch(
-    `https://api.twitch.tv/helix/videos?user_id=${userId}&first=20&type=archive`,
+    `https://api.twitch.tv/helix/videos?user_id=${userId}&first=100&type=archive`,
     {
       headers: {
         'Client-ID': TWITCH_CLIENT_ID,

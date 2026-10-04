@@ -82,7 +82,7 @@ function Spot({ spot, viewerName, onOpen, still }) {
 // The TV every video store had, playing the store's own trailer reel
 // (DESIGN.md §7, Video store). Stills only: every Twitch embed on the channel
 // opens behind Twitch's content gate, so Rent it hands the tape to the rental
-// counter. The reel holds while hovered, while keyboard focus is inside it,
+// counter. The reel holds under a mouse, while keyboard focus is inside it,
 // when paused, in a hidden tab, or while the counter is open (`held`); under
 // reduced motion it only moves when asked. It follows the spot on screen by
 // key, so the list growing or shrinking (going live, recent clips landing)
@@ -95,26 +95,57 @@ export default function InStoreTv({ spots = [], loading = false, viewerName = nu
   const [reduce] = useState(prefersReducedMotion);
   const hidden = useTabHidden();
   const boxRef = useRef(null);
-  // Mouse and touch presses focus buttons too; only keyboard focus holds the reel.
-  const pointer = useRef(false);
+  // Clicks and taps focus buttons too, and so does the counter handing focus
+  // back to Rent it; only focus that follows a key press holds the reel.
+  const lastInput = useRef(null);
+  const spotsRef = useRef(spots);
+  spotsRef.current = spots;
 
   const count = loading ? 0 : spots.length;
   const found = pos.key ? spots.findIndex((s) => s.key === pos.key) : -1;
   const i = count ? (found >= 0 ? found : Math.min(pos.index, count - 1)) : 0;
   const spot = count ? spots[i] : null;
   const auto = !reduce && count > 1;
-  const playing = auto && !paused && !hovered && !focused && !hidden && !held;
+  const moving = !paused && !hovered && !focused && !hidden && !held;
+  const playing = auto && moving;
   const go = (n) => setPos({ key: spots[n].key, index: n });
 
   useEffect(() => {
+    const onKey = () => {
+      lastInput.current = 'key';
+    };
+    const onPointer = () => {
+      lastInput.current = 'pointer';
+    };
+    document.addEventListener('keydown', onKey, true);
+    document.addEventListener('pointerdown', onPointer, true);
+    document.addEventListener('mousedown', onPointer, true);
+    return () => {
+      document.removeEventListener('keydown', onKey, true);
+      document.removeEventListener('pointerdown', onPointer, true);
+      document.removeEventListener('mousedown', onPointer, true);
+    };
+  }, []);
+
+  // The list is rebuilt every minute and on every poll; read it at the cut so
+  // a rebuild doesn't restart the countdown.
+  useEffect(() => {
     if (!playing) return undefined;
-    const t = setTimeout(() => setPos({ key: spots[(i + 1) % count].key, index: (i + 1) % count }), interval);
+    const t = setTimeout(() => {
+      const list = spotsRef.current;
+      const n = (i + 1) % list.length;
+      setPos({ key: list[n].key, index: n });
+    }, interval);
     return () => clearTimeout(t);
-  }, [playing, i, count, interval, spots]);
+  }, [playing, i, count, interval]);
 
   // A focused control can leave with its spot (Watch now when the stream
   // ends); browsers fire no blur for that, so let go of the hold.
   const spotKey = spot ? spot.key : null;
+  // Pin the first spot by key too, so going live doesn't push it aside.
+  useEffect(() => {
+    if (spotKey && pos.key == null) setPos({ key: spotKey, index: i });
+  }, [spotKey, pos.key, i]);
   useEffect(() => {
     if (focused && boxRef.current && !boxRef.current.contains(document.activeElement)) setFocused(false);
   }, [spotKey, focused]);
@@ -149,18 +180,16 @@ export default function InStoreTv({ spots = [], loading = false, viewerName = nu
       ref={boxRef}
       data-testid="in-store-tv"
       className="mt-10"
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      onPointerDown={() => {
-        pointer.current = true;
+      // A tap fires pointerenter and no pointerleave until the next tap
+      // elsewhere, so only a real mouse counts as hovering.
+      onPointerEnter={(e) => {
+        if (!e.pointerType || e.pointerType === 'mouse') setHovered(true);
       }}
-      onKeyDown={() => {
-        pointer.current = false;
+      onPointerLeave={(e) => {
+        if (!e.pointerType || e.pointerType === 'mouse') setHovered(false);
       }}
       onFocus={(e) => {
-        const fromOutside = !e.currentTarget.contains(e.relatedTarget);
-        if (fromOutside && !pointer.current) setFocused(true);
-        pointer.current = false;
+        if (!e.currentTarget.contains(e.relatedTarget) && lastInput.current === 'key') setFocused(true);
       }}
       onBlur={(e) => {
         if (!e.currentTarget.contains(e.relatedTarget)) setFocused(false);
@@ -180,7 +209,7 @@ export default function InStoreTv({ spots = [], loading = false, viewerName = nu
             <p data-testid="spot-announcer" className="sr-only" aria-live={playing ? 'off' : 'polite'}>
               {`${spot.kicker}: ${spot.title}`}
             </p>
-            <Spot spot={spot} viewerName={viewerName} onOpen={onOpen} still={!playing} />
+            <Spot spot={spot} viewerName={viewerName} onOpen={onOpen} still={!moving} />
           </div>
         ) : (
           <p className={`${MONO} py-16 text-center text-xs tracking-[0.2em] text-onair-screen-ink`}>Tuning in…</p>

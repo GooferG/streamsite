@@ -60,15 +60,16 @@ test('previous and next step through the reel and wrap', () => {
   expect(title()).toBe('Win Wednesdays');
 });
 
-test('hovering or focusing the TV holds the spot', () => {
+test('hovering with a mouse or keyboard focus inside the TV holds the spot', () => {
   render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
   const box = screen.getByTestId('in-store-tv');
-  fireEvent.mouseEnter(box);
+  fireEvent.pointerEnter(box);
   tick();
   expect(title()).toBe('Win Wednesdays');
-  fireEvent.mouseLeave(box);
+  fireEvent.pointerLeave(box);
   tick();
   expect(title()).toBe('Leprecher max ARS');
+  fireEvent.keyDown(document, { key: 'Tab' });
   act(() => tv().getByRole('button', { name: 'Next spot' }).focus());
   tick();
   expect(title()).toBe('Leprecher max ARS');
@@ -104,6 +105,7 @@ test('a hidden tab or an open counter holds the reel', () => {
 test('Play restarts the reel even with focus still on the button', () => {
   render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
   const toggle = tv().getByRole('button', { name: 'Pause the reel' });
+  fireEvent.keyDown(document, { key: 'Tab' });
   act(() => toggle.focus());
   fireEvent.click(toggle);
   tick();
@@ -123,6 +125,46 @@ test('clicking Next with a mouse does not stall the reel', () => {
   expect(title()).toBe('Leprecher max ARS');
   tick();
   expect(title()).toBe('5 scat? pants off');
+});
+
+test('focus handed back from the counter after a mouse click does not hold the reel', () => {
+  render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
+  fireEvent.pointerDown(document.body);
+  act(() => tv().getByRole('button', { name: 'Rent it: Win Wednesdays' }).focus());
+  tick();
+  expect(title()).toBe('Leprecher max ARS');
+});
+
+test('a tap on a phone does not leave the reel held', () => {
+  render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
+  const over = new Event('pointerover', { bubbles: true });
+  Object.defineProperty(over, 'pointerType', { value: 'touch' });
+  act(() => {
+    screen.getByTestId('in-store-tv').dispatchEvent(over);
+  });
+  tick();
+  expect(title()).toBe('Leprecher max ARS');
+});
+
+test('a spot held from the start stays on screen when the stream goes live', () => {
+  const { rerender } = render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
+  fireEvent.click(tv().getByRole('button', { name: 'Pause the reel' }));
+  rerender(<InStoreTv spots={LIVE_SPOTS} onOpen={() => {}} />);
+  expect(title()).toBe('Win Wednesdays');
+  expect(tv().getByText('Spot 2 of 6')).toBeTruthy();
+});
+
+test('a list rebuild with the same spots does not restart the countdown', () => {
+  const { rerender } = render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
+  act(() => jest.advanceTimersByTime(SPOT_MS - 1000));
+  rerender(<InStoreTv spots={SPOTS.map((s) => ({ ...s }))} onOpen={() => {}} />);
+  act(() => jest.advanceTimersByTime(1000));
+  expect(title()).toBe('Leprecher max ARS');
+});
+
+test('a single spot still gets its slow push-in', () => {
+  render(<InStoreTv spots={SPOTS.slice(0, 1)} onOpen={() => {}} />);
+  expect(tv().getByRole('group').querySelector('img').className).not.toContain('[animation-play-state:paused]');
 });
 
 test('the reel waits behind Tuning in and opens on spot 1 when the floor lands', () => {

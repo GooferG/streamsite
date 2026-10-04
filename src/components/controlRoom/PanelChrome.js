@@ -51,19 +51,21 @@ export default function PanelChrome({
         <span id="cr-title" className="sr-only">
           Control room
         </span>
-        <Tally on={tallies.live} tone="red">LIVE</Tally>
-        <Tally on={tallies.gvw} tone="orange">GVW</Tally>
-        <Tally on={tallies.prd} tone="amber">PRD</Tally>
-        <Tally on={tallies.red > 0} tone="amber">
-          {tallies.red > 0 ? `RED ${tallies.red}` : 'RED'}
-        </Tally>
-        {dataLost && <Tally on tone="red">DATA</Tally>}
-        {!narrow && !docked && (
-          <span className="cr-grip" aria-hidden="true">
-            ⠿
-          </span>
-        )}
-        <div className="ml-auto flex items-center gap-1">
+        <div className="cr-tallies">
+          <Tally on={tallies.live} tone="red">LIVE</Tally>
+          <Tally on={tallies.gvw} tone="orange">GVW</Tally>
+          <Tally on={tallies.prd} tone="amber">PRD</Tally>
+          <Tally on={tallies.red > 0} tone="amber">
+            {tallies.red > 0 ? `RED ${tallies.red}` : 'RED'}
+          </Tally>
+          {dataLost && <Tally on tone="red">DATA</Tally>}
+          {!narrow && !docked && (
+            <span className="cr-grip" aria-hidden="true">
+              ⠿
+            </span>
+          )}
+        </div>
+        <div className="ml-auto flex shrink-0 items-center gap-1">
           <button
             type="button"
             aria-pressed={stage}

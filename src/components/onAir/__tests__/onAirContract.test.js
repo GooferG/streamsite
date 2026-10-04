@@ -5,12 +5,12 @@ const path = require('path');
 const config = require('../../../../tailwind.config.js');
 
 const ROOT = path.resolve(__dirname, '../../../..');
-const DIRS = ['src/components/onAir', 'src/components/hunts', 'src/components/nav'];
+const DIRS = ['src/components/onAir', 'src/components/hunts', 'src/components/store', 'src/components/nav'];
 // Nav chrome that lives outside the nav folder, scanned with the nav.
 const CONTROL_ROOM_BUTTON = 'src/components/controlRoom/ControlRoomButton.js';
 const FILES = [CONTROL_ROOM_BUTTON];
 // Fixture data and the per-slot tile tints are the recorded raw-colour exceptions.
-const RAW_COLOUR_EXEMPT = ['src/components/hunts/huntFixtures.js'];
+const RAW_COLOUR_EXEMPT = ['src/components/hunts/huntFixtures.js', 'src/components/store/storeFixtures.js'];
 
 const read = (rel) => [rel, fs.readFileSync(path.join(ROOT, rel), 'utf8')];
 
@@ -63,10 +63,12 @@ test('Type: nothing below the 10px floor, no unloaded 600 weight, mono tracking 
   expect(offenders(/text-\[0\.5625rem\]|font-semibold|tracking-\[0\.1[0-4]em\]/)).toEqual([]);
 });
 
-test('Tokens: no raw colours or bare radii in the Hunts and nav components', () => {
+test('Tokens: no raw colours or bare radii in the Hunts, Store and nav components', () => {
   expect(
     offenders(/rgba\(|#[0-9a-fA-F]{6}\b|\brounded\b(?!-)/, {
-      only: (rel) => (rel.startsWith('src/components/hunts/') || isNavChrome(rel)) && !RAW_COLOUR_EXEMPT.includes(rel),
+      only: (rel) =>
+        (rel.startsWith('src/components/hunts/') || rel.startsWith('src/components/store/') || isNavChrome(rel)) &&
+        !RAW_COLOUR_EXEMPT.includes(rel),
     })
   ).toEqual([]);
 });

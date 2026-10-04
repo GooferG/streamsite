@@ -105,6 +105,8 @@ module.exports = {
       backgroundImage: {
         // The guess meter's dotted track.
         'onair-track': 'repeating-linear-gradient(90deg, rgba(255,255,255,.18) 0 2px, transparent 2px 12px)',
+        // Scanlines over store item art (the Monitor screen's lines as a token).
+        'onair-scanlines': 'repeating-linear-gradient(0deg, rgba(255,255,255,.03) 0 1px, transparent 1px 3px)',
       },
       borderRadius: {
         'onair-bezel': '36px',
@@ -253,6 +255,11 @@ module.exports = {
           '0%, 100%': { opacity: '1' },
           '50%': { opacity: '0.35' },
         },
+        // The wallet's stub tearing off after an order.
+        'onair-tear': {
+          '0%': { transform: 'translateY(0) rotate(0deg)', opacity: '1' },
+          '100%': { transform: 'translateY(72px) rotate(-7deg)', opacity: '0' },
+        },
       },
       animation: {
         'slow-zoom': 'slow-zoom 18s ease-in-out infinite',
@@ -273,6 +280,7 @@ module.exports = {
         'onair-roll': 'onair-roll 0.4s linear infinite',
         'onair-ticker': 'onair-ticker 38s linear infinite',
         'onair-pulse': 'onair-pulse 1.4s ease-in-out infinite',
+        'onair-tear': 'onair-tear 0.6s cubic-bezier(0.5, 0, 0.75, 0) forwards',
       },
     },
   },

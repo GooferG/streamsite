@@ -47,7 +47,7 @@ function TickerRun({ items, tone, hidden }) {
   );
 }
 
-function Chyron({ tag, tone, items }) {
+function Chyron({ tag, tone, items, label = 'Hunt ticker' }) {
   return (
     <div className="relative flex h-10 items-stretch bg-black/[0.55] shadow-onair-row">
       <div
@@ -57,7 +57,7 @@ function Chyron({ tag, tone, items }) {
       </div>
       <div
         role="marquee"
-        aria-label="Hunt ticker"
+        aria-label={label}
         className="relative flex flex-1 items-center overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_4%,#000_96%,transparent)]"
       >
         <div className={`${MONO} flex whitespace-nowrap text-xs tracking-[0.18em] text-onair-ink-2 motion-safe:animate-onair-ticker`}>
@@ -83,7 +83,7 @@ function Knob({ label, sizeClass, deg, indicatorClass, className = '' }) {
   );
 }
 
-function BezelStrip({ readout, turns, live }) {
+function BezelStrip({ readout, turns, live, controls }) {
   return (
     <div className="flex items-center justify-between gap-4 px-3 pb-4 pt-3.5 sm:gap-5 sm:px-[18px]">
       <div className="flex items-center gap-3" aria-hidden="true">
@@ -94,6 +94,7 @@ function BezelStrip({ readout, turns, live }) {
         </span>
       </div>
       <div className="flex items-center gap-3 sm:gap-[22px]">
+        {controls}
         {readout && (
           <div
             className={`${MONO} flex items-center gap-2 whitespace-nowrap rounded-onair-tile bg-black/[0.35] px-3 py-[7px] text-[0.625rem] font-bold tracking-[0.18em] shadow-onair-well ${READOUT[readout.tone]}`}
@@ -130,12 +131,14 @@ export default function Monitor({
   channelKey = null,
   readout = null,
   chyron = null,
+  label = 'Hunt monitor',
+  controls = null,
   children,
 }) {
   const { switching, turns } = useChannelSwitch(channelKey);
   return (
     <section
-      aria-label="Hunt monitor"
+      aria-label={label}
       className="rounded-onair-bezel bg-gradient-to-b from-onair-bezel-top to-onair-bezel-bottom px-2.5 pt-2.5 shadow-onair-bezel sm:px-3.5 sm:pt-3.5"
     >
       <div
@@ -159,7 +162,7 @@ export default function Monitor({
         </div>
         {chyron && chyron.items.length > 0 && <Chyron {...chyron} />}
       </div>
-      <BezelStrip readout={readout} turns={turns} live={status === 'live'} />
+      <BezelStrip readout={readout} turns={turns} live={status === 'live'} controls={controls} />
     </section>
   );
 }

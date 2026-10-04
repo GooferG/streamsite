@@ -45,3 +45,22 @@ test('fitFigure sizes text to a share of the container width', () => {
   expect(size).toMatch(/^clamp\(3\.25rem, calc\([\d.]+cqi \* var\(--hero-share, 1\)\), 6rem\)$/);
   expect(fitFigure('Xilentdrifter', { min: 2.25, max: 3.75, share: '0.9' })).toContain('* 0.9)');
 });
+
+test('Ticket takes a label and renders a stub overlay outside the masked halves', () => {
+  render(
+    <Ticket label="Your wallet" header={<p>head</p>} stubOverlay={<span data-testid="ghost">−420</span>}>
+      <p>body</p>
+    </Ticket>
+  );
+  const slip = screen.getByRole('region', { name: 'Your wallet' });
+  expect(screen.getByTestId('ghost').parentElement).toBe(slip);
+  expect(slip.className).toContain('relative');
+});
+
+test('Chip has a small size and a loss tone', () => {
+  render(<Chip size="sm" tone="loss">Refunded</Chip>);
+  const chip = screen.getByText('Refunded');
+  expect(chip.className).toContain('text-xs');
+  expect(chip.className).toContain('text-onair-loss');
+  expect(chip.className).not.toContain('px-4');
+});

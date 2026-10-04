@@ -294,7 +294,7 @@ function StreamingSiteContent() {
             <Route path="users" element={<AdminUsersPage />} />
             <Route path="moderators" element={<AdminModeratorsPage />} />
           </Route>
-          <Route path="/store" element={<StorePage />} />
+          <Route path="/store" element={<StorePage isLive={isLive} />} />
           <Route path="/giveaway" element={<GiveawayPage />} />
           <Route path="/me" element={<MyAccountPage />} />
           <Route path="/suggest" element={<SuggestPage />} />

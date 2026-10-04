@@ -10,7 +10,7 @@
 .cr-top { display: flex; align-items: center; gap: 6px; padding: 7px 8px 7px 10px; background: #0b0b0d; border-bottom: 1px solid #222; font: 600 8px/1 source-code-pro, Menlo, Consolas, monospace; letter-spacing: 0.28em; color: #71717a; cursor: grab; touch-action: none; user-select: none; }
 .cr-tallies { display: flex; align-items: center; gap: 6px; min-width: 0; overflow: hidden; }
 .cr-panel.is-sheet .cr-top, .cr-panel.is-docked .cr-top { cursor: default; }
-.cr-tally { padding: 3px 5px; border-radius: 2px; background: #27272a; color: #52525b; letter-spacing: 0.2em; transition: background-color 0.2s, color 0.2s, box-shadow 0.2s; }
+.cr-tally { flex: none; white-space: nowrap; padding: 3px 5px; border-radius: 2px; background: #27272a; color: #52525b; letter-spacing: 0.2em; transition: background-color 0.2s, color 0.2s, box-shadow 0.2s; }
 .cr-tally.is-on.tone-red { background: #ef4444; color: #fff; box-shadow: 0 0 10px rgba(239, 68, 68, 0.7); }
 .cr-tally.is-on.tone-orange { background: #f97316; color: #0a0a0a; box-shadow: 0 0 10px rgba(249, 115, 22, 0.55); }
 .cr-tally.is-on.tone-amber { background: #ffb24d; color: #0a0a0a; box-shadow: 0 0 10px rgba(255, 178, 77, 0.5); }

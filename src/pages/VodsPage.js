@@ -28,7 +28,7 @@ function writeTapeParam(id) {
   window.history.replaceState(window.history.state, '', url);
 }
 
-function LiveStore({ videos, clips, loading, isLive, statusReady }) {
+function LiveStore({ videos, clips, loading, isLive, stream, statusReady }) {
   const { twitchUser } = useTwitchAuth();
   const recentClips = useRecentClips();
   const [initialTapeId] = useState(readTapeParam);
@@ -39,6 +39,7 @@ function LiveStore({ videos, clips, loading, isLive, statusReady }) {
       recentClips={recentClips}
       loading={loading}
       isLive={isLive}
+      stream={stream}
       statusReady={statusReady}
       viewerName={(twitchUser && twitchUser.displayName) || null}
       initialTapeId={initialTapeId}
@@ -47,7 +48,7 @@ function LiveStore({ videos, clips, loading, isLive, statusReady }) {
   );
 }
 
-export default function VodsPage({ videos = [], clips = [], loading = false, isLive = false, statusReady = false }) {
+export default function VodsPage({ videos = [], clips = [], loading = false, isLive = false, stream = null, statusReady = false }) {
   const [fixture] = useState(readFixture);
   return (
     <div className="relative min-h-screen px-4 pb-20 pt-24 sm:px-6">
@@ -55,7 +56,7 @@ export default function VodsPage({ videos = [], clips = [], loading = false, isL
         {fixture ? (
           <VideoStoreFront {...fixture} />
         ) : (
-          <LiveStore videos={videos} clips={clips} loading={loading} isLive={isLive} statusReady={statusReady} />
+          <LiveStore videos={videos} clips={clips} loading={loading} isLive={isLive} stream={stream} statusReady={statusReady} />
         )}
       </div>
     </div>

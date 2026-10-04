@@ -127,7 +127,16 @@ const WITH_MUTED = LIVE_VIDEOS.map((v, i) => (i === 0 ? { ...v, muted_segments: 
 
 export const VIDEO_STORE_FIXTURES = {
   rich: { ...base, videos: WITH_MUTED },
-  live: { ...base, isLive: true },
+  live: {
+    ...base,
+    isLive: true,
+    stream: {
+      title: 'Win Wednesdays 💥 Games and Gamba?  ' + TAIL,
+      game_name: 'Slots',
+      viewer_count: 42,
+      thumbnail_url: 'https://static-cdn.jtvnw.net/previews-ttv/live_user_gooferg-{width}x{height}.jpg',
+    },
+  },
   // Only clips from the last 60 days: no Cult classics aisle.
   fresh: { ...base, topClips: LIVE_TOP_CLIPS.filter((c) => Date.parse(c.created_at) >= cutoff) },
   // No recent clips at all: no Fresh picks aisle.

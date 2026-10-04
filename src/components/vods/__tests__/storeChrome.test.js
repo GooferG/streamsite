@@ -2,6 +2,7 @@ import { fireEvent, render, screen } from '@testing-library/react';
 import StoreSign from '../StoreSign';
 import AisleSigns from '../AisleSigns';
 import Clerk from '../Clerk';
+import { NAV_H } from '../../nav/navMetrics';
 
 test('the sign is the page heading', () => {
   render(<StoreSign isLive={false} statusReady={false} />);
@@ -46,6 +47,13 @@ test('aisle signs jump to their aisle and hand it focus', () => {
   expect(screen.getByRole('navigation', { name: 'Aisles' })).toBeTruthy();
   fireEvent.click(link);
   expect(document.activeElement).toBe(screen.getByRole('heading', { name: 'Fresh picks' }));
+});
+
+test('the aisle bar sticks just under the site nav', () => {
+  render(<AisleSigns aisles={[{ id: 'fresh-picks', label: 'Fresh picks', count: 12 }]} />);
+  const nav = screen.getByRole('navigation', { name: 'Aisles' });
+  expect(nav.className).toContain('sticky');
+  expect(nav.style.top).toBe(`${NAV_H + 8}px`);
 });
 
 test('the clerk is set dressing and bows out when the art is missing', () => {

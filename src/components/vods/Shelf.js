@@ -11,7 +11,7 @@ export function Aisle({ id, title, count, children }) {
         <h2
           id={id}
           tabIndex={-1}
-          className="scroll-mt-24 text-[1.875rem] font-extrabold leading-none tracking-[-0.03em] text-onair-ink-1 outline-none"
+          className="scroll-mt-36 text-[1.875rem] font-extrabold leading-none tracking-[-0.03em] text-onair-ink-1 outline-none"
         >
           {title}
         </h2>

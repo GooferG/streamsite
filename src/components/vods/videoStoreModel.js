@@ -84,12 +84,12 @@ export function catalogueNo(id) {
   return String(id).slice(-4);
 }
 
-// The 440×248 cover, or null for a VOD with no picture yet (an empty URL, or
-// Twitch's /_404/ processing image).
-export function coverUrl(video) {
+// The cover at width×height (440×248 on the shelf), or null for a VOD with no
+// picture yet (an empty URL, or Twitch's /_404/ processing image).
+export function coverUrl(video, width = 440, height = 248) {
   const url = video && video.thumbnail_url;
   if (!url || url.includes('/_404/')) return null;
-  return url.replace('%{width}', '440').replace('%{height}', '248');
+  return url.replace('%{width}', String(width)).replace('%{height}', String(height));
 }
 
 // When Twitch deletes the VOD, in calendar days on the viewer's clock.
@@ -173,6 +173,7 @@ function toTape(video, now, timeZone) {
     stock: tapeStock(seconds),
     views: formatViews(video.view_count),
     cover: coverUrl(video),
+    wideCover: coverUrl(video, 1280, 720),
     url: video.url,
     daysLeft: due.daysLeft,
     dueDate: due.daysLeft === 0 ? 'Today' : shortDate(due.date, timeZone),
@@ -306,4 +307,59 @@ export function buildStore({ videos = [], topClips = [], recentClips = [], now, 
     counts: { tapes: tapes.length, fresh: fresh.length, classics: classics.length, clips: clips.length },
     byId,
   };
+}
+
+const byViews = (a, b) => b.viewCount - a.viewCount;
+
+// The in-store TV's trailer reel (DESIGN.md §7, Video store): the stream while
+// Goofer is live, then the newest tape, the three most-watched Fresh picks
+// that have a name ("No label" makes a bad ad), and the most-watched Cult
+// classic. Clip facts leave out "Picked by", which depends on the viewer.
+export function promoSpots(store, { isLive = false, stream = null } = {}) {
+  const spots = [];
+  if (isLive) {
+    spots.push({
+      key: 'live',
+      kind: 'live',
+      kicker: 'On the air now',
+      title: stream && stream.title ? cleanTitle(stream.title) : 'Goofer is live',
+      cover:
+        stream && stream.thumbnail_url
+          ? stream.thumbnail_url.replace('{width}', '1280').replace('{height}', '720')
+          : null,
+      facts: stream
+        ? [stream.game_name, Number.isFinite(stream.viewer_count) ? `${formatViews(stream.viewer_count)} watching` : null].filter(Boolean)
+        : [],
+      item: null,
+    });
+  }
+  const newest = store.shelves.length ? store.shelves[0].tapes[0] : null;
+  if (newest) {
+    spots.push({
+      key: `vod-${newest.id}`,
+      kind: 'vod',
+      kicker: 'Now on tape',
+      title: newest.title,
+      cover: newest.wideCover,
+      facts: [newest.dateLabel, newest.length, newest.stock],
+      item: newest,
+    });
+  }
+  const clipSpot = (clip, kicker) => ({
+    key: `clip-${clip.id}`,
+    kind: 'clip',
+    kicker,
+    title: clip.label,
+    cover: clip.cover,
+    facts: [clip.length, `${clip.views} ${clip.viewCount === 1 ? 'view' : 'views'}`],
+    item: clip,
+  });
+  store.fresh
+    .filter((c) => !c.unlabeled)
+    .sort(byViews)
+    .slice(0, 3)
+    .forEach((clip) => spots.push(clipSpot(clip, 'Fresh pick')));
+  const classic = store.aisles.length ? store.aisles[0].clips[0] : null;
+  if (classic) spots.push(clipSpot(classic, `Staff pick · ${classic.year.replace('© ', '')}`));
+  return spots;
 }

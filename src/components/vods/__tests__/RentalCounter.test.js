@@ -7,6 +7,7 @@ const store = buildStore(F.rich);
 const SEP30 = store.byId['2888141530'];
 const OCT1 = store.byId['2889109731'];
 const SCAT = store.byId['CarefulHyperCasetteKlappa-YJOqxReFjKsu26i4'];
+const UNNAMED = store.byId['GiantViscousFerretNinjaGrumpy-0S22YNqMADX44pfl'];
 const CLASSIC = store.byId.GeniusSmokyOpossumFrankerZ;
 
 function renderCounter(props = {}) {
@@ -101,4 +102,40 @@ test('the page behind does not scroll while the counter is open', () => {
   expect(document.body.style.overflow).toBe('hidden');
   unmount();
   expect(document.body.style.overflow).toBe('');
+});
+
+test('focus that wandered outside the counter is pulled back in on Tab', () => {
+  const outside = document.createElement('button');
+  document.body.appendChild(outside);
+  const { dialog } = renderCounter();
+  const focusables = dialog().querySelectorAll('a[href], button:not([disabled]), iframe');
+  outside.focus();
+  fireEvent.keyDown(document, { key: 'Tab' });
+  expect(document.activeElement).toBe(focusables[0]);
+  outside.focus();
+  fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+  expect(document.activeElement).toBe(focusables[focusables.length - 1]);
+  outside.remove();
+});
+
+test('switching tapes moves focus to the close button', () => {
+  const handlers = { onSeek: jest.fn(), onSwitch: jest.fn(), onClose: jest.fn() };
+  const { rerender } = render(<RentalCounter item={SCAT} at={null} viewerName={null} {...handlers} />);
+  const found = screen.getByRole('button', { name: /^Found on tape/ });
+  found.focus();
+  expect(document.activeElement).toBe(found);
+  rerender(<RentalCounter item={SEP30} at={null} viewerName={null} {...handlers} />);
+  expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Esc, close the counter' }));
+});
+
+test('an unlabeled clip keeps its generated label out of the marker face', () => {
+  renderCounter({ item: UNNAMED });
+  const h2 = screen.getByRole('dialog').querySelector('h2');
+  expect(h2.textContent.startsWith('No label')).toBe(true);
+  expect(h2.className.includes('font-onair-marker')).toBe(false);
+});
+
+test('the header strip separates the shop from the rental', () => {
+  renderCounter();
+  expect(screen.getByRole('dialog').textContent.includes('Goofer Video·Rental No. 1530')).toBe(true);
 });

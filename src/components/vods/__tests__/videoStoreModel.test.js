@@ -158,6 +158,8 @@ test('clips nobody named read No label at their timestamp', () => {
     'No label · at 1:41:31',
     'No label · at 3:16:55',
   ]);
+  expect(rich.fresh.filter((c) => c.unlabeled)).toHaveLength(5);
+  expect(rich.byId.GeniusSmokyOpossumFrankerZ.unlabeled).toBe(false);
   expect(isUnlabeled(`Monday Hunts and Twists${TAIL}`, null)).toBe(true);
   expect(isUnlabeled('Win Wednesdays', 'Win Wednesdays')).toBe(true);
   expect(isUnlabeled('500x hit', 'Hunting')).toBe(false);

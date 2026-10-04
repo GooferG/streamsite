@@ -194,13 +194,15 @@ function toClip(clip, tapesById, timeZone) {
   const seconds = Math.round(Number(clip.duration) || 0);
   const offset = Number.isFinite(clip.vod_offset) ? clip.vod_offset : null;
   const tape = clip.video_id ? tapesById.get(String(clip.video_id)) : null;
-  const label = isUnlabeled(clip.title, tape && tape.rawTitle)
+  const unlabeled = isUnlabeled(clip.title, tape && tape.rawTitle);
+  const label = unlabeled
     ? `No label · ${offset != null ? `at ${formatCounter(offset)}` : shortDate(createdMs, timeZone)}`
     : cleanTitle(clip.title, 'Untitled clip');
   return {
     kind: 'clip',
     id: String(clip.id),
     label,
+    unlabeled,
     picker: clip.creator_name || 'someone in chat',
     createdMs,
     dateLabel: fullDate(createdMs, timeZone),

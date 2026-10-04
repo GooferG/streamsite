@@ -78,7 +78,7 @@ function ClipBack({ clip, viewerName, onSwitch }) {
   const found = clip.foundOn;
   return (
     <section aria-label="Back of the box" className="min-w-0">
-      <h2 id="rental-title" className="break-words font-onair-marker text-[1.5rem] leading-tight text-onair-paper">
+      <h2 id="rental-title" className={`break-words leading-tight text-onair-paper ${clip.unlabeled ? 'font-extrabold' : 'font-onair-marker'} text-[1.5rem]`}>
         {clip.label}
       </h2>
       <p className={`mt-2 text-[0.9375rem] font-bold ${pick.you ? 'text-onair-viewer-light' : 'text-onair-ink-3'}`}>{pick.text}</p>
@@ -124,6 +124,10 @@ export default function RentalCounter({ item, at, viewerName, onSeek, onSwitch, 
   }, []);
 
   useEffect(() => {
+    closeRef.current?.focus();
+  }, [item.id]);
+
+  useEffect(() => {
     const onKey = (e) => {
       if (e.key === 'Escape') {
         onClose();
@@ -134,6 +138,11 @@ export default function RentalCounter({ item, at, viewerName, onSeek, onSwitch, 
       if (!list || list.length === 0) return;
       const first = list[0];
       const last = list[list.length - 1];
+      if (!panelRef.current.contains(document.activeElement)) {
+        e.preventDefault();
+        (e.shiftKey ? last : first).focus();
+        return;
+      }
       if (e.shiftKey && document.activeElement === first) {
         e.preventDefault();
         last.focus();
@@ -165,6 +174,7 @@ export default function RentalCounter({ item, at, viewerName, onSeek, onSwitch, 
       >
         <div className="flex items-center gap-3 px-5 pt-4">
           <span className={`${MONO} text-[0.6875rem] font-bold tracking-[0.2em] text-onair-signal`}>Goofer Video</span>
+          <span aria-hidden="true" className={`${MONO} text-[0.6875rem] tracking-[0.2em] text-onair-ink-5`}>·</span>
           <span className={`${MONO} text-[0.6875rem] tracking-[0.2em] text-onair-ink-4`}>
             {isVod ? `Rental No. ${item.no}` : 'Clip'}
           </span>

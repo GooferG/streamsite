@@ -107,3 +107,15 @@ body.brand-route {
   from { opacity: 1; }
   to { opacity: 0; }
 }
+
+/* The couch (DESIGN.md §7, The couch). Screen dressing over the TV and the
+   laptop: scanlines, a curvature vignette and glass glare. */
+.couch-crt {
+  background:
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 0.03) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% 50%, transparent 58%, rgb(0 0 0 / 0.45)),
+    linear-gradient(160deg, rgb(255 255 255 / 0.07), transparent 38%);
+}
+.couch-flip-static {
+  animation: camera-static-out 300ms ease-in both;
+}

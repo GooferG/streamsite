@@ -1,0 +1,65 @@
+import { act, render, screen } from '@testing-library/react';
+import CouchTv from '../CouchTv';
+import { STATIC_MS } from '../reel';
+
+const STILL = { kind: 'still', id: 's1', src: '/a.jpg' };
+const CARD = { kind: 'card', id: 'card-0', kicker: 'Off air', text: 'Back tomorrow.' };
+const VIDEO = { kind: 'video', id: 'v1', sources: { av1: '/v1.webm', h264: '/v1.mp4' }, poster: '/v1.jpg' };
+const OFF = { state: 'offair', preview: null, viewers: null, cards: [] };
+
+beforeEach(() => {
+  jest.useFakeTimers();
+  HTMLMediaElement.prototype.play = jest.fn(() => Promise.resolve());
+});
+afterEach(() => jest.useRealTimers());
+
+test('waiting shows static and the whole TV is decorative', () => {
+  render(<CouchTv tv={{ ...OFF, state: 'waiting' }} items={[]} mode="video" />);
+  expect(screen.getByTestId('tv-static')).toBeTruthy();
+  expect(screen.getByTestId('couch-tv').getAttribute('aria-hidden')).toBe('true');
+});
+
+test('live shows the preview and the tally', () => {
+  render(<CouchTv tv={{ state: 'live', preview: '/p-640x360.jpg?p=1', viewers: 214, cards: [] }} items={[STILL]} mode="video" />);
+  expect(screen.getByTestId('tv-live').getAttribute('src')).toBe('/p-640x360.jpg?p=1');
+  expect(screen.getByText('Live · 214')).toBeTruthy();
+  expect(screen.queryByTestId('tv-still')).toBeNull();
+});
+
+test('stills advance through a static cut to the card', () => {
+  render(<CouchTv tv={OFF} items={[STILL, CARD]} mode="stills" segmentMs={1000} />);
+  expect(screen.getByTestId('tv-still').getAttribute('src')).toBe('/a.jpg');
+  act(() => jest.advanceTimersByTime(1000));
+  expect(screen.getByTestId('tv-switch')).toBeTruthy();
+  act(() => jest.advanceTimersByTime(STATIC_MS));
+  expect(screen.getByTestId('tv-card').textContent).toContain('Back tomorrow.');
+});
+
+test('hold mode keeps one still with the sentence and never advances', () => {
+  render(<CouchTv tv={OFF} items={[CARD, STILL]} mode="hold" segmentMs={1000} />);
+  act(() => jest.advanceTimersByTime(10000));
+  expect(screen.getByTestId('tv-still')).toBeTruthy();
+  expect(screen.getByText('Back tomorrow.')).toBeTruthy();
+  expect(screen.queryByTestId('tv-switch')).toBeNull();
+});
+
+test('stills mode shows a loop as its poster', () => {
+  render(<CouchTv tv={OFF} items={[VIDEO]} mode="stills" />);
+  expect(screen.getByTestId('tv-still').getAttribute('src')).toBe('/v1.jpg');
+});
+
+test('video mode plays muted and reports a refused autoplay', async () => {
+  HTMLMediaElement.prototype.play = jest.fn(() => Promise.reject(new Error('NotAllowedError')));
+  const onBlocked = jest.fn();
+  render(<CouchTv tv={OFF} items={[VIDEO]} mode="video" onAutoplayBlocked={onBlocked} />);
+  const video = screen.getByTestId('tv-video');
+  expect(video.muted).toBe(true);
+  expect(video.querySelectorAll('source')).toHaveLength(2);
+  await act(async () => {});
+  expect(onBlocked).toHaveBeenCalled();
+});
+
+test('the remote flips the screen to the GSN ident', () => {
+  render(<CouchTv tv={OFF} items={[STILL]} mode="stills" flipTo="gsn" />);
+  expect(screen.getByTestId('tv-flip').getAttribute('src')).toBe('/gsn/ident.webp');
+});

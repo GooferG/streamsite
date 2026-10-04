@@ -20,6 +20,8 @@ import {
 import { useRedemptionAction } from './useRedemptionAction';
 
 const ARM_MS = 4000;
+// A double click would arm and confirm in one go; ignore presses this soon after arming.
+const CONFIRM_GUARD_MS = 400;
 
 // Refund only goes through on a second press inside 4s. The label counts down
 // so the operator can see the window closing.
@@ -27,6 +29,10 @@ function RefundButton({ disabled, onConfirm }) {
   const [armedAt, setArmedAt] = useState(null);
   const armed = armedAt != null;
   const now = useClock({ intervalMs: 250, active: armed });
+  // Pressing another action on the row (it goes busy) disarms the refund.
+  useEffect(() => {
+    if (disabled) setArmedAt(null);
+  }, [disabled]);
   useEffect(() => {
     if (armedAt == null) return undefined;
     const t = setTimeout(() => setArmedAt(null), ARM_MS);
@@ -40,8 +46,9 @@ function RefundButton({ disabled, onConfirm }) {
       type="button"
       className="cr-btn"
       disabled={disabled}
-      onClick={() => {
+      onClick={(e) => {
         if (armed) {
+          if (e.detail > 1 || Date.now() - armedAt < CONFIRM_GUARD_MS) return;
           setArmedAt(null);
           onConfirm();
         } else {

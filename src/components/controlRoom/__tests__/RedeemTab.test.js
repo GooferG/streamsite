@@ -88,10 +88,43 @@ test('Refund needs a second press within 4s', async () => {
   const row = rowOf('Pick a Slot');
   fireEvent.click(within(row).getByRole('button', { name: 'Refund' }));
   expect(authedFetch).not.toHaveBeenCalled();
+  act(() => {
+    jest.advanceTimersByTime(500);
+  });
   await act(async () => {
-    fireEvent.click(within(row).getByRole('button', { name: 'Confirm refund · 4s' }));
+    fireEvent.click(within(row).getByRole('button', { name: /Confirm refund/ }));
   });
   expect(sentBody(0)).toEqual({ id: 'r1', action: 'cancel', note: null });
+});
+
+test('a double click on Refund does not confirm it', () => {
+  show();
+  const row = rowOf('Pick a Slot');
+  fireEvent.click(within(row).getByRole('button', { name: 'Refund' }));
+  fireEvent.click(within(row).getByRole('button', { name: /Confirm refund/ }), { detail: 2 });
+  expect(authedFetch).not.toHaveBeenCalled();
+});
+
+test('a confirm press within 400ms of arming sends nothing and stays armed', () => {
+  show();
+  const row = rowOf('Pick a Slot');
+  fireEvent.click(within(row).getByRole('button', { name: 'Refund' }));
+  act(() => {
+    jest.advanceTimersByTime(300);
+  });
+  fireEvent.click(within(row).getByRole('button', { name: /Confirm refund/ }));
+  expect(authedFetch).not.toHaveBeenCalled();
+  expect(within(row).getByRole('button', { name: /Confirm refund/ })).toBeTruthy();
+});
+
+test('pressing Fulfill disarms an armed Refund', () => {
+  authedFetch.mockImplementation(() => new Promise(() => {}));
+  show();
+  const row = rowOf('Pick a Slot');
+  fireEvent.click(within(row).getByRole('button', { name: 'Refund' }));
+  fireEvent.click(within(row).getByRole('button', { name: 'Fulfill' }));
+  const refund = within(row).getByRole('button', { name: 'Refund' });
+  expect(refund.disabled).toBe(true);
 });
 
 test('an armed Refund counts down and disarms after 4s', () => {

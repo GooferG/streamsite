@@ -1,6 +1,6 @@
 // Dev-only fixtures for /store?fixture=… (StorePage strips them from
-// production builds). Items mirror the live catalogue; art is left out so the
-// fallbacks show until the generated art lands.
+// production builds). Items mirror the live catalogue and use the generated
+// art in public/gsn/items (scripts/gsn-art).
 
 const NOW = Date.now();
 const MIN = 60 * 1000;
@@ -13,7 +13,7 @@ const ITEMS = [
     cost: 420,
     kind: 'stream',
     stock: null,
-    imageUrl: null,
+    imageUrl: '/gsn/items/smoke-break.webp',
     sortOrder: 0,
     active: true,
   },
@@ -24,7 +24,7 @@ const ITEMS = [
     cost: 1500,
     kind: 'stream',
     stock: null,
-    imageUrl: null,
+    imageUrl: '/gsn/items/pick-a-slot.webp',
     sortOrder: 0,
     active: true,
   },
@@ -35,7 +35,7 @@ const ITEMS = [
     cost: 10000,
     kind: 'stream',
     stock: 5,
-    imageUrl: null,
+    imageUrl: '/gsn/items/bonus-buy.webp',
     sortOrder: 0,
     active: true,
   },

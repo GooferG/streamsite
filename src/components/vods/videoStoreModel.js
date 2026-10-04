@@ -185,6 +185,8 @@ function toTape(video, now, timeZone) {
         ? (video.muted_segments || []).map((m) => ({
             start: clamp01(m.offset / seconds),
             width: clamp01(m.duration / seconds),
+            from: formatCounter(m.offset),
+            to: formatCounter(Math.min(m.offset + m.duration, seconds)),
           }))
         : [],
     marks: [],
@@ -330,6 +332,7 @@ export function promoSpots(store, { isLive = false, stream = null } = {}) {
         stream && stream.thumbnail_url
           ? stream.thumbnail_url.replace('{width}', '1280').replace('{height}', '720')
           : null,
+      coverSet: null,
       facts: stream
         ? [stream.game_name, Number.isFinite(stream.viewer_count) ? `${formatViews(stream.viewer_count)} watching` : null].filter(Boolean)
         : [],
@@ -347,6 +350,7 @@ export function promoSpots(store, { isLive = false, stream = null } = {}) {
       kicker: 'Now on tape',
       title: newest.title,
       cover: newest.wideCover,
+      coverSet: newest.cover && newest.wideCover ? `${newest.cover} 440w, ${newest.wideCover} 1280w` : null,
       facts: [newest.dateLabel, newest.length, newest.stock],
       item: newest,
     });
@@ -357,6 +361,7 @@ export function promoSpots(store, { isLive = false, stream = null } = {}) {
     kicker,
     title: clip.label,
     cover: clip.cover,
+    coverSet: null,
     facts: [clip.length, `${clip.views} ${clip.viewCount === 1 ? 'view' : 'views'}`],
     item: clip,
   });

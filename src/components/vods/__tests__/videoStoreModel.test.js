@@ -128,7 +128,7 @@ test('tapes carry their box facts', () => {
     dueLabel: 'Due back Nov 30',
   });
   expect(t.cover).toMatch(/thumb0-440x248\.jpg$/);
-  expect(t.muted).toEqual([{ start: 5400 / 16640, width: 600 / 16640 }]);
+  expect(t.muted).toEqual([{ start: 5400 / 16640, width: 600 / 16640, from: '1:30:00', to: '1:40:00' }]);
 });
 
 test('stickers: new release, then due back, then clips inside, two at most', () => {
@@ -294,6 +294,8 @@ test('promoSpots: the newest tape, the three most-watched named picks, the top c
     facts: ['Thu, Oct 1', '4:37:20', 'T-120 · EP'],
   });
   expect(spots[0].cover).toMatch(/thumb0-1280x720\.jpg$/);
+  expect(spots[0].coverSet).toMatch(/thumb0-440x248\.jpg 440w, .*thumb0-1280x720\.jpg 1280w$/);
+  expect(spots[1].coverSet).toBeNull();
   expect(spots[0].item.id).toBe('2889109731');
   expect(spots.slice(1, 4).map((s) => [s.kicker, s.title])).toEqual([
     ['Fresh pick', 'Leprecher max ARS'],
@@ -361,4 +363,10 @@ test('promoSpots: the staff pick is the most-watched classic with a name', () =>
   };
   const store = buildStore({ ...F.rich, topClips: [unnamed, ...F.rich.topClips] });
   expect(promoSpots(store).find((s) => s.kicker.startsWith('Staff pick')).title).toBe('What just happened');
+});
+
+test('a muted stretch that runs past the end of the tape reads to the end', () => {
+  const video = { ...F.rich.videos[0], duration: '1h0m0s', muted_segments: [{ offset: 3000, duration: 1200 }] };
+  const tape = buildStore({ ...F.rich, videos: [video] }).byId[video.id];
+  expect(tape.muted).toEqual([{ start: 3000 / 3600, width: 1200 / 3600, from: '0:50:00', to: '1:00:00' }]);
 });

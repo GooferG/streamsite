@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { getGameNames, getTwitchAccessToken, getTwitchClipsBetween, getTwitchUserId } from '../../utils/twitchApi';
+import { dropTwitchToken, getGameNames, getTwitchAccessToken, getTwitchClipsBetween, getTwitchUserId } from '../../utils/twitchApi';
 import { ARCHIVE_DAYS } from './videoStoreModel';
 
 const DAY_MS = 86400000;
@@ -26,7 +26,9 @@ export default function useRecentClips() {
         const names = await getGameNames(token, found.map((c) => c.game_id));
         if (!cancelled) setClips(found.map((c) => ({ ...c, game_name: names[c.game_id] || '' })));
       } catch {
-        // App's top clips still fill Fresh picks.
+        // App's top clips still fill Fresh picks. Drop the cached token too,
+        // in case it was revoked.
+        dropTwitchToken();
       }
     })();
     return () => {

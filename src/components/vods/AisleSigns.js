@@ -19,7 +19,12 @@ export default function AisleSigns({ aisles }) {
   return (
     <nav aria-label="Aisles" className="sticky z-30 mt-8" style={{ top: NAV_H + 8 }}>
       {/* p-1.5 leaves room inside the scroller for each link's focus ring. */}
-      <ul className="flex gap-1 overflow-x-auto rounded-onair-card bg-gradient-to-b from-onair-surface-1 to-onair-surface-3 p-1.5 shadow-onair-card">
+      {/* Tailwind's preflight removes list markers, and Safari then drops the list semantics. */}
+      {/* eslint-disable-next-line jsx-a11y/no-redundant-roles */}
+      <ul
+        role="list"
+        className="flex gap-1 overflow-x-auto rounded-onair-card bg-gradient-to-b from-onair-surface-1 to-onair-surface-3 p-1.5 shadow-onair-card"
+      >
         {aisles.map((a) => (
           <li key={a.id} className="shrink-0">
             <a
@@ -27,7 +32,7 @@ export default function AisleSigns({ aisles }) {
               onClick={(e) => jump(e, a.id)}
               className={`inline-flex items-baseline gap-2 whitespace-nowrap rounded-onair-control px-4 py-2 transition-colors hover:bg-white/[0.07] ${FOCUS}`}
             >
-              <span className="text-[0.9375rem] font-bold text-onair-ink-1">{a.label}</span>
+              <span className="text-[0.9375rem] font-bold text-onair-ink-1">{a.label}</span>{' '}
               <span className={`${MONO} text-[0.6875rem] tracking-[0.2em] text-onair-ink-4`}>{padCount(a.count)}</span>
             </a>
           </li>

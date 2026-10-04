@@ -50,7 +50,7 @@ All files are Vercel function handlers (`export default async function handler(r
 
 ### Twitch data flow
 
-- `src/utils/twitchApi.js` calls `/api/twitch-token` then hits `helix/*` directly from the browser using `TWITCH_CLIENT_ID` from `src/constants.js`. Username (`GooferG`) is hardcoded in `constants.js`.
+- `src/utils/twitchApi.js` calls `/api/twitch-token` then hits `helix/*` directly from the browser using `TWITCH_CLIENT_ID` from `src/constants.js`. Username (`GooferG`) is hardcoded in `constants.js`. `getTwitchAccessToken` caches one app token per tab (refreshed at least hourly) and `getTwitchUserId` the id, so App's 120s poll and /vods' recent-clips fetch share them.
 
 ### Misc
 

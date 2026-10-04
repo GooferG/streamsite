@@ -32,6 +32,23 @@ test('the reel opens on the newest tape', () => {
   expect(tv().getByRole('marquee', { name: 'Store ticker' })).toBeTruthy();
 });
 
+test('the vod spot offers a small and a wide cover', () => {
+  render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
+  const img = screen.getByTestId('in-store-tv').querySelector('img');
+  expect(img.getAttribute('srcset')).toMatch(/440w, .*1280w$/);
+});
+
+test('a playing reel preloads the next spot cover', () => {
+  const spy = jest.spyOn(window, 'Image');
+  try {
+    render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
+    const srcs = spy.mock.results.map((r) => r.value.src);
+    expect(srcs).toContain(SPOTS[1].cover);
+  } finally {
+    spy.mockRestore();
+  }
+});
+
 test('it cuts to the next spot every few seconds and wraps', () => {
   render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
   tick();
@@ -257,4 +274,30 @@ test('while loading the TV tunes in', () => {
 test('no spots and not loading: no TV', () => {
   const { container } = render(<InStoreTv spots={[]} onOpen={() => {}} />);
   expect(container.innerHTML).toBe('');
+});
+
+test('a preload carries the next spot srcset and sizes', () => {
+  const spots = [SPOTS[1], SPOTS[0]];
+  const spy = jest.spyOn(window, 'Image');
+  try {
+    render(<InStoreTv spots={spots} onOpen={() => {}} />);
+    const img = spy.mock.results.map((r) => r.value).find((v) => v.src === SPOTS[0].cover);
+    expect(img.srcset).toBe(SPOTS[0].coverSet);
+    expect(img.sizes).toBe('(min-width: 640px) 55vw, 100vw');
+  } finally {
+    spy.mockRestore();
+  }
+});
+
+test('a paused reel preloads nothing', () => {
+  const spy = jest.spyOn(window, 'Image');
+  try {
+    render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
+    spy.mockClear();
+    fireEvent.click(tv().getByRole('button', { name: 'Pause the reel' }));
+    tick();
+    expect(spy).not.toHaveBeenCalled();
+  } finally {
+    spy.mockRestore();
+  }
 });

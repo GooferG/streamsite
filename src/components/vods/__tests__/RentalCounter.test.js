@@ -36,6 +36,8 @@ test('a seek starts the player at the clip, and its mark reads as current', () =
   );
   const mark = within(dialog()).getByRole('button', { name: 'Jump to 3:57:20, 5 scat? pants off' });
   expect(mark.getAttribute('aria-current')).toBe('true');
+  // The track clips overflow, so the ring sits inside the button.
+  expect(mark.className).toContain('focus-visible:-outline-offset-2');
 });
 
 test('clip marks and the clip list both seek', () => {
@@ -49,6 +51,7 @@ test('clip marks and the clip list both seek', () => {
 test('muted stretches show as static, and a tape nobody clipped says so', () => {
   const { dialog } = renderCounter({ item: OCT1 });
   expect(dialog().querySelectorAll('[data-muted]')).toHaveLength(1);
+  expect(within(dialog()).getByText('Audio muted 1:30:00 to 1:40:00')).toBeTruthy();
   expect(within(dialog()).queryByText('No clips on this tape yet')).toBeNull();
   expect(within(dialog()).queryByRole('list', { name: 'Clip marks' })).toBeNull();
   expect(within(dialog()).getByText('Nobody clipped this one yet.')).toBeTruthy();

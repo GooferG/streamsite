@@ -29,7 +29,7 @@ test('New releases shelves the tapes by week, newest first', () => {
 test('aisle signs carry the counts and hand focus to the aisle', () => {
   renderStore('rich');
   const nav = within(screen.getByRole('navigation', { name: 'Aisles' }));
-  expect(nav.getAllByRole('link').map((a) => a.textContent)).toEqual(['Fresh picks012', 'New releases027', 'Cult classics016']);
+  expect(nav.getAllByRole('link').map((a) => a.textContent)).toEqual(['Fresh picks 012', 'New releases 027', 'Cult classics 016']);
   fireEvent.click(nav.getByRole('link', { name: /^Cult classics/ }));
   expect(document.activeElement).toBe(screen.getByRole('heading', { level: 2, name: 'Cult classics' }));
 });
@@ -71,24 +71,17 @@ test('an aisle with nothing in it is left out, and so is its sign', () => {
   expect(screen.queryByRole('link', { name: /^Fresh picks/ })).toBeNull();
 });
 
-test('Cult classics files clips behind a divider per game, most watched first', () => {
+test('Cult classics runs as one shelf, a paper divider before each game, most watched first', () => {
   renderStore('rich');
-  expect(aisle('Cult classics').getAllByRole('heading', { level: 3 }).map((h) => h.textContent)).toEqual([
-    'Escape from Tarkov',
-    'League of Legends',
-    'Nioh',
-    'Misc.',
-    'Slots',
-    'iRacing',
-    'PUBG: BATTLEGROUNDS',
-    'World of Warcraft',
-    'Fortnite',
+  expect(aisle('Cult classics').getAllByRole('heading', { level: 4 }).map((h) => h.textContent)).toEqual([
+    'Escape from Tarkov', 'League of Legends', 'Nioh', 'Misc.', 'Slots', 'iRacing', 'PUBG: BATTLEGROUNDS', 'World of Warcraft', 'Fortnite',
   ]);
-  expect(
-    within(screen.getByRole('list', { name: 'Escape from Tarkov' }))
-      .getAllByRole('button')
-      .map((b) => b.getAttribute('aria-label'))
-  ).toEqual(['What just happened, Picked by Moogle_Cat, 0:39, © 2018', 'ghost?, Picked by GooferG, 0:08, © 2018']);
+  const items = within(screen.getByRole('list', { name: 'Filed by game' })).getAllByRole('listitem');
+  expect(items).toHaveLength(9 + 16);
+  expect(within(items[0]).getByRole('heading', { level: 4 }).textContent).toBe('Escape from Tarkov');
+  expect(within(items[1]).getByRole('button').getAttribute('aria-label')).toBe('What just happened, Picked by Moogle_Cat, 0:39, © 2018');
+  expect(within(items[2]).getByRole('button').getAttribute('aria-label')).toBe('ghost?, Picked by GooferG, 0:08, © 2018');
+  expect(within(items[3]).getByRole('heading', { level: 4 }).textContent).toBe('League of Legends');
 });
 
 test('Fresh picks credit the clipper, and you in purple', () => {

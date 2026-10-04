@@ -41,6 +41,8 @@ function sources() {
 const isNavChrome = (rel) =>
   rel.startsWith('src/components/nav/') || rel.startsWith('src/components/gamba/') || rel === CONTROL_ROOM_BUTTON;
 
+const isVods = (rel) => rel.startsWith('src/components/vods/');
+
 function offenders(pattern, { only = () => true } = {}) {
   return sources()
     .filter(([rel]) => only(rel))
@@ -76,7 +78,7 @@ test('Type: nothing below the 10px floor, no unloaded 600 weight, mono tracking 
   expect(offenders(/text-\[0\.5625rem\]|font-semibold|tracking-\[0\.1[0-4]em\]/)).toEqual([]);
 });
 
-test('Tokens: no raw colours or bare radii in the Hunts, Store, schedule, nav and Gamba components', () => {
+test('Tokens: no raw colours or bare radii in the Hunts, Store, schedule, nav, Gamba and Goofer Video components', () => {
   expect(
     offenders(/rgba\(|#[0-9a-fA-F]{6}\b|\brounded\b(?!-)/, {
       only: (rel) =>
@@ -94,8 +96,8 @@ test('Scope: the control room button is scanned as nav chrome', () => {
   expect(sources().map(([rel]) => rel)).toContain(CONTROL_ROOM_BUTTON);
 });
 
-test('Type: every mono label in the nav and Gamba chrome sets its tracking (0.15em or more) on the same line', () => {
-  expect(offenders(/\$\{MONO\}(?!.*tracking-\[)/, { only: isNavChrome })).toEqual([]);
+test('Type: every mono label in the nav, Gamba chrome and Goofer Video sets its tracking (0.15em or more) on the same line', () => {
+  expect(offenders(/\$\{MONO\}(?!.*tracking-\[)/, { only: (rel) => isNavChrome(rel) || isVods(rel) })).toEqual([]);
 });
 
 // The shared monitor screen (the Hunts monitor and the Gamba featured monitor) is held to it too.
@@ -122,11 +124,9 @@ test('Tokens: the nav bar shadow is a boxShadow token, not a radius', () => {
   expect(config.theme.extend.borderRadius['onair-bar']).toBeUndefined();
 });
 
-test('Roles: the nav and Gamba chrome carry no orange (inside On Air orange is the winner)', () => {
-  expect(offenders(/orange|onair-winner/, { only: isNavChrome })).toEqual([]);
+test('Roles: the nav, Gamba chrome and Goofer Video carry no orange (inside On Air orange is the winner)', () => {
+  expect(offenders(/orange|onair-winner/, { only: (rel) => isNavChrome(rel) || isVods(rel) })).toEqual([]);
 });
-
-const isVods = (rel) => rel.startsWith('src/components/vods/');
 
 function srcFiles(dir) {
   return fs.readdirSync(path.join(ROOT, dir), { withFileTypes: true }).flatMap((d) => {

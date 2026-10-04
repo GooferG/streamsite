@@ -72,6 +72,7 @@ const SHARE_PAGES = [
     path: '/gamba/wheel',
     title: 'Slot Picker · GooferG',
     description: "Can't pick a slot? Spin for one.",
+    settleMs: 10000,
   },
   {
     id: 'store',

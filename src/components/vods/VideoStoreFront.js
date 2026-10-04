@@ -5,7 +5,7 @@ import { buildStore, padCount, promoSpots } from './videoStoreModel';
 import StoreSign from './StoreSign';
 import InStoreTv from './InStoreTv';
 import AisleSigns from './AisleSigns';
-import { Aisle, Shelf } from './Shelf';
+import { Aisle, GameDivider, Shelf } from './Shelf';
 import VhsBox from './VhsBox';
 import ClipCassette from './ClipCassette';
 import RentalCounter from './RentalCounter';
@@ -164,13 +164,14 @@ export default function VideoStoreFront({
           )}
           {counts.classics > 0 && (
             <Aisle id="cult-classics" title="Cult classics" count={counts.classics}>
-              {aisles.map((a) => (
-                <Shelf key={a.key} label={a.game} divider size="clip">
-                  {a.clips.map((clip) => (
+              <Shelf label="Filed by game" size="clip">
+                {aisles.flatMap((a) => [
+                  <GameDivider key={`divider-${a.key}`} game={a.game} count={a.clips.length} />,
+                  ...a.clips.map((clip) => (
                     <ClipCassette key={clip.id} clip={clip} viewerName={viewerName} showYear onOpen={open} />
-                  ))}
-                </Shelf>
-              ))}
+                  )),
+                ])}
+              </Shelf>
             </Aisle>
           )}
         </>

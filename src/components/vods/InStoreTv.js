@@ -42,6 +42,8 @@ function Spot({ spot, viewerName, onOpen, still }) {
           <img
             key={spot.key}
             src={spot.cover}
+            srcSet={spot.coverSet || undefined}
+            sizes="(min-width: 640px) 55vw, 100vw"
             alt=""
             decoding="async"
             className={`h-full w-full object-cover motion-safe:animate-slow-zoom ${still ? '[animation-play-state:paused]' : ''}`}
@@ -138,6 +140,17 @@ export default function InStoreTv({ spots = [], loading = false, viewerName = nu
     }, interval);
     return () => clearTimeout(t);
   }, [playing, i, count, interval]);
+
+  // Warm the next spot's picture while the reel plays, so the cut never waits on it.
+  useEffect(() => {
+    if (!playing) return;
+    const list = spotsRef.current;
+    const next = list[(i + 1) % list.length];
+    if (!next || !next.cover) return;
+    const img = new Image();
+    img.decoding = 'async';
+    img.src = next.cover;
+  }, [playing, i, count]);
 
   // A focused control can leave with its spot (Watch now when the stream
   // ends); browsers fire no blur for that, so let go of the hold.

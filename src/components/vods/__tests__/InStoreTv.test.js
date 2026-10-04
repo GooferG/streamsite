@@ -32,6 +32,23 @@ test('the reel opens on the newest tape', () => {
   expect(tv().getByRole('marquee', { name: 'Store ticker' })).toBeTruthy();
 });
 
+test('the vod spot offers a small and a wide cover', () => {
+  render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
+  const img = screen.getByTestId('in-store-tv').querySelector('img');
+  expect(img.getAttribute('srcset')).toMatch(/440w, .*1280w$/);
+});
+
+test('a playing reel preloads the next spot cover', () => {
+  const spy = jest.spyOn(window, 'Image');
+  try {
+    render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
+    const srcs = spy.mock.results.map((r) => r.value.src);
+    expect(srcs).toContain(SPOTS[1].cover);
+  } finally {
+    spy.mockRestore();
+  }
+});
+
 test('it cuts to the next spot every few seconds and wraps', () => {
   render(<InStoreTv spots={SPOTS} onOpen={() => {}} />);
   tick();

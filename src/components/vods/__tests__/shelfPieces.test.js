@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { Aisle, Shelf } from '../Shelf';
+import { Aisle, GameDivider, Shelf } from '../Shelf';
 import VhsBox from '../VhsBox';
 import ClipCassette from '../ClipCassette';
 import { buildStore } from '../videoStoreModel';
@@ -70,15 +70,16 @@ test('a shelf labels its row and puts every tape on the lip', () => {
   );
   expect(screen.getByRole('heading', { level: 3, name: 'This week' })).toBeTruthy();
   expect(within(screen.getByRole('list', { name: 'This week' })).getAllByRole('listitem')).toHaveLength(2);
+  expect(screen.getByRole('list', { name: 'This week' }).getAttribute('role')).toBe('list');
 });
 
-test('a divider shelf is still a level-3 heading', () => {
-  render(
-    <Shelf label="Nioh" divider size="clip">
-      <span>a</span>
-    </Shelf>
-  );
-  expect(screen.getByRole('heading', { level: 3, name: 'Nioh' })).toBeTruthy();
+test('a game divider is a level-4 heading with its clip count', () => {
+  const { unmount } = render(<GameDivider game="Nioh" count={2} />);
+  expect(screen.getByRole('heading', { level: 4, name: 'Nioh' })).toBeTruthy();
+  expect(screen.getByText('2 clips')).toBeTruthy();
+  unmount();
+  render(<GameDivider game="Slots" count={1} />);
+  expect(screen.getByText('1 clip')).toBeTruthy();
 });
 
 test('an aisle is a region named by a focusable heading', () => {

@@ -23,10 +23,23 @@ export function Aisle({ id, title, count, children }) {
   );
 }
 
-// One shelf: a heading (a week, or a game's paper divider), then the row of
-// tapes on a lip. Below md the row scrolls sideways; from md it wraps, and
-// each item carries its own stretch of lip so the lip runs under every row.
-export function Shelf({ label, divider = false, size = 'box', children }) {
+// A paper divider card that opens a game's run of cassettes on the Cult
+// classics shelf. It fills its shelf cell like the cassettes beside it.
+export function GameDivider({ game, count }) {
+  return (
+    <div className="flex-1 rounded-onair-tile bg-onair-paper p-3 text-onair-paper-ink shadow-onair-raised">
+      <h4 className="break-words text-[1.0625rem] font-extrabold leading-tight">{game}</h4>
+      <p className={`${MONO} mt-1 text-[0.625rem] tracking-[0.15em]`}>
+        {count} {count === 1 ? 'clip' : 'clips'}
+      </p>
+    </div>
+  );
+}
+
+// One shelf: a heading (a week, or "Filed by game"), then the row of tapes on
+// a lip. Below md the row scrolls sideways; from md it wraps, and each item
+// carries its own stretch of lip so the lip runs under every row.
+export function Shelf({ label, size = 'box', children }) {
   const headingId = useId();
   const width = size === 'box' ? 'w-[46vw]' : 'w-[64vw]';
   const columns =
@@ -35,19 +48,13 @@ export function Shelf({ label, divider = false, size = 'box', children }) {
       : 'md:grid-cols-[repeat(auto-fill,minmax(15rem,1fr))]';
   return (
     <div>
-      {divider ? (
-        <h3
-          id={headingId}
-          className="inline-block rounded-onair-label bg-onair-paper px-3 py-1.5 text-[1.0625rem] font-extrabold text-onair-paper-ink shadow-onair-raised"
-        >
-          {label}
-        </h3>
-      ) : (
-        <h3 id={headingId} className={`${MONO} text-[0.75rem] font-bold tracking-[0.2em] text-onair-ink-3`}>
-          {label}
-        </h3>
-      )}
+      <h3 id={headingId} className={`${MONO} text-[0.75rem] font-bold tracking-[0.2em] text-onair-ink-3`}>
+        {label}
+      </h3>
+      {/* Tailwind's preflight removes list markers, and Safari then drops the list semantics. */}
+      {/* eslint-disable-next-line jsx-a11y/no-redundant-roles */}
       <ul
+        role="list"
         aria-labelledby={headingId}
         className={`-mx-2 mt-3 flex snap-x snap-mandatory overflow-x-auto pb-2 pt-2 md:grid md:snap-none md:gap-y-6 md:overflow-visible md:pt-0 ${columns}`}
       >

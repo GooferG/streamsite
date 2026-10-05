@@ -13,10 +13,10 @@ function Site({ input }) {
   nav = useNavigate();
   return loc.pathname === '/' ? <Couch input={input} /> : <p data-testid="page">{loc.pathname}</p>;
 }
-const renderSite = (input = F.offair.input, room = true, timings = ZERO) => {
+const renderSite = (input = F.offair.input, room = true, timings = ZERO, reduced = false) => {
   // Only the room query follows `room`; reduced motion stays off so the camera moves.
   window.matchMedia = jest.fn((query) => ({
-    matches: query.includes('reduced-motion') ? false : room,
+    matches: query.includes('reduced-motion') ? reduced : room,
     addEventListener() {},
     removeEventListener() {},
   }));
@@ -63,6 +63,32 @@ test('the remote flips the TV to GSN, then lands on the Store', async () => {
   await waitFor(() => expect(screen.getByTestId('page').textContent).toBe('/store'));
 });
 
+test('with reduced motion the remote skips the flip and still lands on the Store', async () => {
+  renderSite(F.offair.input, true, ZERO, true);
+  await act(async () => {
+    fireEvent.click(screen.getByRole('link', { name: /^Remote:/ }), { button: 0 });
+  });
+  expect(screen.queryByTestId('tv-flip')).toBeNull();
+  await waitFor(() => expect(screen.getByTestId('page').textContent).toBe('/store'));
+});
+
+test('leaving during the remote flip does not throw', async () => {
+  const errors = [];
+  const onRejection = (e) => errors.push(e);
+  process.on('unhandledRejection', onRejection);
+  renderSite();
+  await act(async () => {
+    fireEvent.click(screen.getByRole('link', { name: /^Remote:/ }), { button: 0 });
+  });
+  await act(async () => nav('/vods'));
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 600));
+  });
+  process.off('unhandledRejection', onRejection);
+  expect(errors).toEqual([]);
+  expect(screen.getByTestId('page').textContent).toBe('/vods');
+});
+
 test('live: the TV opens the stream inside the TV, and Back to the couch closes it', async () => {
   renderSite(F.live.input);
   await act(async () => {
@@ -73,6 +99,7 @@ test('live: the TV opens the stream inside the TV, and Back to the couch closes 
     fireEvent.click(screen.getByRole('button', { name: 'Back to the couch' }));
   });
   expect(screen.queryByTitle("Goofer's live stream")).toBeNull();
+  await waitFor(() => expect(screen.getByTestId('couch-stage').style.transform).toBe(''));
 });
 
 test('the stream ending while you watch closes the frame', async () => {
@@ -90,6 +117,16 @@ test('the stream ending while you watch closes the frame', async () => {
   );
   expect(screen.queryByTitle("Goofer's live stream")).toBeNull();
   expect(screen.getByRole('link', { name: /^Tapes:/ })).toBeTruthy();
+  await waitFor(() => expect(screen.getByTestId('couch-stage').style.transform).toBe(''));
+  // The watch flag is gone from history too, so a reconnect does not reopen the frame.
+  rerender(
+    <MemoryRouter initialEntries={['/']}>
+      <CameraProvider timings={ZERO}>
+        <Site input={F.live.input} />
+      </CameraProvider>
+    </MemoryRouter>
+  );
+  expect(screen.queryByTitle("Goofer's live stream")).toBeNull();
 });
 
 test('Back from a door pulls the camera back once; the nav does not', async () => {
@@ -99,10 +136,7 @@ test('Back from a door pulls the camera back once; the nav does not', async () =
     fireEvent.click(screen.getByRole('link', { name: /^Tapes:/ }), { button: 0 });
   });
   await waitFor(() => expect(screen.getByTestId('page')).toBeTruthy());
-  // Let the camera finish tuning in; a pull-back during a move is skipped.
-  await act(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 200));
-  });
+  await waitFor(() => expect(screen.queryByTestId('camera-static')).toBeNull());
   await act(async () => nav(-1));
   await waitFor(() => expect(Element.prototype.animate).toHaveBeenCalled());
   const [keyframes] = Element.prototype.animate.mock.calls[0];

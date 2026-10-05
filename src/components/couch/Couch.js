@@ -58,6 +58,8 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
       if (door.id === 'remote' && !prefersReducedMotion()) {
         setFlipTo('gsn');
         await wait(FLIP_MS);
+        // Gone while the TV flipped: nothing left to zoom.
+        if (!stageEl.isConnected) return;
       }
       await camera.goThrough({ stage: stageEl, zoom: stage.zoomFor(aimFor(door.id)), href: door.href, doorId: door.id });
     },
@@ -98,12 +100,25 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
   }, [introDone, inRoom, camera, stage]);
 
   // Leaving "inside the TV" (Back, Esc, the button, or the stream ending).
+  // If the camera is still tuning in from entering, the pull-back waits for it
+  // (the context value changes when busy flips, which re-runs this effect).
   const wasWatching = useRef(watching);
+  const pendingPull = useRef(false);
   useEffect(() => {
-    const stageEl = stage.stageRef.current;
-    if (wasWatching.current && !watching && inRoom && stageEl) camera.pullBack({ stage: stageEl, zoom: stage.zoomFor(aimFor('tv')) });
+    if (wasWatching.current && !watching) pendingPull.current = true;
     wasWatching.current = watching;
+    if (!pendingPull.current || camera.busy) return;
+    pendingPull.current = false;
+    const stageEl = stage.stageRef.current;
+    if (inRoom && stageEl) camera.pullBack({ stage: stageEl, zoom: stage.zoomFor(aimFor('tv')) });
   }, [watching, inRoom, camera, stage]);
+
+  // The stream ended while its flag is in history: drop the flag, so a
+  // reconnect does not reopen the frame and Back is not a dead press.
+  const stale = !live && !!(location.state && location.state.watch);
+  useEffect(() => {
+    if (stale) navigate(location.pathname, { replace: true, state: null });
+  }, [stale, location.pathname, navigate]);
 
   const exitWatch = useCallback(() => {
     if (location.key === 'default') navigate(location.pathname, { replace: true, state: null });

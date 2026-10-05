@@ -56,6 +56,8 @@ jest.mock('../routes/loaders', () => ({
 // Only the known noise: the failing Twitch poll logs its error and two debug lines.
 const KNOWN = /Error initializing Twitch API|App\.js Debug/;
 beforeEach(() => {
+  // jsdom has no scrolling; App scrolls to the top on every page.
+  jest.spyOn(window, 'scrollTo').mockImplementation(() => {});
   for (const method of ['error', 'log']) {
     const real = console[method];
     jest.spyOn(console, method).mockImplementation((...args) => {

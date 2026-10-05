@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { pctStyle, within } from './couchLayout';
+import { intersects, pctStyle, within } from './couchLayout';
 import { moonPath, moonPhase } from './moon';
 
 // The window (spec: The window). The glass is transparent in the room's art:
@@ -91,9 +91,17 @@ export function WindowOutside({ win, state, now, theme, witch = null }) {
 export function WindowFront({ win, state, theme, aspect }) {
   if (!win || !win.glass) return null;
   const halloween = theme === 'halloween';
-  // Closed blinds cover the glass: only the cord answers until they are up.
-  const covered = Boolean(win.blinds) && !state.blindsUp;
-  const hit = covered ? 'pointer-events-none' : 'cursor-pointer';
+  // Lowered blinds hide part of the glass: the moon is inert only if they cover
+  // it, and the sky answers only below them. The cord always works.
+  const down = Boolean(win.blinds) && !state.blindsUp;
+  const [gx, gy, gw, gh] = win.glass;
+  const glassBottom = gy + gh;
+  const blindsBottom = down ? Math.min(Math.max(win.blinds.rect[1] + win.blinds.rect[3], gy), glassBottom) : gy;
+  const skyRect = down ? [gx, blindsBottom, gw, glassBottom - blindsBottom] : win.glass;
+  const skyDead = down && skyRect[3] <= 0;
+  const box = moonBox(win.glass, halloween, aspect);
+  const moonDead = down && intersects(box, win.blinds.rect);
+  const live = (dead) => (dead ? 'pointer-events-none' : 'cursor-pointer');
   return (
     <>
       {win.blinds && (
@@ -107,13 +115,13 @@ export function WindowFront({ win, state, theme, aspect }) {
           />
         </span>
       )}
-      <span aria-hidden="true" data-toy="sky" onPointerDown={covered ? undefined : state.pokeSky} className={`absolute ${hit}`} style={pctStyle(win.glass)} />
+      <span aria-hidden="true" data-toy="sky" onPointerDown={skyDead ? undefined : state.pokeSky} className={`absolute ${live(skyDead)}`} style={pctStyle(skyRect)} />
       <span
         aria-hidden="true"
         data-toy="moon"
-        onPointerDown={covered ? undefined : () => state.pokeMoon(halloween)}
-        className={`absolute ${hit} rounded-full`}
-        style={pctStyle(moonBox(win.glass, halloween, aspect))}
+        onPointerDown={moonDead ? undefined : () => state.pokeMoon(halloween)}
+        className={`absolute ${live(moonDead)} rounded-full`}
+        style={pctStyle(box)}
       />
       {win.cord && <span aria-hidden="true" data-toy="cord" onPointerDown={state.pullCord} className="absolute cursor-pointer" style={pctStyle(win.cord)} />}
     </>

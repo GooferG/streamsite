@@ -5,7 +5,7 @@ import { ART_ASPECT, LAYOUT, intersects } from '../couchLayout';
 
 const WIN = {
   glass: [70, 10, 20, 40],
-  blinds: { src: '/blinds.webp', rect: [69, 8, 22, 30] },
+  blinds: { src: '/blinds.webp', rect: [69, 8, 22, 14] },
   cord: [90, 20, 1, 15],
   skyline: { src: '/sky.webp', rect: [70, 38, 20, 12] },
 };
@@ -50,7 +50,6 @@ test("the outside shows tonight's moon, stars and the skyline, all decorative", 
 
 test('tapping the sky sends a shooting star; tapping the moon makes it wink', () => {
   const { container } = render(<Window />);
-  raise(container);
   fireEvent.pointerDown(toy(container, 'sky'));
   expect(screen.getByTestId('window-shooting')).toBeTruthy();
   fireEvent.pointerDown(toy(container, 'moon'));
@@ -67,7 +66,6 @@ test('the cord rolls the blinds up and down', () => {
 
 test('Halloween: a harvest moon, bats, and every third moon tap a witch', () => {
   const { container } = render(<Window theme="halloween" witch="/witch.webp" />);
-  raise(container);
   expect(screen.getByTestId('window-moon').getAttribute('data-phase')).toBe('0.50');
   expect(screen.getByTestId('window-bats')).toBeTruthy();
   const moon = toy(container, 'moon');
@@ -95,17 +93,37 @@ test('no glass, no window', () => {
   expect(container.innerHTML).toBe('');
 });
 
-test('with the blinds down only the cord answers; the moon and sky wake when they are up', () => {
+test('half-closed blinds leave the moon pokeable and shrink the sky to the strip below them', () => {
   const { container } = render(<Window />);
-  expect(toy(container, 'sky').getAttribute('class')).toMatch(/pointer-events-none/);
-  fireEvent.pointerDown(toy(container, 'sky'));
   fireEvent.pointerDown(toy(container, 'moon'));
-  expect(screen.queryByTestId('window-shooting')).toBeNull();
+  expect(screen.getByTestId('window-moon').getAttribute('class')).toMatch(/animate-couch-blink/);
+  const strip = toy(container, 'sky');
+  expect(strip.style.top).toBe('22%');
+  expect(strip.style.height).toBe('28%');
+  raise(container);
+  expect(toy(container, 'sky').style.top).toBe('10%');
+  expect(toy(container, 'sky').style.height).toBe('40%');
+});
+
+test('a moon under the blinds is inert until the cord is pulled', () => {
+  const covering = { ...WIN, blinds: { src: '/blinds.webp', rect: [69, 8, 22, 30] } };
+  function Covered() {
+    const state = useWindowState();
+    return (
+      <div>
+        <WindowOutside win={covering} state={state} now={ECLIPSE} />
+        <WindowFront win={covering} state={state} aspect={16 / 9} />
+      </div>
+    );
+  }
+  const { container } = render(<Covered />);
+  expect(toy(container, 'moon').getAttribute('class')).toMatch(/pointer-events-none/);
+  fireEvent.pointerDown(toy(container, 'moon'));
   expect(screen.getByTestId('window-moon').getAttribute('class')).not.toMatch(/blink/);
   raise(container);
-  expect(toy(container, 'sky').getAttribute('class')).not.toMatch(/pointer-events-none/);
-  fireEvent.pointerDown(toy(container, 'sky'));
-  expect(screen.getByTestId('window-shooting')).toBeTruthy();
+  expect(toy(container, 'moon').getAttribute('class')).not.toMatch(/pointer-events-none/);
+  fireEvent.pointerDown(toy(container, 'moon'));
+  expect(screen.getByTestId('window-moon').getAttribute('class')).toMatch(/animate-couch-blink/);
 });
 
 test('moonPath crescents and gibbous moons, waxing and waning', () => {

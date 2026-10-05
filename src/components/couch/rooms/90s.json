@@ -232,7 +232,7 @@
     },
     {
       "id": "can",
-      "effect": "pop",
+      "effect": "fizz",
       "rect": [
         72.38,
         74.33,
@@ -318,7 +318,7 @@
         },
         {
           "id": "candy",
-          "effect": "pop",
+          "effect": "scatter",
           "rect": [
             33.24,
             58.02,

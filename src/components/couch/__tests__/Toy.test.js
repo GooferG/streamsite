@@ -2,13 +2,19 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import RoomToys from '../RoomToys';
 import Toy, { TOY_MS } from '../Toy';
 import { roomToys } from '../themes';
+import { LAYOUT } from '../couchLayout';
 
 const LAMP = { id: 'lamp', effect: 'toggle', rect: [5, 10, 10, 30], art: { idle: '/lamp-on.webp', active: '/lamp-off.webp' } };
 const PUMPKIN = { id: 'pumpkin', effect: 'light', rect: [60, 50, 6, 8], art: { idle: '/p.webp', active: '/p-lit.webp' } };
-const CAN = { id: 'can', effect: 'pop', rect: [70, 80, 3, 6], art: { idle: '/can.webp' } };
+const CAN = { id: 'can', effect: 'fizz', rect: [70, 80, 3, 6], art: { idle: '/can.webp' } };
+const CANDY = { id: 'candy', effect: 'scatter', rect: [33, 58, 5, 8], art: { idle: '/candy.webp' } };
+const PAD = { id: 'controller', effect: 'wiggle', rect: [61, 79, 7, 5], art: { idle: '/pad.webp' } };
 const NEON = { id: 'neon', effect: 'neon', rect: [40, 2, 20, 12], art: { idle: '/neon.webp', active: '/neon-off.webp' } };
 const toyEl = (c, id) => c.querySelector(`[data-toy="${id}"]`);
 const pic = (el) => el.querySelector('img').getAttribute('src');
+const calmDown = () => {
+  window.matchMedia = jest.fn().mockReturnValue({ matches: true });
+};
 
 beforeEach(() => jest.useFakeTimers());
 afterEach(() => {
@@ -54,7 +60,7 @@ test('under reduced motion a toy still switches its art, holds for its time, the
   );
   fireEvent.pointerDown(toyEl(container, 'pumpkin'));
   fireEvent.pointerDown(toyEl(container, 'can'));
-  act(() => jest.advanceTimersByTime(TOY_MS.pop - 1));
+  act(() => jest.advanceTimersByTime(TOY_MS.fizz - 1));
   expect(toyEl(container, 'pumpkin').getAttribute('data-on')).toBe('true');
   expect(toyEl(container, 'can').getAttribute('data-on')).toBe('true');
   act(() => jest.advanceTimersByTime(1));
@@ -74,10 +80,152 @@ test('unmounting a toy mid-effect clears its timer', () => {
   err.mockRestore();
 });
 
-test('a can with no extra picture fizzes', () => {
-  const { container } = render(<Toy toy={CAN} />);
+describe('the can', () => {
+  test('shakes, then foam geysers out of the top and droplets fly off, all gone after TOY_MS.fizz', () => {
+    const { container } = render(<Toy toy={CAN} />);
+    const el = toyEl(container, 'can');
+    expect(screen.queryByTestId('toy-fizz')).toBeNull();
+    fireEvent.pointerDown(el);
+    expect(el.firstChild.className).toContain('animate-couch-shake');
+    const foam = screen.getAllByTestId('fizz-foam');
+    expect(foam.length).toBeGreaterThanOrEqual(6);
+    expect(foam.length).toBeLessThanOrEqual(10);
+    const drops = screen.getAllByTestId('fizz-drop');
+    expect(drops.length).toBeGreaterThanOrEqual(3);
+    expect(drops.length).toBeLessThanOrEqual(4);
+    expect(foam[0].className).toContain('animate-couch-foam');
+    expect(screen.getByTestId('fizz-cap').className).toContain('animate-couch-foam-cap');
+    act(() => jest.advanceTimersByTime(TOY_MS.fizz - 1));
+    expect(screen.getByTestId('toy-fizz')).toBeTruthy();
+    act(() => jest.advanceTimersByTime(1));
+    expect(screen.queryByTestId('toy-fizz')).toBeNull();
+    expect(el.firstChild.className).not.toContain('animate-couch-shake');
+  });
+
+  test('a poke mid-fizz starts it over', () => {
+    const { container } = render(<Toy toy={CAN} />);
+    const el = toyEl(container, 'can');
+    fireEvent.pointerDown(el);
+    act(() => jest.advanceTimersByTime(1000));
+    const first = screen.getByTestId('toy-fizz');
+    fireEvent.pointerDown(el);
+    expect(screen.getByTestId('toy-fizz')).not.toBe(first);
+    act(() => jest.advanceTimersByTime(TOY_MS.fizz - 1));
+    expect(screen.getByTestId('toy-fizz')).toBeTruthy();
+    act(() => jest.advanceTimersByTime(1));
+    expect(screen.queryByTestId('toy-fizz')).toBeNull();
+  });
+
+  test('under reduced motion a still foam cap sits on the can for TOY_MS.fizz, then goes', () => {
+    calmDown();
+    const { container } = render(<Toy toy={CAN} />);
+    fireEvent.pointerDown(toyEl(container, 'can'));
+    expect(screen.getByTestId('fizz-cap')).toBeTruthy();
+    expect(screen.queryAllByTestId('fizz-foam')).toHaveLength(0);
+    expect(screen.queryAllByTestId('fizz-drop')).toHaveLength(0);
+    expect(container.innerHTML).not.toContain('animate-');
+    act(() => jest.advanceTimersByTime(TOY_MS.fizz - 1));
+    expect(screen.getByTestId('fizz-cap')).toBeTruthy();
+    act(() => jest.advanceTimersByTime(1));
+    expect(screen.queryByTestId('toy-fizz')).toBeNull();
+  });
+});
+
+describe('the candy bowl', () => {
+  const side = (c) => Math.sign(parseFloat(c.style.getPropertyValue('--dx')));
+
+  test('wrapped sweets and drops hop out to both sides and back, all gone after TOY_MS.scatter', () => {
+    const { container } = render(<Toy toy={CANDY} />);
+    expect(screen.queryAllByTestId('toy-candy')).toHaveLength(0);
+    fireEvent.pointerDown(toyEl(container, 'candy'));
+    const candies = screen.getAllByTestId('toy-candy');
+    expect(candies.length).toBeGreaterThanOrEqual(4);
+    expect(candies.length).toBeLessThanOrEqual(6);
+    expect(new Set(candies.map((c) => c.getAttribute('data-kind')))).toEqual(new Set(['wrapped', 'drop']));
+    expect(new Set(candies.map(side))).toEqual(new Set([-1, 1]));
+    candies.forEach((c) => expect(c.className).toContain('animate-couch-hop-x'));
+    act(() => jest.advanceTimersByTime(TOY_MS.scatter - 1));
+    expect(screen.getAllByTestId('toy-candy')).toHaveLength(candies.length);
+    act(() => jest.advanceTimersByTime(1));
+    expect(screen.queryAllByTestId('toy-candy')).toHaveLength(0);
+  });
+
+  test('a poke mid-hop starts it over', () => {
+    const { container } = render(<Toy toy={CANDY} />);
+    const el = toyEl(container, 'candy');
+    fireEvent.pointerDown(el);
+    act(() => jest.advanceTimersByTime(1200));
+    const first = screen.getAllByTestId('toy-candy')[0];
+    fireEvent.pointerDown(el);
+    expect(screen.getAllByTestId('toy-candy')[0]).not.toBe(first);
+    act(() => jest.advanceTimersByTime(TOY_MS.scatter - 1));
+    expect(screen.getAllByTestId('toy-candy').length).toBeGreaterThan(0);
+    act(() => jest.advanceTimersByTime(1));
+    expect(screen.queryAllByTestId('toy-candy')).toHaveLength(0);
+  });
+
+  test('under reduced motion the candies rest beside the bowl for TOY_MS.scatter, then go', () => {
+    calmDown();
+    const { container } = render(<Toy toy={CANDY} />);
+    fireEvent.pointerDown(toyEl(container, 'candy'));
+    const candies = screen.getAllByTestId('toy-candy');
+    expect(candies.length).toBeGreaterThanOrEqual(4);
+    candies.forEach((c) => expect(c.style.transform).toMatch(/^translateX\(-?\d/));
+    expect(container.innerHTML).not.toContain('animate-');
+    act(() => jest.advanceTimersByTime(TOY_MS.scatter));
+    expect(screen.queryAllByTestId('toy-candy')).toHaveLength(0);
+  });
+});
+
+test('unmounting the can or the bowl mid-effect clears their timers', () => {
+  const err = jest.spyOn(console, 'error').mockImplementation(() => {});
+  const { container, unmount } = render(
+    <>
+      <Toy toy={CAN} />
+      <Toy toy={CANDY} />
+    </>
+  );
   fireEvent.pointerDown(toyEl(container, 'can'));
-  expect(screen.getByTestId('toy-bubbles')).toBeTruthy();
+  fireEvent.pointerDown(toyEl(container, 'candy'));
+  expect(jest.getTimerCount()).toBe(2);
+  unmount();
+  expect(jest.getTimerCount()).toBe(0);
+  act(() => jest.advanceTimersByTime(TOY_MS.scatter));
+  expect(err).not.toHaveBeenCalled();
+  err.mockRestore();
+});
+
+describe('the controller', () => {
+  test('rumble marks flash on both sides while it wiggles', () => {
+    const { container } = render(<Toy toy={PAD} />);
+    const el = toyEl(container, 'controller');
+    expect(screen.queryAllByTestId('toy-rumble')).toHaveLength(0);
+    fireEvent.pointerDown(el);
+    expect(el.firstChild.className).toContain('animate-couch-wiggle');
+    const marks = screen.getAllByTestId('toy-rumble');
+    expect(marks.map((m) => m.getAttribute('data-side')).sort()).toEqual(['left', 'right']);
+    marks.forEach((m) => expect(m.className).toContain('animate-couch-rumble'));
+    act(() => jest.advanceTimersByTime(TOY_MS.wiggle));
+    expect(screen.queryAllByTestId('toy-rumble')).toHaveLength(0);
+  });
+
+  test('under reduced motion it draws no rumble marks', () => {
+    calmDown();
+    const { container } = render(<Toy toy={PAD} />);
+    const el = toyEl(container, 'controller');
+    fireEvent.pointerDown(el);
+    expect(el.getAttribute('data-on')).toBe('true');
+    expect(screen.queryAllByTestId('toy-rumble')).toHaveLength(0);
+    expect(container.innerHTML).not.toContain('animate-');
+  });
+});
+
+test('the room fizzes its can and scatters its candy, and every toy effect is one Toy knows', () => {
+  const all = [...LAYOUT.toys, ...Object.values(LAYOUT.themes).flatMap((t) => t.toys || [])];
+  const effect = Object.fromEntries(all.map((t) => [t.id, t.effect]));
+  expect(effect.can).toBe('fizz');
+  expect(effect.candy).toBe('scatter');
+  all.forEach((t) => expect(t.effect === 'toggle' || TOY_MS[t.effect] > 0).toBe(true));
 });
 
 test('roomToys adds the theme toys to the room toys', () => {

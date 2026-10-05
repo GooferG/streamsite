@@ -280,10 +280,69 @@ module.exports = {
           '80%': { transform: 'rotate(2deg)' },
         },
         'couch-drop': { '0%,100%': { transform: 'translateY(0)' }, '40%,60%': { transform: 'translateY(160%)' } },
-        'couch-pop': {
-          '0%': { transform: 'translateY(0) scale(0.6)', opacity: '0' },
-          '30%': { opacity: '1' },
-          '100%': { transform: 'translateY(-140%) scale(1)', opacity: '0' },
+        // The controller's rumble lines flash in time with its wiggle.
+        'couch-rumble': {
+          '0%': { opacity: '0', transform: 'scale(0.7)' },
+          '12%': { opacity: '1', transform: 'scale(1)' },
+          '28%': { opacity: '0.25', transform: 'scale(0.92)' },
+          '44%': { opacity: '1', transform: 'scale(1.06)' },
+          '60%': { opacity: '0.25', transform: 'scale(0.95)' },
+          '76%': { opacity: '1', transform: 'scale(1.04)' },
+          '100%': { opacity: '0', transform: 'scale(1.12)' },
+        },
+        // The can (fizz): a shake from its base, then a foam head swells over the
+        // rim while blobs geyser out and droplets fly off. Each bit rides a wrapper
+        // the size of the can's box, so its CSS variables (set per bit in
+        // ToyEffects.js) are percentages of the can.
+        'couch-shake': {
+          '0%,100%': { transform: 'translateX(0) rotate(0deg)' },
+          '20%': { transform: 'translateX(-7%) rotate(-4deg)' },
+          '45%': { transform: 'translateX(6%) rotate(4deg)' },
+          '70%': { transform: 'translateX(-4%) rotate(-2deg)' },
+          '88%': { transform: 'translateX(2%) rotate(1deg)' },
+        },
+        'couch-foam-cap': {
+          '0%': { transform: 'scale(0.2)', opacity: '0' },
+          '15%': { transform: 'scale(1.12)', opacity: '1' },
+          '25%': { transform: 'scale(0.96)' },
+          '33%,85%': { transform: 'scale(1)', opacity: '1' },
+          '100%': { transform: 'scale(1.05)', opacity: '0' },
+        },
+        // A blob rises fast to its peak (--fx, --fy), hangs, then drifts down and fades.
+        'couch-foam': {
+          '0%': { transform: 'translate(0, 0) scale(0.3)', opacity: '0', animationTimingFunction: 'cubic-bezier(0.15, 0.7, 0.35, 1)' },
+          '12%': { opacity: '1' },
+          '45%': { transform: 'translate(var(--fx), var(--fy)) scale(1)', animationTimingFunction: 'cubic-bezier(0.45, 0, 0.75, 0.6)' },
+          '75%': { opacity: '1' },
+          '100%': { transform: 'translate(calc(var(--fx) * 1.3), calc(var(--fy) * 0.6)) scale(1.15)', opacity: '0' },
+        },
+        // A droplet's arc: steady sideways (--dx) on the outer wrapper, up to --up
+        // and down to --dy on the inner one.
+        'couch-fling-x': { '0%': { transform: 'translateX(0)' }, '100%': { transform: 'translateX(var(--dx))' } },
+        'couch-fling-y': {
+          '0%': { transform: 'translateY(0) scale(0.6)', opacity: '0', animationTimingFunction: 'cubic-bezier(0.25, 0.7, 0.5, 1)' },
+          '8%': { opacity: '1' },
+          '40%': { transform: 'translateY(var(--up)) scale(1)', animationTimingFunction: 'cubic-bezier(0.5, 0, 0.8, 0.5)' },
+          '80%': { opacity: '1' },
+          '100%': { transform: 'translateY(var(--dy)) scale(1)', opacity: '0' },
+        },
+        // The candy bowl (scatter): a candy hops out to --dx and lands at --dy with a
+        // tiny bounce, rests, then hops back into the bowl over --back, tumbling by --spin.
+        'couch-hop-x': {
+          '0%': { transform: 'translateX(0)' },
+          '30%,68%': { transform: 'translateX(var(--dx))' },
+          '100%': { transform: 'translateX(0)' },
+        },
+        'couch-hop-y': {
+          '0%': { transform: 'translateY(0) rotate(0deg) scale(0.6)', opacity: '0', animationTimingFunction: 'cubic-bezier(0.25, 0.7, 0.5, 1)' },
+          '4%': { opacity: '1' },
+          '15%': { transform: 'translateY(var(--up)) rotate(calc(var(--spin) * 0.5)) scale(1)', animationTimingFunction: 'cubic-bezier(0.5, 0, 0.8, 0.5)' },
+          '30%': { transform: 'translateY(var(--dy)) rotate(var(--spin)) scale(1)', animationTimingFunction: 'cubic-bezier(0.25, 0.7, 0.5, 1)' },
+          '35%': { transform: 'translateY(calc(var(--dy) - 6%)) rotate(var(--spin)) scale(1)', animationTimingFunction: 'cubic-bezier(0.5, 0, 0.8, 0.5)' },
+          '40%,68%': { transform: 'translateY(var(--dy)) rotate(var(--spin)) scale(1)', animationTimingFunction: 'cubic-bezier(0.25, 0.7, 0.5, 1)' },
+          '84%': { transform: 'translateY(var(--back)) rotate(calc(var(--spin) * 0.4)) scale(1)', animationTimingFunction: 'cubic-bezier(0.5, 0, 0.8, 0.5)' },
+          '92%': { opacity: '1' },
+          '100%': { transform: 'translateY(0) rotate(0deg) scale(0.6)', opacity: '0' },
         },
         'couch-flicker': { '0%,100%': { opacity: '1' }, '20%': { opacity: '0.82' }, '45%': { opacity: '1' }, '70%': { opacity: '0.88' } },
         // The neon sign: the lit art stutters on, hums unevenly, flicks off. Opacity only.
@@ -346,7 +405,14 @@ module.exports = {
         'onair-bounce-y': 'onair-bounce-y 4.3s linear infinite alternate',
         'couch-wiggle': 'couch-wiggle 0.6s ease-in-out',
         'couch-drop': 'couch-drop 2.4s ease-in-out',
-        'couch-pop': 'couch-pop 0.9s ease-out forwards',
+        'couch-rumble': 'couch-rumble 0.6s ease-out both',
+        'couch-shake': 'couch-shake 0.25s ease-in-out',
+        'couch-foam-cap': 'couch-foam-cap 1.2s ease-out 0.2s both',
+        'couch-foam': 'couch-foam 0.85s both',
+        'couch-fling-x': 'couch-fling-x 0.85s linear both',
+        'couch-fling-y': 'couch-fling-y 0.85s both',
+        'couch-hop-x': 'couch-hop-x 1.65s linear both',
+        'couch-hop-y': 'couch-hop-y 1.65s both',
         'couch-flicker': 'couch-flicker 0.5s steps(2) infinite',
         'couch-neon-on': 'couch-neon-on 1.2s linear forwards',
         'couch-neon-hum': 'couch-neon-hum 5.2s linear infinite',

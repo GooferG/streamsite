@@ -33,9 +33,9 @@ WIDTHS = {1280: 90, 1920: 150, 2560: 250}
 CUT_KB = 40
 NEON_KB = 60
 NAMES = {"tv": "TV", "note": "Note", "laptop": "Laptop", "tapes": "Tapes", "guide": "TV guide", "games": "Games", "remote": "Remote", "photo": "Photo"}
-TOYS = [("lamp", "toggle"), ("controller", "wiggle"), ("can", "pop")]
+TOYS = [("lamp", "toggle"), ("controller", "wiggle"), ("can", "fizz")]
 HALLOWEEN_DRESSING = ["cobweb", "poster"]
-HALLOWEEN_TOYS = [("pumpkin", "light"), ("spider", "drop"), ("candy", "pop")]
+HALLOWEEN_TOYS = [("pumpkin", "light"), ("spider", "drop"), ("candy", "scatter")]
 
 
 def load_mask(path, size):

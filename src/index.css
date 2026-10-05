@@ -175,6 +175,47 @@ body.brand-route {
   fill: #0b0a10;
 }
 
+/* What the couch toys throw around (ToyEffects.js): flat cartoon fills under
+   one ink outline, like the room's art. */
+:root {
+  --couch-ink: #1c1714;
+}
+.couch-foam,
+.couch-soda,
+.couch-candy {
+  stroke: var(--couch-ink);
+}
+.couch-rumble {
+  fill: none;
+  stroke: var(--couch-ink);
+}
+.couch-foam {
+  fill: #f4eddc;
+}
+.couch-soda {
+  fill: #dfa35c;
+}
+.couch-candy--orange {
+  fill: #f0862c;
+}
+.couch-candy--purple {
+  fill: #9a5ad8;
+}
+.couch-candy--lime {
+  fill: #a6d64a;
+}
+.couch-candy--pink {
+  fill: #f0708e;
+}
+.couch-candy--yellow {
+  fill: #f5c84c;
+}
+.couch-shine {
+  fill: #fffaf0;
+  stroke: none;
+  opacity: 0.75;
+}
+
 /* The couch's game cases (GameCases.js): a dark plastic case with a header
    band, a hinge down the left edge and a gloss over the cover. */
 .couch-case {

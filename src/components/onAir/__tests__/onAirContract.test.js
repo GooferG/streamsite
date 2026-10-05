@@ -13,6 +13,7 @@ const DIRS = [
   'src/components/nav',
   'src/components/gamba',
   'src/components/vods',
+  'src/components/couch',
 ];
 // Nav chrome that lives outside the nav folder, scanned with the nav (the Gamba tuner is chrome too).
 const CONTROL_ROOM_BUTTON = 'src/components/controlRoom/ControlRoomButton.js';
@@ -42,6 +43,7 @@ const isNavChrome = (rel) =>
   rel.startsWith('src/components/nav/') || rel.startsWith('src/components/gamba/') || rel === CONTROL_ROOM_BUTTON;
 
 const isVods = (rel) => rel.startsWith('src/components/vods/');
+const isCouch = (rel) => rel.startsWith('src/components/couch/');
 
 function offenders(pattern, { only = () => true } = {}) {
   return sources()
@@ -141,16 +143,16 @@ function contrast(a, b) {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-test('Type: the marker face is Goofer Video only', () => {
+test('Type: the marker face is Goofer Video and the couch only', () => {
   const outside = srcFiles('src')
-    .filter((rel) => !isVods(rel))
+    .filter((rel) => !isVods(rel) && !isCouch(rel))
     .filter((rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8').includes('font-onair-marker'));
   expect(outside).toEqual([]);
 });
 
 test('Type: marker text is 15px or larger, its size set on the same line', () => {
   expect(
-    offenders(/font-onair-marker(?!.*text-\[(0\.9375|1\.0625|1\.25|1\.375|1\.5|1\.875|3\.75)rem\])/, { only: isVods })
+    offenders(/font-onair-marker(?!.*text-\[(0\.9375|1\.0625|1\.25|1\.375|1\.5|1\.875|3\.75)rem\])/, { only: (rel) => isVods(rel) || isCouch(rel) })
   ).toEqual([]);
 });
 

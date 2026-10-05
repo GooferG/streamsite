@@ -65,3 +65,9 @@ test('a new tape wears a sticker', () => {
   render(<Room />);
   expect(inside(screen.getByRole('link', { name: /^Tapes:/ })).getByText('New')).toBeTruthy();
 });
+
+test('the doors layer lets pokes through to toys and the window; each door still takes its own', () => {
+  render(<Room />);
+  expect(doorList().className).toContain('pointer-events-none');
+  for (const li of doorList().children) expect(li.className).toContain('pointer-events-auto');
+});

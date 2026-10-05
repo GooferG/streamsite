@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react';
-import { prefersReducedMotion } from '../onAir/useChannelSwitch';
 import { pctStyle } from './couchLayout';
 
 // A toy (spec: Toys): poke it and it reacts; it goes nowhere. Pointer and
@@ -37,7 +36,7 @@ export default function Toy({ toy }) {
     clearTimeout(timer.current);
     setOn(true);
     setRun((n) => n + 1);
-    const ms = toy.effect === 'light' || !prefersReducedMotion() ? TOY_MS[toy.effect] || 800 : 0;
+    const ms = TOY_MS[toy.effect] || 800;
     timer.current = setTimeout(() => setOn(false), ms);
   };
 

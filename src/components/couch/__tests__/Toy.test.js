@@ -3,8 +3,6 @@ import RoomToys from '../RoomToys';
 import Toy, { TOY_MS } from '../Toy';
 import { roomToys } from '../themes';
 
-jest.mock('../../../config/firebase', () => ({ auth: {}, db: {} }));
-
 const LAMP = { id: 'lamp', effect: 'toggle', rect: [5, 10, 10, 30], art: { idle: '/lamp-on.webp', active: '/lamp-off.webp' } };
 const PUMPKIN = { id: 'pumpkin', effect: 'light', rect: [60, 50, 6, 8], art: { idle: '/p.webp', active: '/p-lit.webp' } };
 const CAN = { id: 'can', effect: 'pop', rect: [70, 80, 3, 6], art: { idle: '/can.webp' } };
@@ -45,7 +43,7 @@ test('the pumpkin lights up, then dies down', () => {
   expect(pic(el)).toBe('/p.webp');
 });
 
-test('under reduced motion the pumpkin still lights; a one-shot just resets', () => {
+test('under reduced motion a toy still switches its art, holds for its time, then resets', () => {
   window.matchMedia = jest.fn().mockReturnValue({ matches: true });
   const { container } = render(
     <>
@@ -55,9 +53,24 @@ test('under reduced motion the pumpkin still lights; a one-shot just resets', ()
   );
   fireEvent.pointerDown(toyEl(container, 'pumpkin'));
   fireEvent.pointerDown(toyEl(container, 'can'));
-  act(() => jest.advanceTimersByTime(0));
+  act(() => jest.advanceTimersByTime(TOY_MS.pop - 1));
   expect(toyEl(container, 'pumpkin').getAttribute('data-on')).toBe('true');
+  expect(toyEl(container, 'can').getAttribute('data-on')).toBe('true');
+  act(() => jest.advanceTimersByTime(1));
   expect(toyEl(container, 'can').getAttribute('data-on')).toBe('false');
+  expect(toyEl(container, 'pumpkin').getAttribute('data-on')).toBe('true');
+});
+
+test('unmounting a toy mid-effect clears its timer', () => {
+  const err = jest.spyOn(console, 'error').mockImplementation(() => {});
+  const { container, unmount } = render(<Toy toy={PUMPKIN} />);
+  fireEvent.pointerDown(toyEl(container, 'pumpkin'));
+  expect(jest.getTimerCount()).toBe(1);
+  unmount();
+  expect(jest.getTimerCount()).toBe(0);
+  act(() => jest.advanceTimersByTime(TOY_MS.light));
+  expect(err).not.toHaveBeenCalled();
+  err.mockRestore();
 });
 
 test('a can with no extra picture fizzes', () => {

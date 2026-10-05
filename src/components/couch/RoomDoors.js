@@ -56,7 +56,7 @@ function RoomDoor({ door, covers, giveaway, onDoor }) {
     ? 'transition-transform duration-200 ease-out motion-safe:group-hover:-translate-y-[2%] motion-safe:group-focus-visible:-translate-y-[2%] group-hover:drop-shadow-lg'
     : '';
   return (
-    <li className="absolute" style={pctStyle(box.rect)}>
+    <li className="pointer-events-auto absolute" style={pctStyle(box.rect)}>
       <a {...props} aria-label={door.label} data-door={door.id} className={`group relative block h-full w-full rounded-onair-tile ${FOCUS}`}>
         {box.cutout && (
           <img src={box.cutout} alt="" data-door-art draggable={false} className={`absolute inset-0 h-full w-full ${lift}`} />
@@ -77,7 +77,7 @@ function RoomDoor({ door, covers, giveaway, onDoor }) {
 
 export default function RoomDoors({ doors, covers, giveaway, onDoor }) {
   return (
-    <ol role="list" aria-label="Things in the room" className="absolute inset-0">
+    <ol role="list" aria-label="Things in the room" className="pointer-events-none absolute inset-0">
       {doors.map((door) => (
         <RoomDoor key={door.id} door={door} covers={covers} giveaway={giveaway} onDoor={onDoor} />
       ))}

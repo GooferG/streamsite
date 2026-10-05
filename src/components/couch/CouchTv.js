@@ -9,7 +9,7 @@ import { SEGMENT_MS, STATIC_MS, isPicture } from './reel';
 // The couch's TV (spec: The TV). It sits in the art's screen rectangle and
 // sizes its type in container units. Decorative: the TV door's link says what
 // is on.
-const GSN_IDENT = '/gsn/ident.webp';
+const GSN_IDENT = '/tv/ads/gsn-ident.webp'; // the commercial's ident, a third of /gsn/ident.webp
 
 function useTabHidden() {
   const [hidden, setHidden] = useState(() => typeof document !== 'undefined' && document.hidden);

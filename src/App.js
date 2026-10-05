@@ -85,7 +85,6 @@ function StreamingSiteContent() {
   const navigate = useNavigate();
   const location = useLocation();
   const navType = useNavigationType();
-  const [isVisible, setIsVisible] = useState(false);
   const [channelData, setChannelData] = useState(null);
   const [isLive, setIsLive] = useState(false);
   const [streamData, setStreamData] = useState(null);
@@ -109,6 +108,8 @@ function StreamingSiteContent() {
     return { mode, reduced };
   });
   const [showTVIntro, setShowTVIntro] = useState(intro.mode !== 'none');
+  // With no intro the page is up from the first paint (no fade from black).
+  const [isVisible, setIsVisible] = useState(intro.mode === 'none');
   const [signalLocking, setSignalLocking] = useState(false);
 
   useEffect(() => {

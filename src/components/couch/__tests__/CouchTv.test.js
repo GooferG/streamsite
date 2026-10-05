@@ -110,7 +110,8 @@ test('items vanishing mid-switch and returning does not crash', () => {
 
 test('the remote flips the screen to the GSN ident', () => {
   render(<CouchTv tv={OFF} items={[STILL]} mode="stills" flipTo="gsn" />);
-  expect(screen.getByTestId('tv-flip').getAttribute('src')).toBe('/gsn/ident.webp');
+  // The commercial's small ident (the TV's size), not the store's full one.
+  expect(screen.getByTestId('tv-flip').getAttribute('src')).toBe('/tv/ads/gsn-ident.webp');
 });
 
 test('a still that fails to load is dropped, and a new src gets a fresh try', () => {

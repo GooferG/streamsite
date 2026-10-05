@@ -7,7 +7,8 @@ export default function GrainOverlay() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    // Read back once (toDataURL): a CPU canvas skips the GPU readback.
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
     canvas.width = 200;
     canvas.height = 200;

@@ -29,7 +29,18 @@ jest.mock('../components/controlRoom/StaffLayer', () => () => null);
 jest.mock('../components/GrainOverlay', () => () => null);
 jest.mock('../components/SiteFooter', () => () => null);
 jest.mock('../components/camera/CameraProvider', () => ({ children }) => children);
-jest.mock('../pages/HomePage', () => () => <p>home page</p>);
+// Home notes #main's class as it first mounts, before any effect can change it.
+let mockMainAtMount = null;
+jest.mock('../pages/HomePage', () => {
+  const { useLayoutEffect } = require('react');
+  return function MockHome() {
+    useLayoutEffect(() => {
+      const main = global.document.getElementById('main');
+      mockMainAtMount = main ? main.className : null;
+    }, []);
+    return <p>home page</p>;
+  };
+});
 jest.mock('../pages/GambaPage', () => () => null);
 jest.mock('../routes/loaders', () => ({
   PAGE_LOADERS: {
@@ -68,3 +79,12 @@ test('every other page keeps the bar and has no home button', async () => {
   expect(screen.getByRole('navigation', { name: 'Site' })).toBeTruthy();
   expect(screen.queryByRole('button', { name: /^Menu/ })).toBeNull();
 });
+
+test('with no intro the page is up from its first paint, with no fade from black', async () => {
+  mockMainAtMount = null;
+  render(<MemoryRouter initialEntries={['/']}><App /></MemoryRouter>);
+  expect(await screen.findByText('home page')).toBeTruthy();
+  expect(mockMainAtMount).toContain('opacity-100');
+  expect(mockMainAtMount).not.toContain('opacity-0');
+});
+

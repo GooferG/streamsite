@@ -5,6 +5,7 @@ import useHunt from '../hunts/useHunt';
 import useNow from '../hunts/useNow';
 import usePredictionRound from '../hunts/usePredictionRound';
 import { latestFinished } from './couchModel';
+import { readThemeOverride, themeFor } from './themes';
 import useLastVisit from './useLastVisit';
 import useLiveGiveaway from './useLiveGiveaway';
 import useSteamGames from './useSteamGames';
@@ -32,6 +33,7 @@ export function toCouchInput(p) {
     games: p.games,
     lastVisit: p.lastVisit,
     reel: p.reel,
+    theme: p.theme ?? null,
   };
 }
 
@@ -65,5 +67,6 @@ export default function useCouchData({ isLive, streamData, statusReady, videos, 
     games,
     lastVisit,
     reel,
+    theme: themeFor(now, readThemeOverride()),
   });
 }

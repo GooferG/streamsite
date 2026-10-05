@@ -4,6 +4,8 @@ import LaptopScreen from './LaptopScreen';
 import DoorTiles from './DoorTiles';
 import RoomDoors from './RoomDoors';
 import TvCrop from './TvCrop';
+import Dressing from './Dressing';
+import { themeArt } from './themes';
 import { LAYOUT, center, pctStyle, plateSrc, plateSrcSet } from './couchLayout';
 
 // The couch (spec: The room). Presentational: the art, the live screens and
@@ -15,6 +17,7 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, on
   const base = LAYOUT.art.empty || LAYOUT.art.plate;
   const [tx, ty] = center(LAYOUT.screens.tv);
   const live = couch.tv.state === 'live';
+  const art = themeArt(LAYOUT, couch.theme);
   return (
     <section aria-label="Goofer's couch" className="mt-[57px]">
       <div ref={containerRef} className="relative h-[calc(100svh-57px)] overflow-hidden bg-onair-surface-4">
@@ -34,6 +37,7 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, on
             onError={onPlateError}
             className="absolute inset-0 h-full w-full select-none"
           />
+          <Dressing layers={art && art.dressing} />
           <RoomDoors doors={couch.doors} covers={couch.covers} giveaway={couch.giveaway} onDoor={onDoor} />
           <span
             className={`couch-dim pointer-events-none absolute inset-0 ${live ? 'couch-dim--live' : ''}`}
@@ -44,7 +48,7 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, on
             <CouchTv tv={couch.tv} items={items} mode={mode} flipTo={flipTo} onAutoplayBlocked={onAutoplayBlocked} />
           </span>
           <span className="pointer-events-none absolute z-[2]" style={pctStyle(LAYOUT.screens.laptop)}>
-            <LaptopScreen laptop={couch.laptop} />
+            <LaptopScreen laptop={couch.laptop} bug={art && art.laptopBug} />
           </span>
         </div>
       </div>
@@ -61,7 +65,7 @@ export default function CouchFront(props) {
   const tv = couch.doors.find((d) => d.id === 'tv');
   return (
     <div className={art ? '' : 'mt-[57px]'}>
-      {art && <TvCrop door={tv} tv={couch.tv} items={items} mode={mode} flipTo={flipTo} onDoor={onDoor} onAutoplayBlocked={onAutoplayBlocked} onPlateError={failPlate} />}
+      {art && <TvCrop door={tv} tv={couch.tv} items={items} mode={mode} flipTo={flipTo} onDoor={onDoor} onAutoplayBlocked={onAutoplayBlocked} onPlateError={failPlate} theme={couch.theme} />}
       <DoorTiles doors={couch.doors} onDoor={onDoor} noArt={!art} skip={art ? ['tv'] : []} onPlateError={failPlate} />
     </div>
   );

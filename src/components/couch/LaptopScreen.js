@@ -38,13 +38,13 @@ function Round({ laptop }) {
   );
 }
 
-function Screensaver({ laptop }) {
+function Screensaver({ laptop, bug }) {
   return (
     <>
       <div className="absolute inset-x-[6cqw] bottom-[16cqw] top-[6cqw]">
         <div className="absolute inset-y-0 left-0 w-[24cqw] motion-safe:animate-onair-bounce-x">
           <span className="absolute left-0 top-0 grid h-[10cqw] w-full place-items-center rounded-onair-tile bg-onair-surface-raised font-onair text-[max(10px,6cqw)] font-extrabold text-onair-ink-2 motion-safe:animate-onair-bounce-y">
-            GG
+            {bug ? <img src={bug} alt="" className="h-full w-full object-contain" /> : 'GG'}
           </span>
         </div>
       </div>
@@ -57,7 +57,7 @@ function Screensaver({ laptop }) {
   );
 }
 
-export default function LaptopScreen({ laptop }) {
+export default function LaptopScreen({ laptop, bug = null }) {
   return (
     <div
       className="relative h-full w-full overflow-hidden bg-onair-surface-4"
@@ -67,7 +67,7 @@ export default function LaptopScreen({ laptop }) {
     >
       {laptop.mode === 'hunt' && <Hunt laptop={laptop} />}
       {(laptop.mode === 'open' || laptop.mode === 'locked') && <Round laptop={laptop} />}
-      {laptop.mode === 'idle' && <Screensaver laptop={laptop} />}
+      {laptop.mode === 'idle' && <Screensaver laptop={laptop} bug={bug} />}
       <span className={`${SCREEN_CLASS} pointer-events-none absolute inset-0`} />
     </div>
   );

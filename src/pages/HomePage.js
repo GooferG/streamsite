@@ -6,7 +6,7 @@ import useCouchData from '../components/couch/useCouchData';
 // Home: the couch (spec: docs/superpowers/specs/2026-10-04-couch-home-design.md).
 let readFixture = () => null;
 if (process.env.NODE_ENV !== 'production') {
-  // Dev-only: /?fixture=offair|live|giveaway|hunt|round|late|loading|noart|empty
+  // Dev-only: /?fixture=offair|live|giveaway|hunt|round|late|loading|noart|empty|halloween
   // renders the couch from couchFixtures. Webpack drops this branch, and the
   // fixture module with it, from production builds.
   readFixture = () => {

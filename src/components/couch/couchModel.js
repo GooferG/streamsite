@@ -6,6 +6,7 @@ import { showTitle } from '../schedule/scheduleModel';
 import { cleanTitle, parseDuration } from '../vods/videoStoreModel';
 import { COPY, dayWord, lengthWords, untilWords, whenAired } from './couchCopy';
 import { ROOM } from './couchLayout';
+import { THEMES } from './themes';
 
 // The couch's state from one plain input (spec: Model). Pure.
 //
@@ -15,6 +16,7 @@ import { ROOM } from './couchLayout';
 //   hunts: { live, recent, loading, error }, round, lastHunt (with bonuses),
 //   leaderboardEndsAt, giveaway: { keyword, prize, status } | null,
 //   games: [{ appid, name, playtime_2weeks }] | null,
+//   theme: id | null (a seasonal theme, see themes.js),
 //   lastVisit: ms | null (first visit) | undefined (storage unreadable), reel }
 
 export const DOOR_ORDER = ['tv', 'note', 'laptop', 'tapes', 'guide', 'games', 'remote', 'photo'];
@@ -177,9 +179,11 @@ export function buildCouch(input) {
     };
   });
 
+  const theme = input.theme && THEMES[input.theme] ? input.theme : null;
   const cards =
     state === 'offair'
       ? [
+          ...(theme ? THEMES[theme].cards : []),
           { kicker: 'Off air', text: copy.tv.sentence },
           { kicker: 'Tapes', text: copy.tapes.sentence },
           { kicker: 'Laptop', text: copy.laptop.sentence },
@@ -187,6 +191,7 @@ export function buildCouch(input) {
       : [];
 
   return {
+    theme,
     tv: {
       state,
       preview: state === 'live' ? preview(input.stream, input.now) : null,

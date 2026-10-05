@@ -74,6 +74,7 @@ const BASE = {
   ],
   lastVisit: Date.parse('2026-09-30T00:00:00Z'),
   reel: null,
+  theme: null,
 };
 
 const LIVE = {
@@ -89,6 +90,7 @@ const LIVE = {
 
 export const COUCH_FIXTURES = {
   offair: { input: BASE },
+  halloween: { input: { ...BASE, theme: 'halloween' } },
   live: { input: LIVE },
   giveaway: { input: { ...LIVE, giveaway: { keyword: '!goof', prize: '$25.00 bonus buy', status: 'open' } } },
   hunt: { input: { ...LIVE, hunts: { live: LIVE_HUNT, recent: [], loading: false, error: null } } },

@@ -1,0 +1,65 @@
+[
+  {
+    "id": "i-guess",
+    "title": "I guess",
+    "sources": {
+      "h264": "/tv/reel/i-guess.mp4"
+    },
+    "poster": "/tv/reel/i-guess.jpg",
+    "seconds": 8
+  },
+  {
+    "id": "banana-bonus",
+    "title": "the banana bonus",
+    "sources": {
+      "h264": "/tv/reel/banana-bonus.mp4"
+    },
+    "poster": "/tv/reel/banana-bonus.jpg",
+    "seconds": 8
+  },
+  {
+    "id": "it-kept-counting",
+    "title": "it kept counting",
+    "sources": {
+      "h264": "/tv/reel/it-kept-counting.mp4"
+    },
+    "poster": "/tv/reel/it-kept-counting.jpg",
+    "seconds": 8
+  },
+  {
+    "id": "super-mega",
+    "title": "super mega",
+    "sources": {
+      "h264": "/tv/reel/super-mega.mp4"
+    },
+    "poster": "/tv/reel/super-mega.jpg",
+    "seconds": 8
+  },
+  {
+    "id": "big-win",
+    "title": "big win",
+    "sources": {
+      "h264": "/tv/reel/big-win.mp4"
+    },
+    "poster": "/tv/reel/big-win.jpg",
+    "seconds": 8
+  },
+  {
+    "id": "dig-site",
+    "title": "dig site",
+    "sources": {
+      "h264": "/tv/reel/dig-site.mp4"
+    },
+    "poster": "/tv/reel/dig-site.jpg",
+    "seconds": 8
+  },
+  {
+    "id": "extra-spin",
+    "title": "buy the extra spin",
+    "sources": {
+      "h264": "/tv/reel/extra-spin.mp4"
+    },
+    "poster": "/tv/reel/extra-spin.jpg",
+    "seconds": 8
+  }
+]

@@ -1,0 +1,180 @@
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
+import useMediaQuery from '../../hooks/useMediaQuery';
+import { TIMINGS, useCamera } from '../camera/CameraProvider';
+import { viewRect } from '../camera/cameraMath';
+import { useNavHeight } from '../nav/navMetrics';
+import { prefersReducedMotion } from '../onAir/useChannelSwitch';
+import CouchFront, { ROOM_QUERY } from './CouchFront';
+import TvFrame from './TvFrame';
+import { ART_ASPECT, LAYOUT } from './couchLayout';
+import { buildCouch, withCommercial, withLaptopWindow } from './couchModel';
+import { liteConnection, reelItems, reelMode } from './reel';
+import { isWatching } from '../../utils/watching';
+import useCouchStage from './useCouchStage';
+
+// The couch with its camera (spec: The camera). Must sit inside CameraProvider.
+export const FLIP_MS = 400;
+const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+// What the camera aims at: the TV's screen for the TV and the remote.
+export const aimFor = (id) => (id === 'tv' || id === 'remote' ? LAYOUT.screens.tv : LAYOUT.doors[id].rect);
+
+const liteData = () => typeof navigator !== 'undefined' && liteConnection(navigator.connection);
+const NOT_HELD = { tv: false, laptop: false };
+
+// Back lands on the door you left through (once the camera is back on the
+// room), unless focus already went somewhere else.
+function focusDoor(id) {
+  const active = document.activeElement;
+  if (active && active !== document.body && active.id !== 'main') return;
+  const door = document.querySelector(`[data-door="${id}"]`);
+  if (door) door.focus({ preventScroll: true });
+}
+
+export default function Couch({ input, noArt = false, introPullBack = false, introDone = true }) {
+  const couch = useMemo(() => buildCouch(input), [input]);
+  const roomLayout = useMediaQuery(ROOM_QUERY);
+  const navH = useNavHeight();
+  const stage = useCouchStage(ART_ASPECT, LAYOUT.art.focal, navH);
+  const camera = useCamera();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [flipTo, setFlipTo] = useState(null);
+  const [blocked, setBlocked] = useState(false);
+  const mode = reelMode({ reducedMotion: prefersReducedMotion(), saveData: liteData(), autoplayBlocked: blocked });
+  const items = useMemo(
+    () => reelItems({ reel: input.reel, clips: input.clips, videos: input.videos, cards: couch.tv.cards, ads: couch.tv.ads }),
+    [input.reel, input.clips, input.videos, couch.tv.cards, couch.tv.ads]
+  );
+  const live = couch.tv.state === 'live';
+  // The commercial on the TV and the window on the laptop, if any: each door
+  // goes where its screen points while it shows. A click reads the door it was
+  // rendered with, so a screen changing mid-move never changes the trip.
+  const [ad, setAd] = useState(null);
+  const onSegment = useCallback((item) => setAd(item && item.kind === 'ad' ? item.ad : null), []);
+  const [laptopWindow, setLaptopWindow] = useState(null);
+  const shown = useMemo(() => withLaptopWindow(withCommercial(couch, ad), laptopWindow), [couch, ad, laptopWindow]);
+  // Neither screen changes while its door is hovered or focused, so neither
+  // door retargets under you (useDoorHold).
+  const [held, setHeld] = useState(NOT_HELD);
+  const onHold = useCallback((id, on) => setHeld((h) => (!(id in h) || h[id] === on ? h : { ...h, [id]: on })), []);
+  const watching = isWatching(location, live);
+  // Watching changes only the state: the page and its query (a dev ?fixture=) stay.
+  const here = location.pathname + location.search;
+  const inRoom = roomLayout && !noArt;
+
+  const onDoor = useCallback(
+    async (door, el) => {
+      const stageEl = stage.stageRef.current;
+      if (door.id === 'tv' && live) {
+        if (inRoom && stageEl) await camera.enterInPlace({ stage: stageEl, zoom: stage.zoomFor(aimFor('tv')), state: { watch: true } });
+        else navigate(here, { state: { watch: true } });
+        return;
+      }
+      if (!inRoom || !stageEl) {
+        const art = el.querySelector('img[data-door-art]');
+        const cutout = LAYOUT.doors[door.id] && LAYOUT.doors[door.id].cutout;
+        const src = art && cutout ? art.currentSrc || art.src : null;
+        await camera.growFrom({ rect: (src ? art : el).getBoundingClientRect(), src, href: door.href, doorId: door.id, cut: door.cut, view: viewRect(window, navH) });
+        return;
+      }
+      // Reduced motion has no static and no zoom, so no flip either.
+      // A click during a move is ignored, so it must not flip the TV either.
+      if (door.id === 'remote' && !prefersReducedMotion()) {
+        if (camera.isBusy()) return;
+        setFlipTo('gsn');
+        await wait(FLIP_MS);
+        // Gone while the TV flipped: nothing left to zoom.
+        if (!stageEl.isConnected) return;
+      }
+      await camera.goThrough({ stage: stageEl, zoom: stage.zoomFor(aimFor(door.id)), href: door.href, doorId: door.id, cut: door.cut, view: viewRect(window, navH) });
+    },
+    [camera, inRoom, live, here, navigate, stage, navH]
+  );
+
+  // On mount: start inside the TV for the intro, or pull back from the door we
+  // came back through. Layout effect, so the zoomed frame is what paints first.
+  useLayoutEffect(() => {
+    const stageEl = stage.stageRef.current;
+    if (introPullBack && !introDone) {
+      if (inRoom && stageEl) camera.hold({ stage: stageEl, zoom: stage.zoomFor(aimFor('tv')) });
+      return;
+    }
+    const back = camera.takeReturn();
+    if (!back) return;
+    const { doorId, cut } = back;
+    const land = () => focusDoor(doorId);
+    if (inRoom && stageEl) {
+      camera.pullBack({ stage: stageEl, zoom: stage.zoomFor(aimFor(doorId)), cut, view: viewRect(window, navH) }).then(land);
+      return;
+    }
+    const tile = document.querySelector(`[data-door="${doorId}"]`);
+    if (!tile) return;
+    // The tile may be below the fold (a phone): bring it into view before measuring.
+    if (tile.scrollIntoView) tile.scrollIntoView({ block: 'nearest' });
+    const art = tile.querySelector('img[data-door-art]');
+    const cutout = LAYOUT.doors[doorId] && LAYOUT.doors[doorId].cutout;
+    const src = art && cutout ? art.currentSrc || art.src : null;
+    camera.shrinkInto({ rect: (src ? art : tile).getBoundingClientRect(), src, view: viewRect(window, navH), cut }).then(land);
+    // Mount only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // The intro: once the power-on finishes, pull back from the TV.
+  const introPending = useRef(introPullBack && !introDone);
+  useEffect(() => {
+    if (!introPending.current || !introDone) return;
+    introPending.current = false;
+    const stageEl = stage.stageRef.current;
+    if (inRoom && stageEl) camera.pullBack({ stage: stageEl, zoom: stage.zoomFor(aimFor('tv')), duration: TIMINGS.introPull, cut: null });
+  }, [introDone, inRoom, camera, stage]);
+
+  // Leaving "inside the TV" (Back, Esc, the button, or the stream ending).
+  // If the camera is still tuning in from entering, the pull-back waits for it
+  // (the context value changes when busy flips, which re-runs this effect).
+  const wasWatching = useRef(watching);
+  const pendingPull = useRef(false);
+  useEffect(() => {
+    if (wasWatching.current && !watching) pendingPull.current = true;
+    wasWatching.current = watching;
+    if (!pendingPull.current || camera.busy) return;
+    pendingPull.current = false;
+    const stageEl = stage.stageRef.current;
+    if (inRoom && stageEl) camera.pullBack({ stage: stageEl, zoom: stage.zoomFor(aimFor('tv')) });
+  }, [watching, inRoom, camera, stage]);
+
+  // The stream ended while its flag is in history: drop the flag, so a
+  // reconnect does not reopen the frame and Back is not a dead press.
+  const stale = !live && !!(location.state && location.state.watch);
+  useEffect(() => {
+    if (stale) navigate(here, { replace: true, state: null });
+  }, [stale, here, navigate]);
+
+  const exitWatch = useCallback(() => {
+    if (location.key === 'default') navigate(here, { replace: true, state: null });
+    else navigate(-1);
+  }, [location.key, here, navigate]);
+
+  return (
+    <>
+      <CouchFront
+        now={input.now}
+        couch={shown}
+        items={items}
+        mode={mode}
+        flipTo={flipTo}
+        onDoor={onDoor}
+        onAutoplayBlocked={() => setBlocked(true)}
+        onSegment={onSegment}
+        onWindow={setLaptopWindow}
+        held={held}
+        onHold={onHold}
+        stage={stage}
+        roomLayout={roomLayout}
+        noArt={noArt}
+      />
+      {watching && <TvFrame onExit={exitWatch} navH={navH} />}
+    </>
+  );
+}

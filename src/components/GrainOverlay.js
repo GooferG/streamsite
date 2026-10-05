@@ -7,7 +7,8 @@ export default function GrainOverlay() {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    // Read back once (toDataURL): a CPU canvas skips the GPU readback.
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
 
     canvas.width = 200;
     canvas.height = 200;
@@ -39,13 +40,11 @@ export default function GrainOverlay() {
   return (
     <>
       <canvas ref={canvasRef} style={{ display: 'none' }} />
+      {/* The drift is a class, so prefers-reduced-motion switches it off (DESIGN.md: Grain Overlay). */}
       <div
         id="grain-overlay"
-        className="fixed inset-0 opacity-[0.08] pointer-events-none mix-blend-overlay"
-        style={{
-          backgroundSize: '200px 200px',
-          animation: 'grain 8s steps(10) infinite',
-        }}
+        className="fixed inset-0 opacity-[0.08] pointer-events-none mix-blend-overlay motion-safe:animate-[grain_8s_steps(10)_infinite]"
+        style={{ backgroundSize: '200px 200px' }}
       />
     </>
   );

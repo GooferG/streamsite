@@ -4,19 +4,24 @@ import {
   Route,
   useNavigate,
   useLocation,
+  useNavigationType,
 } from 'react-router-dom';
 import Navigation from './components/nav/Navigation';
+import HomeMenuButton from './components/nav/HomeMenuButton';
 import SiteFooter from './components/SiteFooter';
 import GrainOverlay from './components/GrainOverlay';
 import AdminLayout from './components/AdminLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import TVStaticIntro from './components/TVStaticIntro';
+import CameraProvider from './components/camera/CameraProvider';
 import HomePage from './pages/HomePage';
 import GambaPage from './pages/GambaPage';
 import { AuthProvider } from './contexts/AuthContext';
 import { TwitchAuthProvider } from './contexts/TwitchAuthContext';
 import { ControlRoomProvider } from './contexts/ControlRoomContext';
 import StaffLayer from './components/controlRoom/StaffLayer';
+import { PAGE_LOADERS } from './routes/loaders';
+import { titleFor } from './routes/pageTitles';
 import {
   dropTwitchToken,
   getTwitchAccessToken,
@@ -25,7 +30,6 @@ import {
   getTwitchVideos,
   getTwitchStreamInfo,
   getTwitchChannelInfo,
-  getTwitchFollowers,
   getGameNames,
 } from './utils/twitchApi';
 import {
@@ -39,10 +43,10 @@ import {
 // staff. Secondary public pages split per route. HomePage + GambaPage stay eager (landing paint / GambaPage
 // already code-splits its own heavy children). TVStaticIntro is eager too: it
 // is a few KB of raw WebGL and has to cover the very first paint.
-const SchedulePage = lazy(() => import('./pages/SchedulePage'));
-const VodsPage = lazy(() => import('./pages/VodsPage'));
-const AboutPage = lazy(() => import('./pages/AboutPage'));
-const GamingPage = lazy(() => import('./pages/GamingPage'));
+const SchedulePage = lazy(PAGE_LOADERS.schedule);
+const VodsPage = lazy(PAGE_LOADERS.vods);
+const AboutPage = lazy(PAGE_LOADERS.about);
+const GamingPage = lazy(PAGE_LOADERS.gaming);
 const GearPage = lazy(() => import('./pages/Gear'));
 const GearInteractive = lazy(() => import('./pages/GearInteractive'));
 const AdminHubPage = lazy(() => import('./pages/AdminHubPage'));
@@ -55,8 +59,8 @@ const AdminGiveawaysPage = lazy(() => import('./pages/AdminGiveawaysPage'));
 const AdminHuntsPage = lazy(() => import('./pages/AdminHuntsPage'));
 const AdminUsersPage = lazy(() => import('./pages/AdminUsersPage'));
 const AdminModeratorsPage = lazy(() => import('./pages/AdminModeratorsPage'));
-const StorePage = lazy(() => import('./pages/StorePage'));
-const GiveawayPage = lazy(() => import('./pages/GiveawayPage'));
+const StorePage = lazy(PAGE_LOADERS.store);
+const GiveawayPage = lazy(PAGE_LOADERS.giveaway);
 const MyAccountPage = lazy(() => import('./pages/MyAccountPage'));
 const TwitchCallbackPage = lazy(() => import('./pages/TwitchCallbackPage'));
 const DiscordCallbackPage = lazy(() => import('./pages/DiscordCallbackPage'));
@@ -79,7 +83,7 @@ const PRODUCT_PREFIXES = [
 function StreamingSiteContent() {
   const navigate = useNavigate();
   const location = useLocation();
-  const [isVisible, setIsVisible] = useState(false);
+  const navType = useNavigationType();
   const [channelData, setChannelData] = useState(null);
   const [isLive, setIsLive] = useState(false);
   const [streamData, setStreamData] = useState(null);
@@ -103,6 +107,8 @@ function StreamingSiteContent() {
     return { mode, reduced };
   });
   const [showTVIntro, setShowTVIntro] = useState(intro.mode !== 'none');
+  // With no intro the page is up from the first paint (no fade from black).
+  const [isVisible, setIsVisible] = useState(intro.mode === 'none');
   const [signalLocking, setSignalLocking] = useState(false);
 
   useEffect(() => {
@@ -111,13 +117,12 @@ function StreamingSiteContent() {
         const token = await getTwitchAccessToken();
         const userId = await getTwitchUserId(token);
 
-        const [clipsData, videosData, streamInfo, channelInfo, followersCount] =
+        const [clipsData, videosData, streamInfo, channelInfo] =
           await Promise.all([
             getTwitchClips(token, userId),
             getTwitchVideos(token, userId),
             getTwitchStreamInfo(token, userId),
             getTwitchChannelInfo(token, userId),
-            getTwitchFollowers(token, userId),
           ]);
 
         const gameIds = [
@@ -142,7 +147,7 @@ function StreamingSiteContent() {
         setIsLive(!!streamInfo);
         setStatusReady(true);
         setStreamData(streamInfo);
-        setChannelData({ ...channelInfo, followers: followersCount });
+        setChannelData(channelInfo);
         setLoading(false);
 
         console.log('App.js Debug - Stream Info:', streamInfo);
@@ -188,8 +193,33 @@ function StreamingSiteContent() {
     return () => document.body.classList.remove('brand-route');
   }, [isBrandRoute]);
 
+  // Back to the couch keeps the page where it is: on a phone the door tiles
+  // run below the fold, and the camera shrinks back into the one you left.
   useEffect(() => {
+    if (navType === 'POP' && location.pathname === '/') return;
     window.scrollTo(0, 0);
+    // Page changes only: navType is read for the change that just happened.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  // The tab says which page this is.
+  useEffect(() => {
+    document.title = titleFor(location.pathname);
+  }, [location.pathname]);
+
+  // A new page (a link, the nav, a door on the couch) takes focus on #main so
+  // screen readers land on it; Back leaves focus to the page it returns to,
+  // and a page that put focus somewhere itself keeps it, in #main or in a
+  // modal dialog it portaled outside it (the rental counter, a stage moment).
+  useEffect(() => {
+    if (navType !== 'PUSH') return;
+    const main = document.getElementById('main');
+    const active = document.activeElement;
+    const placed = active && active !== main && (main?.contains(active) || active.closest?.('[aria-modal="true"]'));
+    if (!main || placed) return;
+    main.focus({ preventScroll: true });
+    // Page changes only: navType is read for the change that just happened.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
   useEffect(() => {
@@ -219,6 +249,7 @@ function StreamingSiteContent() {
 
   return (
     <div className="min-h-screen bg-zinc-broadcast text-white-body">
+      <CameraProvider>
       {showTVIntro && (
         <TVStaticIntro
           mode={intro.mode}
@@ -231,14 +262,19 @@ function StreamingSiteContent() {
 
       <GrainOverlay />
 
-      <Navigation isLive={isLive} viewerCount={streamData?.viewer_count ?? null} statusReady={statusReady} />
+      {/* The room is the navigation on home: a corner menu instead of the bar. */}
+      {location.pathname === '/' ? (
+        <HomeMenuButton isLive={isLive} viewerCount={streamData?.viewer_count ?? null} statusReady={statusReady} />
+      ) : (
+        <Navigation isLive={isLive} viewerCount={streamData?.viewer_count ?? null} statusReady={statusReady} />
+      )}
 
       <StaffLayer isLive={isLive} streamData={streamData} pathname={location.pathname} />
 
       <main
         id="main"
         tabIndex={-1}
-        className={`transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'} ${signalLocking ? 'motion-safe:animate-signal-lock' : ''}`}
+        className={`transition-opacity duration-700 focus:outline-none ${isVisible ? 'opacity-100' : 'opacity-0'} ${signalLocking ? 'motion-safe:animate-signal-lock' : ''}`}
       >
         <ErrorBoundary key={location.pathname}>
         <Suspense
@@ -255,14 +291,14 @@ function StreamingSiteContent() {
             path="/"
             element={
               <HomePage
-                setPage={(id) => navigate(id === 'home' ? '/' : `/${id}`)}
                 channelData={channelData}
                 isLive={isLive}
                 streamData={streamData}
-                loading={loading}
                 clips={clips}
                 videos={videos}
+                statusReady={statusReady}
                 introDone={!showTVIntro}
+                introPullBack={intro.mode === 'gate'}
               />
             }
           />
@@ -312,6 +348,7 @@ function StreamingSiteContent() {
       </main>
 
       {isBrandRoute && <SiteFooter />}
+      </CameraProvider>
     </div>
   );
 }

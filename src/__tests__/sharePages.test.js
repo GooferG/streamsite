@@ -49,7 +49,7 @@ describe('writeSharePages', () => {
     expect(home).toContain('property="og:url" content="https://goofer.tv/"');
     expect(board).toContain('property="og:url" content="https://goofer.tv/gamba/leaderboard"');
     expect(board).toContain('property="og:title" content="Leaderboard · GooferG"');
-    expect(board).toContain('<title>Goofer Live</title>');
+    expect(board).toContain('<title>GooferG</title>');
     expect(ogImage(home)).toMatch(/^https:\/\/goofer\.tv\/share\/home\.jpg\?v=[0-9a-f]{8}$/);
     expect(ogImage(board)).toMatch(/^https:\/\/goofer\.tv\/share\/leaderboard\.jpg\?v=[0-9a-f]{8}$/);
   });
@@ -102,6 +102,29 @@ describe('rewriteProblems', () => {
 describe('repo wiring', () => {
   test('vercel.json rewrites match the share pages', () => {
     expect(rewriteProblems(vercel.rewrites, SHARE_PAGES)).toEqual([]);
+  });
+
+  // The files aren't fingerprinted, so a day, then a week of revalidating in the background.
+  test('vercel.json caches the TV, couch and GSN art for a day', () => {
+    const cache = (source) => {
+      const rule = (vercel.headers || []).find((h) => h.source === source);
+      const header = rule && rule.headers.find((h) => h.key === 'Cache-Control');
+      return header && header.value;
+    };
+    // The day rule skips the reel manifest, which has its own rule below.
+    const tv = '/tv/((?!reel/manifest.json$).*)';
+    [tv, '/couch/(.*)', '/gsn/(.*)'].forEach((source) =>
+      expect([source, cache(source)]).toEqual([source, 'public, max-age=86400, stale-while-revalidate=604800'])
+    );
+  });
+
+  // The manifest names the reel's current files, so a stale copy hides a new reel.
+  test('vercel.json never caches the reel manifest, and no day rule matches it', () => {
+    const rules = vercel.headers || [];
+    const manifest = '/tv/reel/manifest.json';
+    expect(rules.find((h) => h.source === manifest).headers).toEqual([{ key: 'Cache-Control', value: 'no-cache' }]);
+    const covering = rules.filter((h) => h.source !== manifest && new RegExp(`^${h.source}$`).test(manifest));
+    expect(covering).toEqual([]);
   });
 
   test('every share page has its screenshot', () => {

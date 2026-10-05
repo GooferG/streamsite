@@ -41,7 +41,7 @@ export function orderByWeek(schedule) {
 }
 
 // The next scheduled stream from `now` forward (today included), skipping days
-// marked off. Null when nothing is scheduled. Shared by HomeHero and the nav.
+// marked off. Null when nothing is scheduled. Shared by the couch and the nav.
 export function nextScheduledStream(schedule, now = new Date()) {
   if (!schedule || schedule.length === 0) return null;
   const today = now.getDay();

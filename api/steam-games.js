@@ -41,6 +41,8 @@ export default async function handler(req, res) {
       img_logo_url: `https://cdn.cloudflare.steamstatic.com/steam/apps/${game.appid}/header.jpg`
     }));
 
+    // Home is the most-visited page; let the CDN answer most of it.
+    res.setHeader('Cache-Control', 's-maxage=1800, stale-while-revalidate=86400');
     res.status(200).json({ games: formattedGames });
   } catch (error) {
     console.error('Steam API Error:', error);

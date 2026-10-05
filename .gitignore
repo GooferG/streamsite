@@ -31,3 +31,4 @@ yarn-error.log*
 .vercel
 .env*
 .superpowers/
+scripts/tv-reel/source/

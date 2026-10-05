@@ -45,10 +45,10 @@ test('live with zero or unknown viewers reads plain LIVE', () => {
   expect(screen.getByRole('link', { name: 'Live now' }).textContent).toBe('Live');
 });
 
-test('live on Home is status text, not a link to itself', () => {
-  renderAt('/', { isLive: true, viewerCount: 1204, statusReady: true });
-  expect(screen.queryByRole('link')).toBeNull();
-  expect(screen.getByText('Live now, 1,204 watching').className).toContain('sr-only');
+test('live is a link home, named with the viewer count', () => {
+  renderAt('/schedule', { isLive: true, viewerCount: 1204, statusReady: true });
+  const link = screen.getByRole('link', { name: 'Live now, 1,204 watching' });
+  expect(link.getAttribute('href')).toBe('/');
 });
 
 test('off air: the next stream, linking to the schedule, from lg in the bar', () => {

@@ -1,6 +1,9 @@
 const SIZES = {
   md: 'h-[30px] px-2.5 text-[0.9375rem]',
   lg: 'h-16 px-5 text-[1.875rem]',
+  // On the couch TV's GSN commercial, in the screen's container units.
+  tv: 'h-[8cqw] px-[2.2cqw] text-[max(10px,4.6cqw)]',
+  ident: 'h-[22cqw] px-[6cqw] text-[max(10px,12cqw)]',
 };
 
 // The station bug. Pure CSS: generated art never carries lettering.

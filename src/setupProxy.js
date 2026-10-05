@@ -108,6 +108,29 @@ module.exports = function (app) {
     }
   });
 
+  // /api/steam-games needs STEAM_API_KEY (server-only): dev reads the deployed function.
+  app.use(
+    '/api/steam-games',
+    createProxyMiddleware({
+      target: DEPLOYED_API_TARGET,
+      changeOrigin: true,
+      secure: true,
+      pathRewrite: { '^/api/steam-games': '/api/steam-games' },
+    })
+  );
+
+  // /api/twitch-token needs TWITCH_CLIENT_SECRET (server-only): dev reads the
+  // deployed function, so the stream status, clips and VODs load on localhost.
+  app.use(
+    '/api/twitch-token',
+    createProxyMiddleware({
+      target: DEPLOYED_API_TARGET,
+      changeOrigin: true,
+      secure: true,
+      pathRewrite: { '^/api/twitch-token': '/api/twitch-token' },
+    })
+  );
+
   // /api/me/* needs Firebase admin — proxy to the deployed functions.
   app.use(
     '/api/me',

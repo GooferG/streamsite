@@ -243,12 +243,17 @@ module.exports = {
           '100%': { transform: 'translateY(0)' },
         },
         // On Air monitor: channel-change static, rolling band, chyron, LIVE light.
+        // The static jumps its noise layer (StaticNoise) between fixed offsets,
+        // never more than 64px, by transform only.
         'onair-static': {
-          '0%': { backgroundPosition: '0 0, 0 0' },
-          '25%': { backgroundPosition: '-37px 21px, 13px -9px' },
-          '50%': { backgroundPosition: '19px -43px, -27px 31px' },
-          '75%': { backgroundPosition: '-11px 7px, 41px 17px' },
-          '100%': { backgroundPosition: '29px 39px, -7px -23px' },
+          '0%, 100%': { transform: 'translate(0, 0)' },
+          '12.5%': { transform: 'translate(-37px, 21px)' },
+          '25%': { transform: 'translate(19px, -43px)' },
+          '37.5%': { transform: 'translate(-53px, -11px)' },
+          '50%': { transform: 'translate(41px, 57px)' },
+          '62.5%': { transform: 'translate(-13px, 47px)' },
+          '75%': { transform: 'translate(59px, -29px)' },
+          '87.5%': { transform: 'translate(-29px, -61px)' },
         },
         'onair-roll': {
           '0%': { transform: 'translateY(-100%)' },
@@ -267,6 +272,134 @@ module.exports = {
           '0%': { transform: 'translateY(0) rotate(0deg)', opacity: '1' },
           '100%': { transform: 'translateY(72px) rotate(-7deg)', opacity: '0' },
         },
+        // The couch laptop's screensaver: the GG bug drifting corner to corner.
+        // Transform only: each layer fills the screensaver, so 100% is its
+        // width (or height), less the bug's box in LaptopScreen (24cqw x 10cqw).
+        'onair-bounce-x': { from: { transform: 'translateX(0)' }, to: { transform: 'translateX(calc(100% - 24cqw))' } },
+        'onair-bounce-y': { from: { transform: 'translateY(0)' }, to: { transform: 'translateY(calc(100% - 10cqw))' } },
+        // Couch toys (spec: Toys). Transform and opacity only.
+        'couch-wiggle': {
+          '0%,100%': { transform: 'rotate(0deg)' },
+          '20%': { transform: 'rotate(-4deg)' },
+          '40%': { transform: 'rotate(4deg)' },
+          '60%': { transform: 'rotate(-3deg)' },
+          '80%': { transform: 'rotate(2deg)' },
+        },
+        'couch-drop': { '0%,100%': { transform: 'translateY(0)' }, '40%,60%': { transform: 'translateY(160%)' } },
+        // The controller's rumble lines flash in time with its wiggle.
+        'couch-rumble': {
+          '0%': { opacity: '0', transform: 'scale(0.7)' },
+          '12%': { opacity: '1', transform: 'scale(1)' },
+          '28%': { opacity: '0.25', transform: 'scale(0.92)' },
+          '44%': { opacity: '1', transform: 'scale(1.06)' },
+          '60%': { opacity: '0.25', transform: 'scale(0.95)' },
+          '76%': { opacity: '1', transform: 'scale(1.04)' },
+          '100%': { opacity: '0', transform: 'scale(1.12)' },
+        },
+        // The can (fizz): a shake from its base, then a foam head swells over the
+        // rim while blobs geyser out and droplets fly off. Each bit rides a wrapper
+        // the size of the can's box, so its CSS variables (set per bit in
+        // ToyEffects.js) are percentages of the can.
+        'couch-shake': {
+          '0%,100%': { transform: 'translateX(0) rotate(0deg)' },
+          '20%': { transform: 'translateX(-7%) rotate(-4deg)' },
+          '45%': { transform: 'translateX(6%) rotate(4deg)' },
+          '70%': { transform: 'translateX(-4%) rotate(-2deg)' },
+          '88%': { transform: 'translateX(2%) rotate(1deg)' },
+        },
+        'couch-foam-cap': {
+          '0%': { transform: 'scale(0.2)', opacity: '0' },
+          '15%': { transform: 'scale(1.12)', opacity: '1' },
+          '25%': { transform: 'scale(0.96)' },
+          '33%,85%': { transform: 'scale(1)', opacity: '1' },
+          '100%': { transform: 'scale(1.05)', opacity: '0' },
+        },
+        // A blob rises fast to its peak (--fx, --fy), hangs, then drifts down and fades.
+        'couch-foam': {
+          '0%': { transform: 'translate(0, 0) scale(0.3)', opacity: '0', animationTimingFunction: 'cubic-bezier(0.15, 0.7, 0.35, 1)' },
+          '12%': { opacity: '1' },
+          '45%': { transform: 'translate(var(--fx), var(--fy)) scale(1)', animationTimingFunction: 'cubic-bezier(0.45, 0, 0.75, 0.6)' },
+          '75%': { opacity: '1' },
+          '100%': { transform: 'translate(calc(var(--fx) * 1.3), calc(var(--fy) * 0.6)) scale(1.15)', opacity: '0' },
+        },
+        // A droplet's arc: steady sideways (--dx) on the outer wrapper, up to --up
+        // and down to --dy on the inner one.
+        'couch-fling-x': { '0%': { transform: 'translateX(0)' }, '100%': { transform: 'translateX(var(--dx))' } },
+        'couch-fling-y': {
+          '0%': { transform: 'translateY(0) scale(0.6)', opacity: '0', animationTimingFunction: 'cubic-bezier(0.25, 0.7, 0.5, 1)' },
+          '8%': { opacity: '1' },
+          '40%': { transform: 'translateY(var(--up)) scale(1)', animationTimingFunction: 'cubic-bezier(0.5, 0, 0.8, 0.5)' },
+          '80%': { opacity: '1' },
+          '100%': { transform: 'translateY(var(--dy)) scale(1)', opacity: '0' },
+        },
+        // The candy bowl (scatter): a candy hops out to --dx and lands at --dy with a
+        // tiny bounce, rests, then hops back into the bowl over --back, tumbling by --spin.
+        'couch-hop-x': {
+          '0%': { transform: 'translateX(0)' },
+          '30%,68%': { transform: 'translateX(var(--dx))' },
+          '100%': { transform: 'translateX(0)' },
+        },
+        'couch-hop-y': {
+          '0%': { transform: 'translateY(0) rotate(0deg) scale(0.6)', opacity: '0', animationTimingFunction: 'cubic-bezier(0.25, 0.7, 0.5, 1)' },
+          '4%': { opacity: '1' },
+          '15%': { transform: 'translateY(var(--up)) rotate(calc(var(--spin) * 0.5)) scale(1)', animationTimingFunction: 'cubic-bezier(0.5, 0, 0.8, 0.5)' },
+          '30%': { transform: 'translateY(var(--dy)) rotate(var(--spin)) scale(1)', animationTimingFunction: 'cubic-bezier(0.25, 0.7, 0.5, 1)' },
+          '35%': { transform: 'translateY(calc(var(--dy) - 6%)) rotate(var(--spin)) scale(1)', animationTimingFunction: 'cubic-bezier(0.5, 0, 0.8, 0.5)' },
+          '40%,68%': { transform: 'translateY(var(--dy)) rotate(var(--spin)) scale(1)', animationTimingFunction: 'cubic-bezier(0.25, 0.7, 0.5, 1)' },
+          '84%': { transform: 'translateY(var(--back)) rotate(calc(var(--spin) * 0.4)) scale(1)', animationTimingFunction: 'cubic-bezier(0.5, 0, 0.8, 0.5)' },
+          '92%': { opacity: '1' },
+          '100%': { transform: 'translateY(0) rotate(0deg) scale(0.6)', opacity: '0' },
+        },
+        'couch-flicker': { '0%,100%': { opacity: '1' }, '20%': { opacity: '0.82' }, '45%': { opacity: '1' }, '70%': { opacity: '0.88' } },
+        // The neon sign: the lit art stutters on, hums unevenly, flicks off. Opacity only.
+        'couch-neon-on': {
+          '0%': { opacity: '0' },
+          '12%': { opacity: '0.9' },
+          '24%': { opacity: '0.1' },
+          '40%': { opacity: '1' },
+          '56%': { opacity: '0.4' },
+          '72%,100%': { opacity: '1' },
+        },
+        'couch-neon-hum': {
+          '0%,100%': { opacity: '1' },
+          '20%': { opacity: '0.93' },
+          '34%': { opacity: '0.87' },
+          '36%': { opacity: '0.5' },
+          '38%': { opacity: '0.95' },
+          '62%': { opacity: '0.9' },
+          '80%': { opacity: '0.98' },
+          '83%': { opacity: '0.7' },
+          '86%': { opacity: '1' },
+        },
+        'couch-neon-off': {
+          '0%': { opacity: '1' },
+          '12%': { opacity: '0.2' },
+          '26%': { opacity: '0.85' },
+          '40%,100%': { opacity: '0' },
+        },
+        // The couch window (spec: The window).
+        'couch-twinkle': { '0%,100%': { opacity: '0.85' }, '50%': { opacity: '0.35' } },
+        'couch-blink': { '0%,100%': { transform: 'scaleY(1)' }, '45%,55%': { transform: 'scaleY(0.12)' } },
+        'couch-shoot': {
+          from: { transform: 'translate(0, 0)', opacity: '0' },
+          '15%': { opacity: '1' },
+          to: { transform: 'translate(320%, 160%)', opacity: '0' },
+        },
+        'couch-cross': { '0%': { transform: 'translateX(-35%)' }, '60%,100%': { transform: 'translateX(110%)' } },
+        // The couch laptop's next window popping up on its desktop (LaptopScreen.js).
+        'couch-laptop-in': { from: { opacity: '0', transform: 'translateY(6%) scale(0.94)' }, to: { opacity: '1', transform: 'translateY(0) scale(1)' } },
+        // The couch TV's commercials (TvCommercial.js). Opacity and transform
+        // only; each beat sets its own delay (and a push its length) inline.
+        'tv-ad-cut': { from: { opacity: '0' }, to: { opacity: '1' } },
+        'tv-ad-hold': { '0%,100%': { opacity: '1' } },
+        'tv-ad-in': { from: { opacity: '0', transform: 'translateY(35%)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+        'tv-ad-pop': {
+          '0%': { opacity: '0', transform: 'scale(0.4)' },
+          '60%': { opacity: '1', transform: 'scale(1.08)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        'tv-ad-push': { from: { transform: 'scale(1)' }, to: { transform: 'scale(1.1)' } },
+        'tv-ad-crawl': { from: { transform: 'translateY(100%)' }, to: { transform: 'translateY(0)' } },
       },
       animation: {
         'slow-zoom': 'slow-zoom 18s ease-in-out infinite',
@@ -283,11 +416,42 @@ module.exports = {
         'crt-blink': 'crt-blink 1.1s steps(1) infinite',
         'crt-roll': 'crt-roll 0.7s ease-in-out both',
         'signal-lock': 'signal-lock 0.7s cubic-bezier(0.2, 0.7, 0.3, 1)',
-        'onair-static': 'onair-static 0.12s steps(4) infinite',
+        'onair-static': 'onair-static 0.24s steps(1) infinite',
         'onair-roll': 'onair-roll 0.4s linear infinite',
         'onair-ticker': 'onair-ticker 38s linear infinite',
         'onair-pulse': 'onair-pulse 1.4s ease-in-out infinite',
         'onair-tear': 'onair-tear 0.6s cubic-bezier(0.5, 0, 0.75, 0) forwards',
+        'onair-bounce-x': 'onair-bounce-x 7s linear infinite alternate',
+        'onair-bounce-y': 'onair-bounce-y 4.3s linear infinite alternate',
+        'couch-wiggle': 'couch-wiggle 0.6s ease-in-out',
+        'couch-drop': 'couch-drop 2.4s ease-in-out',
+        'couch-rumble': 'couch-rumble 0.6s ease-out both',
+        'couch-shake': 'couch-shake 0.25s ease-in-out',
+        'couch-foam-cap': 'couch-foam-cap 1.2s ease-out 0.2s both',
+        'couch-foam': 'couch-foam 0.85s both',
+        'couch-fling-x': 'couch-fling-x 0.85s linear both',
+        'couch-fling-y': 'couch-fling-y 0.85s both',
+        'couch-hop-x': 'couch-hop-x 1.65s linear both',
+        'couch-hop-y': 'couch-hop-y 1.65s both',
+        'couch-flicker': 'couch-flicker 0.5s steps(2) infinite',
+        'couch-neon-on': 'couch-neon-on 1.2s linear forwards',
+        // The hum and the stars step (about 12 frames a second, like the grain)
+        // instead of drawing every frame.
+        'couch-neon-hum': 'couch-neon-hum 5.2s steps(12) infinite',
+        'couch-neon-off': 'couch-neon-off 0.9s linear forwards',
+        'couch-twinkle': 'couch-twinkle 3.2s steps(20) infinite',
+        'couch-blink': 'couch-blink 0.7s ease-in-out',
+        'couch-shoot': 'couch-shoot 0.9s ease-out forwards',
+        'couch-cross': 'couch-cross 60s linear infinite',
+        'couch-laptop-in': 'couch-laptop-in 240ms cubic-bezier(0.2, 0.7, 0.3, 1) both',
+        // A hard cut in; visible for the GSN ident's beat; words stepping in;
+        // a lineup item popping in; the slow push-in; the listings crawling up.
+        'tv-ad-cut': 'tv-ad-cut 1ms linear both',
+        'tv-ad-hold': 'tv-ad-hold 1.4s linear',
+        'tv-ad-in': 'tv-ad-in 320ms cubic-bezier(0.2, 0.7, 0.3, 1) both',
+        'tv-ad-pop': 'tv-ad-pop 420ms cubic-bezier(0.3, 0.7, 0.4, 1) both',
+        'tv-ad-push': 'tv-ad-push 4s linear both',
+        'tv-ad-crawl': 'tv-ad-crawl 4.5s linear both',
       },
     },
   },

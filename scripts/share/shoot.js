@@ -77,7 +77,7 @@ async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const failed = [];
   for (const page of pages) {
-    const url = base + page.path;
+    const url = base + (page.shot || page.path);
     const tab = await context.newPage();
     try {
       // Not 'networkidle': Firestore's long-poll keeps the network busy.

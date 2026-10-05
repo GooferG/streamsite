@@ -27,7 +27,7 @@ code {
 }
 
 /* ─── Global keyframes ────────────────────────────────────────────────────── */
-/* Referenced via inline `style={{ animation: '...' }}` in components.       */
+/* Referenced by components' animation styles and animate-[…] classes.    */
 @keyframes grain {
   0%, 100% { transform: translate(0, 0); }
   10% { transform: translate(-5%, -10%); }
@@ -90,4 +90,160 @@ body.brand-route {
 .scrollbar-hide {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* The camera's cut (src/components/camera). */
+.camera-static-in {
+  animation: camera-static-in 120ms ease-out both;
+}
+.camera-static-out {
+  animation: camera-static-out 300ms ease-in both;
+}
+@keyframes camera-static-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes camera-static-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+/* The iris cut for things (CameraIris): a square, clear inside its circle
+   (90% of the half side, HOLE in CameraIris.js) and black in the corners,
+   with a 1px edge; the camera scales it. 'out' fades the black off the new page. */
+.camera-iris-hole {
+  background: radial-gradient(circle closest-side, transparent calc(90% - 1px), #000 90%);
+}
+.camera-iris-out {
+  animation: camera-static-out 300ms ease-out both;
+}
+
+/* The couch (DESIGN.md §7, The couch). Screen dressing over the TV and the
+   laptop: scanlines, a curvature vignette and glass glare. */
+.couch-crt {
+  background:
+    repeating-linear-gradient(0deg, rgb(255 255 255 / 0.03) 0 1px, transparent 1px 3px),
+    radial-gradient(ellipse at 50% 50%, transparent 58%, rgb(0 0 0 / 0.45)),
+    linear-gradient(160deg, rgb(255 255 255 / 0.07), transparent 38%);
+}
+/* The channel-change static's fixed scanlines (onAir/StaticNoise). */
+.onair-scanlines {
+  background-image: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.3) 0 1px, transparent 1px 3px);
+}
+.couch-flip-static {
+  animation: camera-static-out 300ms ease-in both;
+}
+
+/* Night in the room; the TV lights it only while live (the neon sign's glow is in its art). */
+.couch-dim {
+  z-index: 1;
+  background: rgb(0 0 0 / 0.22);
+  transition: background 400ms;
+}
+.couch-dim--live {
+  background:
+    radial-gradient(ellipse 34% 46% at var(--tv-x) var(--tv-y), color-mix(in srgb, theme('colors.onair.signal.DEFAULT') 18%, transparent), transparent 70%),
+    rgb(0 0 0 / 0.1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .couch-dim {
+    transition: none;
+  }
+}
+
+/* The couch window's night (DESIGN.md §7, The couch). */
+:root {
+  --couch-star: #f1ead8;
+}
+.couch-sky {
+  background: linear-gradient(180deg, #0b1020 0%, #18213a 60%, #2a2440 100%);
+}
+.couch-star {
+  background: var(--couch-star);
+}
+.couch-moon-dark {
+  fill: #2b3046;
+}
+.couch-moon {
+  fill: #efe6c8;
+}
+.couch-moon--harvest {
+  fill: #f0a050;
+}
+.couch-shooting {
+  background: linear-gradient(90deg, transparent, var(--couch-star));
+}
+.couch-plane {
+  background: #e05a4a;
+}
+.couch-bat {
+  fill: #0b0a10;
+}
+
+/* What the couch toys throw around (ToyEffects.js): flat cartoon fills under
+   one ink outline, like the room's art. */
+:root {
+  --couch-ink: #1c1714;
+}
+.couch-foam,
+.couch-soda,
+.couch-candy {
+  stroke: var(--couch-ink);
+}
+.couch-rumble {
+  fill: none;
+  stroke: var(--couch-ink);
+}
+.couch-foam {
+  fill: #f4eddc;
+}
+.couch-soda {
+  fill: #dfa35c;
+}
+.couch-candy--orange {
+  fill: #f0862c;
+}
+.couch-candy--purple {
+  fill: #9a5ad8;
+}
+.couch-candy--lime {
+  fill: #a6d64a;
+}
+.couch-candy--pink {
+  fill: #f0708e;
+}
+.couch-candy--yellow {
+  fill: #f5c84c;
+}
+.couch-shine {
+  fill: #fffaf0;
+  stroke: none;
+  opacity: 0.75;
+}
+
+/* The Goofer Guide commercial on the couch TV (TvCommercial.js): a
+   Prevue-style listings channel, light type on a dark blue grid. */
+.couch-ad-guide {
+  background: #0a1340;
+}
+.couch-ad-guide-head {
+  background: linear-gradient(#2a3fa8, #1c2c84);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18);
+}
+.couch-ad-guide-cell {
+  background: #172469;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12);
+}
+
+/* The couch's game cases (GameCases.js): the spines on the shelf, a dark
+   plastic spine with a band at each end and the cover dimmed behind the name. */
+.couch-spine {
+  border-radius: 2px;
+  background: #0f0e12;
+  box-shadow: 0 0 0 1px #0b0a0d, inset 1px 0 0 rgba(255, 255, 255, 0.14);
+}
+.couch-spine-band {
+  background: linear-gradient(#2e2a33, #18161c);
+}
+.couch-spine-shade {
+  background: linear-gradient(90deg, rgba(10, 9, 13, 0.82), rgba(10, 9, 13, 0.55) 50%, rgba(10, 9, 13, 0.82));
 }

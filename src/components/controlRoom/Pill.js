@@ -12,6 +12,7 @@ export default function Pill({ giveaway, round, warnings, dataLost, redeem, anch
   return (
     <button
       type="button"
+      data-control-room=""
       onClick={onOpen}
       aria-label={`Open control room. ${label}${pending}`}
       className={`cr-pill cr-pill-in tone-${tone} fixed z-[65]`}

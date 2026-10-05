@@ -1,0 +1,343 @@
+{
+  "final": true,
+  "room": {
+    "id": "90s",
+    "screen": "crt",
+    "names": {
+      "tv": "TV",
+      "note": "Note",
+      "laptop": "Laptop",
+      "tapes": "Tapes",
+      "guide": "TV guide",
+      "games": "Games",
+      "remote": "Remote",
+      "photo": "Photo"
+    }
+  },
+  "art": {
+    "width": 2560,
+    "height": 1422,
+    "focal": [
+      49.96,
+      47.68
+    ],
+    "plate": {
+      "1280": "/couch/90s/room-1280.webp",
+      "1920": "/couch/90s/room-1920.webp",
+      "2560": "/couch/90s/room-2560.webp"
+    },
+    "empty": {
+      "1280": "/couch/90s/empty-1280.webp",
+      "1920": "/couch/90s/empty-1920.webp",
+      "2560": "/couch/90s/empty-2560.webp"
+    }
+  },
+  "screens": {
+    "tv": [
+      41.29,
+      36.36,
+      17.34,
+      22.64
+    ],
+    "laptop": [
+      44.88,
+      66.53,
+      11.64,
+      12.87
+    ]
+  },
+  "doors": {
+    "tv": {
+      "rect": [
+        38.83,
+        32.98,
+        22.27,
+        32.98
+      ],
+      "anchor": [
+        49.96,
+        32.98
+      ]
+    },
+    "tapes": {
+      "rect": [
+        36.02,
+        69.97,
+        8.75,
+        7.52
+      ],
+      "anchor": [
+        40.4,
+        69.97
+      ],
+      "cutout": "/couch/90s/cut-tapes.webp"
+    },
+    "guide": {
+      "rect": [
+        25.12,
+        77.36,
+        10.16,
+        7.31
+      ],
+      "anchor": [
+        30.2,
+        77.36
+      ],
+      "cutout": "/couch/90s/cut-guide.webp"
+    },
+    "laptop": {
+      "rect": [
+        44.3,
+        66.32,
+        13.01,
+        18.35
+      ],
+      "anchor": [
+        50.8,
+        66.32
+      ],
+      "cutout": "/couch/90s/cut-laptop.webp"
+    },
+    "games": {
+      "rect": [
+        58.4,
+        67.37,
+        6.17,
+        9.7
+      ],
+      "anchor": [
+        61.48,
+        67.37
+      ],
+      "cutout": "/couch/90s/cut-games.webp",
+      "cases": [
+        [
+          58.4,
+          67.37,
+          2.07,
+          9.7
+        ],
+        [
+          60.47,
+          67.37,
+          2.03,
+          9.7
+        ],
+        [
+          62.5,
+          67.44,
+          2.07,
+          9.56
+        ]
+      ]
+    },
+    "remote": {
+      "rect": [
+        37.62,
+        79.18,
+        3.95,
+        5.27
+      ],
+      "anchor": [
+        39.6,
+        79.18
+      ],
+      "cutout": "/couch/90s/cut-remote.webp"
+    },
+    "photo": {
+      "rect": [
+        19.73,
+        29.68,
+        9.1,
+        18.92
+      ],
+      "anchor": [
+        24.28,
+        29.68
+      ],
+      "cutout": "/couch/90s/cut-photo.webp"
+    },
+    "note": {
+      "rect": [
+        39.72,
+        34.3,
+        4.45,
+        7.92
+      ],
+      "anchor": [
+        41.94,
+        34.3
+      ]
+    }
+  },
+  "window": {
+    "glass": [
+      80.9,
+      0.0,
+      16.8,
+      52.74
+    ],
+    "blinds": {
+      "src": "/couch/90s/blinds.webp",
+      "rect": [
+        80.47,
+        0.0,
+        19.34,
+        36.36
+      ]
+    },
+    "cord": [
+      82.46,
+      33.76,
+      2.23,
+      7.88
+    ],
+    "skyline": {
+      "src": "/couch/90s/skyline.webp",
+      "rect": [
+        80.9,
+        46.08,
+        16.8,
+        6.66
+      ]
+    }
+  },
+  "toys": [
+    {
+      "id": "lamp",
+      "effect": "toggle",
+      "rect": [
+        0.82,
+        16.39,
+        12.5,
+        56.26
+      ],
+      "art": {
+        "idle": "/couch/90s/toy-lamp.webp",
+        "active": "/couch/90s/toy-lamp-off.webp"
+      }
+    },
+    {
+      "id": "controller",
+      "effect": "wiggle",
+      "rect": [
+        61.64,
+        79.32,
+        6.84,
+        4.85
+      ],
+      "art": {
+        "idle": "/couch/90s/toy-controller.webp"
+      }
+    },
+    {
+      "id": "can",
+      "effect": "fizz",
+      "rect": [
+        72.38,
+        74.33,
+        2.62,
+        9.92
+      ],
+      "art": {
+        "idle": "/couch/90s/toy-can.webp"
+      }
+    },
+    {
+      "id": "neon",
+      "effect": "neon",
+      "rect": [
+        14.18,
+        2.95,
+        35.43,
+        41.21
+      ],
+      "hit": [
+        15.98,
+        6.12,
+        31.88,
+        20.96
+      ],
+      "art": {
+        "idle": "/couch/90s/toy-neon.webp",
+        "active": "/couch/90s/toy-neon-off.webp"
+      }
+    }
+  ],
+  "themes": {
+    "halloween": {
+      "dressing": [
+        {
+          "id": "cobweb",
+          "src": "/couch/90s/halloween/cobweb.webp",
+          "rect": [
+            84.88,
+            0.0,
+            15.12,
+            43.74
+          ]
+        },
+        {
+          "id": "poster",
+          "src": "/couch/90s/halloween/poster.webp",
+          "rect": [
+            63.71,
+            7.1,
+            11.56,
+            28.9
+          ]
+        }
+      ],
+      "toys": [
+        {
+          "id": "pumpkin",
+          "effect": "light",
+          "rect": [
+            61.33,
+            51.76,
+            7.58,
+            14.56
+          ],
+          "art": {
+            "idle": "/couch/90s/halloween/pumpkin.webp",
+            "active": "/couch/90s/halloween/pumpkin-lit.webp"
+          }
+        },
+        {
+          "id": "spider",
+          "effect": "drop",
+          "rect": [
+            93.79,
+            38.54,
+            4.06,
+            5.91
+          ],
+          "art": {
+            "idle": "/couch/90s/halloween/spider.webp"
+          }
+        },
+        {
+          "id": "candy",
+          "effect": "scatter",
+          "rect": [
+            33.24,
+            58.02,
+            5.2,
+            8.16
+          ],
+          "art": {
+            "idle": "/couch/90s/halloween/candy.webp"
+          }
+        }
+      ],
+      "laptopBug": "/couch/90s/halloween/pumpkin.webp",
+      "witch": "/couch/90s/halloween/witch.webp"
+    }
+  },
+  "phoneCrop": [
+    29.11,
+    28.98,
+    38.89,
+    52.51
+  ]
+}

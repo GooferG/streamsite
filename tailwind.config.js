@@ -243,12 +243,17 @@ module.exports = {
           '100%': { transform: 'translateY(0)' },
         },
         // On Air monitor: channel-change static, rolling band, chyron, LIVE light.
+        // The static jumps its noise layer (StaticNoise) between fixed offsets,
+        // never more than 64px, by transform only.
         'onair-static': {
-          '0%': { backgroundPosition: '0 0, 0 0' },
-          '25%': { backgroundPosition: '-37px 21px, 13px -9px' },
-          '50%': { backgroundPosition: '19px -43px, -27px 31px' },
-          '75%': { backgroundPosition: '-11px 7px, 41px 17px' },
-          '100%': { backgroundPosition: '29px 39px, -7px -23px' },
+          '0%, 100%': { transform: 'translate(0, 0)' },
+          '12.5%': { transform: 'translate(-37px, 21px)' },
+          '25%': { transform: 'translate(19px, -43px)' },
+          '37.5%': { transform: 'translate(-53px, -11px)' },
+          '50%': { transform: 'translate(41px, 57px)' },
+          '62.5%': { transform: 'translate(-13px, 47px)' },
+          '75%': { transform: 'translate(59px, -29px)' },
+          '87.5%': { transform: 'translate(-29px, -61px)' },
         },
         'onair-roll': {
           '0%': { transform: 'translateY(-100%)' },
@@ -411,7 +416,7 @@ module.exports = {
         'crt-blink': 'crt-blink 1.1s steps(1) infinite',
         'crt-roll': 'crt-roll 0.7s ease-in-out both',
         'signal-lock': 'signal-lock 0.7s cubic-bezier(0.2, 0.7, 0.3, 1)',
-        'onair-static': 'onair-static 0.12s steps(4) infinite',
+        'onair-static': 'onair-static 0.24s steps(1) infinite',
         'onair-roll': 'onair-roll 0.4s linear infinite',
         'onair-ticker': 'onair-ticker 38s linear infinite',
         'onair-pulse': 'onair-pulse 1.4s ease-in-out infinite',

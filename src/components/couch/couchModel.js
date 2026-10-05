@@ -6,7 +6,7 @@ import { showTitle } from '../schedule/scheduleModel';
 import { cleanTitle, parseDuration } from '../vods/videoStoreModel';
 import { COPY, dayWord, lengthWords, untilWords, whenAired } from './couchCopy';
 import { ROOM } from './couchLayout';
-import { THEMES } from './themes';
+import { THEMES, isTheme } from './themes';
 
 // The couch's state from one plain input (spec: Model). Pure.
 //
@@ -179,7 +179,7 @@ export function buildCouch(input) {
     };
   });
 
-  const theme = input.theme && THEMES[input.theme] ? input.theme : null;
+  const theme = isTheme(input.theme) ? input.theme : null;
   const cards =
     state === 'offair'
       ? [

@@ -9,11 +9,16 @@ export const THEMES = {
   },
 };
 
+export const isTheme = (id) => typeof id === 'string' && Object.prototype.hasOwnProperty.call(THEMES, id);
+
+// One formatter for the Arizona month (building one per call is wasteful).
+const MONTH = new Intl.DateTimeFormat('en-US', { month: 'numeric', timeZone: HOME_ZONE });
+
 // The theme for `now`, unless `override` names one; 'none' switches themes off.
 export function themeFor(now, override = null) {
   if (override === 'none') return null;
-  if (override && THEMES[override]) return override;
-  const month = Number(new Intl.DateTimeFormat('en-US', { month: 'numeric', timeZone: HOME_ZONE }).format(now)) - 1;
+  if (isTheme(override)) return override;
+  const month = Number(MONTH.format(now)) - 1;
   return Object.keys(THEMES).find((id) => THEMES[id].months.includes(month)) || null;
 }
 
@@ -26,7 +31,8 @@ export function readThemeOverride() {
   }
 }
 
-export const themeArt = (layout, theme) => (theme && layout && layout.themes && layout.themes[theme]) || null;
+export const themeArt = (layout, theme) =>
+  (isTheme(theme) && layout && layout.themes && Object.prototype.hasOwnProperty.call(layout.themes, theme) && layout.themes[theme]) || null;
 
 // The room's toys plus the theme's (spec: Toys).
 export const roomToys = (layout, theme) => [...((layout && layout.toys) || []), ...((themeArt(layout, theme) || {}).toys || [])];

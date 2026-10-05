@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import TvCrop from '../TvCrop';
 import CouchFront from '../CouchFront';
 import Dressing from '../Dressing';
 import LaptopScreen from '../LaptopScreen';
@@ -11,6 +12,8 @@ import { toCouchInput } from '../useCouchData';
 
 jest.mock('../../../routes/loaders', () => ({ prefetchRoute: () => Promise.resolve() }));
 jest.mock('../../../config/firebase', () => ({ db: {}, auth: {} }));
+
+jest.mock('../rooms/90s.json', () => ({ ...jest.requireActual('../rooms/90s.json'), themes: {} }));
 
 const at = (iso) => Date.parse(iso);
 
@@ -80,11 +83,36 @@ function Room({ phone = false }) {
 }
 
 test('a theme on with no art in the layout renders no dressing and does not crash', () => {
-  expect(themeArt(LAYOUT, 'halloween')).toBeNull();
   const room = render(<Room />);
   expect(room.container.querySelector('[data-dressing]')).toBeNull();
   expect(screen.getByTestId('laptop-screen').querySelector('img')).toBeNull();
   room.unmount();
   const phone = render(<Room phone />);
   expect(phone.container.querySelector('[data-dressing]')).toBeNull();
+});
+
+test('inherited object keys are not themes', () => {
+  expect(themeFor(at('2026-10-15T12:00:00Z'), 'constructor')).toBe('halloween');
+  expect(themeFor(at('2026-03-01T12:00:00Z'), '__proto__')).toBeNull();
+  expect(() => buildCouch({ ...F.offair.input, theme: '__proto__' })).not.toThrow();
+  expect(buildCouch({ ...F.offair.input, theme: '__proto__' }).theme).toBeNull();
+  expect(themeArt(LAYOUT, 'constructor')).toBeNull();
+  expect(themeArt({ themes: { halloween: {} } }, 'toString')).toBeNull();
+  expect(themeArt({ themes: {} }, 'halloween')).toBeNull();
+});
+
+test('the phone crop renders only dressing that falls inside it', () => {
+  const [x, y, w, h] = LAYOUT.phoneCrop;
+  const inside = { id: 'in', src: '/in.webp', rect: [x + w / 4, y + h / 4, w / 4, h / 4] };
+  const outside = { id: 'out', src: '/out.webp', rect: [x + w + 1, y + h + 1, 5, 5] };
+  LAYOUT.themes = { halloween: { dressing: [inside, outside] } };
+  try {
+    const couch = buildCouch(F.halloween.input);
+    const tv = couch.doors.find((d) => d.id === 'tv');
+    const { container } = render(<TvCrop door={tv} tv={couch.tv} items={[]} mode="stills" onDoor={() => {}} theme="halloween" />);
+    expect(container.querySelector('[data-dressing="in"]')).toBeTruthy();
+    expect(container.querySelector('[data-dressing="out"]')).toBeNull();
+  } finally {
+    LAYOUT.themes = {};
+  }
 });

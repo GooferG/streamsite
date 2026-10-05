@@ -405,6 +405,6 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 
 **Rooms Are Swappable.** A room is its art plus its measured layout (names, screen skin, window, toys, theme art). Behaviour lives in code; a new era is a new folder and layout file.
 
-**Toys Light Themselves.** A toy may light itself while you play with it (a lit pumpkin is art with an opacity flicker); it never uses a glow token and lights nothing around it. Only the TV lights the room.
+**Toys Light Themselves.** A toy may light itself while you play with it (a lit pumpkin is art with an opacity flicker); it never uses a glow token and lights nothing around it. The room has two light sources: the TV, which lights it only while live, and the GOOFER neon sign, whose green glow is drawn in its art and animated by opacity only.
 
 **Dressing Never Covers A Door.** Theme dressing and toys are decorative (`aria-hidden`, pointer and touch only, never in the tab order) unless the theme gives a dressing layer a link out (Halloween's poster → beantwitch.com): that layer is a real link, keyboard reachable after the doors, opens a new tab, moves no camera, and is decorative again in the phone crop. Neither ever sits on a door or a label; the layout test enforces it.

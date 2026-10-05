@@ -10,6 +10,10 @@ usage: python scripts/couch-art/measure.py <work-dir> [room-id]
   masks/case-1.png … case-3.png     game case fronts, left to right (optional)
   masks/lamp.png, controller.png, can.png   the room's toys
   lamp-off.png                      the plate with the lamp switched off
+  neon/ (optional)                  lit.png, off.png, mask.png: the GOOFER sign lit (with its glow on
+                                    the wall), switched off, and a SOFT alpha mask (box and cord 255,
+                                    glow halo fading to 0); cut with the mask's own values as alpha
+                                    into toy-neon.webp / toy-neon-off.webp (60 KB each)
   skyline.png                       the night skyline strip, transparent background (optional)
   halloween/ (optional)             plate.png, pumpkin-lit.png, witch.png (transparent) and
                                     masks/cobweb.png, poster.png, pumpkin.png, spider.png, candy.png
@@ -27,6 +31,7 @@ DOORS = ["tv", "tapes", "guide", "laptop", "games", "remote", "photo"]
 CUT = ["tapes", "guide", "laptop", "games", "remote", "photo"]
 WIDTHS = {1280: 90, 1920: 150, 2560: 250}
 CUT_KB = 40
+NEON_KB = 60
 NAMES = {"tv": "TV", "note": "Note", "laptop": "Laptop", "tapes": "Tapes", "guide": "TV guide", "games": "Games", "remote": "Remote", "photo": "Photo"}
 TOYS = [("lamp", "toggle"), ("controller", "wiggle"), ("can", "pop")]
 HALLOWEEN_DRESSING = ["cobweb", "poster"]
@@ -37,8 +42,8 @@ def load_mask(path, size):
     return Image.open(path).convert("L").resize(size)
 
 
-def bbox(mask):
-    a = np.array(mask) > 127
+def bbox(mask, threshold=127):
+    a = np.array(mask) > threshold
     ys, xs = np.nonzero(a)
     if not len(xs):
         raise SystemExit("empty mask")
@@ -162,6 +167,16 @@ def main(work, room="90s"):
             ok &= cutout(lamp_off, m, rect, os.path.join(pub, "toy-lamp-off.webp"))
             art["active"] = url("toy-lamp-off.webp")
         toys.append({"id": name, "effect": effect, "rect": rect, "art": art})
+
+    # The neon sign: lit and off art, both cut with the soft mask (glow halo included).
+    neon = os.path.join(work, "neon")
+    if all(os.path.exists(os.path.join(neon, n)) for n in ("lit.png", "off.png", "mask.png")):
+        nm = load_mask(os.path.join(neon, "mask.png"), size)
+        rect = bbox(nm, 8)
+        for src, out in (("lit.png", "toy-neon.webp"), ("off.png", "toy-neon-off.webp")):
+            img = Image.open(os.path.join(neon, src)).convert("RGB").resize(size)
+            ok &= cutout(img, nm, rect, os.path.join(pub, out), NEON_KB)
+        toys.append({"id": "neon", "effect": "neon", "rect": rect, "art": {"idle": url("toy-neon.webp"), "active": url("toy-neon-off.webp")}})
 
     # Halloween: dressing and toys cut from the Halloween plate.
     themes = {}

@@ -71,6 +71,20 @@ test('the screensaver: the bouncing GG and the board reset', () => {
   expect(screen.getByTestId('laptop-screen').getAttribute('aria-hidden')).toBe('true');
 });
 
+test('the screensaver drifts by transform only: two full-size layers, no left or top animated', () => {
+  const { keyframes } = require('../../../../tailwind.config.js').theme.extend;
+  render(<LaptopScreen laptop={only('screensaver')} />);
+  const x = screen.getByTestId('laptop-bounce-x');
+  const y = screen.getByTestId('laptop-bounce-y');
+  expect(x.className).toContain('motion-safe:animate-onair-bounce-x');
+  expect(y.className).toContain('motion-safe:animate-onair-bounce-y');
+  [x, y].forEach((layer) => expect(layer.className).toContain('inset-0'));
+  expect(x.contains(y)).toBe(true);
+  // 100% of a full-size layer, less the bug's box: the same path as before.
+  expect(keyframes['onair-bounce-x']).toEqual({ from: { transform: 'translateX(0)' }, to: { transform: 'translateX(calc(100% - 24cqw))' } });
+  expect(keyframes['onair-bounce-y']).toEqual({ from: { transform: 'translateY(0)' }, to: { transform: 'translateY(calc(100% - 10cqw))' } });
+});
+
 test('the desktop wallpaper is the bug, small in a corner', () => {
   render(<LaptopScreen laptop={only('leaderboard')} bug="/couch/90s/halloween/pumpkin.webp" />);
   expect(screen.getByTestId('laptop-wallpaper').querySelector('img').getAttribute('src')).toBe('/couch/90s/halloween/pumpkin.webp');

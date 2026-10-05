@@ -151,15 +151,15 @@ function History({ win, calm }) {
 function Screensaver({ win, bug, calm }) {
   return (
     <Window id={win.id} title={win.title} calm={calm}>
+      {/* Two full-size layers carry the bug, one across and one up and down,
+          by transform only (no layout while it drifts). */}
       <div className="relative min-h-0 flex-1">
-        <div className={`absolute inset-y-0 left-0 w-[24cqw] ${calm ? '' : 'motion-safe:animate-onair-bounce-x'}`}>
-          <span
-            className={`absolute left-0 top-0 grid h-[10cqw] w-full place-items-center rounded-onair-tile bg-onair-surface-raised font-onair text-[max(10px,6cqw)] font-extrabold text-onair-ink-2 ${
-              calm ? '' : 'motion-safe:animate-onair-bounce-y'
-            }`}
-          >
-            <Mark bug={bug} />
-          </span>
+        <div data-testid="laptop-bounce-x" className={`absolute inset-0 ${calm ? '' : 'motion-safe:animate-onair-bounce-x'}`}>
+          <div data-testid="laptop-bounce-y" className={`absolute inset-0 ${calm ? '' : 'motion-safe:animate-onair-bounce-y'}`}>
+            <span className="absolute left-0 top-0 grid h-[10cqw] w-[24cqw] place-items-center rounded-onair-tile bg-onair-surface-raised font-onair text-[max(10px,6cqw)] font-extrabold text-onair-ink-2">
+              <Mark bug={bug} />
+            </span>
+          </div>
         </div>
       </div>
       {win.resetsIn ? (

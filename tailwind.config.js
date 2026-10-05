@@ -268,9 +268,10 @@ module.exports = {
           '100%': { transform: 'translateY(72px) rotate(-7deg)', opacity: '0' },
         },
         // The couch laptop's screensaver: the GG bug drifting corner to corner.
-        // The end offsets match the bug's box in LaptopScreen (24cqw x 10cqw).
-        'onair-bounce-x': { from: { left: '0%' }, to: { left: 'calc(100% - 24cqw)' } },
-        'onair-bounce-y': { from: { top: '0%' }, to: { top: 'calc(100% - 10cqw)' } },
+        // Transform only: each layer fills the screensaver, so 100% is its
+        // width (or height), less the bug's box in LaptopScreen (24cqw x 10cqw).
+        'onair-bounce-x': { from: { transform: 'translateX(0)' }, to: { transform: 'translateX(calc(100% - 24cqw))' } },
+        'onair-bounce-y': { from: { transform: 'translateY(0)' }, to: { transform: 'translateY(calc(100% - 10cqw))' } },
         // Couch toys (spec: Toys). Transform and opacity only.
         'couch-wiggle': {
           '0%,100%': { transform: 'rotate(0deg)' },
@@ -429,9 +430,11 @@ module.exports = {
         'couch-hop-y': 'couch-hop-y 1.65s both',
         'couch-flicker': 'couch-flicker 0.5s steps(2) infinite',
         'couch-neon-on': 'couch-neon-on 1.2s linear forwards',
-        'couch-neon-hum': 'couch-neon-hum 5.2s linear infinite',
+        // The hum and the stars step (about 12 frames a second, like the grain)
+        // instead of drawing every frame.
+        'couch-neon-hum': 'couch-neon-hum 5.2s steps(12) infinite',
         'couch-neon-off': 'couch-neon-off 0.9s linear forwards',
-        'couch-twinkle': 'couch-twinkle 3.2s ease-in-out infinite',
+        'couch-twinkle': 'couch-twinkle 3.2s steps(20) infinite',
         'couch-blink': 'couch-blink 0.7s ease-in-out',
         'couch-shoot': 'couch-shoot 0.9s ease-out forwards',
         'couch-cross': 'couch-cross 60s linear infinite',

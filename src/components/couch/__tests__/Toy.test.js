@@ -304,6 +304,40 @@ describe('the neon sign', () => {
     expect(lit(el).className).toContain('animate-couch-neon-on');
   });
 
+  test('the lit layer stays mounted through a poke; a poke during the flick off replays it in place', () => {
+    const reflow = jest.spyOn(HTMLElement.prototype, 'offsetWidth', 'get');
+    try {
+      const { container } = render(<Toy toy={NEON} />);
+      const el = toyEl(container, 'neon');
+      const layer = lit(el);
+      const under = el.querySelector('img[src="/neon-off.webp"]');
+      act(() => jest.advanceTimersByTime(1200));
+      fireEvent.click(el);
+      expect(lit(el)).toBe(layer);
+      expect(el.querySelector('img[src="/neon-off.webp"]')).toBe(under);
+      expect(layer.className).toContain('animate-couch-neon-off');
+      // A new phase swaps the class, which starts its animation: no reflow needed.
+      expect(reflow).not.toHaveBeenCalled();
+      act(() => jest.advanceTimersByTime(300));
+      fireEvent.click(el);
+      expect(lit(el)).toBe(layer);
+      expect(layer.className).toContain('animate-couch-neon-off');
+      expect(reflow).toHaveBeenCalledTimes(1);
+      expect(layer.style.animationName).toBe('');
+      act(() => jest.advanceTimersByTime(TOY_MS.neon));
+      expect(lit(el)).toBe(layer);
+      expect(layer.className).toContain('animate-couch-neon-on');
+    } finally {
+      reflow.mockRestore();
+    }
+  });
+
+  test('the hum and the window stars step (about 12 frames a second) instead of drawing every frame', () => {
+    const { animation } = require('../../../../tailwind.config.js').theme.extend;
+    expect(animation['couch-neon-hum']).toBe('couch-neon-hum 5.2s steps(12) infinite');
+    expect(animation['couch-twinkle']).toBe('couch-twinkle 3.2s steps(20) infinite');
+  });
+
   test('unmounting clears every timer', () => {
     const err = jest.spyOn(console, 'error').mockImplementation(() => {});
     const { container, unmount } = render(<Toy toy={NEON} />);

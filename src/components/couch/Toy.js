@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { pctStyle, within } from './couchLayout';
 import { prefersReducedMotion } from '../onAir/useChannelSwitch';
 import { Fizz, Rumble, Scatter } from './ToyEffects';
@@ -25,10 +25,14 @@ const MOTION = {
 const THREAD = 'before:absolute before:bottom-full before:left-1/2 before:h-[300%] before:w-px before:bg-onair-ink-5';
 
 // The sign: the off art underneath, the lit art on top, and only the lit
-// layer's opacity moves. Under reduced motion it is one picture that swaps.
-function NeonSign({ toy, on, run, art }) {
+// layer's opacity moves. Both layers stay mounted (a fresh image would paint
+// again, a late LCP candidate): a phase swaps the lit layer's class, which
+// starts its animation, and a poke during the flick off replays it in place.
+// Under reduced motion it is one picture that swaps.
+function NeonSign({ on, run, art }) {
   const [humming, setHumming] = useState(false);
   const calm = useRef(prefersReducedMotion()).current;
+  const lit = useRef(null);
   useEffect(() => {
     if (calm || on) {
       setHumming(false);
@@ -38,15 +42,26 @@ function NeonSign({ toy, on, run, art }) {
     return () => clearTimeout(t);
   }, [calm, on, run]);
 
+  const phase = on ? 'off' : humming ? 'hum' : 'on';
+  const last = useRef({ run, phase });
+  useLayoutEffect(() => {
+    const prev = last.current;
+    last.current = { run, phase };
+    const el = lit.current;
+    if (!el || prev.run === run || prev.phase !== phase) return;
+    el.style.animationName = 'none';
+    void el.offsetWidth; // a reflow, so the cleared name takes before it comes back
+    el.style.animationName = '';
+  }, [run, phase]);
+
   if (calm) {
     const src = on ? art.active : art.idle;
     return src ? <img src={src} alt="" draggable={false} className="pointer-events-none h-full w-full" /> : null;
   }
-  const phase = on ? 'off' : humming ? 'hum' : 'on';
   return (
     <>
       <img src={art.active} alt="" draggable={false} className="pointer-events-none absolute inset-0 h-full w-full" />
-      <img key={`${run}-${phase}`} src={art.idle} alt="" draggable={false} className={`pointer-events-none absolute inset-0 h-full w-full ${NEON_CLASS[phase]}`} />
+      <img ref={lit} src={art.idle} alt="" draggable={false} className={`pointer-events-none absolute inset-0 h-full w-full ${NEON_CLASS[phase]}`} />
     </>
   );
 }
@@ -83,8 +98,9 @@ export default function Toy({ toy }) {
       className={`absolute select-none ${toy.hit ? 'pointer-events-none' : 'pointer-events-auto cursor-pointer'}`}
       style={pctStyle(toy.rect)}
     >
-      <span key={run} className={`absolute inset-0 ${toy.effect === 'drop' ? THREAD : ''} ${moving}`}>
-        {neon && <NeonSign toy={toy} on={on} run={run} art={art} />}
+      {/* Keyed by the poke, so a toy's move starts over; the sign restarts its own. */}
+      <span key={neon ? 'neon' : run} className={`absolute inset-0 ${toy.effect === 'drop' ? THREAD : ''} ${moving}`}>
+        {neon && <NeonSign on={on} run={run} art={art} />}
         {!neon && src && <img src={src} alt="" draggable={false} className="pointer-events-none h-full w-full" />}
       </span>
       {on && toy.effect === 'fizz' && <Fizz key={`f-${run}`} calm={calm} />}

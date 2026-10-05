@@ -63,7 +63,7 @@ test('in the final art no toy or dressing sits on a door', () => {
     ...Object.values(LAYOUT.themes || {}).flatMap((t) => [...(t.toys || []), ...(t.dressing || [])]),
   ];
   for (const item of items) {
-    for (const id of DOOR_IDS) expect([item.id, id, intersects(item.rect, LAYOUT.doors[id].rect)]).toEqual([item.id, id, false]);
+    for (const id of DOOR_IDS) expect([item.id, id, intersects(item.hit || item.rect, LAYOUT.doors[id].rect)]).toEqual([item.id, id, false]);
   }
 });
 
@@ -75,7 +75,7 @@ test('in the final art no linked dressing sits on a toy or the window toys', () 
   const windowToys = [win.cord, moonBox(win.glass, false, ART_ASPECT, win.blinds && win.blinds.rect), moonBox(win.glass, true, ART_ASPECT, win.blinds && win.blinds.rect)].filter(Boolean);
   for (const [id, theme] of Object.entries(LAYOUT.themes || {})) {
     const links = themeLinks(id);
-    const toys = [...(LAYOUT.toys || []), ...(theme.toys || [])].map((t) => t.rect);
+    const toys = [...(LAYOUT.toys || []), ...(theme.toys || [])].map((t) => t.hit || t.rect);
     for (const layer of (theme.dressing || []).filter((l) => links[l.id])) {
       for (const rect of [...toys, ...windowToys]) expect([layer.id, rect, intersects(layer.rect, rect)]).toEqual([layer.id, rect, false]);
     }

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { pctStyle } from './couchLayout';
+import { pctStyle, within } from './couchLayout';
 import { prefersReducedMotion } from '../onAir/useChannelSwitch';
 
 // A toy (spec: Toys): poke it and it reacts; it goes nowhere. Pointer and
@@ -84,8 +84,8 @@ export default function Toy({ toy }) {
       aria-hidden="true"
       data-toy={toy.id}
       data-on={on ? 'true' : 'false'}
-      onPointerDown={poke}
-      className="pointer-events-auto absolute cursor-pointer select-none"
+      onPointerDown={toy.hit ? undefined : poke}
+      className={`absolute select-none ${toy.hit ? 'pointer-events-none' : 'pointer-events-auto cursor-pointer'}`}
       style={pctStyle(toy.rect)}
     >
       <span key={run} className={`absolute inset-0 ${toy.effect === 'drop' ? THREAD : ''} ${moving}`}>
@@ -98,6 +98,14 @@ export default function Toy({ toy }) {
         ) : (
           <Bubbles key={`b-${run}`} />
         ))}
+      {toy.hit && (
+        <span
+          data-testid={`toy-hit-${toy.id}`}
+          onPointerDown={poke}
+          className="pointer-events-auto absolute cursor-pointer"
+          style={pctStyle(within(toy.rect, toy.hit))}
+        />
+      )}
     </span>
   );
 }

@@ -176,7 +176,16 @@ def main(work, room="90s"):
         for src, out in (("lit.png", "toy-neon.webp"), ("off.png", "toy-neon-off.webp")):
             img = Image.open(os.path.join(neon, src)).convert("RGB").resize(size)
             ok &= cutout(img, nm, rect, os.path.join(pub, out), NEON_KB)
-        toys.append({"id": "neon", "effect": "neon", "rect": rect, "art": {"idle": url("toy-neon.webp"), "active": url("toy-neon-off.webp")}})
+        # The pointer area is the sign's box: the hard part of the mask, minus the cord
+        # (rows narrower than 30% of the widest row).
+        hard = np.array(nm) >= 250
+        counts = hard.sum(axis=1)
+        keep = counts >= 0.3 * counts.max()
+        ys = np.nonzero(keep)[0]
+        xs = np.nonzero(hard[keep].any(axis=0))[0]
+        h, w = hard.shape
+        hit = [round(100 * xs.min() / w, 2), round(100 * ys.min() / h, 2), round(100 * (xs.max() + 1 - xs.min()) / w, 2), round(100 * (ys.max() + 1 - ys.min()) / h, 2)]
+        toys.append({"id": "neon", "effect": "neon", "rect": rect, "hit": hit, "art": {"idle": url("toy-neon.webp"), "active": url("toy-neon-off.webp")}})
 
     # Halloween: dressing and toys cut from the Halloween plate.
     themes = {}

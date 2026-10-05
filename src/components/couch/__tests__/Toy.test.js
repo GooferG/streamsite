@@ -164,3 +164,20 @@ describe('the neon sign', () => {
     expect(layers(el)).toEqual(['/neon.webp']);
   });
 });
+
+test('a toy with a hit area pokes only from that area, and its art ignores the pointer', () => {
+  const toy = { ...NEON, rect: [10, 10, 40, 40], hit: [20, 20, 20, 10] };
+  const { container } = render(<Toy toy={toy} />);
+  const el = toyEl(container, 'neon');
+  fireEvent.pointerDown(el);
+  expect(el.getAttribute('data-on')).toBe('false');
+  expect(el.className).toContain('pointer-events-none');
+  expect(el.querySelector('img').className).toContain('pointer-events-none');
+  const hit = screen.getByTestId('toy-hit-neon');
+  expect(hit.style.left).toBe('25%');
+  expect(hit.style.top).toBe('25%');
+  expect(hit.style.width).toBe('50%');
+  expect(hit.style.height).toBe('25%');
+  fireEvent.pointerDown(hit);
+  expect(el.getAttribute('data-on')).toBe('true');
+});

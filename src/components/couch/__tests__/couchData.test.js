@@ -1,6 +1,6 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import { toCouchInput } from '../useCouchData';
-import useLastVisit from '../useLastVisit';
+import useLastVisit, { __resetLastVisitForTests } from '../useLastVisit';
 import useLiveGiveaway from '../useLiveGiveaway';
 import useSteamGames from '../useSteamGames';
 
@@ -24,7 +24,10 @@ function Show({ hook }) {
 }
 const v = () => screen.getByTestId('v').textContent;
 
-beforeEach(() => localStorage.clear());
+beforeEach(() => {
+  localStorage.clear();
+  __resetLastVisitForTests();
+});
 
 test('useLastVisit: null on a first visit, then the stored time', async () => {
   render(<Show hook={useLastVisit} />);
@@ -45,6 +48,15 @@ test('useLastVisit: undefined when storage throws', () => {
   render(<Show hook={useLastVisit} />);
   expect(v()).toBe('undefined');
   spy.mockRestore();
+});
+
+test('useLastVisit: a remount keeps the first value', async () => {
+  const { unmount } = render(<Show hook={useLastVisit} />);
+  expect(v()).toBe('null');
+  await waitFor(() => expect(localStorage.getItem('gg_last_visit')).not.toBeNull());
+  unmount();
+  render(<Show hook={useLastVisit} />);
+  expect(v()).toBe('null');
 });
 
 test('useLiveGiveaway reads the newest active giveaway', () => {

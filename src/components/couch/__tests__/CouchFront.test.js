@@ -38,7 +38,8 @@ test('a plain click hands the door to onDoor; a ctrl-click stays native', () => 
 test('labels show the teaser; the plate and screens render', () => {
   render(<Room />);
   expect(screen.getByText('Back tomorrow 11:00 AM')).toBeTruthy();
-  expect(screen.getByTestId('couch-stage').querySelector('img').getAttribute('src')).toBe('/couch/90s/test-room-1280.webp');
+  // The room draws the empty plate under the cut-outs (the outside's skyline comes first).
+  expect(screen.getByTestId('couch-stage').querySelector('img[srcset]').getAttribute('src')).toBe('/couch/90s/empty-1920.webp');
   expect(screen.getByTestId('couch-tv')).toBeTruthy();
   expect(screen.getByTestId('laptop-screen')).toBeTruthy();
 });

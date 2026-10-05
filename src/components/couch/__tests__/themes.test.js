@@ -88,7 +88,8 @@ test('a theme on with no art in the layout renders no dressing and does not cras
   expect(screen.getByTestId('laptop-screen').querySelector('img')).toBeNull();
   room.unmount();
   const phone = render(<Room phone />);
-  expect(phone.container.querySelector('[data-dressing]')).toBeNull();
+  // The crop still shows the room's own toy stills; no theme dressing.
+  expect(phone.container.querySelector('[data-dressing]:not([data-dressing^="toy-"])')).toBeNull();
 });
 
 test('inherited object keys are not themes', () => {

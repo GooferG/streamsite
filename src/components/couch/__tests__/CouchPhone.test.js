@@ -2,6 +2,7 @@ import { fireEvent, render, screen, within as inside } from '@testing-library/re
 import CouchFront from '../CouchFront';
 import { buildCouch } from '../couchModel';
 import { COUCH_FIXTURES as F } from '../couchFixtures';
+import { LAYOUT } from '../couchLayout';
 
 jest.mock('../../../routes/loaders', () => ({ prefetchRoute: () => Promise.resolve() }));
 beforeEach(() => {
@@ -43,16 +44,27 @@ test('no art: every door is a plain tile, the TV included, and no images load', 
 
 test('a plate that fails to load falls back to the tiles', () => {
   const { container } = render(front('offair', { roomLayout: true, stage: { ...STAGE, box: null } }));
-  fireEvent.error(container.querySelector('[data-testid="couch-stage"] img'));
+  fireEvent.error(container.querySelector('[data-testid="couch-stage"] img[srcset]'));
   expect(screen.getByRole('list', { name: 'On the coffee table' })).toBeTruthy();
 });
 
 test('a wide door keeps its tile art inside the tile', () => {
-  const { container } = render(front('offair'));
-  const art = container.querySelector('[data-door="tapes"] [data-door-art]');
-  // jsdom drops min() widths, so the cap is a class reading a custom property
-  expect(art.parentElement.className).toContain('w-[min(100%,var(--art-w))]');
-  expect(art.parentElement.style.getPropertyValue('--art-w')).toMatch(/rem$/);
+  const first = render(front('offair'));
+  // A cut-out is capped by the tile's width.
+  expect(first.container.querySelector('[data-door="tapes"] [data-door-art]').className).toContain('max-w-full');
+  first.unmount();
+  // A door without a cut-out shows a crop of the plate, capped by a class reading a
+  // custom property (jsdom drops min() widths).
+  const { cutout } = LAYOUT.doors.tapes;
+  delete LAYOUT.doors.tapes.cutout;
+  try {
+    const { container } = render(front('offair'));
+    const art = container.querySelector('[data-door="tapes"] [data-door-art]');
+    expect(art.parentElement.className).toContain('w-[min(100%,var(--art-w))]');
+    expect(art.parentElement.style.getPropertyValue('--art-w')).toMatch(/rem$/);
+  } finally {
+    LAYOUT.doors.tapes.cutout = cutout;
+  }
 });
 
 test('a plate that fails to load on the phone layout falls back to plain tiles', () => {

@@ -232,13 +232,13 @@ The doors render as an ordered list of links (the order above) with their senten
 
 - A theme dresses the room; it never replaces it. `themes.js` holds each theme's calendar (Goofer's Arizona calendar) and copy; the room's layout holds that theme's art.
 - **Halloween**, October 1 to 31:
-  - dressing: cobwebs and paper bats on the wall (nothing on a door, so no extra tape on the stack);
+  - dressing: cobwebs and, in place of the paper bats (owner's change, 2026-10-04), a horror-movie poster, "Night of the Living Bean", starring a streamer friend's meme face and linking to beantwitch.com;
   - toys: a jack-o'-lantern, a spider on the cobweb, a candy bowl;
   - the window: an orange harvest moon and a bat flock, plus a witch on a broom (art) that a moon tap sometimes sends across;
   - a pumpkin in place of the GG bug on the laptop's screensaver;
   - a "Spooky season" station-break card first in the TV reel.
 - `?theme=<id>` previews a theme and `?theme=none` turns it off, in any build.
-- Dressing is decorative (`aria-hidden`, no pointer events), never covers a door or a label, and is at most 40 KB a layer. On phones the TV crop shows whatever dressing and toys fall inside it, as still pictures.
+- Dressing is decorative (`aria-hidden`, no pointer events) unless its theme gives it a link out (`THEMES.<id>.links`, the poster): then it is a real link, opens a new tab, comes after the doors in tab order, makes no camera move and never sits on a door or a toy. Dressing never covers a door or a label and is at most 40 KB a layer. On phones the TV crop shows whatever dressing and toys fall inside it, as still pictures.
 
 ### Toys
 

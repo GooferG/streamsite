@@ -1,6 +1,8 @@
 import fs from 'fs';
 import path from 'path';
-import { DOOR_IDS, LAYOUT, ROOM, SCREEN_CLASS, center, cropStyle, insideSafe, intersects, plateSrc, plateSrcSet, within } from '../couchLayout';
+import { ART_ASPECT, DOOR_IDS, LAYOUT, ROOM, SCREEN_CLASS, center, cropStyle, insideSafe, intersects, plateSrc, plateSrcSet, within } from '../couchLayout';
+import { moonBox } from '../RoomWindow';
+import { themeLinks } from '../themes';
 
 const PUBLIC = path.resolve(__dirname, '../../../../public');
 
@@ -62,5 +64,20 @@ test('in the final art no toy or dressing sits on a door', () => {
   ];
   for (const item of items) {
     for (const id of DOOR_IDS) expect([item.id, id, intersects(item.rect, LAYOUT.doors[id].rect)]).toEqual([item.id, id, false]);
+  }
+});
+
+// A linked dressing layer (the Halloween poster) paints over the toys and the
+// window, so it must never sit on one or it would swallow their pokes.
+test('in the final art no linked dressing sits on a toy or the window toys', () => {
+  if (!LAYOUT.final) return;
+  const win = LAYOUT.window;
+  const windowToys = [win.cord, moonBox(win.glass, false, ART_ASPECT), moonBox(win.glass, true, ART_ASPECT)].filter(Boolean);
+  for (const [id, theme] of Object.entries(LAYOUT.themes || {})) {
+    const links = themeLinks(id);
+    const toys = [...(LAYOUT.toys || []), ...(theme.toys || [])].map((t) => t.rect);
+    for (const layer of (theme.dressing || []).filter((l) => links[l.id])) {
+      for (const rect of [...toys, ...windowToys]) expect([layer.id, rect, intersects(layer.rect, rect)]).toEqual([layer.id, rect, false]);
+    }
   }
 });

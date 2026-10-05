@@ -1,7 +1,6 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
 import { FOCUS } from '../onAir/classes';
 import { NAV_ITEMS, currentFor } from './navItems';
 import { NAV_H } from './navMetrics';
@@ -11,8 +10,8 @@ import StatusReadout, { PowerLed } from './StatusReadout';
 import AccountMenu from './AccountMenu';
 import OperatorControls from './OperatorControls';
 import NavSheet from './NavSheet';
+import useNavSheet from './useNavSheet';
 
-const ADMIN_EMAIL = 'luimeneghim@gmail.com';
 const SECRET_CLICKS = 5;
 const SECRET_WINDOW_MS = 2000;
 
@@ -47,32 +46,7 @@ function Wordmark({ live }) {
 // button with the side sheet below lg. Height is NAV_H (57px) everywhere.
 export default function Navigation({ isLive = false, viewerCount = null, statusReady = false }) {
   const { pathname } = useLocation();
-  const { currentUser, isStaff } = useAuth();
-  const isAdmin = currentUser?.email === ADMIN_EMAIL;
-  const [sheetOpen, setSheetOpen] = useState(false);
-  const menuButtonRef = useRef(null);
-  const wasOpen = useRef(false);
-  const sheetId = useId();
-
-  const closeSheet = useCallback(() => setSheetOpen(false), []);
-  // Any navigation (a row, Back, a link elsewhere) closes the sheet.
-  useEffect(() => setSheetOpen(false), [pathname]);
-  // The sheet is lg:hidden; reaching lg with it open would leave the page
-  // scroll-locked behind nothing, so close it.
-  useEffect(() => {
-    if (!sheetOpen || typeof window.matchMedia !== 'function') return undefined;
-    const lg = window.matchMedia('(min-width: 1024px)');
-    const onChange = (e) => {
-      if (e.matches) setSheetOpen(false);
-    };
-    lg.addEventListener?.('change', onChange);
-    return () => lg.removeEventListener?.('change', onChange);
-  }, [sheetOpen]);
-  // When the sheet closes, focus goes back to the button that opened it.
-  useEffect(() => {
-    if (wasOpen.current && !sheetOpen) menuButtonRef.current?.focus();
-    wasOpen.current = sheetOpen;
-  }, [sheetOpen]);
+  const { open: sheetOpen, close: closeSheet, toggle, buttonRef: menuButtonRef, sheetId, isAdmin, isStaff } = useNavSheet({ closeAtLg: true });
 
   const status = { isLive, viewerCount, statusReady };
 
@@ -122,7 +96,7 @@ export default function Navigation({ isLive = false, viewerCount = null, statusR
           <button
             ref={menuButtonRef}
             type="button"
-            onClick={() => setSheetOpen((o) => !o)}
+            onClick={toggle}
             aria-expanded={sheetOpen}
             aria-controls={sheetId}
             aria-label={sheetOpen ? 'Close menu' : 'Open menu'}

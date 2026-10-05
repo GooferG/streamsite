@@ -42,9 +42,15 @@ jest.mock('../routes/loaders', () => ({
   },
 }));
 
+// Only the known noise: the failing Twitch poll logs its error and two debug lines.
+const KNOWN = /Error initializing Twitch API|App\.js Debug/;
 beforeEach(() => {
-  jest.spyOn(console, 'error').mockImplementation(() => {});
-  jest.spyOn(console, 'log').mockImplementation(() => {});
+  for (const method of ['error', 'log']) {
+    const real = console[method];
+    jest.spyOn(console, method).mockImplementation((...args) => {
+      if (!KNOWN.test(String(args[0]))) real(...args);
+    });
+  }
 });
 afterEach(() => jest.restoreAllMocks());
 
@@ -52,7 +58,7 @@ test('home has no bar: a Menu button stands in, and it is the first thing to tab
   render(<MemoryRouter initialEntries={['/']}><App /></MemoryRouter>);
   expect(await screen.findByText('home page')).toBeTruthy();
   expect(screen.queryByRole('navigation', { name: 'Site' })).toBeNull();
-  const menu = screen.getByRole('button', { name: 'Menu' });
+  const menu = screen.getByRole('button', { name: /^Menu/ });
   expect(document.body.querySelector('a[href], button:not([disabled])')).toBe(menu);
 });
 
@@ -60,5 +66,5 @@ test('every other page keeps the bar and has no home button', async () => {
   render(<MemoryRouter initialEntries={['/vods']}><App /></MemoryRouter>);
   expect(await screen.findByText('vods page')).toBeTruthy();
   expect(screen.getByRole('navigation', { name: 'Site' })).toBeTruthy();
-  expect(screen.queryByRole('button', { name: 'Menu' })).toBeNull();
+  expect(screen.queryByRole('button', { name: /^Menu/ })).toBeNull();
 });

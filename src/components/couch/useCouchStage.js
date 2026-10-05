@@ -1,13 +1,12 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { coverBox, pctRect, viewRect, zoomTransform } from '../camera/cameraMath';
-import { NAV_H } from '../nav/navMetrics';
 
 // Measures the room's container, places the art over it like a cover image
 // around the focal point, and turns a rect in percent of the art into the
 // camera zoom that fills the view with it. Rects are computed from the box at
 // rest, never measured off the (possibly transformed) stage. `navH` is the bar
 // above the view (0 on the home page, which has none).
-export default function useCouchStage(aspect, focal, navH = NAV_H) {
+export default function useCouchStage(aspect, focal, navH) {
   const nodeRef = useRef(null);
   const stageRef = useRef(null);
   const [node, setNode] = useState(null);

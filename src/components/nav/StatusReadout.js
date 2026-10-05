@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import StatusLight from '../onAir/StatusLight';
 import { FOCUS, MONO } from '../onAir/classes';
 import { useSchedule } from '../../hooks/useSchedule';
@@ -18,7 +18,6 @@ export function PowerLed({ live }) {
 }
 
 function Tally({ viewerCount, full }) {
-  const { pathname } = useLocation();
   // Zero reads as plain LIVE: "LIVE · 0" at stream start helps nobody.
   const count = viewerCount > 0 ? formatViewerCount(viewerCount) : null;
   const label = count ? `Live now, ${Number(viewerCount).toLocaleString('en-US')} watching` : 'Live now';
@@ -28,14 +27,6 @@ function Tally({ viewerCount, full }) {
       {count && <span className={full ? '' : 'hidden xl:inline'}>&nbsp;· {count}</span>}
     </StatusLight>
   );
-  if (pathname === '/') {
-    return (
-      <span className="inline-flex">
-        <span aria-hidden="true">{light}</span>
-        <span className="sr-only">{label}</span>
-      </span>
-    );
-  }
   return (
     <Link to="/" aria-label={label} className={`inline-flex rounded-onair-tile ${FOCUS}`}>
       {light}

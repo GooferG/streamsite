@@ -8,7 +8,7 @@ jest.mock('../../../routes/loaders', () => ({ prefetchRoute: () => Promise.resol
 beforeEach(() => {
   HTMLMediaElement.prototype.play = jest.fn(() => Promise.resolve());
 });
-const STAGE = { containerRef: { current: null }, stageRef: { current: null }, box: null };
+const STAGE = { containerRef: { current: null }, stageRef: { current: null }, box: null, navH: 57 };
 const front = (fixture, extra = {}) => (
   <CouchFront couch={buildCouch(F[fixture].input)} items={[]} mode="stills" onDoor={() => {}} stage={STAGE} roomLayout={false} {...extra} />
 );

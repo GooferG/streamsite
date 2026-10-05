@@ -8,7 +8,6 @@ import Dressing from './Dressing';
 import RoomToys from './RoomToys';
 import { WindowFront, WindowOutside, useWindowState } from './RoomWindow';
 import { roomToys, themeArt, themeLinks } from './themes';
-import { NAV_H } from '../nav/navMetrics';
 import { ART_ASPECT, LAYOUT, center, pctStyle, plateSrc, plateSrcSet } from './couchLayout';
 
 // The couch (spec: The room). Presentational: the art, the live screens and
@@ -17,7 +16,7 @@ export const ROOM_QUERY = '(min-width: 768px) and (min-aspect-ratio: 4/3)';
 
 function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, onPlateError, now = Date.now() }) {
   const { containerRef, stageRef, box } = stage;
-  const navH = stage.navH ?? NAV_H;
+  const navH = stage.navH;
   const base = LAYOUT.art.empty || LAYOUT.art.plate;
   const [tx, ty] = center(LAYOUT.screens.tv);
   const live = couch.tv.state === 'live';
@@ -76,7 +75,7 @@ export default function CouchFront(props) {
   if (roomLayout && !noArt && !plateFailed) return <Room {...props} onPlateError={failPlate} />;
   const art = !noArt && !plateFailed;
   const tv = couch.doors.find((d) => d.id === 'tv');
-  const navH = (props.stage && props.stage.navH) ?? NAV_H;
+  const navH = props.stage.navH;
   return (
     <div style={art ? undefined : { marginTop: navH }}>
       {art && <TvCrop navH={navH} door={tv} tv={couch.tv} items={items} mode={mode} flipTo={flipTo} onDoor={onDoor} onAutoplayBlocked={onAutoplayBlocked} onPlateError={failPlate} theme={couch.theme} />}

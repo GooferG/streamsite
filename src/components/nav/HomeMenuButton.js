@@ -1,32 +1,19 @@
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { isWatching } from '../../utils/watching';
 import { FOCUS } from '../onAir/classes';
 import { PowerLed } from './StatusReadout';
 import NavSheet from './NavSheet';
-
-const ADMIN_EMAIL = 'luimeneghim@gmail.com';
+import useNavSheet from './useNavSheet';
 
 // The home page has no bar (the room is the navigation), so the site menu is a
 // small button in the top-right corner that opens the same side sheet at every
 // width. z-50 matches the bar: under the control room panel, over the room.
+// Inside the TV (the watch dialog) it steps out of the way.
 export default function HomeMenuButton({ isLive = false, viewerCount = null, statusReady = false }) {
-  const { pathname } = useLocation();
-  const { currentUser, isStaff } = useAuth();
-  const isAdmin = currentUser?.email === ADMIN_EMAIL;
-  const [open, setOpen] = useState(false);
-  const buttonRef = useRef(null);
-  const wasOpen = useRef(false);
-  const sheetId = useId();
-
-  const close = useCallback(() => setOpen(false), []);
-  useEffect(() => setOpen(false), [pathname]);
-  // When the sheet closes, focus goes back to the button that opened it.
-  useEffect(() => {
-    if (wasOpen.current && !open) buttonRef.current?.focus();
-    wasOpen.current = open;
-  }, [open]);
+  const location = useLocation();
+  const { open, close, toggle, buttonRef, sheetId, isAdmin, isStaff } = useNavSheet();
+  if (isWatching(location, isLive)) return null;
 
   const onAir = statusReady && isLive;
 
@@ -35,20 +22,15 @@ export default function HomeMenuButton({ isLive = false, viewerCount = null, sta
       <button
         ref={buttonRef}
         type="button"
-        onClick={() => setOpen((o) => !o)}
-        aria-label="Menu"
+        onClick={toggle}
+        aria-label={onAir ? 'Menu, on air' : 'Menu'}
         aria-expanded={open}
         aria-controls={sheetId}
         style={{ top: 'max(0.75rem, env(safe-area-inset-top))', right: 'max(0.75rem, env(safe-area-inset-right))' }}
-        className={`fixed z-50 inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-onair-control bg-black/50 px-3 font-onair text-onair-ink-2 backdrop-blur-sm transition-colors duration-150 hover:bg-black/70 motion-reduce:transition-none ${FOCUS}`}
+        className={`fixed z-50 inline-flex h-11 min-w-11 items-center justify-center gap-2 rounded-onair-control bg-gradient-to-b from-onair-bezel-top to-onair-bezel-bottom px-3 font-onair text-onair-ink-2 shadow-onair-bar transition-colors duration-150 hover:text-onair-ink-1 motion-reduce:transition-none ${FOCUS}`}
       >
         <Menu size={20} aria-hidden="true" />
-        {onAir && (
-          <>
-            <PowerLed live />
-            <span className="sr-only">On air</span>
-          </>
-        )}
+        {onAir && <PowerLed live />}
       </button>
       <NavSheet
         always

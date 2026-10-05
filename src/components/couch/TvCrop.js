@@ -1,6 +1,5 @@
 import { useCallback } from 'react';
 import useDoor from '../camera/useDoor';
-import { NAV_H } from '../nav/navMetrics';
 import { FOCUS } from '../onAir/classes';
 import CouchTv from './CouchTv';
 import Dressing from './Dressing';
@@ -9,7 +8,7 @@ import { LAYOUT, cropStyle, overlapShare, pctStyle, plateSrc, rectAspect, within
 
 // Phones: the TV and its stand, cropped from the same plate, with the live
 // screen in it. The whole crop is the TV door.
-export default function TvCrop({ navH = NAV_H, door, tv, items, mode, flipTo, onDoor, onAutoplayBlocked, onPlateError, theme = null }) {
+export default function TvCrop({ navH, door, tv, items, mode, flipTo, onDoor, onAutoplayBlocked, onPlateError, theme = null }) {
   const crop = LAYOUT.phoneCrop;
   const art = themeArt(LAYOUT, theme);
   const go = useCallback((el) => onDoor(door, el), [door, onDoor]);

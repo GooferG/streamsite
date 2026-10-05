@@ -11,7 +11,7 @@ beforeEach(() => {
 });
 
 function Room({ fixture = 'offair', onDoor = () => {} }) {
-  const stage = useCouchStage(ART_ASPECT, LAYOUT.art.focal);
+  const stage = useCouchStage(ART_ASPECT, LAYOUT.art.focal, 57);
   const couch = buildCouch(F[fixture].input);
   return <CouchFront couch={couch} items={[]} mode="stills" onDoor={onDoor} stage={stage} roomLayout />;
 }

@@ -1,11 +1,10 @@
 import { useEffect, useRef } from 'react';
 import { SOCIAL_LINKS } from '../../constants';
-import { NAV_H } from '../nav/navMetrics';
 import { FOCUS } from '../onAir/classes';
 
 // "Inside the TV" while live (spec: Watch inside the TV): the Twitch player at
 // full resolution under the nav. Esc, Back or the button pull back out.
-export default function TvFrame({ onExit, channel = 'GooferG', navH = NAV_H }) {
+export default function TvFrame({ onExit, channel = 'GooferG', navH }) {
   const closeRef = useRef(null);
   useEffect(() => {
     if (closeRef.current) closeRef.current.focus();

@@ -10,6 +10,7 @@ import TvFrame from './TvFrame';
 import { ART_ASPECT, LAYOUT } from './couchLayout';
 import { buildCouch } from './couchModel';
 import { reelItems, reelMode } from './reel';
+import { isWatching } from '../../utils/watching';
 import useCouchStage from './useCouchStage';
 
 // The couch with its camera (spec: The camera). Must sit inside CameraProvider.
@@ -37,7 +38,7 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
     [input.reel, input.clips, input.videos, couch.tv.cards]
   );
   const live = couch.tv.state === 'live';
-  const watching = live && !!(location.state && location.state.watch);
+  const watching = isWatching(location, live);
   const inRoom = roomLayout && !noArt;
 
   const onDoor = useCallback(

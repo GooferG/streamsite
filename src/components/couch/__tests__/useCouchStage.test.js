@@ -3,7 +3,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import useCouchStage from '../useCouchStage';
 
 function Harness() {
-  const { containerRef, box } = useCouchStage(2, [0.5, 0.5]);
+  const { containerRef, box } = useCouchStage(2, [0.5, 0.5], 0);
   const [shown, setShown] = useState(true);
   return (
     <div>

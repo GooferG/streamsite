@@ -1,5 +1,5 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, useNavigate } from 'react-router-dom';
 import HomeMenuButton from '../HomeMenuButton';
 import { useTwitchAuth } from '../../../contexts/TwitchAuthContext';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -19,13 +19,13 @@ beforeEach(() => {
   document.body.style.overflow = '';
 });
 
-const setup = (props = {}) =>
+const setup = (props = {}, entry = '/') =>
   render(
-    <MemoryRouter initialEntries={['/']}>
+    <MemoryRouter initialEntries={[entry]}>
       <HomeMenuButton statusReady {...props} />
     </MemoryRouter>
   );
-const button = () => screen.getByRole('button', { name: 'Menu' });
+const button = () => screen.getByRole('button', { name: /^Menu/ });
 
 test('opens the site sheet; aria-expanded flips and points at the sheet', () => {
   setup();
@@ -61,11 +61,37 @@ test('Escape and Close return focus to the button', () => {
 test('the on-air dot shows only when live and the status is ready', () => {
   const live = setup({ isLive: true });
   expect(button().querySelector('[data-led]')).not.toBeNull();
-  expect(within(button()).getByText('On air')).toBeTruthy();
+  expect(button().getAttribute('aria-label')).toBe('Menu, on air');
   live.unmount();
   const off = setup({ isLive: false });
   expect(button().querySelector('[data-led]')).toBeNull();
   off.unmount();
   setup({ isLive: true, statusReady: false });
   expect(button().querySelector('[data-led]')).toBeNull();
+});
+
+test('inside the TV (live and watching) the button steps out of the way', () => {
+  setup({ isLive: true }, { pathname: '/', state: { watch: true } });
+  expect(screen.queryByRole('button', { name: /^Menu/ })).toBeNull();
+});
+
+test('a watch flag on an off-air channel is stale: the button stays', () => {
+  setup({ isLive: false }, { pathname: '/', state: { watch: true } });
+  expect(button()).toBeTruthy();
+});
+
+test('leaving the TV brings the button back', () => {
+  function Leave() {
+    const navigate = useNavigate();
+    return <button onClick={() => navigate('/', { state: null })}>leave</button>;
+  }
+  render(
+    <MemoryRouter initialEntries={[{ pathname: '/', state: { watch: true } }]}>
+      <HomeMenuButton statusReady isLive />
+      <Leave />
+    </MemoryRouter>
+  );
+  expect(screen.queryByRole('button', { name: /^Menu/ })).toBeNull();
+  fireEvent.click(screen.getByText('leave'));
+  expect(button()).toBeTruthy();
 });

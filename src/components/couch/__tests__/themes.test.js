@@ -77,7 +77,7 @@ test('the laptop keeps its GG mark without a bug', () => {
 });
 
 function Room({ phone = false }) {
-  const stage = useCouchStage(ART_ASPECT, LAYOUT.art.focal);
+  const stage = useCouchStage(ART_ASPECT, LAYOUT.art.focal, 57);
   const couch = buildCouch(F.halloween.input);
   return <CouchFront couch={couch} items={[]} mode="stills" onDoor={() => {}} stage={stage} roomLayout={!phone} />;
 }
@@ -158,7 +158,7 @@ describe('the poster in the room', () => {
   const beanLinks = (root) => [...root.querySelectorAll('a[href="https://beantwitch.com"]')];
   const room = (theme, phone = false) => {
     function R() {
-      const stage = useCouchStage(ART_ASPECT, LAYOUT.art.focal);
+      const stage = useCouchStage(ART_ASPECT, LAYOUT.art.focal, 57);
       const couch = buildCouch(theme ? F.halloween.input : F.offair.input);
       return <CouchFront couch={couch} items={[]} mode="stills" onDoor={() => {}} stage={stage} roomLayout={!phone} />;
     }

@@ -43,7 +43,7 @@ const NavigateContext = React.createContext(null);
 function MemoryRouter({ children, initialEntries }) {
   const keys = React.useRef(0);
   const [hist, setHist] = React.useState(() => ({
-    entries: [parseTo(initialEntries && initialEntries[0])],
+    entries: [{ ...parseTo(initialEntries && initialEntries[0]), state: (initialEntries && initialEntries[0] && initialEntries[0].state) || null }],
     index: 0,
     action: 'POP',
   }));

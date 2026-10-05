@@ -119,3 +119,20 @@ body.brand-route {
 .couch-flip-static {
   animation: camera-static-out 300ms ease-in both;
 }
+
+/* Night in the room; only the TV casts light, and only while live. */
+.couch-dim {
+  z-index: 1;
+  background: rgb(0 0 0 / 0.22);
+  transition: background 400ms;
+}
+.couch-dim--live {
+  background:
+    radial-gradient(ellipse 34% 46% at var(--tv-x) var(--tv-y), color-mix(in srgb, theme('colors.onair.signal.DEFAULT') 18%, transparent), transparent 70%),
+    rgb(0 0 0 / 0.1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .couch-dim {
+    transition: none;
+  }
+}

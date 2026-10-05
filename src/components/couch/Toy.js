@@ -28,10 +28,9 @@ const THREAD = 'before:absolute before:bottom-full before:left-1/2 before:h-[300
 // layer's opacity moves. Both layers stay mounted (a fresh image would paint
 // again, a late LCP candidate): a phase swaps the lit layer's class, which
 // starts its animation, and a poke during the flick off replays it in place.
-// Under reduced motion it is one picture that swaps.
-function NeonSign({ on, run, art }) {
+// Under reduced motion (`calm`) it is one picture that swaps.
+function NeonSign({ on, run, art, calm }) {
   const [humming, setHumming] = useState(false);
-  const calm = useRef(prefersReducedMotion()).current;
   const lit = useRef(null);
   useEffect(() => {
     if (calm || on) {
@@ -69,11 +68,14 @@ function NeonSign({ on, run, art }) {
 export default function Toy({ toy }) {
   const [on, setOn] = useState(false);
   const [run, setRun] = useState(0);
-  const [calm] = useState(prefersReducedMotion);
+  // Read again at every poke, so turning reduced motion on or off mid-visit
+  // counts from the next poke.
+  const [calm, setCalm] = useState(prefersReducedMotion);
   const timer = useRef(null);
   useEffect(() => () => clearTimeout(timer.current), []);
 
   const poke = () => {
+    setCalm(prefersReducedMotion());
     if (toy.effect === 'toggle') {
       setOn((v) => !v);
       return;
@@ -100,7 +102,7 @@ export default function Toy({ toy }) {
     >
       {/* Keyed by the poke, so a toy's move starts over; the sign restarts its own. */}
       <span key={neon ? 'neon' : run} className={`absolute inset-0 ${toy.effect === 'drop' ? THREAD : ''} ${moving}`}>
-        {neon && <NeonSign on={on} run={run} art={art} />}
+        {neon && <NeonSign on={on} run={run} art={art} calm={calm} />}
         {!neon && src && <img src={src} alt="" draggable={false} className="pointer-events-none h-full w-full" />}
       </span>
       {on && toy.effect === 'fizz' && <Fizz key={`f-${run}`} calm={calm} />}

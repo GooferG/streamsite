@@ -84,6 +84,34 @@ test('under reduced motion a toy still switches its art, holds for its time, the
   expect(toyEl(container, 'pumpkin').getAttribute('data-on')).toBe('true');
 });
 
+test('reduced motion is read at each poke, so an OS switch mid-visit counts from the next poke', () => {
+  const { container } = render(
+    <>
+      <Toy toy={CAN} />
+      <Toy toy={CANDY} />
+      <Toy toy={NEON} />
+    </>
+  );
+  calmDown();
+  fireEvent.click(toyEl(container, 'can'));
+  fireEvent.click(toyEl(container, 'candy'));
+  fireEvent.click(toyEl(container, 'neon'));
+  expect(screen.getByTestId('fizz-cap')).toBeTruthy();
+  expect(screen.queryAllByTestId('fizz-foam')).toHaveLength(0);
+  expect(toyEl(container, 'candy').innerHTML).not.toContain('animate-');
+  expect(layers(toyEl(container, 'neon'))).toEqual(['/neon-off.webp']);
+  expect(container.innerHTML).not.toContain('animate-');
+  act(() => jest.advanceTimersByTime(TOY_MS.scatter));
+  // And back: motion again from the next poke.
+  delete window.matchMedia;
+  fireEvent.click(toyEl(container, 'can'));
+  expect(toyEl(container, 'can').firstChild.className).toContain('animate-couch-shake');
+  expect(screen.getAllByTestId('fizz-foam').length).toBeGreaterThan(0);
+  fireEvent.click(toyEl(container, 'neon'));
+  expect(layers(toyEl(container, 'neon'))).toEqual(['/neon-off.webp', '/neon.webp']);
+  expect(lit(toyEl(container, 'neon')).className).toContain('animate-couch-neon-off');
+});
+
 test('unmounting a toy mid-effect clears its timer', () => {
   const err = jest.spyOn(console, 'error').mockImplementation(() => {});
   const { container, unmount } = render(<Toy toy={PUMPKIN} />);

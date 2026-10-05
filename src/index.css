@@ -129,7 +129,7 @@ body.brand-route {
   animation: camera-static-out 300ms ease-in both;
 }
 
-/* Night in the room; only the TV casts light, and only while live. */
+/* Night in the room; the TV lights it only while live (the neon sign's glow is in its art). */
 .couch-dim {
   z-index: 1;
   background: rgb(0 0 0 / 0.22);

@@ -5,7 +5,7 @@ import { STATIC_MS } from '../reel';
 
 const STILL = { kind: 'still', id: 's1', src: '/a.jpg' };
 const CARD = { kind: 'card', id: 'card-0', kicker: 'Off air', text: 'Back tomorrow.' };
-const VIDEO = { kind: 'video', id: 'v1', sources: { av1: '/v1.webm', h264: '/v1.mp4' }, poster: '/v1.jpg' };
+const VIDEO = { kind: 'video', id: 'v1', sources: { h264: '/v1.mp4' }, poster: '/v1.jpg' };
 const OFF = { state: 'offair', preview: null, viewers: null, cards: [] };
 const LISTINGS = [
   { day: 'Tomorrow', time: '11:00 AM', show: 'Bonus Hunt Time!' },
@@ -63,9 +63,20 @@ test('video mode plays muted and reports a refused autoplay', async () => {
   render(<CouchTv tv={OFF} items={[VIDEO]} mode="video" onAutoplayBlocked={onBlocked} />);
   const video = screen.getByTestId('tv-video');
   expect(video.muted).toBe(true);
-  expect(video.querySelectorAll('source')).toHaveLength(2);
+  // H.264 only, as the video's own src (no <source> list).
+  expect(video.getAttribute('src')).toBe('/v1.mp4');
+  expect(video.querySelectorAll('source')).toHaveLength(0);
   await act(async () => {});
   expect(onBlocked).toHaveBeenCalled();
+});
+
+test('a loop that fails to load moves on instead of sticking on its poster', () => {
+  render(<CouchTv tv={OFF} items={[VIDEO, CARD]} mode="video" />);
+  fireEvent.error(screen.getByTestId('tv-video'));
+  expect(screen.getByTestId('tv-switch')).toBeTruthy();
+  act(() => jest.advanceTimersByTime(STATIC_MS));
+  expect(screen.queryByTestId('tv-video')).toBeNull();
+  expect(screen.getByTestId('tv-card')).toBeTruthy();
 });
 
 test('an aborted play is not a refused autoplay', async () => {

@@ -1,9 +1,17 @@
 [
   {
+    "id": "i-guess",
+    "title": "I guess",
+    "sources": {
+      "h264": "/tv/reel/i-guess.mp4"
+    },
+    "poster": "/tv/reel/i-guess.jpg",
+    "seconds": 8
+  },
+  {
     "id": "banana-bonus",
     "title": "the banana bonus",
     "sources": {
-      "av1": "/tv/reel/banana-bonus.webm",
       "h264": "/tv/reel/banana-bonus.mp4"
     },
     "poster": "/tv/reel/banana-bonus.jpg",
@@ -13,7 +21,6 @@
     "id": "it-kept-counting",
     "title": "it kept counting",
     "sources": {
-      "av1": "/tv/reel/it-kept-counting.webm",
       "h264": "/tv/reel/it-kept-counting.mp4"
     },
     "poster": "/tv/reel/it-kept-counting.jpg",
@@ -23,7 +30,6 @@
     "id": "super-mega",
     "title": "super mega",
     "sources": {
-      "av1": "/tv/reel/super-mega.webm",
       "h264": "/tv/reel/super-mega.mp4"
     },
     "poster": "/tv/reel/super-mega.jpg",
@@ -33,7 +39,6 @@
     "id": "big-win",
     "title": "big win",
     "sources": {
-      "av1": "/tv/reel/big-win.webm",
       "h264": "/tv/reel/big-win.mp4"
     },
     "poster": "/tv/reel/big-win.jpg",
@@ -43,7 +48,6 @@
     "id": "dig-site",
     "title": "dig site",
     "sources": {
-      "av1": "/tv/reel/dig-site.webm",
       "h264": "/tv/reel/dig-site.mp4"
     },
     "poster": "/tv/reel/dig-site.jpg",
@@ -53,20 +57,9 @@
     "id": "extra-spin",
     "title": "buy the extra spin",
     "sources": {
-      "av1": "/tv/reel/extra-spin.webm",
       "h264": "/tv/reel/extra-spin.mp4"
     },
     "poster": "/tv/reel/extra-spin.jpg",
-    "seconds": 8
-  },
-  {
-    "id": "i-guess",
-    "title": "I guess",
-    "sources": {
-      "av1": "/tv/reel/i-guess.webm",
-      "h264": "/tv/reel/i-guess.mp4"
-    },
-    "poster": "/tv/reel/i-guess.jpg",
     "seconds": 8
   }
 ]

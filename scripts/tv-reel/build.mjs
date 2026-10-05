@@ -3,8 +3,9 @@
 // downloaded from the Twitch creator dashboard into scripts/tv-reel/source/
 // (gitignored). reel.json lists them in playing order:
 //   [{ "file": "chat-called-it.mp4", "title": "chat called it", "start": 2 }]
-// Each becomes an 8 s, 360p, silent loop as AV1 .webm and H.264 .mp4 plus a
-// poster, in public/tv/reel/ with manifest.json. Needs ffmpeg on PATH.
+// Each becomes an 8 s, 360p, silent H.264 .mp4 loop plus a poster, in
+// public/tv/reel/ with manifest.json. H.264 only: phones decode it in
+// hardware, and AV1 came out bigger for most clips. Needs ffmpeg on PATH.
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -45,15 +46,10 @@ for (const item of list) {
   const id = slug(item.id || path.parse(item.file).name);
   const ss = String(item.start || 0);
   const vf = 'scale=-2:360,fps=24';
-  const webm = path.join(OUT, `${id}.webm`);
   const mp4 = path.join(OUT, `${id}.mp4`);
   const poster = path.join(OUT, `${id}.jpg`);
   // Busy clips (confetti, coin showers) can blow the budget: step the quality
   // down until each file fits, a few times at most.
-  for (let crf = 40; crf <= 52; crf += 4) {
-    ff(['-ss', ss, '-t', String(SECONDS), '-i', src, '-vf', vf, '-an', '-c:v', 'libaom-av1', '-crf', String(crf), '-b:v', '0', '-cpu-used', '6', '-row-mt', '1', webm]);
-    if (kb(webm) <= LOOP_KB) break;
-  }
   for (let crf = 28; crf <= 37; crf += 3) {
     ff(['-ss', ss, '-t', String(SECONDS), '-i', src, '-vf', vf, '-an', '-c:v', 'libx264', '-profile:v', 'main', '-pix_fmt', 'yuv420p', '-crf', String(crf), '-preset', 'slow', '-movflags', '+faststart', mp4]);
     if (kb(mp4) <= LOOP_KB) break;
@@ -62,14 +58,14 @@ for (const item of list) {
     ff(['-ss', String(Number(ss) + 1), '-i', src, '-frames:v', '1', '-vf', 'scale=-2:360', '-q:v', String(q), poster]);
     if (kb(poster) <= POSTER_KB) break;
   }
-  for (const [file, cap] of [[webm, LOOP_KB], [mp4, LOOP_KB], [poster, POSTER_KB]]) {
+  for (const [file, cap] of [[mp4, LOOP_KB], [poster, POSTER_KB]]) {
     if (kb(file) > cap) over.push(`${path.basename(file)} ${kb(file).toFixed(0)} KB > ${cap} KB`);
   }
-  total += kb(webm) + kb(poster); // a browser downloads one video format
+  total += kb(mp4) + kb(poster);
   manifest.push({
     id,
     title: item.title || '',
-    sources: { av1: `/tv/reel/${id}.webm`, h264: `/tv/reel/${id}.mp4` },
+    sources: { h264: `/tv/reel/${id}.mp4` },
     poster: `/tv/reel/${id}.jpg`,
     seconds: SECONDS,
   });
@@ -81,4 +77,4 @@ if (over.length) {
   console.error(`Over budget:\n  ${over.join('\n  ')}`);
   process.exit(1);
 }
-console.log(`${manifest.length} loops, ${total.toFixed(0)} KB (AV1 + posters)`);
+console.log(`${manifest.length} loops, ${total.toFixed(0)} KB (H.264 + posters)`);

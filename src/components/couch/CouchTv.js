@@ -10,7 +10,6 @@ import { SEGMENT_MS, STATIC_MS, isPicture } from './reel';
 // sizes its type in container units. Decorative: the TV door's link says what
 // is on.
 const GSN_IDENT = '/gsn/ident.webp';
-const AV1 = 'video/webm; codecs="av01.0.04M.08"';
 
 function useTabHidden() {
   const [hidden, setHidden] = useState(() => typeof document !== 'undefined' && document.hidden);
@@ -51,6 +50,8 @@ function Video({ item, hidden, onEnded, onBlocked }) {
       });
     }
   }, [item.id, hidden, onBlocked]);
+  // One H.264 file as the src, so a dead link fires the video's own error and
+  // the reel moves on (a failing <source> never does).
   return (
     <video
       ref={ref}
@@ -60,13 +61,11 @@ function Video({ item, hidden, onEnded, onBlocked }) {
       playsInline
       preload="auto"
       poster={item.poster}
+      src={item.sources.h264}
       onEnded={onEnded}
       onError={onEnded}
       data-testid="tv-video"
-    >
-      {item.sources.av1 && <source src={item.sources.av1} type={AV1} />}
-      {item.sources.h264 && <source src={item.sources.h264} type="video/mp4" />}
-    </video>
+    />
   );
 }
 

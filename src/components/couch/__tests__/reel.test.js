@@ -5,7 +5,7 @@ import { reelItems, reelMode } from '../reel';
 import useTvReel from '../useTvReel';
 
 const CARDS = [{ kicker: 'Off air', text: 'A' }, { kicker: 'Tapes', text: 'B' }];
-const loop = (id) => ({ id, title: id, sources: { av1: `/tv/reel/${id}.webm`, h264: `/tv/reel/${id}.mp4` }, poster: `/tv/reel/${id}.jpg` });
+const loop = (id) => ({ id, title: id, sources: { h264: `/tv/reel/${id}.mp4` }, poster: `/tv/reel/${id}.jpg` });
 const tag = (i) => (i.kind === 'ad' ? `ad:${i.ad}` : `${i.kind}:${i.id}`);
 const adsFor = (input) => buildCouch(input).tv.ads;
 
@@ -103,14 +103,40 @@ test('every commercial gets its own id and slot length', () => {
 });
 
 test('with a manifest the reel alternates loops and cards', () => {
-  const reel = [
-    { id: 'one', title: 'one', sources: { av1: '/tv/reel/one.webm', h264: '/tv/reel/one.mp4' }, poster: '/tv/reel/one.jpg' },
-    { id: 'two', title: 'two', sources: { av1: '/tv/reel/two.webm', h264: '/tv/reel/two.mp4' }, poster: '/tv/reel/two.jpg' },
-    { id: 'three', title: 'three', sources: { av1: '/tv/reel/three.webm', h264: '/tv/reel/three.mp4' }, poster: '/tv/reel/three.jpg' },
-  ];
+  const reel = ['one', 'two', 'three'].map(loop);
   expect(reelItems({ reel, cards: CARDS }).map((i) => `${i.kind}:${i.id}`)).toEqual([
     'video:one', 'card:card-0', 'video:two', 'card:card-1', 'video:three',
   ]);
+  expect(reelItems({ reel }).find((i) => i.id === 'one').sources).toEqual({ h264: '/tv/reel/one.mp4' });
+});
+
+test('a malformed manifest entry is skipped, and an AV1 file is never passed on', () => {
+  const reel = [
+    null,
+    { id: 'no-file', title: 'x', sources: {}, poster: '/tv/reel/x.jpg' },
+    { id: 'no-sources', title: 'x', poster: '/tv/reel/x.jpg' },
+    { id: 'no-poster', title: 'x', sources: { h264: '/tv/reel/x.mp4' } },
+    { ...loop('old'), sources: { av1: '/tv/reel/old.webm', h264: '/tv/reel/old.mp4' } },
+    loop('good'),
+  ];
+  const items = reelItems({ reel });
+  expect(items.map((i) => i.id)).toEqual(['old', 'good']);
+  expect(items[0].sources).toEqual({ h264: '/tv/reel/old.mp4' });
+  // Nothing playable: the newest tape and the clip thumbnails stand in.
+  const stills = reelItems({ reel: [null, { id: 'x' }], clips: [{ id: 'c1', thumbnail_url: 'https://x/c1.jpg' }] });
+  expect(stills.map((i) => `${i.kind}:${i.id}`)).toEqual(['still:clip-c1']);
+});
+
+test('the shipped manifest is H.264 only, smallest loop first, every entry playable', () => {
+  const manifest = require('../../../../public/tv/reel/manifest.json');
+  expect(manifest.length).toBeGreaterThan(0);
+  expect(manifest[0].id).toBe('i-guess');
+  manifest.forEach((m) => {
+    expect(Object.keys(m.sources)).toEqual(['h264']);
+    expect(m.sources.h264).toMatch(/^\/tv\/reel\/[a-z0-9-]+\.mp4$/);
+    expect(m.poster).toMatch(/^\/tv\/reel\/[a-z0-9-]+\.jpg$/);
+  });
+  expect(reelItems({ reel: manifest })).toHaveLength(manifest.length);
 });
 
 test('without a manifest it uses the newest tape and clip thumbnails', () => {

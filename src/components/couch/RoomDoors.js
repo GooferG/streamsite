@@ -77,6 +77,8 @@ function RoomDoor({ door, covers, giveaway, onDoor }) {
 
 export default function RoomDoors({ doors, covers, giveaway, onDoor }) {
   return (
+    // Safari drops list semantics under list-style none, so the role stays.
+    // eslint-disable-next-line jsx-a11y/no-redundant-roles
     <ol role="list" aria-label="Things in the room" className="pointer-events-none absolute inset-0">
       {doors.map((door) => (
         <RoomDoor key={door.id} door={door} covers={covers} giveaway={giveaway} onDoor={onDoor} />

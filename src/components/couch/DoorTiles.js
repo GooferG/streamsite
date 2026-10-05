@@ -45,6 +45,8 @@ export default function DoorTiles({ doors, onDoor, noArt = false, skip = [], onP
   return (
     <section className="px-3 pb-6 pt-4">
       <h2 className={`${MONO} px-1.5 pb-3 text-[0.625rem] tracking-[0.2em] text-onair-ink-4`}>On the coffee table</h2>
+      {/* Safari drops list semantics under list-style none, so the role stays. */}
+      {/* eslint-disable-next-line jsx-a11y/no-redundant-roles */}
       <ol role="list" aria-label="On the coffee table" className="grid grid-cols-2 gap-2.5">
         {doors
           .filter((d) => !skip.includes(d.id))

@@ -19,6 +19,6 @@ export function moonPath(phase, r = 50) {
   const k = Math.cos(2 * Math.PI * p);
   const rx = round2(Math.abs(k) * r);
   const limb = waxing ? 1 : 0;
-  const terminator = waxing === k > 0 ? 0 : 1;
+  const terminator = waxing === (k > 0) ? 0 : 1;
   return `M ${r} 0 A ${r} ${r} 0 0 ${limb} ${r} ${2 * r} A ${rx} ${r} 0 0 ${terminator} ${r} 0 Z`;
 }

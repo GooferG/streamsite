@@ -79,7 +79,7 @@ export default function Toy({ toy }) {
       aria-hidden="true"
       data-toy={toy.id}
       data-on={on ? 'true' : 'false'}
-      onPointerDown={toy.hit ? undefined : poke}
+      onClick={toy.hit ? undefined : poke}
       className={`absolute select-none ${toy.hit ? 'pointer-events-none' : 'pointer-events-auto cursor-pointer'}`}
       style={pctStyle(toy.rect)}
     >
@@ -93,7 +93,7 @@ export default function Toy({ toy }) {
       {toy.hit && (
         <span
           data-testid={`toy-hit-${toy.id}`}
-          onPointerDown={poke}
+          onClick={poke}
           className="pointer-events-auto absolute cursor-pointer"
           style={pctStyle(within(toy.rect, toy.hit))}
         />

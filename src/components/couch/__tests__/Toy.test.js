@@ -30,19 +30,35 @@ test('a toy is decorative: hidden from screen readers and out of the tab order',
   expect(container.querySelector('button, a')).toBeNull();
 });
 
+test('a toy answers a click, never a bare press, so a scroll that starts on it pokes nothing', () => {
+  const toy = { ...NEON, rect: [10, 10, 40, 40], hit: [20, 20, 20, 10] };
+  const { container } = render(
+    <>
+      <Toy toy={LAMP} />
+      <Toy toy={toy} />
+    </>
+  );
+  fireEvent.pointerDown(toyEl(container, 'lamp'));
+  fireEvent.pointerDown(screen.getByTestId('toy-hit-neon'));
+  expect(toyEl(container, 'lamp').getAttribute('data-on')).toBe('false');
+  expect(toyEl(container, 'neon').getAttribute('data-on')).toBe('false');
+  fireEvent.click(toyEl(container, 'lamp'));
+  expect(toyEl(container, 'lamp').getAttribute('data-on')).toBe('true');
+});
+
 test('the lamp toggles between its two pictures', () => {
   const { container } = render(<Toy toy={LAMP} />);
   const el = toyEl(container, 'lamp');
-  fireEvent.pointerDown(el);
+  fireEvent.click(el);
   expect(pic(el)).toBe('/lamp-off.webp');
-  fireEvent.pointerDown(el);
+  fireEvent.click(el);
   expect(pic(el)).toBe('/lamp-on.webp');
 });
 
 test('the pumpkin lights up, then dies down', () => {
   const { container } = render(<Toy toy={PUMPKIN} />);
   const el = toyEl(container, 'pumpkin');
-  fireEvent.pointerDown(el);
+  fireEvent.click(el);
   expect(el.getAttribute('data-on')).toBe('true');
   expect(pic(el)).toBe('/p-lit.webp');
   act(() => jest.advanceTimersByTime(TOY_MS.light));
@@ -58,8 +74,8 @@ test('under reduced motion a toy still switches its art, holds for its time, the
       <Toy toy={CAN} />
     </>
   );
-  fireEvent.pointerDown(toyEl(container, 'pumpkin'));
-  fireEvent.pointerDown(toyEl(container, 'can'));
+  fireEvent.click(toyEl(container, 'pumpkin'));
+  fireEvent.click(toyEl(container, 'can'));
   act(() => jest.advanceTimersByTime(TOY_MS.fizz - 1));
   expect(toyEl(container, 'pumpkin').getAttribute('data-on')).toBe('true');
   expect(toyEl(container, 'can').getAttribute('data-on')).toBe('true');
@@ -71,7 +87,7 @@ test('under reduced motion a toy still switches its art, holds for its time, the
 test('unmounting a toy mid-effect clears its timer', () => {
   const err = jest.spyOn(console, 'error').mockImplementation(() => {});
   const { container, unmount } = render(<Toy toy={PUMPKIN} />);
-  fireEvent.pointerDown(toyEl(container, 'pumpkin'));
+  fireEvent.click(toyEl(container, 'pumpkin'));
   expect(jest.getTimerCount()).toBe(1);
   unmount();
   expect(jest.getTimerCount()).toBe(0);
@@ -85,7 +101,7 @@ describe('the can', () => {
     const { container } = render(<Toy toy={CAN} />);
     const el = toyEl(container, 'can');
     expect(screen.queryByTestId('toy-fizz')).toBeNull();
-    fireEvent.pointerDown(el);
+    fireEvent.click(el);
     expect(el.firstChild.className).toContain('animate-couch-shake');
     const foam = screen.getAllByTestId('fizz-foam');
     expect(foam.length).toBeGreaterThanOrEqual(6);
@@ -105,10 +121,10 @@ describe('the can', () => {
   test('a poke mid-fizz starts it over', () => {
     const { container } = render(<Toy toy={CAN} />);
     const el = toyEl(container, 'can');
-    fireEvent.pointerDown(el);
+    fireEvent.click(el);
     act(() => jest.advanceTimersByTime(1000));
     const first = screen.getByTestId('toy-fizz');
-    fireEvent.pointerDown(el);
+    fireEvent.click(el);
     expect(screen.getByTestId('toy-fizz')).not.toBe(first);
     act(() => jest.advanceTimersByTime(TOY_MS.fizz - 1));
     expect(screen.getByTestId('toy-fizz')).toBeTruthy();
@@ -119,7 +135,7 @@ describe('the can', () => {
   test('under reduced motion a still foam cap sits on the can for TOY_MS.fizz, then goes', () => {
     calmDown();
     const { container } = render(<Toy toy={CAN} />);
-    fireEvent.pointerDown(toyEl(container, 'can'));
+    fireEvent.click(toyEl(container, 'can'));
     expect(screen.getByTestId('fizz-cap')).toBeTruthy();
     expect(screen.queryAllByTestId('fizz-foam')).toHaveLength(0);
     expect(screen.queryAllByTestId('fizz-drop')).toHaveLength(0);
@@ -137,7 +153,7 @@ describe('the candy bowl', () => {
   test('wrapped sweets and drops hop out to both sides and back, all gone after TOY_MS.scatter', () => {
     const { container } = render(<Toy toy={CANDY} />);
     expect(screen.queryAllByTestId('toy-candy')).toHaveLength(0);
-    fireEvent.pointerDown(toyEl(container, 'candy'));
+    fireEvent.click(toyEl(container, 'candy'));
     const candies = screen.getAllByTestId('toy-candy');
     expect(candies.length).toBeGreaterThanOrEqual(4);
     expect(candies.length).toBeLessThanOrEqual(6);
@@ -153,10 +169,10 @@ describe('the candy bowl', () => {
   test('a poke mid-hop starts it over', () => {
     const { container } = render(<Toy toy={CANDY} />);
     const el = toyEl(container, 'candy');
-    fireEvent.pointerDown(el);
+    fireEvent.click(el);
     act(() => jest.advanceTimersByTime(1200));
     const first = screen.getAllByTestId('toy-candy')[0];
-    fireEvent.pointerDown(el);
+    fireEvent.click(el);
     expect(screen.getAllByTestId('toy-candy')[0]).not.toBe(first);
     act(() => jest.advanceTimersByTime(TOY_MS.scatter - 1));
     expect(screen.getAllByTestId('toy-candy').length).toBeGreaterThan(0);
@@ -167,7 +183,7 @@ describe('the candy bowl', () => {
   test('under reduced motion the candies rest beside the bowl for TOY_MS.scatter, then go', () => {
     calmDown();
     const { container } = render(<Toy toy={CANDY} />);
-    fireEvent.pointerDown(toyEl(container, 'candy'));
+    fireEvent.click(toyEl(container, 'candy'));
     const candies = screen.getAllByTestId('toy-candy');
     expect(candies.length).toBeGreaterThanOrEqual(4);
     candies.forEach((c) => expect(c.style.transform).toMatch(/^translateX\(-?\d/));
@@ -185,8 +201,8 @@ test('unmounting the can or the bowl mid-effect clears their timers', () => {
       <Toy toy={CANDY} />
     </>
   );
-  fireEvent.pointerDown(toyEl(container, 'can'));
-  fireEvent.pointerDown(toyEl(container, 'candy'));
+  fireEvent.click(toyEl(container, 'can'));
+  fireEvent.click(toyEl(container, 'candy'));
   expect(jest.getTimerCount()).toBe(2);
   unmount();
   expect(jest.getTimerCount()).toBe(0);
@@ -200,7 +216,7 @@ describe('the controller', () => {
     const { container } = render(<Toy toy={PAD} />);
     const el = toyEl(container, 'controller');
     expect(screen.queryAllByTestId('toy-rumble')).toHaveLength(0);
-    fireEvent.pointerDown(el);
+    fireEvent.click(el);
     expect(el.firstChild.className).toContain('animate-couch-wiggle');
     const marks = screen.getAllByTestId('toy-rumble');
     expect(marks.map((m) => m.getAttribute('data-side')).sort()).toEqual(['left', 'right']);
@@ -213,7 +229,7 @@ describe('the controller', () => {
     calmDown();
     const { container } = render(<Toy toy={PAD} />);
     const el = toyEl(container, 'controller');
-    fireEvent.pointerDown(el);
+    fireEvent.click(el);
     expect(el.getAttribute('data-on')).toBe('true');
     expect(screen.queryAllByTestId('toy-rumble')).toHaveLength(0);
     expect(container.innerHTML).not.toContain('animate-');
@@ -264,7 +280,7 @@ describe('the neon sign', () => {
     const { container } = render(<Toy toy={NEON} />);
     const el = toyEl(container, 'neon');
     act(() => jest.advanceTimersByTime(1200));
-    fireEvent.pointerDown(el);
+    fireEvent.click(el);
     expect(el.getAttribute('data-on')).toBe('true');
     expect(lit(el).className).toContain('animate-couch-neon-off');
     act(() => jest.advanceTimersByTime(TOY_MS.neon - 1));
@@ -280,7 +296,7 @@ describe('the neon sign', () => {
     const { container } = render(<Toy toy={NEON} />);
     const el = toyEl(container, 'neon');
     act(() => jest.advanceTimersByTime(500));
-    fireEvent.pointerDown(el);
+    fireEvent.click(el);
     expect(lit(el).className).toContain('animate-couch-neon-off');
     act(() => jest.advanceTimersByTime(TOY_MS.neon));
     expect(lit(el).className).toContain('animate-couch-neon-on');
@@ -291,7 +307,7 @@ describe('the neon sign', () => {
   test('unmounting clears every timer', () => {
     const err = jest.spyOn(console, 'error').mockImplementation(() => {});
     const { container, unmount } = render(<Toy toy={NEON} />);
-    fireEvent.pointerDown(toyEl(container, 'neon'));
+    fireEvent.click(toyEl(container, 'neon'));
     unmount();
     expect(jest.getTimerCount()).toBe(0);
     act(() => jest.advanceTimersByTime(5000));
@@ -305,7 +321,7 @@ describe('the neon sign', () => {
     const el = toyEl(container, 'neon');
     expect(container.innerHTML).not.toContain('animate-couch-neon');
     expect(layers(el)).toEqual(['/neon.webp']);
-    fireEvent.pointerDown(el);
+    fireEvent.click(el);
     expect(layers(el)).toEqual(['/neon-off.webp']);
     expect(container.innerHTML).not.toContain('animate-couch-neon');
     act(() => jest.advanceTimersByTime(TOY_MS.neon));
@@ -317,7 +333,7 @@ test('a toy with a hit area pokes only from that area, and its art ignores the p
   const toy = { ...NEON, rect: [10, 10, 40, 40], hit: [20, 20, 20, 10] };
   const { container } = render(<Toy toy={toy} />);
   const el = toyEl(container, 'neon');
-  fireEvent.pointerDown(el);
+  fireEvent.click(el);
   expect(el.getAttribute('data-on')).toBe('false');
   expect(el.className).toContain('pointer-events-none');
   expect(el.querySelector('img').className).toContain('pointer-events-none');
@@ -326,6 +342,6 @@ test('a toy with a hit area pokes only from that area, and its art ignores the p
   expect(hit.style.top).toBe('25%');
   expect(hit.style.width).toBe('50%');
   expect(hit.style.height).toBe('25%');
-  fireEvent.pointerDown(hit);
+  fireEvent.click(hit);
   expect(el.getAttribute('data-on')).toBe('true');
 });

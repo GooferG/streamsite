@@ -22,7 +22,7 @@ function Window({ theme = null, now = ECLIPSE, witch }) {
   );
 }
 const toy = (c, id) => c.querySelector(`[data-toy="${id}"]`);
-const raise = (c) => fireEvent.pointerDown(toy(c, 'cord'));
+const raise = (c) => fireEvent.click(toy(c, 'cord'));
 
 test('moonPhase: a known new moon, half a month later, and a known full moon', () => {
   expect(moonPhase(NEW_MOON)).toBeCloseTo(0, 5);
@@ -50,17 +50,27 @@ test("the outside shows tonight's moon, stars and the skyline, all decorative", 
 
 test('tapping the sky sends a shooting star; tapping the moon makes it wink', () => {
   const { container } = render(<Window />);
-  fireEvent.pointerDown(toy(container, 'sky'));
+  fireEvent.click(toy(container, 'sky'));
   expect(screen.getByTestId('window-shooting')).toBeTruthy();
-  fireEvent.pointerDown(toy(container, 'moon'));
+  fireEvent.click(toy(container, 'moon'));
   expect(screen.getByTestId('window-moon').getAttribute('class')).toMatch(/animate-couch-blink/);
+});
+
+test('the window answers a click, never a bare press, so a scroll that starts on it pokes nothing', () => {
+  const { container } = render(<Window />);
+  fireEvent.pointerDown(toy(container, 'sky'));
+  fireEvent.pointerDown(toy(container, 'moon'));
+  fireEvent.pointerDown(toy(container, 'cord'));
+  expect(screen.queryByTestId('window-shooting')).toBeNull();
+  expect(screen.getByTestId('window-moon').getAttribute('class')).not.toMatch(/animate-couch-blink/);
+  expect(screen.getByTestId('window-blinds').getAttribute('data-up')).toBe('false');
 });
 
 test('the cord rolls the blinds up and down', () => {
   const { container } = render(<Window />);
-  fireEvent.pointerDown(toy(container, 'cord'));
+  fireEvent.click(toy(container, 'cord'));
   expect(screen.getByTestId('window-blinds').getAttribute('data-up')).toBe('true');
-  fireEvent.pointerDown(toy(container, 'cord'));
+  fireEvent.click(toy(container, 'cord'));
   expect(screen.getByTestId('window-blinds').getAttribute('data-up')).toBe('false');
 });
 
@@ -69,10 +79,10 @@ test('Halloween: a harvest moon, bats, and every third moon tap a witch', () => 
   expect(screen.getByTestId('window-moon').getAttribute('data-phase')).toBe('0.50');
   expect(screen.getByTestId('window-bats')).toBeTruthy();
   const moon = toy(container, 'moon');
-  fireEvent.pointerDown(moon);
-  fireEvent.pointerDown(moon);
+  fireEvent.click(moon);
+  fireEvent.click(moon);
   expect(screen.queryByTestId('window-witch')).toBeNull();
-  fireEvent.pointerDown(moon);
+  fireEvent.click(moon);
   expect(screen.getByTestId('window-witch').getAttribute('src')).toBe('/witch.webp');
 });
 
@@ -95,7 +105,7 @@ test('no glass, no window', () => {
 
 test('half-closed blinds leave the moon pokeable and shrink the sky to the strip below them', () => {
   const { container } = render(<Window />);
-  fireEvent.pointerDown(toy(container, 'moon'));
+  fireEvent.click(toy(container, 'moon'));
   expect(screen.getByTestId('window-moon').getAttribute('class')).toMatch(/animate-couch-blink/);
   const strip = toy(container, 'sky');
   expect(strip.style.top).toBe('22%');
@@ -118,11 +128,11 @@ test('a moon under the blinds is inert until the cord is pulled', () => {
   }
   const { container } = render(<Covered />);
   expect(toy(container, 'moon').getAttribute('class')).toMatch(/pointer-events-none/);
-  fireEvent.pointerDown(toy(container, 'moon'));
+  fireEvent.click(toy(container, 'moon'));
   expect(screen.getByTestId('window-moon').getAttribute('class')).not.toMatch(/blink/);
   raise(container);
   expect(toy(container, 'moon').getAttribute('class')).not.toMatch(/pointer-events-none/);
-  fireEvent.pointerDown(toy(container, 'moon'));
+  fireEvent.click(toy(container, 'moon'));
   expect(screen.getByTestId('window-moon').getAttribute('class')).toMatch(/animate-couch-blink/);
 });
 
@@ -189,7 +199,7 @@ test('with the real layout the moon winks without pulling the cord', () => {
   }
   const { container } = render(<Real />);
   expect(toy(container, 'moon').getAttribute('class')).not.toMatch(/pointer-events-none/);
-  fireEvent.pointerDown(toy(container, 'moon'));
+  fireEvent.click(toy(container, 'moon'));
   expect(screen.getByTestId('window-moon').getAttribute('class')).toMatch(/animate-couch-blink/);
 });
 

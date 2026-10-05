@@ -132,15 +132,15 @@ export function WindowFront({ win, state, theme, aspect }) {
           />
         </span>
       )}
-      <span aria-hidden="true" data-toy="sky" onPointerDown={skyDead ? undefined : state.pokeSky} className={`absolute ${live(skyDead)}`} style={pctStyle(skyRect)} />
+      <span aria-hidden="true" data-toy="sky" onClick={skyDead ? undefined : state.pokeSky} className={`absolute ${live(skyDead)}`} style={pctStyle(skyRect)} />
       <span
         aria-hidden="true"
         data-toy="moon"
-        onPointerDown={moonDead ? undefined : () => state.pokeMoon(halloween)}
+        onClick={moonDead ? undefined : () => state.pokeMoon(halloween)}
         className={`absolute ${live(moonDead)} rounded-full`}
         style={pctStyle(box)}
       />
-      {win.cord && <span aria-hidden="true" data-toy="cord" onPointerDown={state.pullCord} className="absolute cursor-pointer" style={pctStyle(win.cord)} />}
+      {win.cord && <span aria-hidden="true" data-toy="cord" onClick={state.pullCord} className="absolute cursor-pointer" style={pctStyle(win.cord)} />}
     </>
   );
 }

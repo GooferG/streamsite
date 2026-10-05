@@ -53,4 +53,11 @@ export const rectAspect = ([, , w, h]) => (w * LAYOUT.art.width) / (h * LAYOUT.a
 
 export const center = ([x, y, w, h]) => [x + w / 2, y + h / 2];
 
+// The share of `rect` (0..1) that falls inside `frame`.
+export function overlapShare([fx, fy, fw, fh], [rx, ry, rw, rh]) {
+  const w = Math.min(fx + fw, rx + rw) - Math.max(fx, rx);
+  const h = Math.min(fy + fh, ry + rh) - Math.max(fy, ry);
+  if (w <= 0 || h <= 0 || rw <= 0 || rh <= 0) return 0;
+  return (w * h) / (rw * rh);
+}
 export const intersects = ([ax, ay, aw, ah], [bx, by, bw, bh]) => ax < bx + bw && bx < ax + aw && ay < by + bh && by < ay + ah;

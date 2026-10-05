@@ -86,3 +86,19 @@ test('layers: the night is behind the plate, the window hit areas are behind the
   expect(sky).toBeGreaterThan(plate);
   expect(sky).toBeLessThan(doors);
 });
+
+test('theme dressing paints over the toys and the window, under the doors', () => {
+  LAYOUT.themes = { halloween: { dressing: [{ id: 'cobweb', src: '/c.webp', rect: [1, 1, 5, 5] }] } };
+  try {
+    const { container } = render(<Room fixture="halloween" />);
+    const web = container.querySelector('[data-dressing="cobweb"]');
+    const blinds = screen.getByTestId('window-blinds');
+    const door = container.querySelector('[data-door]');
+    const follows = (a, b) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    expect(follows(blinds, web)).toBe(true);
+    expect(follows(container.querySelector('[data-toy="moon"]'), web)).toBe(true);
+    expect(follows(web, door)).toBe(true);
+  } finally {
+    LAYOUT.themes = {};
+  }
+});

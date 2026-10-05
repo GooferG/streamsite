@@ -14,10 +14,19 @@ const BAT = 'M0 5 Q3 0 6 4 Q8 2 10 4 Q12 2 14 4 Q17 0 20 5 Q15 4 12 7 Q10 5 8 7 
 
 // The moon's hit box in percent of the art: square on screen, so its height is
 // its width times the art's aspect.
-export function moonBox([gx, gy, gw, gh], harvest, aspect) {
+// With the blinds at rest the moon sits centred in the strip of glass they
+// leave uncovered, so tonight's moon is visible without finding the cord.
+export function moonBox([gx, gy, gw, gh], harvest, aspect, blinds = null) {
   const m = harvest ? HARVEST : MOON;
   const w = (m.w / 100) * gw;
-  return [gx + (m.x / 100) * gw, gy + (m.y / 100) * gh, w, w * aspect];
+  const h = w * aspect;
+  let y = gy + (m.y / 100) * gh;
+  if (blinds) {
+    const top = blinds[1] + blinds[3];
+    if (top > gy && top < gy + gh) y = top + (gy + gh - top - h) / 2;
+    y = Math.max(gy, Math.min(y, gy + gh - h));
+  }
+  return [gx + (m.x / 100) * gw, y, w, h];
 }
 
 export function useWindowState() {
@@ -99,7 +108,7 @@ export function WindowFront({ win, state, theme, aspect }) {
   const blindsBottom = down ? Math.min(Math.max(win.blinds.rect[1] + win.blinds.rect[3], gy), glassBottom) : gy;
   const skyRect = down ? [gx, blindsBottom, gw, glassBottom - blindsBottom] : win.glass;
   const skyDead = down && skyRect[3] <= 0;
-  const box = moonBox(win.glass, halloween, aspect);
+  const box = moonBox(win.glass, halloween, aspect, win.blinds && win.blinds.rect);
   const moonDead = down && intersects(box, win.blinds.rect);
   const live = (dead) => (dead ? 'pointer-events-none' : 'cursor-pointer');
   return (

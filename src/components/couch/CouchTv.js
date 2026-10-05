@@ -69,9 +69,18 @@ function Video({ item, hidden, onEnded, onBlocked }) {
   );
 }
 
+// An image that fails to load is dropped, not shown as a broken glyph; a new
+// src gets a fresh try.
+function useImageFailed(src) {
+  const [failed, setFailed] = useState(null);
+  return [failed === src, () => setFailed(src)];
+}
+
 function Still({ src, moving }) {
+  const [failed, onError] = useImageFailed(src);
+  if (failed) return null;
   return (
-    <img src={src} alt="" className={`h-full w-full object-cover ${moving ? 'motion-safe:animate-slow-zoom' : ''}`} data-testid="tv-still" />
+    <img src={src} alt="" onError={onError} className={`h-full w-full object-cover ${moving ? 'motion-safe:animate-slow-zoom' : ''}`} data-testid="tv-still" />
   );
 }
 
@@ -134,10 +143,11 @@ function Reel({ items, mode, segmentMs, onBlocked }) {
 }
 
 function LivePreview({ tv }) {
+  const [previewFailed, onPreviewError] = useImageFailed(tv.preview);
   return (
     <>
-      {tv.preview ? (
-        <img src={tv.preview} alt="" className="absolute inset-0 h-full w-full object-cover" data-testid="tv-live" />
+      {tv.preview && previewFailed ? null : tv.preview ? (
+        <img src={tv.preview} alt="" onError={onPreviewError} className="absolute inset-0 h-full w-full object-cover" data-testid="tv-live" />
       ) : (
         <StaticNoise className="absolute inset-0" testId="tv-static" />
       )}

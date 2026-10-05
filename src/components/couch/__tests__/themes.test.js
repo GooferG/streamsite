@@ -195,3 +195,19 @@ describe('the poster in the room', () => {
     expect(beanLinks(container)).toHaveLength(0);
   });
 });
+
+test('the phone crop drops a layer with less than half of it inside', () => {
+  const [x, y, w, h] = LAYOUT.phoneCrop;
+  const sliver = { id: 'sliver', src: '/s.webp', rect: [x + w - 1, y, 10, h / 2] };
+  const half = { id: 'half', src: '/h.webp', rect: [x + w - 5, y, 10, h / 2] };
+  LAYOUT.themes = { halloween: { dressing: [sliver, half] } };
+  try {
+    const couch = buildCouch(F.halloween.input);
+    const tv = couch.doors.find((d) => d.id === 'tv');
+    const { container } = render(<TvCrop door={tv} tv={couch.tv} items={[]} mode="stills" onDoor={() => {}} theme="halloween" />);
+    expect(container.querySelector('[data-dressing="sliver"]')).toBeNull();
+    expect(container.querySelector('[data-dressing="half"]')).toBeTruthy();
+  } finally {
+    LAYOUT.themes = {};
+  }
+});

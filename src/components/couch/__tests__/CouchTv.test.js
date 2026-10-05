@@ -1,4 +1,4 @@
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import CouchTv from '../CouchTv';
 import { STATIC_MS } from '../reel';
 
@@ -91,4 +91,19 @@ test('items vanishing mid-switch and returning does not crash', () => {
 test('the remote flips the screen to the GSN ident', () => {
   render(<CouchTv tv={OFF} items={[STILL]} mode="stills" flipTo="gsn" />);
   expect(screen.getByTestId('tv-flip').getAttribute('src')).toBe('/gsn/ident.webp');
+});
+
+test('a still that fails to load is dropped, and a new src gets a fresh try', () => {
+  const { rerender } = render(<CouchTv tv={OFF} items={[STILL]} mode="stills" />);
+  fireEvent.error(screen.getByTestId('tv-still'));
+  expect(screen.queryByTestId('tv-still')).toBeNull();
+  rerender(<CouchTv tv={OFF} items={[{ ...STILL, src: '/b.jpg' }]} mode="stills" />);
+  expect(screen.getByTestId('tv-still').getAttribute('src')).toBe('/b.jpg');
+});
+
+test('a live preview that fails to load is dropped', () => {
+  render(<CouchTv tv={{ state: 'live', preview: '/dead.jpg', viewers: 3, cards: [] }} items={[]} mode="video" />);
+  fireEvent.error(screen.getByTestId('tv-live'));
+  expect(screen.queryByTestId('tv-live')).toBeNull();
+  expect(screen.getByText('Live · 3')).toBeTruthy();
 });

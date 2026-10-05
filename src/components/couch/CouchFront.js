@@ -45,9 +45,9 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, on
             onError={onPlateError}
             className="absolute inset-0 h-full w-full select-none"
           />
-          <Dressing layers={unlinked} />
           <RoomToys toys={roomToys(LAYOUT, couch.theme)} />
           <WindowFront win={LAYOUT.window} state={win} theme={couch.theme} aspect={ART_ASPECT} />
+          <Dressing layers={unlinked} />
           <RoomDoors doors={couch.doors} covers={couch.covers} giveaway={couch.giveaway} onDoor={onDoor} />
           <Dressing layers={linked} links={links} />
           <span

@@ -106,7 +106,7 @@ test('half-closed blinds leave the moon pokeable and shrink the sky to the strip
 });
 
 test('a moon under the blinds is inert until the cord is pulled', () => {
-  const covering = { ...WIN, blinds: { src: '/blinds.webp', rect: [69, 8, 22, 30] } };
+  const covering = { ...WIN, blinds: { src: '/blinds.webp', rect: [69, 8, 22, 42] } };
   function Covered() {
     const state = useWindowState();
     return (
@@ -139,10 +139,56 @@ test('moonPhase: the full moon of 26 October 2026', () => {
 
 test('the window toys and blinds never overlap a door', () => {
   const win = LAYOUT.window;
-  const rects = [win.glass, win.cord, win.blinds && win.blinds.rect, moonBox(win.glass, false, ART_ASPECT), moonBox(win.glass, true, ART_ASPECT)].filter(Boolean);
+  const rects = [win.glass, win.cord, win.blinds && win.blinds.rect, moonBox(win.glass, false, ART_ASPECT, win.blinds && win.blinds.rect), moonBox(win.glass, true, ART_ASPECT, win.blinds && win.blinds.rect)].filter(Boolean);
   for (const r of rects) {
     for (const [id, door] of Object.entries(LAYOUT.doors)) {
       expect([id, intersects(r, door.rect)]).toEqual([id, false]);
     }
   }
+});
+
+test('moonBox centres the moon in the glass the blinds leave uncovered', () => {
+  const glass = [70, 10, 20, 40];
+  const blinds = [69, 8, 22, 14]; // bottom at 22
+  const [, y, , h] = moonBox(glass, false, 16 / 9, blinds);
+  expect(y).toBeCloseTo(22 + (50 - 22 - h) / 2, 6);
+  expect(moonBox(glass, false, 16 / 9)).toEqual(moonBox(glass, false, 16 / 9, null));
+  // Blinds that end above the glass leave the default placement.
+  expect(moonBox(glass, false, 16 / 9, [69, 0, 22, 5])).toEqual(moonBox(glass, false, 16 / 9));
+});
+
+test('a box taller than the strip stays inside the glass', () => {
+  const glass = [70, 10, 20, 40];
+  const [, y, , h] = moonBox(glass, true, 4, [69, 0, 22, 45]);
+  expect(y).toBeGreaterThanOrEqual(10);
+  expect(y + h).toBeLessThanOrEqual(50 + 1e-9);
+});
+
+test('in the real layout both moons start below the blinds, inside the glass', () => {
+  const { glass, blinds } = LAYOUT.window;
+  const bottom = blinds.rect[1] + blinds.rect[3];
+  for (const harvest of [false, true]) {
+    const [x, y, w, h] = moonBox(glass, harvest, ART_ASPECT, blinds.rect);
+    expect(y).toBeGreaterThanOrEqual(bottom - 1e-9);
+    expect(y).toBeGreaterThanOrEqual(glass[1]);
+    expect(y + h).toBeLessThanOrEqual(glass[1] + glass[3] + 1e-9);
+    expect(x + w).toBeLessThanOrEqual(glass[0] + glass[2] + 1e-9);
+  }
+});
+
+test('with the real layout the moon winks without pulling the cord', () => {
+  const win = LAYOUT.window;
+  function Real() {
+    const state = useWindowState();
+    return (
+      <div>
+        <WindowOutside win={win} state={state} now={ECLIPSE} theme={null} />
+        <WindowFront win={win} state={state} theme={null} aspect={ART_ASPECT} />
+      </div>
+    );
+  }
+  const { container } = render(<Real />);
+  expect(toy(container, 'moon').getAttribute('class')).not.toMatch(/pointer-events-none/);
+  fireEvent.pointerDown(toy(container, 'moon'));
+  expect(screen.getByTestId('window-moon').getAttribute('class')).toMatch(/animate-couch-blink/);
 });

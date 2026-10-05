@@ -4,7 +4,7 @@ import { FOCUS } from '../onAir/classes';
 import CouchTv from './CouchTv';
 import Dressing from './Dressing';
 import { roomToys, themeArt } from './themes';
-import { LAYOUT, cropStyle, intersects, pctStyle, plateSrc, rectAspect, within } from './couchLayout';
+import { LAYOUT, cropStyle, overlapShare, pctStyle, plateSrc, rectAspect, within } from './couchLayout';
 
 // Phones: the TV and its stand, cropped from the same plate, with the live
 // screen in it. The whole crop is the TV door.
@@ -28,7 +28,7 @@ export default function TvCrop({ door, tv, items, mode, flipTo, onDoor, onAutopl
           ...roomToys(LAYOUT, theme)
             .filter((t) => t.art && t.art.idle)
             .map((t) => ({ id: `toy-${t.id}`, src: t.art.idle, rect: t.rect })),
-        ].filter((l) => intersects(crop, l.rect))}
+        ].filter((l) => overlapShare(crop, l.rect) >= 0.5)}
         frame={crop}
       />
       <span className="pointer-events-none absolute" style={pctStyle(within(crop, LAYOUT.screens.tv))}>

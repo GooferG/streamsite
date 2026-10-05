@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { ART_ASPECT, DOOR_IDS, LAYOUT, ROOM, SCREEN_CLASS, center, cropStyle, insideSafe, intersects, plateSrc, plateSrcSet, within } from '../couchLayout';
+import { ART_ASPECT, DOOR_IDS, LAYOUT, ROOM, SCREEN_CLASS, center, cropStyle, insideSafe, intersects, overlapShare, plateSrc, plateSrcSet, within } from '../couchLayout';
 import { moonBox } from '../RoomWindow';
 import { themeLinks } from '../themes';
 
@@ -72,7 +72,7 @@ test('in the final art no toy or dressing sits on a door', () => {
 test('in the final art no linked dressing sits on a toy or the window toys', () => {
   if (!LAYOUT.final) return;
   const win = LAYOUT.window;
-  const windowToys = [win.cord, moonBox(win.glass, false, ART_ASPECT), moonBox(win.glass, true, ART_ASPECT)].filter(Boolean);
+  const windowToys = [win.cord, moonBox(win.glass, false, ART_ASPECT, win.blinds && win.blinds.rect), moonBox(win.glass, true, ART_ASPECT, win.blinds && win.blinds.rect)].filter(Boolean);
   for (const [id, theme] of Object.entries(LAYOUT.themes || {})) {
     const links = themeLinks(id);
     const toys = [...(LAYOUT.toys || []), ...(theme.toys || [])].map((t) => t.rect);
@@ -80,4 +80,14 @@ test('in the final art no linked dressing sits on a toy or the window toys', () 
       for (const rect of [...toys, ...windowToys]) expect([layer.id, rect, intersects(layer.rect, rect)]).toEqual([layer.id, rect, false]);
     }
   }
+});
+
+test('overlapShare is the part of a rect inside a frame', () => {
+  const frame = [10, 10, 20, 20];
+  expect(overlapShare(frame, [12, 12, 4, 4])).toBe(1);
+  expect(overlapShare(frame, [28, 10, 4, 4])).toBe(0.5);
+  expect(overlapShare(frame, [0, 0, 5, 5])).toBe(0);
+  expect(overlapShare(frame, [30, 10, 5, 5])).toBe(0); // touching edges only
+  expect(overlapShare(frame, [0, 0, 100, 100])).toBeCloseTo(0.04, 10);
+  expect(overlapShare(frame, [12, 12, 0, 4])).toBe(0);
 });

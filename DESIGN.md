@@ -360,14 +360,14 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 - **The OPEN light** is the page's LIVE light: the red `StatusLight` while live, an unlit "After hours" off air, nothing before the first Twitch poll.
 - **The rental counter.** One click plays a tape in an overlay with the back of its box beside it. The tape timeline marks each clip at its offset, and a mark seeks the VOD. A clip's back links to its tape while the VOD is in the archive. Focus is trapped and goes back to the box.
 - **The marker.** `font-onair-marker` is for labels, index cards and the sign-off: 15px or larger, never for data. Dates, times, lengths and counts stay mono.
-- **The clerk is set dressing.** The night clerk (`public/gsn/video/`) appears only in the loading and empty states, always `aria-hidden`, and bows out when its art is missing.
+- **The clerk is set dressing.** The night clerk (`public/gsn/video/`) appears only in the loading and empty states (and in Goofer Video's commercial on the couch TV), always `aria-hidden`, and bows out when its art is missing.
 
 ### The couch
 
 - **Home is Goofer's living room at 2 AM.** One illustrated room under the nav, sized like a cover image around the TV. Every object is a door to a channel: TV (the stream while live, else Vods), sticky note (Giveaway, only while one is open), laptop (Gamba), tapes (Vods), TV guide (Schedule), game cases (Gaming), remote (Store) and the framed photo (About). Every door and label sits inside the art's safe area (x 12.5-87.5 %, y 12-88 %).
 - **Labels glance, sentences explain.** Each door has a small mono kicker and teaser that is always visible; hover or focus opens its station-break sentence and "Opens ...".
 - **The camera.** A plain click zooms the room into the object (about 650 ms) and cuts by the door's kind: screens (TV, note, laptop, tapes, remote) cut to channel-change static and the page tunes in; things (photo, TV guide, game cases) close a black cartoon iris on the object and the page fades up. Back pulls the camera out to the couch; after a thing, the iris opens on it first. On phones a tile's art grows to fill the screen instead.
-- **The TV** plays the reel off air (loops or stills, with station-break cards), the live preview while live, and the stream inside the TV when clicked; watch mode clears its history entry when the stream ends. **The laptop** shows the hunt, the prediction round, or a bouncing GG screensaver.
+- **The TV** plays the reel off air (loops or stills, with station-break cards), the live preview while live, and the stream inside the TV when clicked; watch mode clears its history entry when the stream ends. Off air a commercial for one of the site's channels (GSN, Goofer Video, the Goofer Guide; `commercials.js`) runs after every two clips, and while it plays the TV door goes to that channel. Under reduced motion a commercial is one still frame. **The laptop** shows the hunt, the prediction round, or a bouncing GG screensaver.
 - **Phones** see a 4:3 crop of the TV above "On the coffee table" tiles. With no art, every door is a tile.
 - **Themes** dress the room on a calendar in `themes.js` (Halloween is October); `?theme=<id>` previews a real theme id and `?theme=none` turns dressing off. An unknown id falls back to the calendar.
 - **Toys** react to a poke and go nowhere: the lamp toggles, the controller rumbles, the can fizzes; Halloween adds the jack-o'-lantern, the spider and the candy bowl. Silent, pointer and touch only, never focusable. Under reduced motion a toy holds its art without moving.
@@ -393,7 +393,7 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 
 **Art Never Carries Lettering.** Generated art (store item art, the GSN operator, the station ident; `scripts/gsn-art/`) has no text in it. Names, prices and the GSN bug are CSS. Art lives in `public/gsn/`.
 
-**The Operator Is Set Dressing.** GSN's recurring operator appears only in the order moment (standby, on the phone, shrug). Always `aria-hidden`; the visible text says what happened.
+**The Operator Is Set Dressing.** GSN's recurring operator appears only in the order moment (standby, on the phone, shrug) and in GSN's commercial on the couch TV. Always `aria-hidden`; the visible text says what happened.
 
 **Doors Are Links.** Every couch object is a real anchor in one ordered list; modifier and middle clicks stay native, and only a plain click plays the camera. The list is `pointer-events-none` and each door `pointer-events-auto`, so a door always wins an overlap with a toy.
 

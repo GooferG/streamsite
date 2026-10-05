@@ -380,6 +380,18 @@ module.exports = {
           to: { transform: 'translate(320%, 160%)', opacity: '0' },
         },
         'couch-cross': { '0%': { transform: 'translateX(-35%)' }, '60%,100%': { transform: 'translateX(110%)' } },
+        // The couch TV's commercials (TvCommercial.js). Opacity and transform
+        // only; each beat sets its own delay (and a push its length) inline.
+        'tv-ad-cut': { from: { opacity: '0' }, to: { opacity: '1' } },
+        'tv-ad-hold': { '0%,100%': { opacity: '1' } },
+        'tv-ad-in': { from: { opacity: '0', transform: 'translateY(35%)' }, to: { opacity: '1', transform: 'translateY(0)' } },
+        'tv-ad-pop': {
+          '0%': { opacity: '0', transform: 'scale(0.4)' },
+          '60%': { opacity: '1', transform: 'scale(1.08)' },
+          '100%': { opacity: '1', transform: 'scale(1)' },
+        },
+        'tv-ad-push': { from: { transform: 'scale(1)' }, to: { transform: 'scale(1.1)' } },
+        'tv-ad-crawl': { from: { transform: 'translateY(100%)' }, to: { transform: 'translateY(0)' } },
       },
       animation: {
         'slow-zoom': 'slow-zoom 18s ease-in-out infinite',
@@ -421,6 +433,14 @@ module.exports = {
         'couch-blink': 'couch-blink 0.7s ease-in-out',
         'couch-shoot': 'couch-shoot 0.9s ease-out forwards',
         'couch-cross': 'couch-cross 60s linear infinite',
+        // A hard cut in; visible for the GSN ident's beat; words stepping in;
+        // a lineup item popping in; the slow push-in; the listings crawling up.
+        'tv-ad-cut': 'tv-ad-cut 1ms linear both',
+        'tv-ad-hold': 'tv-ad-hold 1.4s linear',
+        'tv-ad-in': 'tv-ad-in 320ms cubic-bezier(0.2, 0.7, 0.3, 1) both',
+        'tv-ad-pop': 'tv-ad-pop 420ms cubic-bezier(0.3, 0.7, 0.4, 1) both',
+        'tv-ad-push': 'tv-ad-push 4s linear both',
+        'tv-ad-crawl': 'tv-ad-crawl 4.5s linear both',
       },
     },
   },

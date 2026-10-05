@@ -1,5 +1,5 @@
 import { COUCH_FIXTURES as F } from '../couchFixtures';
-import { DOOR_ORDER, buildCouch, isNewTape, steamCovers } from '../couchModel';
+import { DOOR_ORDER, buildCouch, isNewTape, steamCovers, withCommercial } from '../couchModel';
 
 const door = (couch, id) => couch.doors.find((d) => d.id === id);
 const NOW = F.offair.input.now;
@@ -129,4 +129,18 @@ test('every fixture keeps the voice rules and the door order', () => {
       expect(d.label).not.toMatch(/—|, not /i);
     }
   }
+});
+
+test('a commercial on the TV points the TV door at its channel, off air only', () => {
+  const c = buildCouch(F.offair.input);
+  const tv = door(withCommercial(c, 'video'), 'tv');
+  expect(tv.href).toBe('/vods');
+  expect(tv.teaser).toBe('Goofer Video commercial');
+  expect(tv.label).toBe('TV: A Goofer Video commercial. Opens Vods.');
+  expect(door(withCommercial(c, 'guide'), 'tv').label).toBe('TV: A Goofer Guide commercial. Opens Schedule.');
+  // The other doors are untouched; no commercial, or live, is the couch as built.
+  expect(withCommercial(c, 'gsn').doors.filter((d) => d.id !== 'tv')).toEqual(c.doors.filter((d) => d.id !== 'tv'));
+  expect(withCommercial(c, null)).toBe(c);
+  const live = buildCouch(F.live.input);
+  expect(withCommercial(live, 'gsn')).toBe(live);
 });

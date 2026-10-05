@@ -14,7 +14,7 @@ import { ART_ASPECT, LAYOUT, center, pctStyle, plateSrc, plateSrcSet } from './c
 // the doors, positioned in percent of the art on one stage the camera moves.
 export const ROOM_QUERY = '(min-width: 768px) and (min-aspect-ratio: 4/3)';
 
-function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, onPlateError, now = Date.now() }) {
+function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, onSegment, stage, onPlateError, now = Date.now() }) {
   const { containerRef, stageRef, box } = stage;
   const navH = stage.navH;
   const base = LAYOUT.art.empty || LAYOUT.art.plate;
@@ -57,7 +57,7 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, on
             data-testid={live ? 'couch-glow' : undefined}
           />
           <span className="pointer-events-none absolute z-[2]" style={pctStyle(LAYOUT.screens.tv)}>
-            <CouchTv tv={couch.tv} items={items} mode={mode} flipTo={flipTo} onAutoplayBlocked={onAutoplayBlocked} />
+            <CouchTv tv={couch.tv} items={items} mode={mode} flipTo={flipTo} onAutoplayBlocked={onAutoplayBlocked} onSegment={onSegment} />
           </span>
           <span className="pointer-events-none absolute z-[2]" style={pctStyle(LAYOUT.screens.laptop)}>
             <LaptopScreen laptop={couch.laptop} bug={art && art.laptopBug} />
@@ -69,7 +69,7 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, on
 }
 
 export default function CouchFront(props) {
-  const { couch, items, mode, flipTo, onDoor, onAutoplayBlocked, roomLayout, noArt = false } = props;
+  const { couch, items, mode, flipTo, onDoor, onAutoplayBlocked, onSegment, roomLayout, noArt = false } = props;
   const [plateFailed, setPlateFailed] = useState(false);
   const failPlate = () => setPlateFailed(true);
   if (roomLayout && !noArt && !plateFailed) return <Room {...props} onPlateError={failPlate} />;
@@ -78,7 +78,7 @@ export default function CouchFront(props) {
   const navH = props.stage.navH;
   return (
     <div style={art ? undefined : { marginTop: navH }}>
-      {art && <TvCrop navH={navH} door={tv} tv={couch.tv} items={items} mode={mode} flipTo={flipTo} onDoor={onDoor} onAutoplayBlocked={onAutoplayBlocked} onPlateError={failPlate} theme={couch.theme} />}
+      {art && <TvCrop navH={navH} door={tv} tv={couch.tv} items={items} mode={mode} flipTo={flipTo} onDoor={onDoor} onAutoplayBlocked={onAutoplayBlocked} onSegment={onSegment} onPlateError={failPlate} theme={couch.theme} />}
       <DoorTiles doors={couch.doors} onDoor={onDoor} noArt={!art} skip={art ? ['tv'] : []} onPlateError={failPlate} />
     </div>
   );

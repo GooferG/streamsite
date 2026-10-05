@@ -45,6 +45,9 @@ export function lengthWords(seconds) {
   return m ? `${plural(h, 'hour')} ${m}` : plural(h, 'hour');
 }
 
+// A listing's day, from dayWord: "Today", "Tomorrow", "Mon".
+export const listingDay = (day) => cap(shortDay(day));
+
 // The day a moment falls on, on the viewer's calendar: "today", "tomorrow",
 // "yesterday" or the weekday.
 export function dayWord(ms, now, timeZone) {

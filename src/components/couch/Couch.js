@@ -8,7 +8,7 @@ import { prefersReducedMotion } from '../onAir/useChannelSwitch';
 import CouchFront, { ROOM_QUERY } from './CouchFront';
 import TvFrame from './TvFrame';
 import { ART_ASPECT, LAYOUT } from './couchLayout';
-import { buildCouch } from './couchModel';
+import { buildCouch, withCommercial } from './couchModel';
 import { reelItems, reelMode } from './reel';
 import { isWatching } from '../../utils/watching';
 import useCouchStage from './useCouchStage';
@@ -34,10 +34,16 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
   const [blocked, setBlocked] = useState(false);
   const mode = reelMode({ reducedMotion: prefersReducedMotion(), saveData: saveData(), autoplayBlocked: blocked });
   const items = useMemo(
-    () => reelItems({ reel: input.reel, clips: input.clips, videos: input.videos, cards: couch.tv.cards }),
-    [input.reel, input.clips, input.videos, couch.tv.cards]
+    () => reelItems({ reel: input.reel, clips: input.clips, videos: input.videos, cards: couch.tv.cards, ads: couch.tv.ads }),
+    [input.reel, input.clips, input.videos, couch.tv.cards, couch.tv.ads]
   );
   const live = couch.tv.state === 'live';
+  // The commercial on the TV, if any: the TV door goes to its channel while it
+  // runs. A click reads the door it was rendered with, so a commercial ending
+  // mid-move never changes the trip.
+  const [ad, setAd] = useState(null);
+  const onSegment = useCallback((item) => setAd(item && item.kind === 'ad' ? item.ad : null), []);
+  const shown = useMemo(() => withCommercial(couch, ad), [couch, ad]);
   const watching = isWatching(location, live);
   const inRoom = roomLayout && !noArt;
 
@@ -132,12 +138,13 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
     <>
       <CouchFront
         now={input.now}
-        couch={couch}
+        couch={shown}
         items={items}
         mode={mode}
         flipTo={flipTo}
         onDoor={onDoor}
         onAutoplayBlocked={() => setBlocked(true)}
+        onSegment={onSegment}
         stage={stage}
         roomLayout={roomLayout}
         noArt={noArt}

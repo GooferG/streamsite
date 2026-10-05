@@ -8,7 +8,7 @@ import { LAYOUT, cropStyle, overlapShare, pctStyle, plateSrc, rectAspect, within
 
 // Phones: the TV and its stand, cropped from the same plate, with the live
 // screen in it. The whole crop is the TV door.
-export default function TvCrop({ navH, door, tv, items, mode, flipTo, onDoor, onAutoplayBlocked, onPlateError, theme = null }) {
+export default function TvCrop({ navH, door, tv, items, mode, flipTo, onDoor, onAutoplayBlocked, onSegment, onPlateError, theme = null }) {
   const crop = LAYOUT.phoneCrop;
   const art = themeArt(LAYOUT, theme);
   const go = useCallback((el) => onDoor(door, el), [door, onDoor]);
@@ -32,7 +32,7 @@ export default function TvCrop({ navH, door, tv, items, mode, flipTo, onDoor, on
         frame={crop}
       />
       <span className="pointer-events-none absolute" style={pctStyle(within(crop, LAYOUT.screens.tv))}>
-        <CouchTv tv={tv} items={items} mode={mode} flipTo={flipTo} onAutoplayBlocked={onAutoplayBlocked} />
+        <CouchTv tv={tv} items={items} mode={mode} flipTo={flipTo} onAutoplayBlocked={onAutoplayBlocked} onSegment={onSegment} />
       </span>
     </a>
   );

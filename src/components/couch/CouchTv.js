@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { MONO } from '../onAir/classes';
 import StaticNoise from '../onAir/StaticNoise';
 import StatusLight from '../onAir/StatusLight';
+import TvCommercial from './TvCommercial';
 import { SCREEN_CLASS } from './couchLayout';
-import { SEGMENT_MS, STATIC_MS } from './reel';
+import { SEGMENT_MS, STATIC_MS, isPicture } from './reel';
 
 // The couch's TV (spec: The TV). It sits in the art's screen rectangle and
 // sizes its type in container units. Decorative: the TV door's link says what
@@ -84,14 +85,25 @@ function Still({ src, moving }) {
   );
 }
 
-function Reel({ items, mode, segmentMs, onBlocked }) {
+function Reel({ items, mode, segmentMs, onBlocked, onSegment }) {
   const [index, setIndex] = useState(0);
   const [switching, setSwitching] = useState(false);
   const hidden = useTabHidden();
+  const hold = mode === 'hold';
   const item = items.length ? items[index % items.length] : null;
+  // Holding (reduced motion): one picture, or with none a commercial's still frame.
+  const held = hold ? items.find(isPicture) || items.find((i) => i.kind === 'ad') || null : null;
+  const shown = hold ? held : item;
   const advance = useCallback(() => {
     if (items.length > 1) setSwitching(true);
   }, [items.length]);
+
+  // What is on screen, for the TV door (it follows a commercial); nothing once
+  // the reel is gone.
+  useEffect(() => {
+    onSegment(shown);
+  }, [shown, onSegment]);
+  useEffect(() => () => onSegment(null), [onSegment]);
 
   useEffect(() => {
     setIndex(0);
@@ -107,21 +119,26 @@ function Reel({ items, mode, segmentMs, onBlocked }) {
     return () => clearTimeout(t);
   }, [switching, items.length]);
 
+  // A segment's clock follows its place in the running order, so fresh reel
+  // data (a new array every poll) never restarts it. A commercial runs its own
+  // length.
+  const kind = item ? item.kind : null;
+  const ms = (item && item.ms) || segmentMs;
   useEffect(() => {
-    if (!item || mode === 'hold' || hidden || switching) return undefined;
-    if (item.kind === 'video' && mode === 'video') return undefined; // the loop ends itself
-    const t = setTimeout(advance, segmentMs);
+    if (!kind || hold || hidden || switching) return undefined;
+    if (kind === 'video' && mode === 'video') return undefined; // the loop ends itself
+    const t = setTimeout(advance, ms);
     return () => clearTimeout(t);
-  }, [item, mode, hidden, switching, segmentMs, advance]);
+  }, [index, kind, ms, hold, mode, hidden, switching, advance]);
 
   if (!item) return <StaticNoise className="absolute inset-0" testId="tv-static" />;
 
-  if (mode === 'hold') {
-    const still = items.find((i) => i.kind !== 'card');
+  if (hold) {
+    if (held && held.kind === 'ad') return <TvCommercial item={held} still />;
     const card = items.find((i) => i.kind === 'card');
     return (
       <>
-        {still && <Still src={still.kind === 'video' ? still.poster : still.src} moving={false} />}
+        {held && <Still src={held.kind === 'video' ? held.poster : held.src} moving={false} />}
         {card && (
           <span className="absolute inset-x-0 bottom-0 bg-onair-surface-4/90 px-[5cqw] py-[3cqw] font-onair text-[max(10px,5cqw)] font-bold leading-tight text-onair-ink-1">
             {card.text}
@@ -134,6 +151,8 @@ function Reel({ items, mode, segmentMs, onBlocked }) {
   return (
     <>
       {item.kind === 'card' && <Card item={item} />}
+      {/* Keyed by its slot, and remounted when the tab comes back (the clock restarts then), so the beats run from the top in step. */}
+      {item.kind === 'ad' && <TvCommercial key={`${index}:${item.id}:${hidden ? 'away' : 'on'}`} item={item} />}
       {item.kind === 'video' && mode === 'video' && <Video item={item} hidden={hidden} onEnded={advance} onBlocked={onBlocked} />}
       {item.kind === 'video' && mode !== 'video' && <Still src={item.poster} moving />}
       {item.kind === 'still' && <Still src={item.src} moving />}
@@ -161,7 +180,7 @@ function LivePreview({ tv }) {
   );
 }
 
-export default function CouchTv({ tv, items, mode, flipTo = null, onAutoplayBlocked, segmentMs = SEGMENT_MS }) {
+export default function CouchTv({ tv, items, mode, flipTo = null, onAutoplayBlocked, onSegment, segmentMs = SEGMENT_MS }) {
   // Report a refused autoplay at most once per mount, whatever the parent passes.
   const blockedRef = useRef(onAutoplayBlocked);
   blockedRef.current = onAutoplayBlocked;
@@ -170,6 +189,12 @@ export default function CouchTv({ tv, items, mode, flipTo = null, onAutoplayBloc
     if (reported.current) return;
     reported.current = true;
     if (blockedRef.current) blockedRef.current();
+  }, []);
+  // The segment on screen, to whatever the parent passes now.
+  const segmentRef = useRef(onSegment);
+  segmentRef.current = onSegment;
+  const reportSegment = useCallback((item) => {
+    if (segmentRef.current) segmentRef.current(item);
   }, []);
   return (
     <div
@@ -180,7 +205,9 @@ export default function CouchTv({ tv, items, mode, flipTo = null, onAutoplayBloc
     >
       {tv.state === 'waiting' && <StaticNoise className="absolute inset-0" testId="tv-static" />}
       {tv.state === 'live' && <LivePreview tv={tv} />}
-      {tv.state === 'offair' && <Reel items={items} mode={mode} segmentMs={segmentMs} onBlocked={reportBlocked} />}
+      {tv.state === 'offair' && (
+        <Reel items={items} mode={mode} segmentMs={segmentMs} onBlocked={reportBlocked} onSegment={reportSegment} />
+      )}
       {flipTo === 'gsn' && (
         <>
           <img src={GSN_IDENT} alt="" className="absolute inset-0 h-full w-full object-cover" data-testid="tv-flip" />

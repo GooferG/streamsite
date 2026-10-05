@@ -4,7 +4,8 @@ import { huntFeature } from '../gamba/guide';
 import { huntMode, huntStats } from '../hunts/huntStats';
 import { showTitle } from '../schedule/scheduleModel';
 import { cleanTitle, parseDuration } from '../vods/videoStoreModel';
-import { COPY, dayWord, lengthWords, untilWords, whenAired } from './couchCopy';
+import { COMMERCIALS, commercials } from './commercials';
+import { COPY, dayWord, lengthWords, listingDay, untilWords, whenAired } from './couchCopy';
 import { ROOM } from './couchLayout';
 import { THEMES, isTheme } from './themes';
 
@@ -129,6 +130,49 @@ function tapesCopy(vod, input) {
   });
 }
 
+// The next `count` shows for the Goofer Guide commercial, soonest first, on
+// the viewer's calendar and clock (the TV's "Back tomorrow" card reads the same
+// way): [{ day, time, show }]. A time that doesn't read is listed as typed.
+export function guideListings(schedule, now, timeZone, count = 3) {
+  const out = [];
+  let rest = Array.isArray(schedule) ? schedule.filter(Boolean) : [];
+  while (out.length < count) {
+    const next = upNext(rest, now);
+    if (!next) break;
+    rest = rest.filter((e) => e !== next.entry);
+    out.push({
+      day: listingDay(dayWord(next.start.getTime(), now, timeZone)),
+      time: next.timeKnown ? formatClock(next.start, timeZone) : (next.entry.time || '').trim() || 'Time TBA',
+      show: showTitle(next.entry).title || 'Stream',
+    });
+  }
+  return out;
+}
+
+export const doorLabel = (kicker, sentence, destination) => `${kicker}: ${sentence} Opens ${destination}.`;
+
+// While a commercial is on the TV (off air), the TV door goes to its channel
+// and says so; everything else is the couch as built.
+export function withCommercial(couch, adId) {
+  const ad = COMMERCIALS[adId];
+  if (!ad || couch.tv.state !== 'offair') return couch;
+  return {
+    ...couch,
+    doors: couch.doors.map((d) =>
+      d.id === 'tv'
+        ? {
+            ...d,
+            href: ad.href,
+            teaser: ad.teaser,
+            sentence: ad.sentence,
+            destination: ad.destination,
+            label: doorLabel(d.kicker, ad.sentence, ad.destination),
+          }
+        : d
+    ),
+  };
+}
+
 function preview(stream, now) {
   if (!stream || !stream.thumbnailUrl) return null;
   const url = stream.thumbnailUrl.replace('{width}', '640').replace('{height}', '360');
@@ -177,7 +221,7 @@ export function buildCouch(input) {
       kicker,
       destination,
       cut: DOOR_CUT[id] || 'static',
-      label: `${kicker}: ${copy[id].sentence} Opens ${destination}.`,
+      label: doorLabel(kicker, copy[id].sentence, destination),
       lit: (id === 'tv' && state === 'live') || (id === 'laptop' && laptop.mode !== 'idle') || id === 'note',
       sticker: id === 'tapes' && isNewTape(newest, input.lastVisit, input.now) ? 'new' : null,
     };
@@ -193,6 +237,8 @@ export function buildCouch(input) {
           { kicker: 'Laptop', text: copy.laptop.sentence },
         ]
       : [];
+  // Commercials run off air only; live, the TV shows the stream.
+  const ads = state === 'offair' ? commercials({ listings: guideListings(input.schedule, input.now, input.timeZone) }) : [];
 
   return {
     theme,
@@ -201,6 +247,7 @@ export function buildCouch(input) {
       preview: state === 'live' ? preview(input.stream, input.now) : null,
       viewers: input.stream ? input.stream.viewers : null,
       cards,
+      ads,
     },
     laptop,
     giveaway,

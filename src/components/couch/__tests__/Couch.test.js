@@ -3,7 +3,9 @@ import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import { logCovers } from '../../../test/coverLog';
 import CameraProvider from '../../camera/CameraProvider';
 import Couch from '../Couch';
+import { AD_MS } from '../commercials';
 import { COUCH_FIXTURES as F } from '../couchFixtures';
+import { SEGMENT_MS, STATIC_MS } from '../reel';
 
 jest.mock('../../../routes/loaders', () => ({ prefetchRoute: () => Promise.resolve() }));
 const ZERO = { zoom: 0, cut: 0, staticIn: 0, iris: 0, minHold: 0, maxHold: 0, tuneOut: 0, pull: 0, introPull: 0, fade: 0, grow: 0 };
@@ -208,4 +210,68 @@ test('phones: the photo tile closes an iris too', async () => {
   const covers = await goThroughDoor(/^Photo:/);
   expect(page()).toBe('/about');
   expect(covers.cuts()).toEqual(['camera-iris']);
+});
+
+describe('the TV door follows a commercial', () => {
+  const tv = () => screen.getByRole('link', { name: /^TV:/ });
+  const step = (ms) =>
+    act(() => {
+      jest.advanceTimersByTime(ms);
+    });
+  // The offair fixture's reel: the newest tape, a card and a clip, then GSN.
+  const toGsn = () => {
+    for (let i = 0; i < 3; i += 1) {
+      step(SEGMENT_MS);
+      step(STATIC_MS);
+    }
+  };
+  const OFF_AIR_LABEL = 'TV: Off the air. Back tomorrow at 11:00 AM for Bonus Hunt Time! Opens Vods.';
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  test('while the GSN commercial plays the TV goes to the store, then back to the tapes', () => {
+    renderSite();
+    expect(tv().getAttribute('href')).toBe('/vods');
+    toGsn();
+    expect(screen.getByTestId('tv-ad').getAttribute('data-ad')).toBe('gsn');
+    expect(tv().getAttribute('href')).toBe('/store');
+    expect(tv().getAttribute('aria-label')).toBe('TV: A Goofer Shopping Network commercial. Opens Store.');
+    expect(tv().querySelector('[data-label="tv"]').textContent).toContain('GSN commercial');
+    step(AD_MS);
+    step(STATIC_MS);
+    expect(screen.queryByTestId('tv-ad')).toBeNull();
+    expect(tv().getAttribute('href')).toBe('/vods');
+    expect(tv().getAttribute('aria-label')).toBe(OFF_AIR_LABEL);
+    expect(tv().querySelector('[data-label="tv"]').textContent).toContain('Back tomorrow 11:00 AM');
+  });
+
+  test('a click during the commercial goes to its page, even if the commercial ends mid-move', async () => {
+    renderSite(F.offair.input, true, { ...ZERO, cut: AD_MS * 2 });
+    toGsn();
+    await act(async () => {
+      fireEvent.click(tv(), { button: 0 });
+    });
+    step(AD_MS);
+    step(STATIC_MS);
+    // The commercial is over and the door is back on the tapes; the trip is not.
+    expect(tv().getAttribute('href')).toBe('/vods');
+    for (let i = 0; i < 6; i += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      await act(async () => {
+        jest.advanceTimersByTime(AD_MS);
+      });
+    }
+    expect(screen.getByTestId('page').textContent).toBe('/store');
+  });
+
+  test('phones: the TV crop follows the commercial too', () => {
+    renderSite(F.offair.input, false);
+    toGsn();
+    expect(tv().getAttribute('data-door')).toBe('tv');
+    expect(tv().getAttribute('href')).toBe('/store');
+    expect(tv().getAttribute('aria-label')).toBe('TV: A Goofer Shopping Network commercial. Opens Store.');
+    step(AD_MS);
+    step(STATIC_MS);
+    expect(tv().getAttribute('href')).toBe('/vods');
+  });
 });

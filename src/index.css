@@ -216,6 +216,20 @@ body.brand-route {
   opacity: 0.75;
 }
 
+/* The Goofer Guide commercial on the couch TV (TvCommercial.js): a
+   Prevue-style listings channel, light type on a dark blue grid. */
+.couch-ad-guide {
+  background: #0a1340;
+}
+.couch-ad-guide-head {
+  background: linear-gradient(#2a3fa8, #1c2c84);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.18);
+}
+.couch-ad-guide-cell {
+  background: #172469;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.12);
+}
+
 /* The couch's game cases (GameCases.js): a dark plastic case with a header
    band, a hinge down the left edge and a gloss over the cover. */
 .couch-case {

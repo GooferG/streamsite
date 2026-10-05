@@ -104,6 +104,18 @@ describe('repo wiring', () => {
     expect(rewriteProblems(vercel.rewrites, SHARE_PAGES)).toEqual([]);
   });
 
+  // The files aren't fingerprinted, so a day, then a week of revalidating in the background.
+  test('vercel.json caches the TV, couch and GSN art for a day', () => {
+    const cache = (source) => {
+      const rule = (vercel.headers || []).find((h) => h.source === source);
+      const header = rule && rule.headers.find((h) => h.key === 'Cache-Control');
+      return header && header.value;
+    };
+    ['/tv/(.*)', '/couch/(.*)', '/gsn/(.*)'].forEach((source) =>
+      expect([source, cache(source)]).toEqual([source, 'public, max-age=86400, stale-while-revalidate=604800'])
+    );
+  });
+
   test('every share page has its screenshot', () => {
     const missing = SHARE_PAGES.filter(
       (p) => !fs.existsSync(path.join(ROOT, 'public', 'share', `${p.id}.jpg`))

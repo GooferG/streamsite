@@ -1,7 +1,8 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import useDoor from '../camera/useDoor';
 import { FOCUS, MONO } from '../onAir/classes';
-import { LAYOUT, pctStyle, within } from './couchLayout';
+import { LAYOUT, pctStyle } from './couchLayout';
+import GameCases from './GameCases';
 import { resolveLabels } from './labelLayout';
 
 const LABEL_GAP = 4;
@@ -65,12 +66,7 @@ function RoomDoor({ door, covers, giveaway, onDoor, nudge }) {
         {box.cutout && (
           <img src={box.cutout} alt="" data-door-art draggable={false} className={`absolute inset-0 h-full w-full ${lift}`} />
         )}
-        {door.id === 'games' &&
-          (box.cases || []).map((rect, i) =>
-            covers[i] ? (
-              <img key={covers[i].appid} src={covers[i].cover} alt="" className="absolute object-cover" style={pctStyle(within(box.rect, rect))} />
-            ) : null
-          )}
+        {door.id === 'games' && <GameCases covers={covers} className={lift} />}
         {door.id === 'note' && giveaway && <StickyNote keyword={giveaway.keyword} />}
         {door.sticker === 'new' && <NewSticker />}
         <Label door={door} style={anchor} nudge={nudge} />

@@ -174,3 +174,24 @@ body.brand-route {
 .couch-bat {
   fill: #0b0a10;
 }
+
+/* The couch's game cases (GameCases.js): a dark plastic case with a header
+   band, a hinge down the left edge and a gloss over the cover. */
+.couch-case {
+  border-radius: 3px;
+  background: #0f0e12;
+  box-shadow: 0 0 0 1.5px #0b0a0d, 2px 3px 0 rgba(0, 0, 0, 0.45);
+}
+.couch-case-band {
+  background: linear-gradient(#2e2a33, #18161c);
+  border-bottom: 1px solid #000;
+}
+.couch-case-hinge {
+  background: linear-gradient(90deg, rgba(0, 0, 0, 0.6), rgba(255, 255, 255, 0.1) 55%, rgba(255, 255, 255, 0));
+}
+.couch-case-gloss {
+  background: linear-gradient(118deg, rgba(255, 255, 255, 0.2) 0%, rgba(255, 255, 255, 0) 32%, rgba(255, 255, 255, 0) 72%, rgba(255, 255, 255, 0.07) 100%);
+}
+.couch-case-shade {
+  background: rgba(0, 0, 0, 0.3);
+}

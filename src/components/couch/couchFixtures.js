@@ -24,31 +24,67 @@ const CLIPS = [
   { id: 'c2', title: 'the 1,240x', thumbnail_url: 'https://clips-media-assets2.twitch.tv/c2-preview-480x272.jpg' },
 ];
 
+// The last finished hunt: its wins add up to its total, its best hit leads.
 const LAST_HUNT = {
   id: 'h9',
   status: 'finished',
   totalWon: 412,
   pot: 600,
   currency: null,
-  bonusCount: 3,
+  bonusCount: 9,
+  startedAt: '2026-10-02T03:05:00Z',
+  endedAt: '2026-10-02T06:40:00Z',
   bonuses: [
-    { slot: 'Sugar Rush 1000', bet: 0.5, win: 620, multiplier: 1240 },
-    { slot: 'Wanted Dead or a Wild', bet: 0.5, win: 244, multiplier: 488 },
-    { slot: "Groovin' Gems", bet: 0.5, win: null, multiplier: null },
+    { slot: 'Gates of Olympus 1000', bet: 0.4, win: 38.4, multiplier: 96 },
+    { slot: 'Le Bandit', bet: 0.2, win: 17.6, multiplier: 88 },
+    { slot: 'Sugar Rush 1000', bet: 0.2, win: 248, multiplier: 1240 },
+    { slot: 'Big Bass Splash', bet: 0.4, win: 20.8, multiplier: 52 },
+    { slot: "Groovin' Gems", bet: 0.3, win: 0, multiplier: 0 },
+    { slot: 'Wanted Dead or a Wild', bet: 0.2, win: 62, multiplier: 310 },
+    { slot: 'Hand of Anubis', bet: 0.3, win: 12.3, multiplier: 41 },
+    { slot: 'Fire in the Hole 3', bet: 0.2, win: 6.8, multiplier: 34 },
+    { slot: 'The Dog House Megaways', bet: 0.4, win: 6.1, multiplier: 15.25 },
   ],
 };
 
+// The overview's recent hunts, newest first (summaries carry no bonuses).
+const RECENT = [
+  { id: 'h9', status: 'finished', currency: null, endedAt: '2026-10-02T06:40:00Z', totalWon: 412, pot: 600 },
+  { id: 'h8', status: 'finished', currency: null, endedAt: '2026-09-30T05:10:00Z', totalWon: 1130, pot: 800 },
+  { id: 'h7', status: 'finished', currency: null, endedAt: '2026-09-28T04:55:00Z', totalWon: 518, pot: 700 },
+  { id: 'h6', status: 'finished', currency: null, endedAt: '2026-09-26T06:20:00Z', totalWon: 1476, pot: 750 },
+  { id: 'h5', status: 'finished', currency: null, endedAt: '2026-09-24T05:45:00Z', totalWon: 612, pot: 600 },
+  { id: 'h4', status: 'finished', currency: null, endedAt: '2026-09-22T05:30:00Z', totalWon: 290, pot: 500 },
+];
+
+// The BEAN board's top five, handles masked upstream the way bean sends them.
+const LEADERS = [
+  { rank: 1, handle: 'Go***r', wagered: 1284310 },
+  { rank: 2, handle: 'Be***n', wagered: 906452 },
+  { rank: 3, handle: 'Sl***z', wagered: 512078 },
+  { rank: 4, handle: 'Wi***7', wagered: 233940 },
+  { rank: 5, handle: 'Lu***y', wagered: 118605 },
+];
+
+// A hunt 14 bonuses in at 25 cents a spin: $412 back on $600, Densho up next.
+const LIVE_SLOTS = [
+  'Sweet Bonanza 1000', 'Gates of Olympus 1000', 'Big Bass Splash', 'Le Bandit', 'Wanted Dead or a Wild', 'Hand of Anubis',
+  'Fire in the Hole 3', 'The Dog House Megaways', 'Starlight Princess 1000', 'Zeus vs Hades', 'Mental 2', 'Rip City',
+  'Chaos Crew 3', 'Sugar Rush 1000', 'Densho', 'Duel at Dawn', 'Toshi Video Club', 'Bloodthirst', 'Pray for Three',
+  'Tombstone RIP', 'Fruit Party', 'Madame Destiny Megaways', 'Book of Time',
+];
+const LIVE_MULTIS = [48, 220, 0, 124, 32, 416, 88, 68, 0, 184, 36, 252, 84, 96];
 const LIVE_HUNT = {
   id: 'h10',
   status: 'live',
   pot: 600,
   currency: null,
-  bonusCount: 23,
-  bonuses: Array.from({ length: 23 }, (_, i) => {
-    if (i >= 14) return { slot: `Slot ${i + 1}`, bet: 1, win: null, multiplier: null };
-    const win = i === 13 ? 48 : 28;
-    return { slot: `Slot ${i + 1}`, bet: 1, win, multiplier: win };
-  }),
+  bonusCount: LIVE_SLOTS.length,
+  bonuses: LIVE_SLOTS.map((slot, i) =>
+    i < LIVE_MULTIS.length
+      ? { slot, bet: 0.25, win: LIVE_MULTIS[i] * 0.25, multiplier: LIVE_MULTIS[i] }
+      : { slot, bet: 0.25, win: null, multiplier: null }
+  ),
 };
 
 const BASE = {
@@ -61,9 +97,10 @@ const BASE = {
   videos: VIDEOS,
   clips: CLIPS,
   category: 'Slots',
-  hunts: { live: null, recent: [{ id: 'h9', status: 'finished', totalWon: 412, pot: 600 }], loading: false, error: null },
+  hunts: { live: null, recent: RECENT, loading: false, error: null },
   round: null,
   lastHunt: LAST_HUNT,
+  leaders: LEADERS,
   leaderboardEndsAt: NOW + 3 * DAY + 4 * HOUR,
   giveaway: null,
   games: [
@@ -112,6 +149,7 @@ export const COUCH_FIXTURES = {
       hunts: { live: null, recent: [], loading: true, error: null },
       round: undefined,
       lastHunt: null,
+      leaders: [],
       leaderboardEndsAt: null,
       games: null,
       lastVisit: null,
@@ -127,6 +165,7 @@ export const COUCH_FIXTURES = {
       category: null,
       hunts: { live: null, recent: [], loading: false, error: null },
       lastHunt: null,
+      leaders: [],
       leaderboardEndsAt: null,
       games: [],
       lastVisit: null,

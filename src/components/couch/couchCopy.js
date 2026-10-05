@@ -1,5 +1,6 @@
-import { formatMoney } from '../../utils/money';
+import { formatMoney, formatMoneyCompact } from '../../utils/money';
 import { calendarDay } from '../../utils/scheduleTime';
+import { formatUSD } from '../Leaderboard/format';
 
 // Every sentence the couch says (spec: Sentences). Station-break voice: plain
 // full sentences with live data in them, under PRODUCT.md's voice rules (no
@@ -76,6 +77,16 @@ export function whenAired(ms, now, timeZone) {
 
 export const money = (value, currency) => formatMoney(value, currency || null, { decimals: 0 });
 
+// Screen-sized money: whole units, and a big figure (an ARS hunt) compact.
+export const shortMoney = (value, currency) =>
+  Math.abs(value) >= 100000 ? formatMoneyCompact(value, currency || null) : money(value, currency);
+
+// A spin's bet: cents under ten, whole units above.
+export const betMoney = (value, currency) => formatMoney(value, currency || null, { decimals: Math.abs(value) < 10 ? 2 : 0 });
+
+// A leaderboard wager, formatted the way the leaderboard page does.
+export const wager = (value) => formatUSD(value);
+
 export function multiplier(x) {
   const n = Number(x);
   if (!Number.isFinite(n)) return null;
@@ -128,6 +139,18 @@ export const COPY = {
     kicker: 'Laptop',
     teaser: resetsIn ? `Resets in ${shortUntil(resetsIn)}` : 'Gamba',
     sentence: resetsIn ? `The leaderboard resets in ${untilWords(resetsIn)}.` : 'The gamba tools live here.',
+  }),
+  laptopBoard: ({ leader, resetsIn }) => ({
+    kicker: 'Laptop',
+    teaser: 'BEAN board',
+    sentence: `${leader.handle || 'The leader'} leads the BEAN board with ${wager(leader.wagered)} wagered.${
+      resetsIn ? ` It resets in ${untilWords(resetsIn)}.` : ''
+    }`,
+  }),
+  laptopHistory: ({ count, paidBack, latest }) => ({
+    kicker: 'Laptop',
+    teaser: `Last ${count} hunts`,
+    sentence: `${paidBack || 'None'} of the last ${count} hunts paid back their cost. The latest paid back ${latest}%.`,
   }),
 
   tapes: ({ title, when, length }) => ({

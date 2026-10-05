@@ -1,4 +1,4 @@
-import { COPY, dayWord, lengthWords, multiplier, shortUntil, untilWords, whenAired } from '../couchCopy';
+import { COPY, betMoney, dayWord, lengthWords, multiplier, shortMoney, shortUntil, untilWords, whenAired } from '../couchCopy';
 
 const AZ = 'America/Phoenix';
 const NOW = Date.parse('2026-10-04T17:00:00Z'); // Sunday 10:00 AM in Arizona
@@ -60,6 +60,20 @@ test('the sentences', () => {
     "Giveaway's open. Type !goof in chat for a $25.00 bonus buy."
   );
   expect(COPY.laptopOpen({ guesses: 1 }).sentence).toBe('Predictions are open. 1 guess in so far. Guess the payout before it locks.');
+  expect(COPY.laptopBoard({ leader: { handle: '2A***r', wagered: 9138587.155 }, resetsIn: null }).sentence).toBe(
+    '2A***r leads the BEAN board with $9,138,587 wagered.'
+  );
+  expect(COPY.laptopHistory({ count: 5, paidBack: 1, latest: 84 }).sentence).toBe(
+    '1 of the last 5 hunts paid back their cost. The latest paid back 84%.'
+  );
+});
+
+test('screen money: whole units, big figures compact, bets in cents', () => {
+  expect(shortMoney(412, null)).toBe('$412');
+  expect(shortMoney(2046.12, 'CAD')).toBe('CA$2,046');
+  expect(shortMoney(3294392.6, 'ARS')).toMatch(/^ARS\s3\.3M$/);
+  expect(betMoney(0.2, null)).toBe('$0.20');
+  expect(betMoney(200, 'ARS')).toMatch(/^ARS\s200$/);
 });
 
 test('every sentence keeps the voice rules', () => {
@@ -68,6 +82,8 @@ test('every sentence keeps the voice rules', () => {
     COPY.tvDay({ title: 'X', day: 'Monday' }), COPY.tvLate({ title: 'X' }), COPY.tvNothing(),
     COPY.noteOpen({ keyword: 'goof' }), COPY.laptopHunt({ opened: 1, total: 1, back: 5 }), COPY.laptopOpen({ guesses: 0 }),
     COPY.laptopLocked(), COPY.laptopLastHunt({ paid: 5 }), COPY.laptopIdle({ resetsIn: H }), COPY.laptopIdle({ resetsIn: null }),
+    COPY.laptopBoard({ leader: { handle: 'Go***r', wagered: 5 }, resetsIn: H }), COPY.laptopBoard({ leader: { handle: '', wagered: 5 } }),
+    COPY.laptopHistory({ count: 5, paidBack: 0, latest: 69 }), COPY.laptopHistory({ count: 2, paidBack: 2, latest: 140 }),
     COPY.tapes({ title: 'X', when: 'Tonight' }), COPY.tapesNone(), COPY.guideDay({ title: 'X', day: 'today' }),
     COPY.guideLate({ title: 'X' }), COPY.guideLoading(), COPY.guideNone(), COPY.games({ name: 'X', hours: 0 }),
     COPY.gamesNone({ category: 'Slots' }), COPY.remote(), COPY.photo(),

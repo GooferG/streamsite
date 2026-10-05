@@ -14,7 +14,7 @@ import { ART_ASPECT, LAYOUT, center, pctStyle, plateSrc, plateSrcSet } from './c
 // the doors, positioned in percent of the art on one stage the camera moves.
 export const ROOM_QUERY = '(min-width: 768px) and (min-aspect-ratio: 4/3)';
 
-function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, onSegment, stage, onPlateError, now = Date.now() }) {
+function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, onSegment, onWindow, stage, onPlateError, now = Date.now() }) {
   const { containerRef, stageRef, box } = stage;
   const navH = stage.navH;
   const base = LAYOUT.art.empty || LAYOUT.art.plate;
@@ -60,7 +60,7 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, onSegment
             <CouchTv tv={couch.tv} items={items} mode={mode} flipTo={flipTo} onAutoplayBlocked={onAutoplayBlocked} onSegment={onSegment} />
           </span>
           <span className="pointer-events-none absolute z-[2]" style={pctStyle(LAYOUT.screens.laptop)}>
-            <LaptopScreen laptop={couch.laptop} bug={art && art.laptopBug} />
+            <LaptopScreen laptop={couch.laptop} bug={art && art.laptopBug} onWindow={onWindow} />
           </span>
         </div>
       </div>

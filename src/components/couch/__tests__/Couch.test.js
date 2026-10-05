@@ -4,6 +4,7 @@ import { logCovers } from '../../../test/coverLog';
 import CameraProvider from '../../camera/CameraProvider';
 import Couch from '../Couch';
 import { AD_MS } from '../commercials';
+import { WINDOW_MS } from '../LaptopScreen';
 import { COUCH_FIXTURES as F } from '../couchFixtures';
 import { SEGMENT_MS, STATIC_MS } from '../reel';
 
@@ -273,5 +274,65 @@ describe('the TV door follows a commercial', () => {
     step(AD_MS);
     step(STATIC_MS);
     expect(tv().getAttribute('href')).toBe('/vods');
+  });
+});
+
+describe('the laptop door follows the window on screen', () => {
+  const laptop = () => screen.getByRole('link', { name: /^Laptop:/ });
+  const chip = () => laptop().querySelector('[data-label="laptop"]').textContent;
+  const step = (ms) =>
+    act(() => {
+      jest.advanceTimersByTime(ms);
+    });
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  test('the board sends you to the leaderboard, then the recap to Hunts, and so on round', () => {
+    renderSite();
+    expect(laptop().getAttribute('href')).toBe('/gamba/leaderboard');
+    expect(laptop().getAttribute('aria-label')).toMatch(/^Laptop: Go\*\*\*r leads the BEAN board .* Opens Leaderboard\.$/);
+    expect(chip()).toContain('BEAN board');
+    step(WINDOW_MS);
+    expect(laptop().getAttribute('href')).toBe('/gamba/hunts');
+    expect(laptop().getAttribute('aria-label')).toBe('Laptop: Last hunt paid $412 on $600. Best hit: 1,240x on Sugar Rush 1000. Opens Hunts.');
+    expect(chip()).toContain('Best hit 1,240x');
+    step(WINDOW_MS);
+    expect(laptop().getAttribute('aria-label')).toMatch(/Opens Hunts\.$/);
+    expect(chip()).toContain('Last 5 hunts');
+    step(WINDOW_MS);
+    expect(laptop().getAttribute('href')).toBe('/gamba');
+    expect(laptop().getAttribute('aria-label')).toMatch(/Opens Gamba\.$/);
+    step(WINDOW_MS);
+    expect(laptop().getAttribute('href')).toBe('/gamba/leaderboard');
+  });
+
+  test('a click on the board window goes to the leaderboard, even if the window changes mid-move', async () => {
+    renderSite(F.offair.input, true, { ...ZERO, cut: WINDOW_MS * 2 });
+    await act(async () => {
+      fireEvent.click(laptop(), { button: 0 });
+    });
+    step(WINDOW_MS);
+    expect(laptop().getAttribute('href')).toBe('/gamba/hunts');
+    for (let i = 0; i < 4; i += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      await act(async () => {
+        jest.advanceTimersByTime(WINDOW_MS);
+      });
+    }
+    expect(screen.getByTestId('page').textContent).toBe('/gamba/leaderboard');
+  });
+
+  test('a live hunt keeps the laptop on Hunts', () => {
+    renderSite(F.hunt.input);
+    expect(laptop().getAttribute('href')).toBe('/gamba/hunts');
+    step(WINDOW_MS * 2);
+    expect(laptop().getAttribute('aria-label')).toBe('Laptop: A hunt is running. 14 of 23 bonuses opened, $412 back so far. Opens Gamba.');
+  });
+
+  test('phones have no laptop screen, so the tile keeps its own door', () => {
+    renderSite(F.offair.input, false);
+    expect(laptop().getAttribute('href')).toBe('/gamba');
+    step(WINDOW_MS);
+    expect(laptop().getAttribute('href')).toBe('/gamba');
   });
 });

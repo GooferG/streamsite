@@ -65,15 +65,19 @@ test('no layers, no dressing', () => {
   expect(container.innerHTML).toBe('');
 });
 
-test('the laptop screensaver shows the theme bug', () => {
-  render(<LaptopScreen laptop={{ mode: 'idle', resetsIn: null, last: null }} bug="/couch/90s/halloween/bug.webp" />);
-  expect(screen.getByTestId('laptop-screen').querySelector('img').getAttribute('src')).toBe('/couch/90s/halloween/bug.webp');
+const SCREENSAVER = { mode: 'idle', resetsIn: null, last: null, windows: [{ id: 'screensaver', href: '/gamba', title: 'Screensaver', resetsIn: null }] };
+
+test('the laptop screensaver and its wallpaper show the theme bug', () => {
+  render(<LaptopScreen laptop={SCREENSAVER} bug="/couch/90s/halloween/bug.webp" />);
+  const imgs = screen.getByTestId('laptop-screen').querySelectorAll('img');
+  expect(Array.from(imgs, (img) => img.getAttribute('src'))).toEqual(['/couch/90s/halloween/bug.webp', '/couch/90s/halloween/bug.webp']);
   expect(screen.queryByText('GG')).toBeNull();
 });
 
 test('the laptop keeps its GG mark without a bug', () => {
-  render(<LaptopScreen laptop={{ mode: 'idle', resetsIn: null, last: null }} bug={undefined} />);
-  expect(screen.getByText('GG')).toBeTruthy();
+  render(<LaptopScreen laptop={SCREENSAVER} bug={undefined} />);
+  // The screensaver's bouncing GG and the wallpaper's.
+  expect(screen.getAllByText('GG')).toHaveLength(2);
 });
 
 function Room({ phone = false }) {

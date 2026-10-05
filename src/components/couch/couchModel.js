@@ -1,7 +1,8 @@
 import { SOCIAL_LINKS } from '../../constants';
 import { formatClock, upNext } from '../../utils/scheduleTime';
 import { huntFeature } from '../gamba/guide';
-import { huntMode, huntStats } from '../hunts/huntStats';
+import { huntMode, huntStats, isOpened } from '../hunts/huntStats';
+import { toDate } from '../hunts/huntTime';
 import { showTitle } from '../schedule/scheduleModel';
 import { cleanTitle, parseDuration } from '../vods/videoStoreModel';
 import { COMMERCIALS, commercials } from './commercials';
@@ -15,7 +16,8 @@ import { THEMES, isTheme } from './themes';
 //   stream: { title, viewers, game, thumbnailUrl } | null,
 //   schedule: array | null (null while loading), videos, clips, category,
 //   hunts: { live, recent, loading, error }, round, lastHunt (with bonuses),
-//   leaderboardEndsAt, giveaway: { keyword, prize, status } | null,
+//   leaders: [{ rank, handle, wagered }] (the board's top five, handles as
+//   masked upstream), leaderboardEndsAt, giveaway: { keyword, prize, status } | null,
 //   games: [{ appid, name, playtime_2weeks }] | null,
 //   theme: id | null (a seasonal theme, see themes.js),
 //   lastVisit: ms | null (first visit) | undefined (storage unreadable), reel }
@@ -53,20 +55,130 @@ function bestHit(hunt) {
   return b ? { multi: Number(b.multiplier), slot: b.slot || 'a slot' } : null;
 }
 
-export function laptopState({ hunts, round, lastHunt, leaderboardEndsAt, now }) {
+// The laptop (spec: The laptop; Task 22d). A live hunt or an open or locked
+// round takes the screen over; otherwise it is a little desktop cycling
+// windows, each with its own door. The screen gets plain numbers and strings,
+// and money builders get real numbers only (a missing one would print an em dash).
+const BOARD_ROWS = 5;
+const HISTORY_HUNTS = 5;
+const num = (v) => (v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
+const slotName = (b) => b.slot || 'A slot';
+const multiOf = (b) => num(b.multiplier) ?? (num(b.bet) > 0 && num(b.win) != null ? num(b.win) / num(b.bet) : null);
+const doorCopy = ({ teaser, sentence }, destination) => ({ teaser, sentence, destination });
+
+function huntTracker(feature) {
+  const s = feature.stats;
+  const next = s.nextIndex >= 0 ? s.bonuses[s.nextIndex] : null;
+  return {
+    mode: 'hunt',
+    opened: s.openedCount,
+    total: s.bonusCount,
+    back: s.wonSoFar ?? 0,
+    cost: s.startCost,
+    currency: feature.currency,
+    next: next ? { slot: slotName(next), bet: num(next.bet) } : null,
+    // Opened in running order, so the newest is the last one opened.
+    recent: s.bonuses.filter(isOpened).slice(-3).reverse().map((b) => ({ slot: slotName(b), multi: multiOf(b) })),
+  };
+}
+
+function boardWindow(leaders, resetsIn) {
+  const rows = (Array.isArray(leaders) ? leaders : [])
+    .filter(Boolean)
+    .slice(0, BOARD_ROWS)
+    .map((p, i) => ({ rank: p.rank || i + 1, handle: p.handle || '', wagered: num(p.wagered) ?? 0 }));
+  if (!rows.length) return null;
+  return {
+    id: 'leaderboard',
+    href: '/gamba/leaderboard',
+    title: 'BEAN board',
+    rows,
+    resetsIn,
+    ...doorCopy(COPY.laptopBoard({ leader: rows[0], resetsIn }), 'Leaderboard'),
+  };
+}
+
+// The hunt's day on the viewer's calendar: "Oct 1".
+function huntDay(hunt, timeZone) {
+  const d = toDate(hunt.endedAt || hunt.startedAt);
+  return d ? new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', timeZone }).format(d) : null;
+}
+
+function recapWindow(hunt, timeZone) {
+  const s = huntStats(hunt, null);
+  if (s.won == null) return null;
+  const currency = hunt.currency || null;
+  const best = bestHit(hunt);
+  const day = huntDay(hunt, timeZone);
+  const top = s.bonuses
+    .filter(isOpened)
+    .map((b) => ({ slot: slotName(b), bet: num(b.bet), multi: num(b.multiplier) }))
+    .filter((b) => b.multi != null)
+    .sort((a, b) => b.multi - a.multi)
+    .slice(0, 3);
+  return {
+    id: 'recap',
+    href: '/gamba/hunts',
+    title: day ? `Hunt · ${day}` : 'Last hunt',
+    start: s.startCost,
+    won: s.won,
+    result: s.result,
+    currency,
+    best,
+    top,
+    ...doorCopy(COPY.laptopLastHunt({ paid: s.won, start: s.startCost, currency, best }), 'Hunts'),
+  };
+}
+
+// The return of the last few finished hunts, oldest first, scaled so the
+// tallest fills the chart (between 150% and 300%, taller ones clip).
+function historyWindow(hunts) {
+  const done = ((hunts && hunts.recent) || [])
+    .filter((h) => h && h.status !== 'live')
+    .map((h) => ({ id: h.id, s: huntStats(h, null) }))
+    .filter(({ s }) => s.won != null && s.startCost != null)
+    .slice(0, HISTORY_HUNTS)
+    .reverse();
+  if (done.length < 2) return null;
+  const ratios = done.map(({ s }) => (s.won / s.startCost) * 100);
+  const ceiling = Math.min(300, Math.max(150, ...ratios));
+  const bars = done.map(({ id }, i) => ({
+    id,
+    pct: Math.round(ratios[i]),
+    up: ratios[i] >= 100,
+    height: Math.min(ratios[i], ceiling) / ceiling,
+  }));
+  const latest = bars[bars.length - 1];
+  return {
+    id: 'history',
+    href: '/gamba/hunts',
+    title: `Last ${bars.length} hunts`,
+    bars,
+    latest: latest.pct,
+    up: latest.up,
+    line: 100 / ceiling,
+    ...doorCopy(COPY.laptopHistory({ count: bars.length, paidBack: bars.filter((b) => b.up).length, latest: latest.pct }), 'Hunts'),
+  };
+}
+
+const screensaverWindow = (resetsIn) => ({
+  id: 'screensaver',
+  href: '/gamba',
+  title: 'Screensaver',
+  resetsIn,
+  ...doorCopy(COPY.laptopIdle({ resetsIn }), 'Gamba'),
+});
+
+export function laptopState({ hunts, round, lastHunt, leaders, leaderboardEndsAt, now, timeZone }) {
   const feature = huntFeature({ hunts, round });
-  if (feature.kind === 'live' && feature.hunt) {
-    const s = feature.stats;
-    // Money builders get real numbers only (a missing one would print an em dash).
-    return { mode: 'hunt', opened: s.openedCount, total: s.bonusCount, back: s.wonSoFar ?? 0, currency: feature.currency };
-  }
+  if (feature.kind === 'live' && feature.hunt) return huntTracker(feature);
   const mode = huntMode(round);
   if (mode === 'open' || mode === 'locked') return { mode, guesses: feature.guessCount };
   const resetsIn = leaderboardEndsAt != null && leaderboardEndsAt > now ? leaderboardEndsAt - now : null;
-  const last = lastHunt && Number.isFinite(Number(lastHunt.totalWon))
-    ? { paid: lastHunt.totalWon, start: lastHunt.pot, currency: lastHunt.currency || null, best: bestHit(lastHunt) }
-    : null;
-  return { mode: 'idle', resetsIn, last };
+  const recap = lastHunt ? recapWindow(lastHunt, timeZone) : null;
+  const last = recap ? { paid: recap.won, start: recap.start, currency: recap.currency, best: recap.best } : null;
+  const windows = [boardWindow(leaders, resetsIn), recap, historyWindow(hunts), screensaverWindow(resetsIn)].filter(Boolean);
+  return { mode: 'idle', resetsIn, last, windows };
 }
 
 export function isNewTape(vod, lastVisit, now) {
@@ -151,26 +263,40 @@ export function guideListings(schedule, now, timeZone, count = 3) {
 
 export const doorLabel = (kicker, sentence, destination) => `${kicker}: ${sentence} Opens ${destination}.`;
 
-// While a commercial is on the TV (off air), the TV door goes to its channel
-// and says so; everything else is the couch as built.
-export function withCommercial(couch, adId) {
-  const ad = COMMERCIALS[adId];
-  if (!ad || couch.tv.state !== 'offair') return couch;
+// A screen's door follows what the screen shows ({ href, teaser, sentence,
+// destination }): the TV's commercial, the laptop's window. Everything else
+// is the couch as built.
+function followScreen(couch, id, shows) {
   return {
     ...couch,
     doors: couch.doors.map((d) =>
-      d.id === 'tv'
+      d.id === id
         ? {
             ...d,
-            href: ad.href,
-            teaser: ad.teaser,
-            sentence: ad.sentence,
-            destination: ad.destination,
-            label: doorLabel(d.kicker, ad.sentence, ad.destination),
+            href: shows.href,
+            teaser: shows.teaser,
+            sentence: shows.sentence,
+            destination: shows.destination,
+            label: doorLabel(d.kicker, shows.sentence, shows.destination),
           }
         : d
     ),
   };
+}
+
+// While a commercial is on the TV (off air), the TV door goes to its channel
+// and says so.
+export function withCommercial(couch, adId) {
+  const ad = COMMERCIALS[adId];
+  if (!ad || couch.tv.state !== 'offair') return couch;
+  return followScreen(couch, 'tv', ad);
+}
+
+// While a window is up on the laptop's desktop, the laptop door goes where
+// that window points and says so. A live hunt or a round has no windows.
+export function withLaptopWindow(couch, windowId) {
+  const win = couch.laptop.mode === 'idle' && windowId ? (couch.laptop.windows || []).find((w) => w.id === windowId) : null;
+  return win ? followScreen(couch, 'laptop', win) : couch;
 }
 
 function preview(stream, now) {

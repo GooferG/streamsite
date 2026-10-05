@@ -380,6 +380,8 @@ module.exports = {
           to: { transform: 'translate(320%, 160%)', opacity: '0' },
         },
         'couch-cross': { '0%': { transform: 'translateX(-35%)' }, '60%,100%': { transform: 'translateX(110%)' } },
+        // The couch laptop's next window popping up on its desktop (LaptopScreen.js).
+        'couch-laptop-in': { from: { opacity: '0', transform: 'translateY(6%) scale(0.94)' }, to: { opacity: '1', transform: 'translateY(0) scale(1)' } },
         // The couch TV's commercials (TvCommercial.js). Opacity and transform
         // only; each beat sets its own delay (and a push its length) inline.
         'tv-ad-cut': { from: { opacity: '0' }, to: { opacity: '1' } },
@@ -433,6 +435,7 @@ module.exports = {
         'couch-blink': 'couch-blink 0.7s ease-in-out',
         'couch-shoot': 'couch-shoot 0.9s ease-out forwards',
         'couch-cross': 'couch-cross 60s linear infinite',
+        'couch-laptop-in': 'couch-laptop-in 240ms cubic-bezier(0.2, 0.7, 0.3, 1) both',
         // A hard cut in; visible for the GSN ident's beat; words stepping in;
         // a lineup item popping in; the slow push-in; the listings crawling up.
         'tv-ad-cut': 'tv-ad-cut 1ms linear both',

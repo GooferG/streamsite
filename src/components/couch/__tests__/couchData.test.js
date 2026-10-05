@@ -77,31 +77,53 @@ test('useSteamGames: games on success, null on failure', async () => {
   expect(v()).toBe('null');
 });
 
+const PROPS = {
+  now: 5,
+  timeZone: 'UTC',
+  isLive: true,
+  statusReady: true,
+  streamData: { title: 'T', viewer_count: 9, game_name: 'Slots', thumbnail_url: 'u' },
+  videos: [],
+  clips: [],
+  channelData: { game_name: 'Slots' },
+  schedule: { schedule: [], loading: true },
+  hunts: { live: null, recent: [] },
+  round: { round: null },
+  lastHunt: { id: 'h', bonuses: [] },
+  leaderboard: {
+    endsAt: 99,
+    players: ['2A***r', 'C4***n', 'Th***r', 'Sn***7', 'tr***e', '***'].map((h, i) => ({
+      id: `p${i}`,
+      username: h,
+      maskedUsername: h,
+      wagered: 1000 - i,
+      position: i + 1,
+      prize: 0,
+    })),
+  },
+  giveaway: { status: 'open', keyword: 'k', prize: 'p', id: 'g' },
+  games: null,
+  lastVisit: null,
+  reel: [],
+};
+
 test('toCouchInput maps App and hook data onto the model input', () => {
-  const input = toCouchInput({
-    now: 5,
-    timeZone: 'UTC',
-    isLive: true,
-    statusReady: true,
-    streamData: { title: 'T', viewer_count: 9, game_name: 'Slots', thumbnail_url: 'u' },
-    videos: [],
-    clips: [],
-    channelData: { game_name: 'Slots' },
-    schedule: { schedule: [], loading: true },
-    hunts: { live: null, recent: [] },
-    round: { round: null },
-    lastHunt: { id: 'h', bonuses: [] },
-    leaderboard: { endsAt: 99 },
-    giveaway: { status: 'open', keyword: 'k', prize: 'p', id: 'g' },
-    games: null,
-    lastVisit: null,
-    reel: [],
-  });
+  const input = toCouchInput(PROPS);
   expect(input.stream).toEqual({ title: 'T', viewers: 9, game: 'Slots', thumbnailUrl: 'u' });
   expect(input.schedule).toBeNull();
   expect(input.category).toBe('Slots');
   expect(input.round).toBeNull();
   expect(input.leaderboardEndsAt).toBe(99);
+  // The board's top five, handles exactly as the board masked them.
+  expect(input.leaders).toEqual([
+    { rank: 1, handle: '2A***r', wagered: 1000 },
+    { rank: 2, handle: 'C4***n', wagered: 999 },
+    { rank: 3, handle: 'Th***r', wagered: 998 },
+    { rank: 4, handle: 'Sn***7', wagered: 997 },
+    { rank: 5, handle: 'tr***e', wagered: 996 },
+  ]);
+  expect(input.hunts.recent).toEqual([]);
+  expect(toCouchInput({ ...PROPS, leaderboard: { endsAt: null, players: [] } }).leaders).toEqual([]);
   expect(input.giveaway).toEqual({ status: 'open', keyword: 'k', prize: 'p' });
   expect(input.lastHunt).toEqual({ id: 'h', bonuses: [] });
 });

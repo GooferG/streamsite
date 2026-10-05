@@ -11,6 +11,13 @@ import useLiveGiveaway from './useLiveGiveaway';
 import useSteamGames from './useSteamGames';
 import useTvReel from './useTvReel';
 
+// The board's top five for the laptop. Handles arrive masked from the bean
+// board; never re-mask.
+const topLeaders = (leaderboard) =>
+  ((leaderboard && leaderboard.players) || [])
+    .slice(0, 5)
+    .map((p, i) => ({ rank: p.position || i + 1, handle: p.maskedUsername, wagered: p.wagered }));
+
 // App's Twitch poll plus the hooks below, mapped onto the couch model's input.
 export function toCouchInput(p) {
   const s = p.streamData;
@@ -28,6 +35,7 @@ export function toCouchInput(p) {
     hunts: p.hunts,
     round: p.round.round,
     lastHunt: p.lastHunt && Array.isArray(p.lastHunt.bonuses) ? p.lastHunt : null,
+    leaders: topLeaders(p.leaderboard),
     leaderboardEndsAt: p.leaderboard.endsAt ?? null,
     giveaway: g ? { status: g.status, keyword: g.keyword, prize: g.prize } : null,
     games: p.games,

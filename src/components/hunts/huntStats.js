@@ -12,7 +12,7 @@ function num(value) {
 }
 const round2 = (n) => Math.round(n * 100) / 100;
 const sum = (xs) => xs.reduce((a, b) => a + b, 0);
-const isOpened = (b) => !!b && num(b.win) != null;
+export const isOpened = (b) => !!b && num(b.win) != null;
 
 export function huntMode(round) {
   if (!round || !round.acceptPredictions) return 'offair';

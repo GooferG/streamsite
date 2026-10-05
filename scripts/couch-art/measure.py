@@ -30,6 +30,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)
 DOORS = ["tv", "tapes", "guide", "laptop", "games", "remote", "photo"]
 CUT = ["tapes", "guide", "laptop", "games", "remote", "photo"]
 WIDTHS = {1280: 90, 1920: 150, 2560: 250}
+DOOR_SCALE = 2560
 CUT_KB = 40
 NEON_KB = 60
 NAMES = {"tv": "TV", "note": "Note", "laptop": "Laptop", "tapes": "Tapes", "guide": "TV guide", "games": "Games", "remote": "Remote", "photo": "Photo"}
@@ -63,12 +64,12 @@ def webp(img, out, max_kb):
     return kb <= max_kb
 
 
-def cutout(img, mask, rect, out, max_kb=CUT_KB):
+def cutout(img, mask, rect, out, max_kb=CUT_KB, scale=1920):
     W, H = img.size
     box = (round(rect[0] * W / 100), round(rect[1] * H / 100), round((rect[0] + rect[2]) * W / 100), round((rect[1] + rect[3]) * H / 100))
     piece = img.crop(box).convert("RGBA")
     piece.putalpha(mask.crop(box).filter(ImageFilter.GaussianBlur(0.6)))
-    target = max(1, round(rect[2] / 100 * 1920))
+    target = max(1, round(rect[2] / 100 * scale))
     if piece.width > target:
         piece = piece.resize((target, round(piece.height * target / piece.width)), Image.LANCZOS)
     return webp(piece, out, max_kb)
@@ -127,7 +128,8 @@ def main(work, room="90s"):
         rect = bbox(m)
         entry = {"rect": rect, "anchor": [round(rect[0] + rect[2] / 2, 2), rect[1]]}
         if d in CUT:
-            ok &= cutout(plate, m, rect, os.path.join(pub, f"cut-{d}.webp"))
+            # Doors are the camera's zoom targets: cut them at the plate's full width.
+            ok &= cutout(plate, m, rect, os.path.join(pub, f"cut-{d}.webp"), scale=DOOR_SCALE)
             entry["cutout"] = url(f"cut-{d}.webp")
         doors[d] = entry
     tv = doors["tv"]["rect"]

@@ -37,6 +37,20 @@ test('whenAired', () => {
 test('multiplier', () => {
   expect(multiplier(1240)).toBe('1,240x');
   expect(multiplier(48.5)).toBe('48.5x');
+  // Whole multipliers read whole, and rounding over 100 drops the tenth.
+  expect(multiplier(5)).toBe('5x');
+  expect(multiplier(99.95)).toBe('100x');
+  expect(multiplier(99.94)).toBe('99.9x');
+  expect(multiplier(9.96)).toBe('10x');
+  expect(multiplier(0.43)).toBe('0.4x');
+  expect(multiplier('12.25')).toBe('12.3x');
+  expect(multiplier(undefined)).toBeNull();
+});
+
+test('a late show title drops its "!" when the sentence goes on', () => {
+  expect(COPY.tvLate({ title: 'Bonus Hunt Time!' }).sentence).toBe('Bonus Hunt Time should be on by now. Give him a minute.');
+  expect(COPY.guideLate({ title: 'Bonus Hunt Time!' }).sentence).toBe('Next up: Bonus Hunt Time, due now.');
+  expect(COPY.guideLate({ title: 'Sunday Slots' }).sentence).toBe('Next up: Sunday Slots, due now.');
 });
 
 test('the sentences', () => {

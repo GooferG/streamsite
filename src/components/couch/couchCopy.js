@@ -10,6 +10,9 @@ import { formatUSD } from '../Leaderboard/format';
 
 export const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const stop = (s) => (/[.!?]$/.test(s) ? s : `${s}.`);
+// A show title with more sentence after it drops its "!" ("Bonus Hunt Time!
+// should be on" reads as two sentences).
+const mid = (s) => s.replace(/!+$/, '');
 const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 const clip = (s, max = 18) => (s.length > max ? `${s.slice(0, max - 1).trimEnd()}…` : s);
 const shortDay = (day) => (day === 'today' || day === 'tomorrow' ? day : day.slice(0, 3));
@@ -87,10 +90,13 @@ export const betMoney = (value, currency) => formatMoney(value, currency || null
 // A leaderboard wager, formatted the way the leaderboard page does.
 export const wager = (value) => formatUSD(value);
 
+// "1,240x", "48.5x", "5x": a tenth under 100 (none when it is whole), whole
+// above, rounded first so 99.95 reads "100x".
 export function multiplier(x) {
   const n = Number(x);
   if (!Number.isFinite(n)) return null;
-  return n >= 100 ? `${Math.round(n).toLocaleString('en-US')}x` : `${n.toFixed(1)}x`;
+  const tenth = Math.round(n * 10) / 10;
+  return tenth >= 100 ? `${Math.round(n).toLocaleString('en-US')}x` : `${tenth}x`;
 }
 
 export const COPY = {
@@ -106,7 +112,7 @@ export const COPY = {
     sentence: `Off the air. Back ${day} at ${clock} for ${stop(title)}`,
   }),
   tvDay: ({ title, day }) => ({ kicker: 'TV', teaser: `Back ${shortDay(day)}`, sentence: `Off the air. Back ${day} for ${stop(title)}` }),
-  tvLate: ({ title }) => ({ kicker: 'TV', teaser: 'Running late', sentence: `${title} should be on by now. Give him a minute.` }),
+  tvLate: ({ title }) => ({ kicker: 'TV', teaser: 'Running late', sentence: `${mid(title)} should be on by now. Give him a minute.` }),
   tvNothing: () => ({ kicker: 'TV', teaser: 'Off air', sentence: 'Off the air. Nothing on the books yet.' }),
 
   noteOpen: ({ keyword, prize }) => ({
@@ -166,7 +172,7 @@ export const COPY = {
     sentence: `Next up: ${title} ${onDay(day)} at ${clock}, in ${until}.`,
   }),
   guideDay: ({ title, day }) => ({ kicker: 'TV guide', teaser: cap(shortDay(day)), sentence: `Next up: ${title} ${onDay(day)}.` }),
-  guideLate: ({ title }) => ({ kicker: 'TV guide', teaser: 'Running late', sentence: `Next up: ${title}, due now.` }),
+  guideLate: ({ title }) => ({ kicker: 'TV guide', teaser: 'Running late', sentence: `Next up: ${mid(title)}, due now.` }),
   guideLoading: () => ({ kicker: 'TV guide', teaser: 'Tuning in', sentence: 'Checking the guide.' }),
   guideNone: () => ({ kicker: 'TV guide', teaser: 'This week', sentence: 'Nothing on the books yet. The guide has the week.' }),
 

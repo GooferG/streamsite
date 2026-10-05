@@ -42,7 +42,7 @@ test('the recap: cost to total, a loss chip and the top three hits, the best one
   expect(chip.textContent).toBe('▼ $188');
   expect(chip.className).toContain('bg-onair-loss');
   const rows = Array.from(screen.getByTestId('laptop-window').querySelectorAll('li'), (li) => li.textContent);
-  expect(rows).toEqual(['Sugar Rush 1000$0.201,240x', 'Wanted Dead or a Wild$0.20310x', 'Gates of Olympus 1000$0.4096.0x']);
+  expect(rows).toEqual(['Sugar Rush 1000$0.201,240x', 'Wanted Dead or a Wild$0.20310x', 'Gates of Olympus 1000$0.4096x']);
 });
 
 test('a profit gets the green chip', () => {
@@ -202,7 +202,7 @@ test('a live hunt: progress, money back against the cost, the next slot and the 
   expect(text()).toContain('of $600');
   expect(screen.getByTestId('laptop-next').textContent).toBe('NextDensho$0.25');
   const rows = Array.from(screen.getByTestId('laptop-window').querySelectorAll('li'), (li) => li.textContent);
-  expect(rows).toEqual(['Sugar Rush 100096.0x', 'Chaos Crew 384.0x', 'Rip City252x']);
+  expect(rows).toEqual(['Sugar Rush 100096x', 'Chaos Crew 384x', 'Rip City252x']);
   expect(screen.getByTestId('laptop-progress').style.transform).toBe(`scaleX(${14 / 23})`);
 });
 

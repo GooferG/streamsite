@@ -1,7 +1,6 @@
 import { createContext, useContext, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useNavigationType } from 'react-router-dom';
 import { prefetchRoute } from '../../routes/loaders';
-import { navHeightFor } from '../nav/navMetrics';
 import { prefersReducedMotion } from '../onAir/useChannelSwitch';
 import CameraIris from './CameraIris';
 import CameraStatic from './CameraStatic';
@@ -27,6 +26,10 @@ export const TIMINGS = {
 };
 const EASE_IN = 'cubic-bezier(0.5, 0, 0.75, 0)';
 const EASE_OUT = 'cubic-bezier(0.25, 1, 0.5, 1)';
+// The iris starts closing at 60% of the move: the ease-in zoom lands at about
+// four times its average speed, a landing the static (at the cut mark) hides
+// and an iris starting later would leave in the open.
+const IRIS_AT = 0.6;
 // Mirrors tailwind's signal-lock keyframes: the page settling as it tunes in.
 const SIGNAL_LOCK = [
   { transform: 'translateY(-14px)' },
@@ -105,9 +108,9 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
     };
 
     // One move's cut: show(phase, duration) puts it on screen. The iris centres
-    // on the view (`view`, else the window under the current page's bar).
+    // on the view the caller zoomed into (the whole window if it names none).
     function coverFor(cut, view) {
-      const at = cut === 'iris' ? irisCircle(view || viewRect(window, navHeightFor(locationRef.current.pathname)), window) : null;
+      const at = cut === 'iris' ? irisCircle(view || viewRect(window, 0), window) : null;
       return (phase, duration) => setCover({ cut, phase, at, duration });
     }
 
@@ -126,15 +129,16 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
     }
 
     // Zoom `el` from rest to `zoom` and bring the cut up over the end of it
-    // (the static fades in, the iris closes on the object), wait for the page
-    // chunk (bounded), then run `go` under the cut and show the page.
+    // (the static fades in at the cut mark, the iris closes on the object from
+    // IRIS_AT of the move), wait for the page chunk (bounded), then run `go`
+    // under the cut and show the page.
     // If the viewer navigates elsewhere meanwhile (the nav stays usable under
     // the cut), the move is dropped: no `go`, no stale door; `skipped` cleans up.
     async function zoomAndCut({ el, zoom, duration, load, go, skipped, cut, view }) {
       const key = locationRef.current.key;
       const show = coverFor(cut, view);
       const zooming = move(el, REST, zoom, duration, EASE_IN);
-      await wait(t.cut);
+      await wait(cut === 'iris' ? Math.round(duration * IRIS_AT) : t.cut);
       const coming = cut === 'iris' ? t.iris : t.staticIn;
       show('in', coming);
       await Promise.all([zooming, wait(coming)]);
@@ -168,7 +172,8 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
     }
 
     return {
-      async goThrough({ stage, zoom, href, doorId, state, cut = 'static' }) {
+      // `view` is the rect `zoom` fills; the iris centres on it.
+      async goThrough({ stage, zoom, href, doorId, state, cut = 'static', view }) {
         if (!start()) return;
         try {
           const load = prefetchRoute(href);
@@ -178,8 +183,9 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
             navigate(href, { state });
             return;
           }
-          await zoomAndCut({ el: stage, zoom, duration: t.zoom, load, go: () => navigate(href, { state }), cut });
+          await zoomAndCut({ el: stage, zoom, duration: t.zoom, load, go: () => navigate(href, { state }), cut, view });
         } finally {
+          setCover(null);
           finish();
         }
       },
@@ -194,12 +200,14 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
           }
           await zoomAndCut({ el: stage, zoom, duration: t.zoom, load: Promise.resolve(), go: () => navigate(path, { state }), cut: 'static' });
         } finally {
+          setCover(null);
           finish();
         }
       },
 
-      // `cut` is the door's ('static' | 'iris'), or null for a bare pull (the intro).
-      async pullBack({ stage, zoom, duration, cut = 'static' }) {
+      // `cut` is the door's ('static' | 'iris'), or null for a bare pull (the
+      // intro); `view` is the rect `zoom` fills, where the iris centres.
+      async pullBack({ stage, zoom, duration, cut = 'static', view }) {
         if (!start()) return;
         try {
           if (prefersReducedMotion()) {
@@ -207,7 +215,7 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
             return;
           }
           setTransform(stage, zoom);
-          await uncover(cut, null, () => move(stage, zoom, REST, duration ?? t.pull, EASE_OUT));
+          await uncover(cut, view, () => move(stage, zoom, REST, duration ?? t.pull, EASE_OUT));
         } finally {
           setCover(null);
           finish();
@@ -254,6 +262,8 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
             view,
           });
         } finally {
+          setGhost(null);
+          setCover(null);
           finish();
         }
       },

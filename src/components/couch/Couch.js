@@ -63,7 +63,7 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
         // Gone while the TV flipped: nothing left to zoom.
         if (!stageEl.isConnected) return;
       }
-      await camera.goThrough({ stage: stageEl, zoom: stage.zoomFor(aimFor(door.id)), href: door.href, doorId: door.id, cut: door.cut });
+      await camera.goThrough({ stage: stageEl, zoom: stage.zoomFor(aimFor(door.id)), href: door.href, doorId: door.id, cut: door.cut, view: viewRect(window, navH) });
     },
     [camera, inRoom, live, location.pathname, navigate, stage, navH]
   );
@@ -80,7 +80,7 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
     if (!back) return;
     const { doorId, cut } = back;
     if (inRoom && stageEl) {
-      camera.pullBack({ stage: stageEl, zoom: stage.zoomFor(aimFor(doorId)), cut });
+      camera.pullBack({ stage: stageEl, zoom: stage.zoomFor(aimFor(doorId)), cut, view: viewRect(window, navH) });
       return;
     }
     const tile = document.querySelector(`[data-door="${doorId}"]`);

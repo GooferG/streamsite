@@ -108,10 +108,10 @@ body.brand-route {
   to { opacity: 0; }
 }
 /* The iris cut for things (CameraIris): a square, clear inside its circle
-   (80% of the half side) and black in the corners, with a 1px edge; the
-   camera scales it. 'out' fades the black off the new page. */
+   (90% of the half side, HOLE in CameraIris.js) and black in the corners,
+   with a 1px edge; the camera scales it. 'out' fades the black off the new page. */
 .camera-iris-hole {
-  background: radial-gradient(circle closest-side, transparent calc(80% - 1px), #000 80%);
+  background: radial-gradient(circle closest-side, transparent calc(90% - 1px), #000 90%);
 }
 .camera-iris-out {
   animation: camera-static-out 300ms ease-out both;

@@ -2,14 +2,13 @@ import { useLayoutEffect, useRef } from 'react';
 
 // The camera's cut for doors that aren't screens (Ruling R23): a cartoon iris.
 // A square whose round hole is drawn by .camera-iris-hole (index.css) scales
-// about the object's centre, and four black bars ride the square's edges so
-// the black always reaches the window, even as the hole shrinks to nothing.
+// about the object's centre, and four black bars move with it, standing in its
+// black ring, so the black always reaches the window as the hole shrinks.
 // Only transforms animate. Phases: 'in' closes the iris on the object, 'hold'
 // is plain black, 'out' fades the black off the new page, 'open' opens the
 // iris on the room. Decorative: aria-hidden and never takes the pointer.
-const HOLE = 0.8; // the hole's radius over the square's half side (index.css)
-const SHUT = 0.001; // closed: a speck the bars already cover
-const OVERLAP = 2; // px the bars reach into the square's black corners, so no seam shows
+const HOLE = 0.9; // the hole's radius over the square's half side (index.css)
+const SHUT = 0.001; // closed: a speck, then plain black takes over
 const EASE = 'cubic-bezier(0.65, 0, 0.35, 1)';
 
 // Where the square and the four bars (top, bottom, left, right) sit at rest,
@@ -26,11 +25,20 @@ function boxes({ x, y, r }) {
   ];
 }
 
-// Each part's transform with the iris open by `s` (1 open, SHUT closed): the
-// square scales, and the bars stand off it halfway between the hole's edge and
-// the square's, minus the overlap.
+// The iris open by `s` (1 open, SHUT closed), for a hole of radius r: the
+// hole's radius, the square's half side, and how far the bars stand off the
+// centre. The bars stand in the middle of the square's black ring, so at every
+// scale they meet black on the square and never cut into the round hole.
+export function irisFrame(r, s) {
+  const hole = s * r;
+  const half = hole / HOLE;
+  return { hole, half, bars: (hole + half) / 2 };
+}
+
+// Each part's transform with the iris open by `s`: the square scales, the bars
+// stand off.
 function transforms(r, s) {
-  const off = (s * (r + r / HOLE)) / 2 - OVERLAP;
+  const off = irisFrame(r, s).bars;
   return [`scale(${s})`, `translateY(${-off}px)`, `translateY(${off}px)`, `translateX(${-off}px)`, `translateX(${off}px)`];
 }
 
@@ -67,6 +75,7 @@ export default function CameraIris({ iris }) {
         boxes(iris.at).map((box, i) => (
           <div
             key={i}
+            data-testid={i === 0 ? 'camera-iris-hole' : undefined}
             ref={(el) => {
               partRefs.current[i] = el;
             }}

@@ -4,7 +4,9 @@ import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
 import { logCovers } from '../../../test/coverLog';
 import CameraProvider, { useCamera } from '../CameraProvider';
 
-jest.mock('../../../routes/loaders', () => ({ prefetchRoute: () => Promise.resolve() }));
+// A plain function (CRA resets jest.fn mocks before each test); one test swaps it.
+let mockLoad = () => Promise.resolve();
+jest.mock('../../../routes/loaders', () => ({ prefetchRoute: (href) => mockLoad(href) }));
 
 const ZERO = { zoom: 0, cut: 0, staticIn: 0, iris: 0, minHold: 0, maxHold: 0, tuneOut: 0, pull: 0, introPull: 0, fade: 0, grow: 0 };
 let cam;
@@ -265,4 +267,53 @@ test('phones: an iris tile grows its ghost under the iris and shrinks back into 
   expect(covers.log).toContain('camera-iris:open');
   expect(screen.queryByTestId('camera-ghost')).toBeNull();
   expect(screen.queryByTestId('camera-iris')).toBeNull();
+});
+
+test('the iris starts at 60% of the move, ahead of the static cut mark', async () => {
+  renderCam({ ...ZERO, zoom: 100, cut: 90, iris: 200 });
+  const stage = document.createElement('div');
+  let moving;
+  act(() => {
+    moving = cam.goThrough({ stage, zoom: ZOOM, href: '/about', doorId: 'photo', cut: 'iris' });
+  });
+  // 60% of 100 ms is 60 ms; the cut mark (90 ms) has not come yet.
+  await act(() => new Promise((resolve) => setTimeout(resolve, 75)));
+  expect(screen.getByTestId('camera-iris').getAttribute('data-phase')).toBe('in');
+  await act(() => moving);
+  expect(where()).toBe('/about|null');
+});
+
+test('the iris centres on the view the caller zoomed into', async () => {
+  renderCam({ ...ZERO, iris: 200 });
+  const stage = document.createElement('div');
+  const view = { x: 0, y: 100, width: 400, height: 300 };
+  let moving;
+  act(() => {
+    moving = cam.goThrough({ stage, zoom: ZOOM, href: '/about', doorId: 'photo', cut: 'iris', view });
+  });
+  await act(() => new Promise((resolve) => setTimeout(resolve, 20)));
+  const hole = screen.getByTestId('camera-iris-hole');
+  expect(parseFloat(hole.style.left) + parseFloat(hole.style.width) / 2).toBeCloseTo(200, 5);
+  expect(parseFloat(hole.style.top) + parseFloat(hole.style.height) / 2).toBeCloseTo(250, 5);
+  await act(() => moving);
+});
+
+test('the cover never outlives the move, even when the move fails under it', async () => {
+  // A load that fails once the move waits on it (after the cut is up) stands
+  // in for any failure under the cover. A thenable, so it fails only when read.
+  mockLoad = () => ({ then: (resolve, reject) => reject(new Error('chunk failed')) });
+  try {
+    renderCam();
+    const stage = document.createElement('div');
+    let moving;
+    act(() => {
+      moving = cam.goThrough({ stage, zoom: ZOOM, href: '/about', doorId: 'photo', cut: 'iris' }).catch((e) => e);
+    });
+    const failure = await act(() => moving);
+    expect(failure.message).toBe('chunk failed');
+    expect(screen.queryByTestId('camera-iris')).toBeNull();
+    expect(cam.busy).toBe(false);
+  } finally {
+    mockLoad = () => Promise.resolve();
+  }
 });

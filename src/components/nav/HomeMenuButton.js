@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { isWatching } from '../../utils/watching';
@@ -9,11 +10,16 @@ import useNavSheet from './useNavSheet';
 // The home page has no bar (the room is the navigation), so the site menu is a
 // small button in the top-right corner that opens the same side sheet at every
 // width. z-50 matches the bar: under the control room panel, over the room.
-// Inside the TV (the watch dialog) it steps out of the way.
+// Inside the TV (the watch dialog) it steps out of the way, and its sheet
+// closes, so it never comes back open.
 export default function HomeMenuButton({ isLive = false, viewerCount = null, statusReady = false }) {
   const location = useLocation();
   const { open, close, toggle, buttonRef, sheetId, isAdmin, isStaff } = useNavSheet();
-  if (isWatching(location, isLive)) return null;
+  const watching = isWatching(location, isLive);
+  useEffect(() => {
+    if (watching) close();
+  }, [watching, close]);
+  if (watching) return null;
 
   const onAir = statusReady && isLive;
 

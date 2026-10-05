@@ -95,3 +95,29 @@ test('leaving the TV brings the button back', () => {
   fireEvent.click(screen.getByText('leave'));
   expect(button()).toBeTruthy();
 });
+
+test('going inside the TV closes the sheet, so it never comes back open', () => {
+  function Watch() {
+    const navigate = useNavigate();
+    return (
+      <>
+        <button onClick={() => navigate('/', { state: { watch: true } })}>watch</button>
+        <button onClick={() => navigate('/', { state: null })}>leave</button>
+      </>
+    );
+  }
+  render(
+    <MemoryRouter initialEntries={['/']}>
+      <HomeMenuButton statusReady isLive />
+      <Watch />
+    </MemoryRouter>
+  );
+  fireEvent.click(button());
+  expect(button().getAttribute('aria-expanded')).toBe('true');
+  fireEvent.click(screen.getByText('watch'));
+  expect(screen.queryByRole('button', { name: /^Menu/ })).toBeNull();
+  fireEvent.click(screen.getByText('leave'));
+  expect(button().getAttribute('aria-expanded')).toBe('false');
+  expect(document.getElementById(button().getAttribute('aria-controls')).hasAttribute('inert')).toBe(true);
+});
+

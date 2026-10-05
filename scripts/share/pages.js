@@ -4,11 +4,14 @@
 // Adding a page: list it here, add its vercel.json rewrite above the catch-all,
 // then shoot it. Removing or renaming one: remove or rename its rewrite too
 // (the build fails on a mismatch). Unlisted routes get the home card.
-// settleMs / waitFor are capture hints for shoot.js.
+// settleMs / waitFor / shot (the URL to capture, default path) are capture
+// hints for shoot.js.
 const SHARE_PAGES = [
   {
     id: 'home',
     path: '/',
+    // The card outlives the season: shoot the couch without its theme.
+    shot: '/?theme=none',
     title: 'GooferG',
     description: 'Late-night variety streams, bonus hunts, clips and more.',
   },

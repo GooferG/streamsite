@@ -55,13 +55,14 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, on
 export default function CouchFront(props) {
   const { couch, items, mode, flipTo, onDoor, onAutoplayBlocked, roomLayout, noArt = false } = props;
   const [plateFailed, setPlateFailed] = useState(false);
-  if (roomLayout && !noArt && !plateFailed) return <Room {...props} onPlateError={() => setPlateFailed(true)} />;
+  const failPlate = () => setPlateFailed(true);
+  if (roomLayout && !noArt && !plateFailed) return <Room {...props} onPlateError={failPlate} />;
   const art = !noArt && !plateFailed;
   const tv = couch.doors.find((d) => d.id === 'tv');
   return (
     <div className={art ? '' : 'mt-[57px]'}>
-      {art && <TvCrop door={tv} tv={couch.tv} items={items} mode={mode} flipTo={flipTo} onDoor={onDoor} onAutoplayBlocked={onAutoplayBlocked} />}
-      <DoorTiles doors={couch.doors} onDoor={onDoor} noArt={!art} skip={art ? ['tv'] : []} />
+      {art && <TvCrop door={tv} tv={couch.tv} items={items} mode={mode} flipTo={flipTo} onDoor={onDoor} onAutoplayBlocked={onAutoplayBlocked} onPlateError={failPlate} />}
+      <DoorTiles doors={couch.doors} onDoor={onDoor} noArt={!art} skip={art ? ['tv'] : []} onPlateError={failPlate} />
     </div>
   );
 }

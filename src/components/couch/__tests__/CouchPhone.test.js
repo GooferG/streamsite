@@ -46,3 +46,19 @@ test('a plate that fails to load falls back to the tiles', () => {
   fireEvent.error(container.querySelector('[data-testid="couch-stage"] img'));
   expect(screen.getByRole('list', { name: 'On the coffee table' })).toBeTruthy();
 });
+
+test('a wide door keeps its tile art inside the tile', () => {
+  const { container } = render(front('offair'));
+  const art = container.querySelector('[data-door="tapes"] [data-door-art]');
+  // jsdom drops min() widths, so the cap is a class reading a custom property
+  expect(art.parentElement.className).toContain('w-[min(100%,var(--art-w))]');
+  expect(art.parentElement.style.getPropertyValue('--art-w')).toMatch(/rem$/);
+});
+
+test('a plate that fails to load on the phone layout falls back to plain tiles', () => {
+  const { container } = render(front('offair'));
+  fireEvent.error(container.querySelector('[data-door="tv"] img'));
+  const tiles = inside(screen.getByRole('list', { name: 'On the coffee table' })).getAllByRole('link');
+  expect(tiles[0].getAttribute('data-door')).toBe('tv');
+  expect(container.querySelector('img')).toBeNull();
+});

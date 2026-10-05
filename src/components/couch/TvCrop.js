@@ -6,7 +6,7 @@ import { LAYOUT, cropStyle, pctStyle, plateSrc, rectAspect, within } from './cou
 
 // Phones: the TV and its stand, cropped from the same plate, with the live
 // screen in it. The whole crop is the TV door.
-export default function TvCrop({ door, tv, items, mode, flipTo, onDoor, onAutoplayBlocked }) {
+export default function TvCrop({ door, tv, items, mode, flipTo, onDoor, onAutoplayBlocked, onPlateError }) {
   const crop = LAYOUT.phoneCrop;
   const go = useCallback((el) => onDoor(door, el), [door, onDoor]);
   const props = useDoor(door.href, go);
@@ -18,7 +18,7 @@ export default function TvCrop({ door, tv, items, mode, flipTo, onDoor, onAutopl
       className={`relative mt-[57px] block overflow-hidden ${FOCUS}`}
       style={{ aspectRatio: rectAspect(crop) }}
     >
-      <img src={plateSrc(LAYOUT.art.plate)} alt="" style={cropStyle(crop)} />
+      <img src={plateSrc(LAYOUT.art.plate)} alt="" onError={onPlateError} style={cropStyle(crop)} />
       <span className="pointer-events-none absolute" style={pctStyle(within(crop, LAYOUT.screens.tv))}>
         <CouchTv tv={tv} items={items} mode={mode} flipTo={flipTo} onAutoplayBlocked={onAutoplayBlocked} />
       </span>

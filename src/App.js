@@ -11,6 +11,7 @@ import GrainOverlay from './components/GrainOverlay';
 import AdminLayout from './components/AdminLayout';
 import ErrorBoundary from './components/ErrorBoundary';
 import TVStaticIntro from './components/TVStaticIntro';
+import CameraProvider from './components/camera/CameraProvider';
 import HomePage from './pages/HomePage';
 import GambaPage from './pages/GambaPage';
 import { AuthProvider } from './contexts/AuthContext';
@@ -220,6 +221,7 @@ function StreamingSiteContent() {
 
   return (
     <div className="min-h-screen bg-zinc-broadcast text-white-body">
+      <CameraProvider>
       {showTVIntro && (
         <TVStaticIntro
           mode={intro.mode}
@@ -256,14 +258,15 @@ function StreamingSiteContent() {
             path="/"
             element={
               <HomePage
-                setPage={(id) => navigate(id === 'home' ? '/' : `/${id}`)}
                 channelData={channelData}
                 isLive={isLive}
                 streamData={streamData}
                 loading={loading}
                 clips={clips}
                 videos={videos}
+                statusReady={statusReady}
                 introDone={!showTVIntro}
+                introPullBack={intro.mode === 'gate'}
               />
             }
           />
@@ -313,6 +316,7 @@ function StreamingSiteContent() {
       </main>
 
       {isBrandRoute && <SiteFooter />}
+      </CameraProvider>
     </div>
   );
 }

@@ -150,3 +150,22 @@ describe('labels never stack', () => {
     rest.guide = [320, 205];
   });
 });
+
+test('the room runs full height when there is no bar above it (home)', () => {
+  function Home() {
+    const stage = useCouchStage(ART_ASPECT, LAYOUT.art.focal, 0);
+    return <CouchFront couch={buildCouch(F.offair.input)} items={[]} mode="stills" onDoor={() => {}} stage={stage} roomLayout />;
+  }
+  render(<Home />);
+  const section = screen.getByRole('region', { name: "Goofer's couch" });
+  expect(section.style.marginTop).toBe('0px');
+  expect(section.firstChild.style.height).toBe('calc(100svh - 0px)');
+  expect(section.outerHTML).not.toContain('57px');
+});
+
+test('with a bar the room sits under it', () => {
+  render(<Room />);
+  const section = screen.getByRole('region', { name: "Goofer's couch" });
+  expect(section.style.marginTop).toBe('57px');
+  expect(section.firstChild.style.height).toBe('calc(100svh - 57px)');
+});

@@ -5,7 +5,7 @@ import { FOCUS } from '../onAir/classes';
 
 // "Inside the TV" while live (spec: Watch inside the TV): the Twitch player at
 // full resolution under the nav. Esc, Back or the button pull back out.
-export default function TvFrame({ onExit, channel = 'GooferG' }) {
+export default function TvFrame({ onExit, channel = 'GooferG', navH = NAV_H }) {
   const closeRef = useRef(null);
   useEffect(() => {
     if (closeRef.current) closeRef.current.focus();
@@ -17,7 +17,7 @@ export default function TvFrame({ onExit, channel = 'GooferG' }) {
   }, [onExit]);
   const host = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
   return (
-    <div role="dialog" aria-modal="true" aria-label="Goofer's stream" className="fixed inset-x-0 bottom-0 z-40 flex flex-col bg-onair-surface-4" style={{ top: NAV_H }}>
+    <div role="dialog" aria-modal="true" aria-label="Goofer's stream" className="fixed inset-x-0 bottom-0 z-40 flex flex-col bg-onair-surface-4" style={{ top: navH }}>
       <iframe
         title="Goofer's live stream"
         src={`https://player.twitch.tv/?channel=${channel}&parent=${host}&autoplay=true`}

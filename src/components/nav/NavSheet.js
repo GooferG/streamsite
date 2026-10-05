@@ -91,12 +91,17 @@ function Identity({ isAdmin, onClose }) {
 // focus to the menu button; this owns the scroll lock, Escape and moving focus
 // in (to Close, so Enter right after opening never signs anyone out). Every row
 // closes it too: a link to the page you are on doesn't change the path.
-export default function NavSheet({ id, open, onClose, isLive, viewerCount, statusReady, isAdmin, isStaff }) {
+// `always` is the home page's sheet: no bar above it, so it covers the full
+// height, sits over the corner button and the control room, and shows at every
+// width instead of hiding at lg.
+export default function NavSheet({ id, open, onClose, isLive, viewerCount, statusReady, isAdmin, isStaff, always = false }) {
   const { pathname } = useLocation();
   const panelRef = useRef(null);
   const closeRef = useRef(null);
   const launcher = useControlRoomLauncher();
   const tuned = channelForPath(pathname);
+  const top = always ? 0 : NAV_H;
+  const hideAtLg = always ? '' : 'lg:hidden';
 
   useEffect(() => {
     if (!open) return undefined;
@@ -132,8 +137,8 @@ export default function NavSheet({ id, open, onClose, isLive, viewerCount, statu
     <>
       {open && (
         <div
-          className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden"
-          style={{ top: NAV_H }}
+          className={`fixed inset-0 bg-black/60 backdrop-blur-sm ${always ? 'z-[69]' : 'z-40'} ${hideAtLg}`}
+          style={{ top }}
           onClick={onClose}
           aria-hidden="true"
           data-testid="nav-scrim"
@@ -147,8 +152,8 @@ export default function NavSheet({ id, open, onClose, isLive, viewerCount, statu
         aria-label="Site menu"
         role="dialog"
         aria-modal={open || undefined}
-        style={{ top: NAV_H }}
-        className={`fixed bottom-0 right-0 z-40 w-[300px] max-w-[85vw] overflow-y-auto rounded-l-onair-card bg-gradient-to-b from-onair-surface-1 to-onair-surface-3 p-2 font-onair shadow-onair-card transition-transform duration-200 ease-out motion-reduce:transition-none lg:hidden ${
+        style={{ top }}
+        className={`fixed bottom-0 right-0 ${always ? 'z-[70]' : 'z-40'} w-[300px] max-w-[85vw] overflow-y-auto rounded-l-onair-card bg-gradient-to-b from-onair-surface-1 to-onair-surface-3 p-2 font-onair shadow-onair-card transition-transform duration-200 ease-out motion-reduce:transition-none ${hideAtLg} ${
           open ? 'translate-x-0' : 'translate-x-full'
         }`}
       >

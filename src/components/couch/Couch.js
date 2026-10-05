@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import useMediaQuery from '../../hooks/useMediaQuery';
 import { TIMINGS, useCamera } from '../camera/CameraProvider';
 import { viewRect } from '../camera/cameraMath';
-import { NAV_H } from '../nav/navMetrics';
+import { useNavHeight } from '../nav/navMetrics';
 import { prefersReducedMotion } from '../onAir/useChannelSwitch';
 import CouchFront, { ROOM_QUERY } from './CouchFront';
 import TvFrame from './TvFrame';
@@ -24,7 +24,8 @@ const saveData = () => typeof navigator !== 'undefined' && !!(navigator.connecti
 export default function Couch({ input, noArt = false, introPullBack = false, introDone = true }) {
   const couch = useMemo(() => buildCouch(input), [input]);
   const roomLayout = useMediaQuery(ROOM_QUERY);
-  const stage = useCouchStage(ART_ASPECT, LAYOUT.art.focal);
+  const navH = useNavHeight();
+  const stage = useCouchStage(ART_ASPECT, LAYOUT.art.focal, navH);
   const camera = useCamera();
   const navigate = useNavigate();
   const location = useLocation();
@@ -51,7 +52,7 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
         const art = el.querySelector('img[data-door-art]');
         const cutout = LAYOUT.doors[door.id] && LAYOUT.doors[door.id].cutout;
         const src = art && cutout ? art.currentSrc || art.src : null;
-        await camera.growFrom({ rect: (src ? art : el).getBoundingClientRect(), src, href: door.href, doorId: door.id, view: viewRect(window, NAV_H) });
+        await camera.growFrom({ rect: (src ? art : el).getBoundingClientRect(), src, href: door.href, doorId: door.id, view: viewRect(window, navH) });
         return;
       }
       // Reduced motion has no static and no zoom, so no flip either.
@@ -63,7 +64,7 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
       }
       await camera.goThrough({ stage: stageEl, zoom: stage.zoomFor(aimFor(door.id)), href: door.href, doorId: door.id });
     },
-    [camera, inRoom, live, location.pathname, navigate, stage]
+    [camera, inRoom, live, location.pathname, navigate, stage, navH]
   );
 
   // On mount: start inside the TV for the intro, or pull back from the door we
@@ -85,7 +86,7 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
     const art = tile.querySelector('img[data-door-art]');
     const cutout = LAYOUT.doors[back] && LAYOUT.doors[back].cutout;
     const src = art && cutout ? art.currentSrc || art.src : null;
-    camera.shrinkInto({ rect: (src ? art : tile).getBoundingClientRect(), src, view: viewRect(window, NAV_H) });
+    camera.shrinkInto({ rect: (src ? art : tile).getBoundingClientRect(), src, view: viewRect(window, navH) });
     // Mount only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -139,7 +140,7 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
         roomLayout={roomLayout}
         noArt={noArt}
       />
-      {watching && <TvFrame onExit={exitWatch} />}
+      {watching && <TvFrame onExit={exitWatch} navH={navH} />}
     </>
   );
 }

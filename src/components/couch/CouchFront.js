@@ -8,6 +8,7 @@ import Dressing from './Dressing';
 import RoomToys from './RoomToys';
 import { WindowFront, WindowOutside, useWindowState } from './RoomWindow';
 import { roomToys, themeArt, themeLinks } from './themes';
+import { NAV_H } from '../nav/navMetrics';
 import { ART_ASPECT, LAYOUT, center, pctStyle, plateSrc, plateSrcSet } from './couchLayout';
 
 // The couch (spec: The room). Presentational: the art, the live screens and
@@ -16,6 +17,7 @@ export const ROOM_QUERY = '(min-width: 768px) and (min-aspect-ratio: 4/3)';
 
 function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, onPlateError, now = Date.now() }) {
   const { containerRef, stageRef, box } = stage;
+  const navH = stage.navH ?? NAV_H;
   const base = LAYOUT.art.empty || LAYOUT.art.plate;
   const [tx, ty] = center(LAYOUT.screens.tv);
   const live = couch.tv.state === 'live';
@@ -26,8 +28,8 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, on
   const linked = dressing.filter((l) => Object.prototype.hasOwnProperty.call(links, l.id));
   const win = useWindowState();
   return (
-    <section aria-label="Goofer's couch" className="mt-[57px]">
-      <div ref={containerRef} className="relative h-[calc(100svh-57px)] overflow-hidden bg-onair-surface-4">
+    <section aria-label="Goofer's couch" style={{ marginTop: navH }}>
+      <div ref={containerRef} className="relative overflow-hidden bg-onair-surface-4" style={{ height: `calc(100svh - ${navH}px)` }}>
         <div
           ref={stageRef}
           data-testid="couch-stage"
@@ -74,9 +76,10 @@ export default function CouchFront(props) {
   if (roomLayout && !noArt && !plateFailed) return <Room {...props} onPlateError={failPlate} />;
   const art = !noArt && !plateFailed;
   const tv = couch.doors.find((d) => d.id === 'tv');
+  const navH = (props.stage && props.stage.navH) ?? NAV_H;
   return (
-    <div className={art ? '' : 'mt-[57px]'}>
-      {art && <TvCrop door={tv} tv={couch.tv} items={items} mode={mode} flipTo={flipTo} onDoor={onDoor} onAutoplayBlocked={onAutoplayBlocked} onPlateError={failPlate} theme={couch.theme} />}
+    <div style={art ? undefined : { marginTop: navH }}>
+      {art && <TvCrop navH={navH} door={tv} tv={couch.tv} items={items} mode={mode} flipTo={flipTo} onDoor={onDoor} onAutoplayBlocked={onAutoplayBlocked} onPlateError={failPlate} theme={couch.theme} />}
       <DoorTiles doors={couch.doors} onDoor={onDoor} noArt={!art} skip={art ? ['tv'] : []} onPlateError={failPlate} />
     </div>
   );

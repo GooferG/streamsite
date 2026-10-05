@@ -6,6 +6,7 @@ import {
   useLocation,
 } from 'react-router-dom';
 import Navigation from './components/nav/Navigation';
+import HomeMenuButton from './components/nav/HomeMenuButton';
 import SiteFooter from './components/SiteFooter';
 import GrainOverlay from './components/GrainOverlay';
 import AdminLayout from './components/AdminLayout';
@@ -234,7 +235,12 @@ function StreamingSiteContent() {
 
       <GrainOverlay />
 
-      <Navigation isLive={isLive} viewerCount={streamData?.viewer_count ?? null} statusReady={statusReady} />
+      {/* The room is the navigation on home: a corner menu instead of the bar. */}
+      {location.pathname === '/' ? (
+        <HomeMenuButton isLive={isLive} viewerCount={streamData?.viewer_count ?? null} statusReady={statusReady} />
+      ) : (
+        <Navigation isLive={isLive} viewerCount={streamData?.viewer_count ?? null} statusReady={statusReady} />
+      )}
 
       <StaffLayer isLive={isLive} streamData={streamData} pathname={location.pathname} />
 

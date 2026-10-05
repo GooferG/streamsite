@@ -5,8 +5,9 @@ import { NAV_H } from '../nav/navMetrics';
 // Measures the room's container, places the art over it like a cover image
 // around the focal point, and turns a rect in percent of the art into the
 // camera zoom that fills the view with it. Rects are computed from the box at
-// rest, never measured off the (possibly transformed) stage.
-export default function useCouchStage(aspect, focal) {
+// rest, never measured off the (possibly transformed) stage. `navH` is the bar
+// above the view (0 on the home page, which has none).
+export default function useCouchStage(aspect, focal, navH = NAV_H) {
   const nodeRef = useRef(null);
   const stageRef = useRef(null);
   const [node, setNode] = useState(null);
@@ -41,10 +42,10 @@ export default function useCouchStage(aspect, focal) {
       const c = nodeRef.current.getBoundingClientRect();
       const b = coverBox({ width: c.width, height: c.height }, aspect, focal);
       const stage = { x: c.left + b.left, y: c.top + b.top, width: b.width, height: b.height };
-      return zoomTransform(stage, pctRect(stage, rect), viewRect(window, NAV_H));
+      return zoomTransform(stage, pctRect(stage, rect), viewRect(window, navH));
     },
-    [aspect, focal]
+    [aspect, focal, navH]
   );
 
-  return { containerRef, stageRef, box: size ? coverBox(size, aspect, focal) : null, zoomFor };
+  return { containerRef, stageRef, box: size ? coverBox(size, aspect, focal) : null, zoomFor, navH };
 }

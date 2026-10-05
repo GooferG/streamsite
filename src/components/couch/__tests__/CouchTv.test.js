@@ -117,7 +117,7 @@ describe('commercials', () => {
     expect(ad.getAttribute('data-ad')).toBe('gsn');
     expect(screen.getByTestId('tv-ad-key').getAttribute('src')).toBe('/gsn/operator-call.webp');
     expect(srcs(ad)).toEqual(
-      expect.arrayContaining(['/gsn/ident.webp', '/gsn/items/bonus-buy.webp', '/gsn/items/pick-a-slot.webp', '/gsn/items/smoke-break.webp'])
+      expect.arrayContaining(['/tv/ads/gsn-ident.webp', '/tv/ads/bonus-buy.webp', '/tv/ads/pick-a-slot.webp', '/tv/ads/smoke-break.webp'])
     );
     expect(ad.textContent).toContain('Operators are standing by.');
     expect(ad.textContent).toContain('Spend your tickets.');
@@ -178,15 +178,15 @@ describe('commercials', () => {
     render(<CouchTv tv={OFF} items={[GSN, STILL]} mode="video" />);
     fireEvent.error(screen.getByTestId('tv-ad-key'));
     expect(screen.queryByTestId('tv-ad-key')).toBeNull();
-    const item = screen.getByTestId('tv-ad').querySelector('img[src="/gsn/items/pick-a-slot.webp"]');
+    const item = screen.getByTestId('tv-ad').querySelector('img[src="/tv/ads/pick-a-slot.webp"]');
     fireEvent.error(item);
-    expect(screen.getByTestId('tv-ad').querySelector('img[src="/gsn/items/pick-a-slot.webp"]')).toBeNull();
+    expect(screen.getByTestId('tv-ad').querySelector('img[src="/tv/ads/pick-a-slot.webp"]')).toBeNull();
     expect(screen.getByTestId('tv-ad').textContent).toContain('Operators are standing by.');
   });
 
-  test('reduced motion holds a commercial as one still frame with nothing animated', () => {
+  test('Save-Data: a commercial is its still frame (one key image, nothing animated), loops are posters', () => {
     const onSegment = jest.fn();
-    render(<CouchTv tv={OFF} items={[CARD, GSN]} mode="hold" onSegment={onSegment} />);
+    render(<CouchTv tv={OFF} items={[GSN, VIDEO]} mode="lite" onSegment={onSegment} />);
     const ad = screen.getByTestId('tv-ad');
     expect(ad.getAttribute('data-still')).toBe('true');
     expect(srcs(ad)).toEqual(['/gsn/operator-call.webp']);
@@ -194,21 +194,44 @@ describe('commercials', () => {
     expect(ad.textContent).not.toContain('Spend your tickets.');
     expect(screen.getByTestId('tv-ad-lower').textContent).toContain('goofer.tv/store');
     expect(classes(screen.getByTestId('couch-tv')).filter((c) => c.includes('animate'))).toEqual([]);
+    // It still holds its slot (the TV door follows it), then cuts to the next.
     expect(onSegment).toHaveBeenLastCalledWith(GSN);
-    act(() => jest.advanceTimersByTime(AD_MS * 3));
-    expect(screen.queryByTestId('tv-switch')).toBeNull();
+    act(() => jest.advanceTimersByTime(AD_MS));
+    act(() => jest.advanceTimersByTime(STATIC_MS));
+    expect(screen.queryByTestId('tv-ad')).toBeNull();
+    expect(screen.queryByTestId('tv-video')).toBeNull();
+    expect(screen.getByTestId('tv-still').getAttribute('src')).toBe('/v1.jpg');
+  });
+
+  test('a refused autoplay keeps the full commercial', () => {
+    render(<CouchTv tv={OFF} items={[GSN, VIDEO]} mode="stills" />);
+    const ad = screen.getByTestId('tv-ad');
+    expect(ad.getAttribute('data-still')).toBeNull();
+    expect(srcs(ad)).toContain('/tv/ads/gsn-ident.webp');
+    expect(ad.textContent).toContain('Spend your tickets.');
   });
 
   test('every commercial has a still frame: key image, headline, lower-third', () => {
-    const { rerender } = render(<CouchTv tv={OFF} items={[TAPES]} mode="hold" />);
+    const { rerender } = render(<CouchTv tv={OFF} items={[TAPES]} mode="lite" />);
     expect(srcs(screen.getByTestId('tv-ad'))).toEqual(['/gsn/video/clerk-restock.webp']);
     expect(screen.getByTestId('tv-ad').textContent).toContain('New tapes on the shelf.');
     expect(screen.getByTestId('tv-ad').textContent).not.toContain('Be kind, rewind.');
     expect(screen.getByTestId('tv-ad-lower').textContent).toContain('goofer.tv/vods');
-    rerender(<CouchTv tv={OFF} items={[GUIDE]} mode="hold" />);
+    rerender(<CouchTv tv={OFF} items={[GUIDE]} mode="lite" />);
     expect(screen.getAllByTestId('tv-ad-listing')).toHaveLength(2);
     expect(screen.getByTestId('tv-ad-lower').textContent).toContain('goofer.tv/schedule');
     expect(classes(screen.getByTestId('couch-tv')).filter((c) => c.includes('animate'))).toEqual([]);
+  });
+
+  test('reduced motion with no picture holds the card, never a commercial', () => {
+    const onSegment = jest.fn();
+    render(<CouchTv tv={OFF} items={[GSN, CARD, TAPES]} mode="hold" onSegment={onSegment} />);
+    expect(screen.queryByTestId('tv-ad')).toBeNull();
+    expect(screen.getByTestId('tv-card').textContent).toContain('Back tomorrow.');
+    expect(onSegment).toHaveBeenLastCalledWith(CARD);
+    act(() => jest.advanceTimersByTime(AD_MS * 3));
+    expect(screen.queryByTestId('tv-switch')).toBeNull();
+    expect(screen.queryByTestId('tv-ad')).toBeNull();
   });
 
   test('reduced motion with a picture holds the picture, never a commercial', () => {
@@ -233,4 +256,33 @@ test('a live preview that fails to load is dropped', () => {
   fireEvent.error(screen.getByTestId('tv-live'));
   expect(screen.queryByTestId('tv-live')).toBeNull();
   expect(screen.getByText('Live · 3')).toBeTruthy();
+});
+
+describe('the segment clock', () => {
+  test('loops replacing stills mid-segment (same length): the loop plays out, the stills clock is gone', () => {
+    const { rerender } = render(<CouchTv tv={OFF} items={[STILL, CARD]} mode="video" segmentMs={1000} />);
+    act(() => jest.advanceTimersByTime(500));
+    rerender(<CouchTv tv={OFF} items={[VIDEO, CARD]} mode="video" segmentMs={1000} />);
+    expect(screen.getByTestId('tv-video')).toBeTruthy();
+    act(() => jest.advanceTimersByTime(2000));
+    expect(screen.queryByTestId('tv-switch')).toBeNull();
+    fireEvent.ended(screen.getByTestId('tv-video'));
+    expect(screen.getByTestId('tv-switch')).toBeTruthy();
+    act(() => jest.advanceTimersByTime(STATIC_MS));
+    expect(screen.getByTestId('tv-card')).toBeTruthy();
+  });
+
+  test('a new running order (a length change) starts over from its first segment, on a fresh clock', () => {
+    const { rerender } = render(<CouchTv tv={OFF} items={[STILL, CARD]} mode="stills" segmentMs={1000} />);
+    act(() => jest.advanceTimersByTime(500));
+    const next = [{ ...STILL, id: 's2', src: '/b.jpg' }, CARD, STILL];
+    rerender(<CouchTv tv={OFF} items={next} mode="stills" segmentMs={1000} />);
+    expect(screen.getByTestId('tv-still').getAttribute('src')).toBe('/b.jpg');
+    act(() => jest.advanceTimersByTime(999));
+    expect(screen.queryByTestId('tv-switch')).toBeNull();
+    act(() => jest.advanceTimersByTime(1));
+    expect(screen.getByTestId('tv-switch')).toBeTruthy();
+    act(() => jest.advanceTimersByTime(STATIC_MS));
+    expect(screen.getByTestId('tv-card')).toBeTruthy();
+  });
 });

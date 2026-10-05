@@ -91,9 +91,11 @@ function Reel({ items, mode, segmentMs, onBlocked, onSegment }) {
   const hidden = useTabHidden();
   const hold = mode === 'hold';
   const item = items.length ? items[index % items.length] : null;
-  // Holding (reduced motion): one picture, or with none a commercial's still frame.
-  const held = hold ? items.find(isPicture) || items.find((i) => i.kind === 'ad') || null : null;
-  const shown = hold ? held : item;
+  // Holding (reduced motion): one picture with the first card over it, or the
+  // card alone. Never a commercial.
+  const held = hold ? items.find(isPicture) || null : null;
+  const heldCard = hold ? items.find((i) => i.kind === 'card') || null : null;
+  const shown = hold ? held || heldCard : item;
   const advance = useCallback(() => {
     if (items.length > 1) setSwitching(true);
   }, [items.length]);
@@ -134,14 +136,13 @@ function Reel({ items, mode, segmentMs, onBlocked, onSegment }) {
   if (!item) return <StaticNoise className="absolute inset-0" testId="tv-static" />;
 
   if (hold) {
-    if (held && held.kind === 'ad') return <TvCommercial item={held} still />;
-    const card = items.find((i) => i.kind === 'card');
+    if (!held) return heldCard ? <Card item={heldCard} /> : null;
     return (
       <>
-        {held && <Still src={held.kind === 'video' ? held.poster : held.src} moving={false} />}
-        {card && (
+        <Still src={held.kind === 'video' ? held.poster : held.src} moving={false} />
+        {heldCard && (
           <span className="absolute inset-x-0 bottom-0 bg-onair-surface-4/90 px-[5cqw] py-[3cqw] font-onair text-[max(10px,5cqw)] font-bold leading-tight text-onair-ink-1">
-            {card.text}
+            {heldCard.text}
           </span>
         )}
       </>
@@ -151,8 +152,8 @@ function Reel({ items, mode, segmentMs, onBlocked, onSegment }) {
   return (
     <>
       {item.kind === 'card' && <Card item={item} />}
-      {/* Keyed by its slot, and remounted when the tab comes back (the clock restarts then), so the beats run from the top in step. */}
-      {item.kind === 'ad' && <TvCommercial key={`${index}:${item.id}:${hidden ? 'away' : 'on'}`} item={item} />}
+      {/* Keyed by its slot, and remounted when the tab comes back (the clock restarts then), so the beats run from the top in step. Save-Data gets the still frame. */}
+      {item.kind === 'ad' && <TvCommercial key={`${index}:${item.id}:${hidden ? 'away' : 'on'}`} item={item} still={mode === 'lite'} />}
       {item.kind === 'video' && mode === 'video' && <Video item={item} hidden={hidden} onEnded={advance} onBlocked={onBlocked} />}
       {item.kind === 'video' && mode !== 'video' && <Still src={item.poster} moving />}
       {item.kind === 'still' && <Still src={item.src} moving />}

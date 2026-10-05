@@ -54,10 +54,13 @@ function withBreaks(program, ads, counts) {
   return out;
 }
 
-// 'hold': one still and a card, no advancing (reduced motion). 'stills': no
-// video (Save-Data, or the browser refused autoplay). Otherwise 'video'.
+// 'hold': one still and a card, no advancing and no commercials (reduced
+// motion). 'lite' (Save-Data): posters, and each commercial as its still frame
+// (one image). 'stills': posters with full commercials (the browser refused
+// autoplay, which is no data concern). Otherwise 'video'.
 export function reelMode({ reducedMotion, saveData, autoplayBlocked }) {
   if (reducedMotion) return 'hold';
-  if (saveData || autoplayBlocked) return 'stills';
+  if (saveData) return 'lite';
+  if (autoplayBlocked) return 'stills';
   return 'video';
 }

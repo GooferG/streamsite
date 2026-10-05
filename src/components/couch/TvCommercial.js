@@ -6,9 +6,9 @@ import { COMMERCIALS } from './commercials';
 // A commercial on the couch TV (copy and art in commercials.js). A few beats
 // cut together inside AD_MS: images with a slow push-in, words that step in,
 // a lower-third. Every move is a motion-safe CSS keyframe on transform or
-// opacity, timed by its inline delay in seconds. `still` (reduced motion)
-// draws the key frame alone: key image, headline, lower-third. Decorative,
-// like the whole TV: the TV door's link says what is on.
+// opacity, timed by its inline delay in seconds. `still` (Save-Data) draws
+// the key frame alone, one image at most: key image, headline, lower-third.
+// Decorative, like the whole TV: the TV door's link says what is on.
 
 const FULL = 'absolute inset-0 h-full w-full object-cover';
 const moving = (still, cls) => (still ? '' : cls);

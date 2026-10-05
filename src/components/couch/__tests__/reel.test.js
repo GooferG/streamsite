@@ -130,7 +130,10 @@ test('without a manifest it uses the newest tape and clip thumbnails', () => {
 
 test('reelMode', () => {
   expect(reelMode({})).toBe('video');
-  expect(reelMode({ saveData: true })).toBe('stills');
+  // Save-Data is its own mode: posters, and commercials as still frames.
+  expect(reelMode({ saveData: true })).toBe('lite');
+  expect(reelMode({ saveData: true, autoplayBlocked: true })).toBe('lite');
+  // A refused autoplay is no data concern: posters, full commercials.
   expect(reelMode({ autoplayBlocked: true })).toBe('stills');
   expect(reelMode({ reducedMotion: true, saveData: true })).toBe('hold');
 });

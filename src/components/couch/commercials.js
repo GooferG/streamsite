@@ -1,4 +1,4 @@
-import { IDENT, OPERATOR } from '../store/storeArt';
+import { OPERATOR } from '../store/storeArt';
 
 // The couch TV's commercials for the site's own channels. Off air, reel.js
 // runs one after every two clips; while one is on, the TV door goes to its
@@ -15,10 +15,11 @@ export const COMMERCIALS = {
     teaser: 'GSN commercial',
     sentence: 'A Goofer Shopping Network commercial.',
     url: 'goofer.tv/store',
+    // TV-size copies of the store's art (public/tv/ads); the operator is the store's own.
     art: {
-      ident: IDENT,
+      ident: '/tv/ads/gsn-ident.webp',
       key: OPERATOR.call,
-      items: ['/gsn/items/bonus-buy.webp', '/gsn/items/pick-a-slot.webp', '/gsn/items/smoke-break.webp'],
+      items: ['/tv/ads/bonus-buy.webp', '/tv/ads/pick-a-slot.webp', '/tv/ads/smoke-break.webp'],
     },
     lines: { hook: 'Operators are standing by.', pitch: 'Spend your tickets.', cta: 'Call now' },
   },

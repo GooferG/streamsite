@@ -265,6 +265,20 @@ describe('the TV door follows a commercial', () => {
     expect(screen.getByTestId('page').textContent).toBe('/store');
   });
 
+  test('Save-Data: the commercial is one still frame, and the door still follows it', () => {
+    Object.defineProperty(navigator, 'connection', { configurable: true, value: { saveData: true } });
+    try {
+      renderSite();
+      toGsn();
+      const ad = screen.getByTestId('tv-ad');
+      expect(ad.getAttribute('data-still')).toBe('true');
+      expect(ad.querySelectorAll('img')).toHaveLength(1);
+      expect(tv().getAttribute('href')).toBe('/store');
+    } finally {
+      delete navigator.connection;
+    }
+  });
+
   test('phones: the TV crop follows the commercial too', () => {
     renderSite(F.offair.input, false);
     toGsn();

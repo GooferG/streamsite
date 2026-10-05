@@ -116,6 +116,26 @@ describe('the cycle', () => {
     expect(shown()).toBe('history');
   });
 
+  test('a window that loads late ahead of the one on screen never replaces it', () => {
+    // The hunts answer first; the board (first in the order) a moment later.
+    const late = { ...IDLE, windows: IDLE.windows.filter((w) => w.id !== 'leaderboard') };
+    const { rerender } = render(<LaptopScreen laptop={late} />);
+    expect(shown()).toBe('recap');
+    rerender(<LaptopScreen laptop={IDLE} />);
+    expect(shown()).toBe('recap');
+    step(WINDOW_MS);
+    expect(shown()).toBe('history');
+  });
+
+  test('a window joining right after the one on screen never holds it past its seven seconds', () => {
+    const pick = (...ids) => ({ ...IDLE, windows: IDLE.windows.filter((w) => ids.includes(w.id)) });
+    const { rerender } = render(<LaptopScreen laptop={pick('recap', 'screensaver')} />);
+    step(4000);
+    rerender(<LaptopScreen laptop={pick('recap', 'history', 'screensaver')} />);
+    step(WINDOW_MS - 4000);
+    expect(shown()).toBe('history');
+  });
+
   test('one window stays put', () => {
     render(<LaptopScreen laptop={only('screensaver')} />);
     for (let i = 0; i < 3; i += 1) step(WINDOW_MS);
@@ -157,6 +177,15 @@ test('a live hunt: progress, money back against the cost, the next slot and the 
   const rows = Array.from(screen.getByTestId('laptop-window').querySelectorAll('li'), (li) => li.textContent);
   expect(rows).toEqual(['Sugar Rush 100096.0x', 'Chaos Crew 384.0x', 'Rip City252x']);
   expect(screen.getByTestId('laptop-progress').style.transform).toBe(`scaleX(${14 / 23})`);
+});
+
+test('five-digit Canadian money wraps under itself rather than clipping', () => {
+  render(<LaptopScreen laptop={laptopState(F.huntcad.input)} />);
+  const money = screen.getByTestId('laptop-money');
+  expect(money.textContent).toBe('CA$10,300of CA$12,500');
+  expect(money.className).toContain('flex-wrap');
+  expect(money.innerHTML).not.toContain('truncate');
+  expect(screen.getByTestId('laptop-next').textContent).toBe('NextDenshoCA$6.25');
 });
 
 test('the start of a hunt reads as nothing back yet, with no cost or next slot to show', () => {

@@ -336,11 +336,37 @@ describe('the laptop door follows the window on screen', () => {
     expect(screen.getByTestId('page').textContent).toBe('/gamba/leaderboard');
   });
 
-  test('a live hunt keeps the laptop on Hunts', () => {
+  test('a live hunt keeps the laptop on Hunts, and says so', () => {
     renderSite(F.hunt.input);
     expect(laptop().getAttribute('href')).toBe('/gamba/hunts');
-    step(WINDOW_MS * 2);
-    expect(laptop().getAttribute('aria-label')).toBe('Laptop: A hunt is running. 14 of 23 bonuses opened, $412 back so far. Opens Gamba.');
+    step(WINDOW_MS);
+    step(WINDOW_MS);
+    expect(laptop().getAttribute('aria-label')).toBe('Laptop: A hunt is running. 14 of 23 bonuses opened, $412 back so far. Opens Hunts.');
+  });
+
+  test('a commercial on the TV and a window on the laptop at once: each door keeps its own', () => {
+    const tv = () => screen.getByRole('link', { name: /^TV:/ });
+    const WINDOW_DOOR = {
+      leaderboard: ['/gamba/leaderboard', 'Leaderboard'],
+      recap: ['/gamba/hunts', 'Hunts'],
+      history: ['/gamba/hunts', 'Hunts'],
+      screensaver: ['/gamba', 'Gamba'],
+    };
+    renderSite();
+    // To the GSN commercial: the newest tape, a card and a clip, each with its static.
+    for (let i = 0; i < 3; i += 1) {
+      step(SEGMENT_MS);
+      step(STATIC_MS);
+    }
+    expect(screen.getByTestId('tv-ad').getAttribute('data-ad')).toBe('gsn');
+    expect(tv().getAttribute('href')).toBe('/store');
+    expect(tv().getAttribute('aria-label')).toBe('TV: A Goofer Shopping Network commercial. Opens Store.');
+    // By now the laptop has moved on from the board too; its door follows its own window.
+    const onLaptop = document.querySelector('[data-window]').getAttribute('data-window');
+    expect(onLaptop).not.toBe('leaderboard');
+    const [href, page] = WINDOW_DOOR[onLaptop];
+    expect(laptop().getAttribute('href')).toBe(href);
+    expect(laptop().getAttribute('aria-label')).toMatch(new RegExp(`^Laptop: .* Opens ${page}\\.$`));
   });
 
   test('phones have no laptop screen, so the tile keeps its own door', () => {

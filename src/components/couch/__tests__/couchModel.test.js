@@ -1,5 +1,15 @@
 import { COUCH_FIXTURES as F } from '../couchFixtures';
-import { DOOR_ORDER, buildCouch, isNewTape, laptopState, steamCovers, withCommercial, withLaptopWindow } from '../couchModel';
+import {
+  DOOR_ORDER,
+  buildCouch,
+  isFinishedHunt,
+  isNewTape,
+  laptopState,
+  latestFinished,
+  steamCovers,
+  withCommercial,
+  withLaptopWindow,
+} from '../couchModel';
 
 const door = (couch, id) => couch.doors.find((d) => d.id === id);
 const NOW = F.offair.input.now;
@@ -81,6 +91,16 @@ test('a live hunt turns the laptop on and points it at Hunts', () => {
   expect(door(c, 'laptop').sentence).toBe('A hunt is running. 14 of 23 bonuses opened, $412 back so far.');
   expect(door(c, 'laptop').href).toBe('/gamba/hunts');
   expect(door(c, 'laptop').lit).toBe(true);
+});
+
+test('a hunt in Canadian dollars keeps its currency and five-digit money', () => {
+  expect(buildCouch(F.huntcad.input).laptop).toMatchObject({
+    mode: 'hunt',
+    back: 10300,
+    cost: 12500,
+    currency: 'CAD',
+    next: { slot: 'Densho', bet: 6.25 },
+  });
 });
 
 test('an open round', () => {
@@ -258,6 +278,58 @@ describe('the laptop desktop', () => {
     expect(withLaptopWindow(c, 'nope')).toBe(c);
     const hunt = buildCouch(F.hunt.input);
     expect(withLaptopWindow(hunt, 'leaderboard')).toBe(hunt);
+  });
+
+  test('a bust still shows: a 0% hunt is a red sliver, never an empty slot', () => {
+    const bust = { id: 'b0', status: 'archived', totalWon: 0, pot: 600 };
+    const history = win(laptopState(withRecent([bust, ...F.offair.input.hunts.recent])), 'history');
+    const bar = history.bars[history.bars.length - 1];
+    expect(bar).toMatchObject({ id: 'b0', pct: 0, up: false });
+    expect(bar.height).toBe(0.03);
+    expect(history.latest).toBe(0);
+  });
+
+  test('only finished hunts count, for the history and for the last hunt', () => {
+    const recent = F.offair.input.hunts.recent;
+    // The statuses in use: live, and finished, archived (communityhunts) or ended.
+    for (const status of ['live', 'draft', 'pending', 'scheduled', 'upcoming', 'setup', 'created', 'Draft']) {
+      const early = { id: `x-${status}`, status, totalWon: 0, pot: 600 };
+      expect(isFinishedHunt(early)).toBe(false);
+      expect(latestFinished({ recent: [early, ...recent] }).id).toBe('h9');
+      expect(win(laptopState(withRecent([early, ...recent])), 'history').bars.map((b) => b.id)).not.toContain(early.id);
+    }
+    for (const status of ['finished', 'archived', 'ended', undefined]) {
+      expect(isFinishedHunt({ id: 'y', status, totalWon: 1, pot: 2 })).toBe(true);
+    }
+    // When it's knowable that nothing was opened, it didn't happen yet.
+    expect(isFinishedHunt({ id: 'z', status: 'archived', bonuses: [{ bet: 1, win: null }] })).toBe(false);
+    expect(isFinishedHunt({ id: 'z', status: 'archived', bonusCount: 0 })).toBe(false);
+    expect(isFinishedHunt({ id: 'z', status: 'archived', bonusCount: null })).toBe(true);
+    expect(isFinishedHunt(null)).toBe(false);
+  });
+
+  test('every laptop door names the page it opens', () => {
+    const label = (c) => door(c, 'laptop').label;
+    expect(label(buildCouch(F.offair.input))).toMatch(/ Opens Gamba\.$/);
+    expect(label(buildCouch(F.hunt.input))).toBe('Laptop: A hunt is running. 14 of 23 bonuses opened, $412 back so far. Opens Hunts.');
+    expect(label(buildCouch(F.round.input))).toMatch(/ Opens Hunts\.$/);
+    const c = buildCouch(F.offair.input);
+    expect(c.laptop.windows.map((w) => [w.href, w.destination])).toEqual([
+      ['/gamba/leaderboard', 'Leaderboard'],
+      ['/gamba/hunts', 'Hunts'],
+      ['/gamba/hunts', 'Hunts'],
+      ['/gamba', 'Gamba'],
+    ]);
+  });
+
+  test('a commercial on the TV and a window on the laptop at once: neither door clobbers the other', () => {
+    const c = buildCouch(F.offair.input);
+    for (const both of [withLaptopWindow(withCommercial(c, 'gsn'), 'recap'), withCommercial(withLaptopWindow(c, 'recap'), 'gsn')]) {
+      expect(door(both, 'tv')).toMatchObject({ href: '/store', label: 'TV: A Goofer Shopping Network commercial. Opens Store.' });
+      expect(door(both, 'laptop')).toMatchObject({ href: '/gamba/hunts', teaser: 'Best hit 1,240x' });
+      expect(door(both, 'laptop').label).toMatch(/ Opens Hunts\.$/);
+      expect(both.doors.filter((d) => d.id !== 'tv' && d.id !== 'laptop')).toEqual(c.doors.filter((d) => d.id !== 'tv' && d.id !== 'laptop'));
+    }
   });
 
   test('every window keeps the voice rules', () => {

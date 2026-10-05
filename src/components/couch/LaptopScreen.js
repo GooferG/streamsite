@@ -190,9 +190,10 @@ function Tracker({ laptop, calm }) {
           />
         </span>
       ) : null}
-      <div className="flex shrink-0 items-baseline gap-[1.5cqw] leading-none">
+      {/* Money back of the cost; "of …" wraps under a long figure (a five-digit CA$ hunt). */}
+      <div data-testid="laptop-money" className="flex shrink-0 flex-wrap items-baseline gap-x-[1.5cqw] gap-y-[0.8cqw] leading-none">
         <span className="font-onair text-[max(10px,8cqw)] font-extrabold text-onair-ink-1">{shortMoney(back, currency)}</span>
-        {cost != null && <span className={`${FIGURE} text-onair-ink-4`}>of {shortMoney(cost, currency)}</span>}
+        {cost != null && <span className={`${TEXT} font-medium text-onair-ink-4`}>of {shortMoney(cost, currency)}</span>}
       </div>
       {next && (
         <div data-testid="laptop-next" className="flex shrink-0 items-baseline gap-[2cqw] leading-none">
@@ -201,9 +202,10 @@ function Tracker({ laptop, calm }) {
           {next.bet != null && <span className={`${FIGURE} shrink-0 text-onair-ink-5`}>{betMoney(next.bet, currency)}</span>}
         </div>
       )}
-      <ol className="flex min-h-0 flex-1 flex-col justify-end gap-[1cqw]">
+      {/* Newest first; short on room, whole rows wrap out of sight, the oldest first. */}
+      <ol className="flex min-h-0 flex-1 flex-col flex-wrap content-start gap-[1cqw] overflow-hidden">
         {recent.map((b, i) => (
-          <li key={i} className="flex items-baseline gap-[2cqw] leading-none">
+          <li key={i} className="flex w-full items-baseline gap-[2cqw] leading-none">
             <span className={`${TEXT} min-w-0 flex-1 truncate font-medium text-onair-ink-3`}>{b.slot}</span>
             {b.multi != null && <span className={`${FIGURE} shrink-0 font-bold text-onair-ink-2`}>{multiplier(b.multi)}</span>}
           </li>
@@ -229,21 +231,34 @@ function Round({ laptop, calm }) {
   );
 }
 
-// One window at a time, each up for WINDOW_MS, wrapping. The clock follows the
-// window on screen and the one after it, so fresh data (a new laptop object
-// every poll) never restarts it, and a window that loads late joins the
-// rotation without moving the one on screen.
+// One window at a time, each up for WINDOW_MS, wrapping. The window on screen
+// is pinned by id as soon as it shows, so a window that loads late (ahead of it
+// in the order or after it) joins the rotation without moving it. Its clock
+// runs from when it came up: fresh data (a new laptop object every poll) and a
+// new window joining never restart it, and it hands over to whichever window
+// follows it when the time is up.
 function useWindowCycle(windows) {
   const [currentId, setCurrentId] = useState(null);
-  const at = Math.max(0, windows.findIndex((w) => w.id === currentId));
+  const found = windows.findIndex((w) => w.id === currentId);
+  const at = Math.max(0, found);
   const current = windows[at] || null;
   const shownId = current ? current.id : null;
-  const nextId = windows.length > 1 ? windows[(at + 1) % windows.length].id : null;
+  const nextRef = useRef(null);
+  nextRef.current = windows.length > 1 ? windows[(at + 1) % windows.length].id : null;
+  const cycles = windows.length > 1;
+
+  // Pin what's on screen: the first window to show, or the one standing in for a window that left.
   useEffect(() => {
-    if (!nextId) return undefined;
-    const t = setTimeout(() => setCurrentId(nextId), WINDOW_MS);
+    if (shownId && found < 0) setCurrentId(shownId);
+  }, [shownId, found]);
+
+  useEffect(() => {
+    if (!cycles) return undefined;
+    const t = setTimeout(() => {
+      if (nextRef.current) setCurrentId(nextRef.current);
+    }, WINDOW_MS);
     return () => clearTimeout(t);
-  }, [shownId, nextId]);
+  }, [shownId, cycles]);
   return current;
 }
 

@@ -1,4 +1,5 @@
 import { SOCIAL_LINKS } from '../../constants';
+import { GAMBA_HUB, channelForPath } from '../../data/gambaTools';
 import { formatClock, upNext } from '../../utils/scheduleTime';
 import { huntFeature } from '../gamba/guide';
 import { huntMode, huntStats, isOpened } from '../hunts/huntStats';
@@ -45,8 +46,24 @@ export function tvState({ statusReady, isLive }) {
   return statusReady ? 'offair' : 'waiting';
 }
 
-export const latestFinished = (hunts) =>
-  ((hunts && hunts.recent) || []).find((h) => h && h.status !== 'live') || null;
+// A hunt that has run its course. communityhunts' recent list carries every
+// status (in use: live, finished, archived, ended), so a live or not-yet-live
+// hunt never counts, nor one that is known to have opened nothing.
+const NOT_FINISHED = new Set(['live', 'draft', 'pending', 'scheduled', 'upcoming', 'setup', 'created']);
+export function isFinishedHunt(h) {
+  if (!h || NOT_FINISHED.has(String(h.status || '').toLowerCase())) return false;
+  if (Array.isArray(h.bonuses)) return h.bonuses.some(isOpened);
+  return !(h.bonusCount != null && Number(h.bonusCount) === 0);
+}
+
+export const latestFinished = (hunts) => ((hunts && hunts.recent) || []).find(isFinishedHunt) || null;
+
+// The page a Gamba href opens, by the name the Gamba tools go by:
+// "Hunts", "Leaderboard", or "Gamba" for the hub.
+export function gambaPage(href) {
+  const tool = channelForPath(href);
+  return tool && tool !== GAMBA_HUB ? tool.label : 'Gamba';
+}
 
 function bestHit(hunt) {
   if (!hunt || !Array.isArray(hunt.bonuses)) return null;
@@ -61,10 +78,12 @@ function bestHit(hunt) {
 // and money builders get real numbers only (a missing one would print an em dash).
 const BOARD_ROWS = 5;
 const HISTORY_HUNTS = 5;
+// A bust still shows as a sliver of a bar.
+const MIN_BAR = 0.03;
 const num = (v) => (v == null || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
 const slotName = (b) => b.slot || 'A slot';
 const multiOf = (b) => num(b.multiplier) ?? (num(b.bet) > 0 && num(b.win) != null ? num(b.win) / num(b.bet) : null);
-const doorCopy = ({ teaser, sentence }, destination) => ({ teaser, sentence, destination });
+const doorCopy = ({ teaser, sentence }, href) => ({ href, teaser, sentence, destination: gambaPage(href) });
 
 function huntTracker(feature) {
   const s = feature.stats;
@@ -90,11 +109,10 @@ function boardWindow(leaders, resetsIn) {
   if (!rows.length) return null;
   return {
     id: 'leaderboard',
-    href: '/gamba/leaderboard',
     title: 'BEAN board',
     rows,
     resetsIn,
-    ...doorCopy(COPY.laptopBoard({ leader: rows[0], resetsIn }), 'Leaderboard'),
+    ...doorCopy(COPY.laptopBoard({ leader: rows[0], resetsIn }), '/gamba/leaderboard'),
   };
 }
 
@@ -106,7 +124,7 @@ function huntDay(hunt, timeZone) {
 
 function recapWindow(hunt, timeZone) {
   const s = huntStats(hunt, null);
-  if (s.won == null) return null;
+  if (!isFinishedHunt(hunt) || s.won == null) return null;
   const currency = hunt.currency || null;
   const best = bestHit(hunt);
   const day = huntDay(hunt, timeZone);
@@ -118,7 +136,6 @@ function recapWindow(hunt, timeZone) {
     .slice(0, 3);
   return {
     id: 'recap',
-    href: '/gamba/hunts',
     title: day ? `Hunt · ${day}` : 'Last hunt',
     start: s.startCost,
     won: s.won,
@@ -126,7 +143,7 @@ function recapWindow(hunt, timeZone) {
     currency,
     best,
     top,
-    ...doorCopy(COPY.laptopLastHunt({ paid: s.won, start: s.startCost, currency, best }), 'Hunts'),
+    ...doorCopy(COPY.laptopLastHunt({ paid: s.won, start: s.startCost, currency, best }), '/gamba/hunts'),
   };
 }
 
@@ -134,7 +151,7 @@ function recapWindow(hunt, timeZone) {
 // tallest fills the chart (between 150% and 300%, taller ones clip).
 function historyWindow(hunts) {
   const done = ((hunts && hunts.recent) || [])
-    .filter((h) => h && h.status !== 'live')
+    .filter(isFinishedHunt)
     .map((h) => ({ id: h.id, s: huntStats(h, null) }))
     .filter(({ s }) => s.won != null && s.startCost != null)
     .slice(0, HISTORY_HUNTS)
@@ -146,27 +163,25 @@ function historyWindow(hunts) {
     id,
     pct: Math.round(ratios[i]),
     up: ratios[i] >= 100,
-    height: Math.min(ratios[i], ceiling) / ceiling,
+    height: Math.max(MIN_BAR, Math.min(ratios[i], ceiling) / ceiling),
   }));
   const latest = bars[bars.length - 1];
   return {
     id: 'history',
-    href: '/gamba/hunts',
     title: `Last ${bars.length} hunts`,
     bars,
     latest: latest.pct,
     up: latest.up,
     line: 100 / ceiling,
-    ...doorCopy(COPY.laptopHistory({ count: bars.length, paidBack: bars.filter((b) => b.up).length, latest: latest.pct }), 'Hunts'),
+    ...doorCopy(COPY.laptopHistory({ count: bars.length, paidBack: bars.filter((b) => b.up).length, latest: latest.pct }), '/gamba/hunts'),
   };
 }
 
 const screensaverWindow = (resetsIn) => ({
   id: 'screensaver',
-  href: '/gamba',
   title: 'Screensaver',
   resetsIn,
-  ...doorCopy(COPY.laptopIdle({ resetsIn }), 'Gamba'),
+  ...doorCopy(COPY.laptopIdle({ resetsIn }), '/gamba'),
 });
 
 export function laptopState({ hunts, round, lastHunt, leaders, leaderboardEndsAt, now, timeZone }) {
@@ -337,7 +352,7 @@ export function buildCouch(input) {
   };
 
   const doors = DOOR_ORDER.filter((id) => copy[id]).map((id) => {
-    const destination = id === 'tv' && state === 'live' ? 'the stream' : DESTINATION[id];
+    const destination = id === 'tv' && state === 'live' ? 'the stream' : id === 'laptop' ? gambaPage(href.laptop) : DESTINATION[id];
     // The room names its objects ("Tapes" in the 90s room); COPY's kicker is the fallback.
     const kicker = (ROOM.names && ROOM.names[id]) || copy[id].kicker;
     return {

@@ -87,6 +87,16 @@ const LIVE_HUNT = {
   ),
 };
 
+// The same hunt in Canadian dollars at CA$6.25 a spin: five-digit money,
+// CA$10,300 back of CA$12,500 (GooferG's real hunts are often in CAD).
+const LIVE_HUNT_CAD = {
+  ...LIVE_HUNT,
+  id: 'h11',
+  currency: 'CAD',
+  pot: 12500,
+  bonuses: LIVE_HUNT.bonuses.map((b) => ({ ...b, bet: 6.25, win: b.multiplier == null ? null : b.multiplier * 6.25 })),
+};
+
 const BASE = {
   now: NOW,
   timeZone: 'America/Phoenix',
@@ -131,6 +141,7 @@ export const COUCH_FIXTURES = {
   live: { input: LIVE },
   giveaway: { input: { ...LIVE, giveaway: { keyword: '!goof', prize: '$25.00 bonus buy', status: 'open' } } },
   hunt: { input: { ...LIVE, hunts: { live: LIVE_HUNT, recent: [], loading: false, error: null } } },
+  huntcad: { input: { ...LIVE, hunts: { live: LIVE_HUNT_CAD, recent: [], loading: false, error: null } } },
   round: { input: { ...BASE, round: { id: 'r1', acceptPredictions: true, status: 'open', entryCount: 37, source: 'manual' } } },
   late: {
     input: {

@@ -91,7 +91,7 @@ export const betMoney = (value, currency) => formatMoney(value, currency || null
 export const wager = (value) => formatUSD(value);
 
 // "1,240x", "48.5x", "5x": a tenth under 100 (none when it is whole), whole
-// above, rounded first so 99.95 reads "100x".
+// above. The tenth comes first, so 99.95 reads "100x".
 export function multiplier(x) {
   const n = Number(x);
   if (!Number.isFinite(n)) return null;

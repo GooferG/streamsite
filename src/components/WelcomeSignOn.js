@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { trapTab } from '../utils/focusTrap';
 import { FOCUS, MONO } from './onAir/classes';
 
 const SEEN_KEY = 'gg_welcome_seen';
@@ -33,21 +34,24 @@ export default function WelcomeSignOn({ introDone, delayMs = SIGN_ON_DELAY_MS })
     return () => clearTimeout(t);
   }, [introDone, delayMs]);
 
-  // Focus the card and wire Esc-to-dismiss while open.
+  // Modal while open: focus the card, keep Tab inside it, Esc dismisses.
   useEffect(() => {
     if (!open) return undefined;
     cardRef.current?.focus();
     const onKey = (e) => {
       if (e.key === 'Escape') dismiss();
+      else trapTab(e, cardRef.current);
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // Focus lands on the page, not on nothing, as the card goes.
   const dismiss = () => {
     markSeen();
     setOpen(false);
+    document.getElementById('main')?.focus({ preventScroll: true });
   };
 
   if (!open) return null;
@@ -57,7 +61,7 @@ export default function WelcomeSignOn({ introDone, delayMs = SIGN_ON_DELAY_MS })
       <div
         ref={cardRef}
         role="dialog"
-        aria-modal="false"
+        aria-modal="true"
         aria-label="First time on the couch"
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}

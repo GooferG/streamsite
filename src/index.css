@@ -27,7 +27,7 @@ code {
 }
 
 /* ─── Global keyframes ────────────────────────────────────────────────────── */
-/* Referenced via inline `style={{ animation: '...' }}` in components.       */
+/* Referenced by components' animation styles and animate-[…] classes.    */
 @keyframes grain {
   0%, 100% { transform: translate(0, 0); }
   10% { transform: translate(-5%, -10%); }

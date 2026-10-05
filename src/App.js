@@ -4,6 +4,7 @@ import {
   Route,
   useNavigate,
   useLocation,
+  useNavigationType,
 } from 'react-router-dom';
 import Navigation from './components/nav/Navigation';
 import HomeMenuButton from './components/nav/HomeMenuButton';
@@ -20,6 +21,7 @@ import { TwitchAuthProvider } from './contexts/TwitchAuthContext';
 import { ControlRoomProvider } from './contexts/ControlRoomContext';
 import StaffLayer from './components/controlRoom/StaffLayer';
 import { PAGE_LOADERS } from './routes/loaders';
+import { titleFor } from './routes/pageTitles';
 import {
   dropTwitchToken,
   getTwitchAccessToken,
@@ -82,6 +84,7 @@ const PRODUCT_PREFIXES = [
 function StreamingSiteContent() {
   const navigate = useNavigate();
   const location = useLocation();
+  const navType = useNavigationType();
   const [isVisible, setIsVisible] = useState(false);
   const [channelData, setChannelData] = useState(null);
   const [isLive, setIsLive] = useState(false);
@@ -195,6 +198,24 @@ function StreamingSiteContent() {
     window.scrollTo(0, 0);
   }, [location.pathname]);
 
+  // The tab says which page this is.
+  useEffect(() => {
+    document.title = titleFor(location.pathname);
+  }, [location.pathname]);
+
+  // A new page (a link, the nav, a door on the couch) takes focus on #main so
+  // screen readers land on it; Back leaves focus to the page it returns to,
+  // and a page that put focus somewhere itself keeps it.
+  useEffect(() => {
+    if (navType !== 'PUSH') return;
+    const main = document.getElementById('main');
+    const active = document.activeElement;
+    if (!main || (active !== main && main.contains(active))) return;
+    main.focus({ preventScroll: true });
+    // Page changes only: navType is read for the change that just happened.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
   useEffect(() => {
     const KONAMI = [
       'ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
@@ -247,7 +268,7 @@ function StreamingSiteContent() {
       <main
         id="main"
         tabIndex={-1}
-        className={`transition-opacity duration-700 ${isVisible ? 'opacity-100' : 'opacity-0'} ${signalLocking ? 'motion-safe:animate-signal-lock' : ''}`}
+        className={`transition-opacity duration-700 focus:outline-none ${isVisible ? 'opacity-100' : 'opacity-0'} ${signalLocking ? 'motion-safe:animate-signal-lock' : ''}`}
       >
         <ErrorBoundary key={location.pathname}>
         <Suspense

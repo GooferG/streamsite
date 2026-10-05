@@ -21,6 +21,23 @@ function useTabHidden() {
   return hidden;
 }
 
+// The TV scrolled out of sight: the reel pauses as it does for a hidden tab.
+// Without IntersectionObserver it always counts as on screen.
+function useOffScreen(ref) {
+  const [off, setOff] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver !== 'function') return undefined;
+    const io = new IntersectionObserver((entries) => {
+      const last = entries[entries.length - 1];
+      if (last) setOff(!last.isIntersecting);
+    });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [ref]);
+  return off;
+}
+
 function Card({ item }) {
   return (
     <div className="flex h-full w-full flex-col justify-center bg-onair-surface-4 px-[8cqw]" data-testid="tv-card">
@@ -87,11 +104,14 @@ function Still({ src, moving }) {
 // `held`: the TV door is hovered or focused, so the segment on screen (and the
 // door that follows it) stays until it isn't; then the segment gets its full
 // time again. A loop that ends meanwhile waits for the hold to end.
-function Reel({ items, mode, segmentMs, held: doorHeld, onBlocked, onSegment }) {
+// `away`: the TV is off screen, which pauses the loop and holds the clock like
+// a hidden tab.
+function Reel({ items, mode, segmentMs, held: doorHeld, away, onBlocked, onSegment }) {
   const [index, setIndex] = useState(0);
   const [switching, setSwitching] = useState(false);
   const [due, setDue] = useState(false);
-  const hidden = useTabHidden();
+  const tabHidden = useTabHidden();
+  const hidden = tabHidden || away;
   const hold = mode === 'hold';
   const item = items.length ? items[index % items.length] : null;
   // Holding (reduced motion): one picture with the first card over it, or the
@@ -166,7 +186,7 @@ function Reel({ items, mode, segmentMs, held: doorHeld, onBlocked, onSegment }) 
   return (
     <>
       {item.kind === 'card' && <Card item={item} />}
-      {/* Keyed by its slot, and remounted when the tab comes back (the clock restarts then), so the beats run from the top in step. Save-Data gets the still frame. */}
+      {/* Keyed by its slot, and remounted when the tab or the TV comes back (the clock restarts then), so the beats run from the top in step. Save-Data gets the still frame. */}
       {item.kind === 'ad' && <TvCommercial key={`${index}:${item.id}:${hidden ? 'away' : 'on'}`} item={item} still={mode === 'lite'} />}
       {item.kind === 'video' && mode === 'video' && <Video item={item} hidden={hidden} onEnded={advance} onBlocked={onBlocked} />}
       {item.kind === 'video' && mode !== 'video' && <Still src={item.poster} moving />}
@@ -211,8 +231,11 @@ export default function CouchTv({ tv, items, mode, flipTo = null, held = false, 
   const reportSegment = useCallback((item) => {
     if (segmentRef.current) segmentRef.current(item);
   }, []);
+  const screenRef = useRef(null);
+  const away = useOffScreen(screenRef);
   return (
     <div
+      ref={screenRef}
       className="relative h-full w-full overflow-hidden bg-onair-surface-4"
       style={{ containerType: 'inline-size' }}
       aria-hidden="true"
@@ -221,7 +244,7 @@ export default function CouchTv({ tv, items, mode, flipTo = null, held = false, 
       {tv.state === 'waiting' && <StaticNoise className="absolute inset-0" testId="tv-static" />}
       {tv.state === 'live' && <LivePreview tv={tv} />}
       {tv.state === 'offair' && (
-        <Reel items={items} mode={mode} segmentMs={segmentMs} held={held} onBlocked={reportBlocked} onSegment={reportSegment} />
+        <Reel items={items} mode={mode} segmentMs={segmentMs} held={held} away={away} onBlocked={reportBlocked} onSegment={reportSegment} />
       )}
       {flipTo === 'gsn' && (
         <>

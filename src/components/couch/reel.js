@@ -57,10 +57,15 @@ function withBreaks(program, ads, counts) {
   return out;
 }
 
+// Save-Data, or a connection the browser rates 3G or slower: the TV goes lite.
+const SLOW = ['slow-2g', '2g', '3g'];
+export const liteConnection = (connection) => !!connection && (!!connection.saveData || SLOW.includes(connection.effectiveType));
+
 // 'hold': one still and a card, no advancing and no commercials (reduced
-// motion). 'lite' (Save-Data): posters, and each commercial as its still frame
-// (one image). 'stills': posters with full commercials (the browser refused
-// autoplay, which is no data concern). Otherwise 'video'.
+// motion). 'lite' (Save-Data or a slow connection, `saveData`): posters, and
+// each commercial as its still frame (one image). 'stills': posters with full
+// commercials (the browser refused autoplay, which is no data concern).
+// Otherwise 'video'.
 export function reelMode({ reducedMotion, saveData, autoplayBlocked }) {
   if (reducedMotion) return 'hold';
   if (saveData) return 'lite';

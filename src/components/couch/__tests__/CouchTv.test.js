@@ -333,3 +333,45 @@ describe('the segment clock', () => {
     expect(screen.getByTestId('tv-card')).toBeTruthy();
   });
 });
+
+describe('off screen (scrolled out of sight)', () => {
+  let report;
+  const realPause = HTMLMediaElement.prototype.pause;
+  beforeEach(() => {
+    window.IntersectionObserver = class {
+      constructor(cb) {
+        report = (isIntersecting) => cb([{ isIntersecting }]);
+      }
+      observe() {}
+      disconnect() {}
+    };
+    HTMLMediaElement.prototype.pause = jest.fn();
+  });
+  afterEach(() => {
+    delete window.IntersectionObserver;
+    HTMLMediaElement.prototype.pause = realPause;
+  });
+
+  test('the clock holds while the TV is out of sight, then gives the segment its full time', () => {
+    render(<CouchTv tv={OFF} items={[STILL, CARD]} mode="stills" segmentMs={1000} />);
+    act(() => report(false));
+    act(() => jest.advanceTimersByTime(5000));
+    expect(screen.queryByTestId('tv-switch')).toBeNull();
+    expect(screen.getByTestId('tv-still')).toBeTruthy();
+    act(() => report(true));
+    act(() => jest.advanceTimersByTime(999));
+    expect(screen.queryByTestId('tv-switch')).toBeNull();
+    act(() => jest.advanceTimersByTime(1));
+    expect(screen.getByTestId('tv-switch')).toBeTruthy();
+  });
+
+  test('a playing loop pauses out of sight and plays again in sight', () => {
+    render(<CouchTv tv={OFF} items={[VIDEO, CARD]} mode="video" />);
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(1);
+    act(() => report(false));
+    expect(HTMLMediaElement.prototype.pause).toHaveBeenCalledTimes(1);
+    act(() => report(true));
+    expect(HTMLMediaElement.prototype.play).toHaveBeenCalledTimes(2);
+    expect(screen.getByTestId('tv-video')).toBeTruthy();
+  });
+});

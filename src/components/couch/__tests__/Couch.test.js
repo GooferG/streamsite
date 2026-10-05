@@ -416,6 +416,19 @@ describe('the TV door follows a commercial', () => {
     }
   });
 
+  test('a 3G connection is treated like Save-Data: the commercial is one still frame', () => {
+    Object.defineProperty(navigator, 'connection', { configurable: true, value: { effectiveType: '3g' } });
+    try {
+      renderSite();
+      toGsn();
+      const ad = screen.getByTestId('tv-ad');
+      expect(ad.getAttribute('data-still')).toBe('true');
+      expect(ad.querySelectorAll('img')).toHaveLength(1);
+    } finally {
+      delete navigator.connection;
+    }
+  });
+
   test('pointing at the TV door holds the reel, so the door never changes under you', () => {
     renderSite();
     fireEvent.pointerEnter(tv());

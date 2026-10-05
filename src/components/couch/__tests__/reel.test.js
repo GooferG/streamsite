@@ -1,7 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
 import { buildCouch } from '../couchModel';
 import { COUCH_FIXTURES as F } from '../couchFixtures';
-import { reelItems, reelMode } from '../reel';
+import { liteConnection, reelItems, reelMode } from '../reel';
 import useTvReel from '../useTvReel';
 
 const CARDS = [{ kicker: 'Off air', text: 'A' }, { kicker: 'Tapes', text: 'B' }];
@@ -162,6 +162,16 @@ test('reelMode', () => {
   // A refused autoplay is no data concern: posters, full commercials.
   expect(reelMode({ autoplayBlocked: true })).toBe('stills');
   expect(reelMode({ reducedMotion: true, saveData: true })).toBe('hold');
+});
+
+test('liteConnection: Save-Data or a connection rated 3G or slower', () => {
+  expect(liteConnection({ saveData: true })).toBe(true);
+  ['slow-2g', '2g', '3g'].forEach((effectiveType) => expect(liteConnection({ effectiveType })).toBe(true));
+  expect(liteConnection({ effectiveType: '4g' })).toBe(false);
+  expect(liteConnection({ effectiveType: '4g', saveData: false })).toBe(false);
+  expect(liteConnection({})).toBe(false);
+  expect(liteConnection(undefined)).toBe(false);
+  expect(liteConnection(null)).toBe(false);
 });
 
 function Probe() {

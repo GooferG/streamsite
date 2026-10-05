@@ -9,7 +9,7 @@ import CouchFront, { ROOM_QUERY } from './CouchFront';
 import TvFrame from './TvFrame';
 import { ART_ASPECT, LAYOUT } from './couchLayout';
 import { buildCouch, withCommercial, withLaptopWindow } from './couchModel';
-import { reelItems, reelMode } from './reel';
+import { liteConnection, reelItems, reelMode } from './reel';
 import { isWatching } from '../../utils/watching';
 import useCouchStage from './useCouchStage';
 
@@ -20,7 +20,7 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 // What the camera aims at: the TV's screen for the TV and the remote.
 export const aimFor = (id) => (id === 'tv' || id === 'remote' ? LAYOUT.screens.tv : LAYOUT.doors[id].rect);
 
-const saveData = () => typeof navigator !== 'undefined' && !!(navigator.connection && navigator.connection.saveData);
+const liteData = () => typeof navigator !== 'undefined' && liteConnection(navigator.connection);
 const NOT_HELD = { tv: false, laptop: false };
 
 // Back lands on the door you left through (once the camera is back on the
@@ -42,7 +42,7 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
   const location = useLocation();
   const [flipTo, setFlipTo] = useState(null);
   const [blocked, setBlocked] = useState(false);
-  const mode = reelMode({ reducedMotion: prefersReducedMotion(), saveData: saveData(), autoplayBlocked: blocked });
+  const mode = reelMode({ reducedMotion: prefersReducedMotion(), saveData: liteData(), autoplayBlocked: blocked });
   const items = useMemo(
     () => reelItems({ reel: input.reel, clips: input.clips, videos: input.videos, cards: couch.tv.cards, ads: couch.tv.ads }),
     [input.reel, input.clips, input.videos, couch.tv.cards, couch.tv.ads]

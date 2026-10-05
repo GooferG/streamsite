@@ -7,7 +7,7 @@ import TvCrop from './TvCrop';
 import Dressing from './Dressing';
 import RoomToys from './RoomToys';
 import { WindowFront, WindowOutside, useWindowState } from './RoomWindow';
-import { roomToys, themeArt } from './themes';
+import { roomToys, themeArt, themeLinks } from './themes';
 import { ART_ASPECT, LAYOUT, center, pctStyle, plateSrc, plateSrcSet } from './couchLayout';
 
 // The couch (spec: The room). Presentational: the art, the live screens and
@@ -20,6 +20,10 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, on
   const [tx, ty] = center(LAYOUT.screens.tv);
   const live = couch.tv.state === 'live';
   const art = themeArt(LAYOUT, couch.theme);
+  const links = themeLinks(couch.theme);
+  const dressing = (art && art.dressing) || [];
+  const unlinked = dressing.filter((l) => !Object.prototype.hasOwnProperty.call(links, l.id));
+  const linked = dressing.filter((l) => Object.prototype.hasOwnProperty.call(links, l.id));
   const win = useWindowState();
   return (
     <section aria-label="Goofer's couch" className="mt-[57px]">
@@ -41,10 +45,11 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, on
             onError={onPlateError}
             className="absolute inset-0 h-full w-full select-none"
           />
-          <Dressing layers={art && art.dressing} />
+          <Dressing layers={unlinked} />
           <RoomToys toys={roomToys(LAYOUT, couch.theme)} />
           <WindowFront win={LAYOUT.window} state={win} theme={couch.theme} aspect={ART_ASPECT} />
           <RoomDoors doors={couch.doors} covers={couch.covers} giveaway={couch.giveaway} onDoor={onDoor} />
+          <Dressing layers={linked} links={links} />
           <span
             className={`couch-dim pointer-events-none absolute inset-0 ${live ? 'couch-dim--live' : ''}`}
             style={{ '--tv-x': `${tx}%`, '--tv-y': `${ty}%` }}

@@ -12,7 +12,7 @@ usage: python scripts/couch-art/measure.py <work-dir> [room-id]
   lamp-off.png                      the plate with the lamp switched off
   skyline.png                       the night skyline strip, transparent background (optional)
   halloween/ (optional)             plate.png, pumpkin-lit.png, witch.png (transparent) and
-                                    masks/cobweb.png, bats-paper.png, pumpkin.png, spider.png, candy.png
+                                    masks/cobweb.png, poster.png, pumpkin.png, spider.png, candy.png
 Writes public/couch/<room>/… and src/components/couch/rooms/<room>.json (final: true).
 """
 import json
@@ -29,7 +29,7 @@ WIDTHS = {1280: 90, 1920: 150, 2560: 250}
 CUT_KB = 40
 NAMES = {"tv": "TV", "note": "Note", "laptop": "Laptop", "tapes": "Tapes", "guide": "TV guide", "games": "Games", "remote": "Remote", "photo": "Photo"}
 TOYS = [("lamp", "toggle"), ("controller", "wiggle"), ("can", "pop")]
-HALLOWEEN_DRESSING = ["cobweb", "bats-paper"]
+HALLOWEEN_DRESSING = ["cobweb", "poster"]
 HALLOWEEN_TOYS = [("pumpkin", "light"), ("spider", "drop"), ("candy", "pop")]
 
 

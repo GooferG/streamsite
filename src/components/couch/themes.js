@@ -6,6 +6,10 @@ export const THEMES = {
   halloween: {
     months: [9], // October (0-based), on Goofer's Arizona calendar
     cards: [{ kicker: 'Spooky season', text: 'The couch is haunted until Halloween.' }],
+    // Dressing layers that are links out, by layer id (everything else is decorative).
+    links: {
+      poster: { href: 'https://beantwitch.com', label: 'Night of the Living Bean, a poster for Bean. Opens beantwitch.com in a new tab.' },
+    },
   },
 };
 
@@ -36,3 +40,6 @@ export const themeArt = (layout, theme) =>
 
 // The room's toys plus the theme's (spec: Toys).
 export const roomToys = (layout, theme) => [...((layout && layout.toys) || []), ...((themeArt(layout, theme) || {}).toys || [])];
+
+// The theme's dressing links ({} when the theme is off, unknown or has none).
+export const themeLinks = (theme) => (isTheme(theme) && THEMES[theme].links) || {};

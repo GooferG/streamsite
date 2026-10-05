@@ -6,7 +6,7 @@ import LaptopScreen from '../LaptopScreen';
 import { buildCouch } from '../couchModel';
 import { COUCH_FIXTURES as F } from '../couchFixtures';
 import { ART_ASPECT, LAYOUT } from '../couchLayout';
-import { THEMES, themeArt, themeFor } from '../themes';
+import { THEMES, themeArt, themeFor, themeLinks } from '../themes';
 import useCouchStage from '../useCouchStage';
 import { toCouchInput } from '../useCouchData';
 
@@ -115,4 +115,82 @@ test('the phone crop renders only dressing that falls inside it', () => {
   } finally {
     LAYOUT.themes = {};
   }
+});
+
+const POSTER = { id: 'poster', src: '/poster.webp', rect: [10, 20, 8, 12] };
+const POSTER_LINKS = { poster: { href: 'https://beantwitch.com', label: 'A poster. Opens in a new tab.' } };
+
+test('a dressing layer with a link is a real external link', () => {
+  const { container } = render(
+    <Dressing layers={[POSTER, { id: 'cobweb', src: '/c.webp', rect: [0, 0, 5, 5] }]} links={POSTER_LINKS} />
+  );
+  const a = container.querySelector('[data-dressing="poster"]');
+  expect(a.tagName).toBe('A');
+  expect(a.getAttribute('href')).toBe('https://beantwitch.com');
+  expect(a.getAttribute('target')).toBe('_blank');
+  expect(a.getAttribute('rel')).toBe('noopener noreferrer');
+  expect(a.getAttribute('aria-label')).toBe(POSTER_LINKS.poster.label);
+  expect(a.getAttribute('aria-hidden')).toBeNull();
+  expect(a.style.left).toBe('10%');
+  expect(a.className).toMatch(/pointer-events-auto/);
+  const web = container.querySelector('[data-dressing="cobweb"]');
+  expect(web.tagName).toBe('IMG');
+  expect(web.getAttribute('aria-hidden')).toBe('true');
+});
+
+test('without links the poster stays a decorative image', () => {
+  const { container } = render(<Dressing layers={[POSTER]} links={null} />);
+  const img = container.querySelector('[data-dressing="poster"]');
+  expect(img.tagName).toBe('IMG');
+  expect(img.getAttribute('aria-hidden')).toBe('true');
+  expect(container.querySelector('a')).toBeNull();
+});
+
+test('themeLinks reads a theme and is empty otherwise', () => {
+  expect(themeLinks('halloween').poster.href).toBe('https://beantwitch.com');
+  expect(themeLinks(null)).toEqual({});
+  expect(themeLinks('nope')).toEqual({});
+  expect(themeLinks('constructor')).toEqual({});
+});
+
+describe('the poster in the room', () => {
+  const beanLinks = (root) => [...root.querySelectorAll('a[href="https://beantwitch.com"]')];
+  const room = (theme, phone = false) => {
+    function R() {
+      const stage = useCouchStage(ART_ASPECT, LAYOUT.art.focal);
+      const couch = buildCouch(theme ? F.halloween.input : F.offair.input);
+      return <CouchFront couch={couch} items={[]} mode="stills" onDoor={() => {}} stage={stage} roomLayout={!phone} />;
+    }
+    return render(<R />);
+  };
+  beforeEach(() => {
+    LAYOUT.themes = { halloween: { dressing: [POSTER] } };
+  });
+  afterEach(() => {
+    LAYOUT.themes = {};
+  });
+
+  test('one link, after every door in tab order', () => {
+    const { container } = room(true);
+    const links = beanLinks(container);
+    expect(links).toHaveLength(1);
+    const doors = [...container.querySelectorAll('[data-door]')];
+    expect(doors.length).toBeGreaterThan(0);
+    doors.forEach((d) => {
+      expect(d.compareDocumentPosition(links[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    });
+  });
+
+  test('theme off, no link', () => {
+    const { container } = room(false);
+    expect(beanLinks(container)).toHaveLength(0);
+  });
+
+  test('the phone branch keeps the poster decorative', () => {
+    const [x, y, w, h] = LAYOUT.phoneCrop;
+    LAYOUT.themes = { halloween: { dressing: [{ ...POSTER, rect: [x + w / 4, y + h / 4, w / 4, h / 4] }] } };
+    const { container } = room(true, true);
+    expect(container.querySelector('[data-dressing="poster"]')).toBeTruthy();
+    expect(beanLinks(container)).toHaveLength(0);
+  });
 });

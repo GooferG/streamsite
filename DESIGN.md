@@ -407,4 +407,4 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 
 **Toys Light Themselves.** A toy may light itself while you play with it (a lit pumpkin is art with an opacity flicker); it never uses a glow token and lights nothing around it. Only the TV lights the room.
 
-**Dressing Never Covers A Door.** Theme dressing and toys are decorative (`aria-hidden`, pointer and touch only, never in the tab order) and never sit on a door or a label; the layout test enforces it.
+**Dressing Never Covers A Door.** Theme dressing and toys are decorative (`aria-hidden`, pointer and touch only, never in the tab order) unless the theme gives a dressing layer a link out (Halloween's poster → beantwitch.com): that layer is a real link, keyboard reachable after the doors, opens a new tab, moves no camera, and is decorative again in the phone crop. Neither ever sits on a door or a label; the layout test enforces it.

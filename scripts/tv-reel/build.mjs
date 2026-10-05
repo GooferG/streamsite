@@ -48,9 +48,20 @@ for (const item of list) {
   const webm = path.join(OUT, `${id}.webm`);
   const mp4 = path.join(OUT, `${id}.mp4`);
   const poster = path.join(OUT, `${id}.jpg`);
-  ff(['-ss', ss, '-t', String(SECONDS), '-i', src, '-vf', vf, '-an', '-c:v', 'libaom-av1', '-crf', '40', '-b:v', '0', '-cpu-used', '6', '-row-mt', '1', webm]);
-  ff(['-ss', ss, '-t', String(SECONDS), '-i', src, '-vf', vf, '-an', '-c:v', 'libx264', '-profile:v', 'main', '-pix_fmt', 'yuv420p', '-crf', '28', '-preset', 'slow', '-movflags', '+faststart', mp4]);
-  ff(['-ss', String(Number(ss) + 1), '-i', src, '-frames:v', '1', '-vf', 'scale=-2:360', '-q:v', '6', poster]);
+  // Busy clips (confetti, coin showers) can blow the budget: step the quality
+  // down until each file fits, a few times at most.
+  for (let crf = 40; crf <= 52; crf += 4) {
+    ff(['-ss', ss, '-t', String(SECONDS), '-i', src, '-vf', vf, '-an', '-c:v', 'libaom-av1', '-crf', String(crf), '-b:v', '0', '-cpu-used', '6', '-row-mt', '1', webm]);
+    if (kb(webm) <= LOOP_KB) break;
+  }
+  for (let crf = 28; crf <= 37; crf += 3) {
+    ff(['-ss', ss, '-t', String(SECONDS), '-i', src, '-vf', vf, '-an', '-c:v', 'libx264', '-profile:v', 'main', '-pix_fmt', 'yuv420p', '-crf', String(crf), '-preset', 'slow', '-movflags', '+faststart', mp4]);
+    if (kb(mp4) <= LOOP_KB) break;
+  }
+  for (let q = 6; q <= 18; q += 3) {
+    ff(['-ss', String(Number(ss) + 1), '-i', src, '-frames:v', '1', '-vf', 'scale=-2:360', '-q:v', String(q), poster]);
+    if (kb(poster) <= POSTER_KB) break;
+  }
   for (const [file, cap] of [[webm, LOOP_KB], [mp4, LOOP_KB], [poster, POSTER_KB]]) {
     if (kb(file) > cap) over.push(`${path.basename(file)} ${kb(file).toFixed(0)} KB > ${cap} KB`);
   }

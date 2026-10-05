@@ -27,3 +27,6 @@ export function readThemeOverride() {
 }
 
 export const themeArt = (layout, theme) => (theme && layout && layout.themes && layout.themes[theme]) || null;
+
+// The room's toys plus the theme's (spec: Toys).
+export const roomToys = (layout, theme) => [...((layout && layout.toys) || []), ...((themeArt(layout, theme) || {}).toys || [])];

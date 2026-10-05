@@ -5,7 +5,8 @@ import DoorTiles from './DoorTiles';
 import RoomDoors from './RoomDoors';
 import TvCrop from './TvCrop';
 import Dressing from './Dressing';
-import { themeArt } from './themes';
+import RoomToys from './RoomToys';
+import { roomToys, themeArt } from './themes';
 import { LAYOUT, center, pctStyle, plateSrc, plateSrcSet } from './couchLayout';
 
 // The couch (spec: The room). Presentational: the art, the live screens and
@@ -38,6 +39,7 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, on
             className="absolute inset-0 h-full w-full select-none"
           />
           <Dressing layers={art && art.dressing} />
+          <RoomToys toys={roomToys(LAYOUT, couch.theme)} />
           <RoomDoors doors={couch.doors} covers={couch.covers} giveaway={couch.giveaway} onDoor={onDoor} />
           <span
             className={`couch-dim pointer-events-none absolute inset-0 ${live ? 'couch-dim--live' : ''}`}

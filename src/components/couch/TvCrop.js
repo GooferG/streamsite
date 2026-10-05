@@ -3,7 +3,7 @@ import useDoor from '../camera/useDoor';
 import { FOCUS } from '../onAir/classes';
 import CouchTv from './CouchTv';
 import Dressing from './Dressing';
-import { themeArt } from './themes';
+import { roomToys, themeArt } from './themes';
 import { LAYOUT, cropStyle, pctStyle, plateSrc, rectAspect, within } from './couchLayout';
 
 // Phones: the TV and its stand, cropped from the same plate, with the live
@@ -22,7 +22,15 @@ export default function TvCrop({ door, tv, items, mode, flipTo, onDoor, onAutopl
       style={{ aspectRatio: rectAspect(crop) }}
     >
       <img src={plateSrc(LAYOUT.art.plate)} alt="" onError={onPlateError} style={cropStyle(crop)} />
-      <Dressing layers={art && art.dressing} frame={crop} />
+      <Dressing
+        layers={[
+          ...((art && art.dressing) || []),
+          ...roomToys(LAYOUT, theme)
+            .filter((t) => t.art && t.art.idle)
+            .map((t) => ({ id: `toy-${t.id}`, src: t.art.idle, rect: t.rect })),
+        ]}
+        frame={crop}
+      />
       <span className="pointer-events-none absolute" style={pctStyle(within(crop, LAYOUT.screens.tv))}>
         <CouchTv tv={tv} items={items} mode={mode} flipTo={flipTo} onAutoplayBlocked={onAutoplayBlocked} />
       </span>

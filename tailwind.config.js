@@ -271,6 +271,21 @@ module.exports = {
         // The end offsets match the bug's box in LaptopScreen (24cqw x 10cqw).
         'onair-bounce-x': { from: { left: '0%' }, to: { left: 'calc(100% - 24cqw)' } },
         'onair-bounce-y': { from: { top: '0%' }, to: { top: 'calc(100% - 10cqw)' } },
+        // Couch toys (spec: Toys). Transform and opacity only.
+        'couch-wiggle': {
+          '0%,100%': { transform: 'rotate(0deg)' },
+          '20%': { transform: 'rotate(-4deg)' },
+          '40%': { transform: 'rotate(4deg)' },
+          '60%': { transform: 'rotate(-3deg)' },
+          '80%': { transform: 'rotate(2deg)' },
+        },
+        'couch-drop': { '0%,100%': { transform: 'translateY(0)' }, '40%,60%': { transform: 'translateY(160%)' } },
+        'couch-pop': {
+          '0%': { transform: 'translateY(0) scale(0.6)', opacity: '0' },
+          '30%': { opacity: '1' },
+          '100%': { transform: 'translateY(-140%) scale(1)', opacity: '0' },
+        },
+        'couch-flicker': { '0%,100%': { opacity: '1' }, '20%': { opacity: '0.82' }, '45%': { opacity: '1' }, '70%': { opacity: '0.88' } },
       },
       animation: {
         'slow-zoom': 'slow-zoom 18s ease-in-out infinite',
@@ -294,6 +309,10 @@ module.exports = {
         'onair-tear': 'onair-tear 0.6s cubic-bezier(0.5, 0, 0.75, 0) forwards',
         'onair-bounce-x': 'onair-bounce-x 7s linear infinite alternate',
         'onair-bounce-y': 'onair-bounce-y 4.3s linear infinite alternate',
+        'couch-wiggle': 'couch-wiggle 0.6s ease-in-out',
+        'couch-drop': 'couch-drop 2.4s ease-in-out',
+        'couch-pop': 'couch-pop 0.9s ease-out forwards',
+        'couch-flicker': 'couch-flicker 0.5s steps(2) infinite',
       },
     },
   },

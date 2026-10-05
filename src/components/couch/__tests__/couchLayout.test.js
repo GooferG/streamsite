@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { DOOR_IDS, LAYOUT, ROOM, SCREEN_CLASS, center, cropStyle, insideSafe, plateSrc, plateSrcSet, within } from '../couchLayout';
+import { DOOR_IDS, LAYOUT, ROOM, SCREEN_CLASS, center, cropStyle, insideSafe, intersects, plateSrc, plateSrcSet, within } from '../couchLayout';
 
 const PUBLIC = path.resolve(__dirname, '../../../../public');
 
@@ -47,4 +47,20 @@ test('helpers', () => {
   expect(within([10, 10, 20, 40], [15, 20, 10, 10])).toEqual([25, 25, 50, 25]);
   expect(cropStyle([25, 50, 50, 25])).toMatchObject({ width: '200%', height: '400%', left: '-50%', top: '-200%' });
   expect(center([10, 20, 30, 40])).toEqual([25, 40]);
+});
+
+test('intersects', () => {
+  expect(intersects([0, 0, 10, 10], [5, 5, 10, 10])).toBe(true);
+  expect(intersects([0, 0, 10, 10], [10, 0, 5, 5])).toBe(false);
+});
+
+test('in the final art no toy or dressing sits on a door', () => {
+  if (!LAYOUT.final) return;
+  const items = [
+    ...(LAYOUT.toys || []),
+    ...Object.values(LAYOUT.themes || {}).flatMap((t) => [...(t.toys || []), ...(t.dressing || [])]),
+  ];
+  for (const item of items) {
+    for (const id of DOOR_IDS) expect([item.id, id, intersects(item.rect, LAYOUT.doors[id].rect)]).toEqual([item.id, id, false]);
+  }
 });

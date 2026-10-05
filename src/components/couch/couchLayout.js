@@ -52,3 +52,5 @@ export function cropStyle([x, y, w, h]) {
 export const rectAspect = ([, , w, h]) => (w * LAYOUT.art.width) / (h * LAYOUT.art.height);
 
 export const center = ([x, y, w, h]) => [x + w / 2, y + h / 2];
+
+export const intersects = ([ax, ay, aw, ah], [bx, by, bw, bh]) => ax < bx + bw && bx < ax + aw && ay < by + bh && by < ay + ah;

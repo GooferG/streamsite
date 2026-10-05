@@ -236,8 +236,9 @@ function Round({ laptop, calm }) {
 // in the order or after it) joins the rotation without moving it. Its clock
 // runs from when it came up: fresh data (a new laptop object every poll) and a
 // new window joining never restart it, and it hands over to whichever window
-// follows it when the time is up.
-function useWindowCycle(windows) {
+// follows it when the time is up. `still` stops the clock (the laptop door is
+// hovered or focused, or reduced motion); the window gets its full time after.
+function useWindowCycle(windows, still) {
   const [currentId, setCurrentId] = useState(null);
   const found = windows.findIndex((w) => w.id === currentId);
   const at = Math.max(0, found);
@@ -245,7 +246,7 @@ function useWindowCycle(windows) {
   const shownId = current ? current.id : null;
   const nextRef = useRef(null);
   nextRef.current = windows.length > 1 ? windows[(at + 1) % windows.length].id : null;
-  const cycles = windows.length > 1;
+  const cycles = windows.length > 1 && !still;
 
   // Pin what's on screen: the first window to show, or the one standing in for a window that left.
   useEffect(() => {
@@ -262,9 +263,11 @@ function useWindowCycle(windows) {
   return current;
 }
 
-export default function LaptopScreen({ laptop, bug = null, onWindow }) {
+// `held`: the laptop door is hovered or focused, so the window (and the door
+// that follows it) stays put. Under reduced motion one window holds.
+export default function LaptopScreen({ laptop, bug = null, held = false, onWindow }) {
   const calm = prefersReducedMotion();
-  const current = useWindowCycle(laptop.mode === 'idle' ? laptop.windows || NONE : NONE);
+  const current = useWindowCycle(laptop.mode === 'idle' ? laptop.windows || NONE : NONE, held || calm);
   const Idle = current ? IDLE[current.id] : null;
 
   // The window on screen, for the laptop door (it follows the window); nothing

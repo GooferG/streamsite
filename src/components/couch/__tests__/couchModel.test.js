@@ -23,6 +23,8 @@ test('off air: TV, guide, tapes, laptop and games say the right things', () => {
   expect(door(c, 'guide').sentence).toBe('Next up: Bonus Hunt Time! tomorrow at 11:00 AM, in 1 day 1 hour.');
   expect(door(c, 'tapes').sentence).toBe('You missed Win Wednesdays. Thursday night, 4 hours 37.');
   expect(door(c, 'tapes').sticker).toBe('new');
+  // The sticker is art, so the name says it too.
+  expect(door(c, 'tapes').label).toBe('Tapes: New tape. You missed Win Wednesdays. Thursday night, 4 hours 37. Opens Vods.');
   expect(door(c, 'laptop').sentence).toBe('Last hunt paid $412 on $600. Best hit: 1,240x on Sugar Rush 1000.');
   expect(door(c, 'laptop').href).toBe('/gamba');
   expect(door(c, 'games').sentence).toBe('Lately: Path of Exile 2, 14 hours in two weeks. Last streamed: Slots.');
@@ -42,7 +44,12 @@ test('live: the TV goes to the stream and lights up', () => {
   expect(c.tv.state).toBe('live');
   expect(tv.href).toBe('https://twitch.tv/GooferG');
   expect(tv.lit).toBe(true);
-  expect(tv.label).toBe("TV: Goofer's live right now. Lean in to watch. Opens the stream.");
+  // The name carries the count the chip shows.
+  expect(tv.label).toBe("TV: Goofer's live right now. 214 watching. Lean in to watch. Opens the stream.");
+  const unknown = door(buildCouch({ ...F.live.input, stream: { ...F.live.input.stream, viewers: null } }), 'tv');
+  expect(unknown.label).toBe("TV: Goofer's live right now. Lean in to watch. Opens the stream.");
+  const crowd = door(buildCouch({ ...F.live.input, stream: { ...F.live.input.stream, viewers: 1204 } }), 'tv');
+  expect(crowd.sentence).toBe("Goofer's live right now. 1,204 watching. Lean in to watch.");
   expect(c.tv.preview).toMatch(/live_user_gooferg-640x360\.jpg\?p=\d+$/);
   expect(c.tv.viewers).toBe(214);
   expect(c.tv.cards).toEqual([]);
@@ -133,6 +140,7 @@ test('empty', () => {
   expect(door(c, 'guide').sentence).toBe('Nothing on the books yet. The guide has the week.');
   expect(door(c, 'laptop').sentence).toBe('The gamba tools live here.');
   expect(door(c, 'tapes').sticker).toBeNull();
+  expect(door(c, 'tapes').label).not.toContain('New tape');
 });
 
 test('isNewTape', () => {
@@ -173,8 +181,13 @@ test('a commercial on the TV points the TV door at its channel, off air only', (
   const tv = door(withCommercial(c, 'video'), 'tv');
   expect(tv.href).toBe('/vods');
   expect(tv.teaser).toBe('Goofer Video commercial');
-  expect(tv.label).toBe('TV: A Goofer Video commercial. Opens Vods.');
-  expect(door(withCommercial(c, 'guide'), 'tv').label).toBe('TV: A Goofer Guide commercial. Opens Schedule.');
+  // The door goes where the commercial points, and its name still says what the TV is up to.
+  expect(tv.label).toBe('TV: A Goofer Video commercial. Off the air. Back tomorrow at 11:00 AM for Bonus Hunt Time! Opens Vods.');
+  expect(door(withCommercial(c, 'guide'), 'tv').label).toBe(
+    'TV: A Goofer Guide commercial. Off the air. Back tomorrow at 11:00 AM for Bonus Hunt Time! Opens Schedule.'
+  );
+  // The chip's sentence is the commercial's.
+  expect(tv.sentence).toBe('A Goofer Video commercial.');
   // The other doors are untouched; no commercial, or live, is the couch as built.
   expect(withCommercial(c, 'gsn').doors.filter((d) => d.id !== 'tv')).toEqual(c.doors.filter((d) => d.id !== 'tv'));
   expect(withCommercial(c, null)).toBe(c);
@@ -325,7 +338,10 @@ describe('the laptop desktop', () => {
   test('a commercial on the TV and a window on the laptop at once: neither door clobbers the other', () => {
     const c = buildCouch(F.offair.input);
     for (const both of [withLaptopWindow(withCommercial(c, 'gsn'), 'recap'), withCommercial(withLaptopWindow(c, 'recap'), 'gsn')]) {
-      expect(door(both, 'tv')).toMatchObject({ href: '/store', label: 'TV: A Goofer Shopping Network commercial. Opens Store.' });
+      expect(door(both, 'tv')).toMatchObject({
+        href: '/store',
+        label: 'TV: A Goofer Shopping Network commercial. Off the air. Back tomorrow at 11:00 AM for Bonus Hunt Time! Opens Store.',
+      });
       expect(door(both, 'laptop')).toMatchObject({ href: '/gamba/hunts', teaser: 'Best hit 1,240x' });
       expect(door(both, 'laptop').label).toMatch(/ Opens Hunts\.$/);
       expect(both.doors.filter((d) => d.id !== 'tv' && d.id !== 'laptop')).toEqual(c.doors.filter((d) => d.id !== 'tv' && d.id !== 'laptop'));

@@ -98,7 +98,7 @@ export const COPY = {
   tvLive: ({ viewers }) => ({
     kicker: 'TV',
     teaser: viewers != null ? `On now · ${viewers}` : 'On now',
-    sentence: "Goofer's live right now. Lean in to watch.",
+    sentence: `Goofer's live right now.${viewers != null ? ` ${Number(viewers).toLocaleString('en-US')} watching.` : ''} Lean in to watch.`,
   }),
   tvNext: ({ title, day, clock }) => ({
     kicker: 'TV',

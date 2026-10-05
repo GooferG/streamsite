@@ -35,6 +35,38 @@ test('a plain click hands the door to onDoor; a ctrl-click stays native', () => 
   expect(onDoor.mock.calls[0][1]).toBe(guide);
 });
 
+test("a label is part of its door: a click on the chip opens that door, and the pointer can rest on it", () => {
+  const onDoor = jest.fn();
+  render(<Room onDoor={onDoor} />);
+  const chip = document.querySelector('[data-label="laptop"]');
+  // Nothing in the chip lets a click fall through to whatever is under it.
+  for (const el of [chip, ...chip.querySelectorAll('*')]) expect(el.getAttribute('class') || '').not.toContain('pointer-events-none');
+  // It stays out of the accessibility tree: the door's name already says it.
+  expect(chip.getAttribute('aria-hidden')).toBe('true');
+  fireEvent.click(chip.querySelector('span span'), { button: 0 });
+  expect(onDoor).toHaveBeenCalledTimes(1);
+  expect(onDoor.mock.calls[0][0].id).toBe('laptop');
+  expect(onDoor.mock.calls[0][1]).toBe(screen.getByRole('link', { name: /^Laptop:/ }));
+});
+
+test('Escape folds an open sentence away until the pointer leaves', () => {
+  render(<Room />);
+  const guide = screen.getByRole('link', { name: /^TV guide:/ });
+  const sentence = () => guide.querySelector('[data-label-sentence]').className;
+  fireEvent.pointerEnter(guide);
+  expect(sentence()).toContain('group-hover:block');
+  fireEvent.keyDown(document, { key: 'Escape' });
+  expect(sentence()).not.toMatch(/group-(hover|focus-visible):block/);
+  fireEvent.pointerLeave(guide);
+  expect(sentence()).toContain('group-hover:block');
+  // Focused, the same.
+  fireEvent.focus(guide);
+  fireEvent.keyDown(document, { key: 'Escape' });
+  expect(sentence()).not.toMatch(/group-(hover|focus-visible):block/);
+  fireEvent.blur(guide);
+  expect(sentence()).toContain('group-focus-visible:block');
+});
+
 test('labels show the teaser; the plate and screens render', () => {
   render(<Room />);
   expect(screen.getByText('Back tomorrow 11:00 AM')).toBeTruthy();
@@ -111,12 +143,18 @@ describe('labels never stack', () => {
   // Two labels drawn on top of each other at rest; a nudge moves them like it would in a browser.
   const rest = { tapes: [300, 200], guide: [320, 205] };
   const rect = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top });
+  // A label whose sentence is open (hovered or focused) is wider and grows up from its anchor.
+  let opened = null;
   function mockRects() {
     Element.prototype.getBoundingClientRect = function mocked() {
       const id = this.getAttribute && this.getAttribute('data-label');
       if (id && rest[id]) {
         const [x, y] = rest[id];
-        return rect(x + (parseFloat(this.style.marginLeft) || 0), y + (parseFloat(this.style.marginTop) || 0), 140, 30);
+        const dx = parseFloat(this.style.marginLeft) || 0;
+        const dy = parseFloat(this.style.marginTop) || 0;
+        const sentence = this.querySelector('[data-label-sentence]');
+        if (id === opened && !(sentence && sentence.style.display === 'none')) return rect(x - 80 + dx, y - 60 + dy, 300, 90);
+        return rect(x + dx, y + dy, 140, 30);
       }
       if (this.getAttribute && this.getAttribute('role') === 'list') return rect(0, 0, 1000, 600);
       if (this.getAttribute && this.getAttribute('data-door')) return rect(0, 0, 200, 100);
@@ -141,6 +179,22 @@ describe('labels never stack', () => {
     expect(document.querySelector('[data-label="guide"]').getAttribute('aria-hidden')).toBe('true');
   });
 
+  test('an open sentence is measured shut, so it never pushes a resting label', () => {
+    mockRects();
+    rest.guide = [300, 140];
+    opened = 'tapes';
+    try {
+      render(<Room />);
+      expect(placed('tapes')).toMatchObject({ x: 300, y: 200 });
+      expect(placed('guide')).toMatchObject({ x: 300, y: 140 });
+      // The sentence shows again after the measure.
+      expect(document.querySelector('[data-label="tapes"] [data-label-sentence]').style.display).toBe('');
+    } finally {
+      opened = null;
+      rest.guide = [320, 205];
+    }
+  });
+
   test('labels that do not touch are not moved', () => {
     mockRects();
     rest.guide = [700, 400];
@@ -159,13 +213,20 @@ test('the room runs full height when there is no bar above it (home)', () => {
   render(<Home />);
   const section = screen.getByRole('region', { name: "Goofer's couch" });
   expect(section.style.marginTop).toBe('0px');
-  expect(section.firstChild.style.height).toBe('calc(100svh - 0px)');
+  expect(section.querySelector(':scope > div').style.height).toBe('calc(100svh - 0px)');
   expect(section.outerHTML).not.toContain('57px');
+});
+
+test('the room opens with a heading for screen readers', () => {
+  render(<Room />);
+  const h1 = screen.getByRole('heading', { level: 1, name: "Goofer's couch" });
+  expect(h1.className).toContain('sr-only');
+  expect(screen.getByRole('region', { name: "Goofer's couch" }).contains(h1)).toBe(true);
 });
 
 test('with a bar the room sits under it', () => {
   render(<Room />);
   const section = screen.getByRole('region', { name: "Goofer's couch" });
   expect(section.style.marginTop).toBe('57px');
-  expect(section.firstChild.style.height).toBe('calc(100svh - 57px)');
+  expect(section.querySelector(':scope > div').style.height).toBe('calc(100svh - 57px)');
 });

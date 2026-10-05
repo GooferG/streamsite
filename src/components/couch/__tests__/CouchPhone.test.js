@@ -74,3 +74,18 @@ test('a plate that fails to load on the phone layout falls back to plain tiles',
   expect(tiles[0].getAttribute('data-door')).toBe('tv');
   expect(container.querySelector('img')).toBeNull();
 });
+
+test("the TV crop's focus ring sits inside it (it runs edge to edge from the top)", () => {
+  render(front('offair'));
+  const tv = screen.getByRole('link', { name: /^TV:/ });
+  expect(tv.className).toContain('focus-visible:-outline-offset-2');
+  expect(tv.className).not.toContain('focus-visible:outline-offset-2');
+});
+
+test('phones and plain tiles open with a heading for the room', () => {
+  const first = render(front('offair'));
+  expect(screen.getByRole('heading', { level: 1, name: "Goofer's couch" }).className).toContain('sr-only');
+  first.unmount();
+  render(front('offair', { noArt: true }));
+  expect(screen.getByRole('heading', { level: 1, name: "Goofer's couch" })).toBeTruthy();
+});

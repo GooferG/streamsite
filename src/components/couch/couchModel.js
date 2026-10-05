@@ -279,9 +279,10 @@ export function guideListings(schedule, now, timeZone, count = 3) {
 export const doorLabel = (kicker, sentence, destination) => `${kicker}: ${sentence} Opens ${destination}.`;
 
 // A screen's door follows what the screen shows ({ href, teaser, sentence,
-// destination }): the TV's commercial, the laptop's window. Everything else
-// is the couch as built.
-function followScreen(couch, id, shows) {
+// destination }): the TV's commercial, the laptop's window. `named` is what the
+// door's name says (the screen's sentence unless the caller adds to it).
+// Everything else is the couch as built.
+function followScreen(couch, id, shows, named = () => shows.sentence) {
   return {
     ...couch,
     doors: couch.doors.map((d) =>
@@ -292,7 +293,7 @@ function followScreen(couch, id, shows) {
             teaser: shows.teaser,
             sentence: shows.sentence,
             destination: shows.destination,
-            label: doorLabel(d.kicker, shows.sentence, shows.destination),
+            label: doorLabel(d.kicker, named(d), shows.destination),
           }
         : d
     ),
@@ -300,11 +301,11 @@ function followScreen(couch, id, shows) {
 }
 
 // While a commercial is on the TV (off air), the TV door goes to its channel
-// and says so.
+// and says so; its name keeps what the TV is up to after the break.
 export function withCommercial(couch, adId) {
   const ad = COMMERCIALS[adId];
   if (!ad || couch.tv.state !== 'offair') return couch;
-  return followScreen(couch, 'tv', ad);
+  return followScreen(couch, 'tv', ad, (tv) => `${ad.sentence} ${tv.sentence}`);
 }
 
 // While a window is up on the laptop's desktop, the laptop door goes where
@@ -355,6 +356,9 @@ export function buildCouch(input) {
     const destination = id === 'tv' && state === 'live' ? 'the stream' : id === 'laptop' ? gambaPage(href.laptop) : DESTINATION[id];
     // The room names its objects ("Tapes" in the 90s room); COPY's kicker is the fallback.
     const kicker = (ROOM.names && ROOM.names[id]) || copy[id].kicker;
+    const sticker = id === 'tapes' && isNewTape(newest, input.lastVisit, input.now) ? 'new' : null;
+    // The sticker is art, so the name says it too.
+    const named = sticker === 'new' ? `New tape. ${copy[id].sentence}` : copy[id].sentence;
     return {
       id,
       href: href[id],
@@ -362,9 +366,9 @@ export function buildCouch(input) {
       kicker,
       destination,
       cut: DOOR_CUT[id] || 'static',
-      label: doorLabel(kicker, copy[id].sentence, destination),
+      label: doorLabel(kicker, named, destination),
       lit: (id === 'tv' && state === 'live') || (id === 'laptop' && laptop.mode !== 'idle') || id === 'note',
-      sticker: id === 'tapes' && isNewTape(newest, input.lastVisit, input.now) ? 'new' : null,
+      sticker,
     };
   });
 

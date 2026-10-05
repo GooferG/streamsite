@@ -151,19 +151,32 @@ describe('the cycle', () => {
     expect(onWindow.mock.calls.every(([id]) => id === null)).toBe(true);
   });
 
-  test('reduced motion: the windows cut on the same clock with no animation at all', () => {
+  test('reduced motion: one window holds, with no animation at all', () => {
     window.matchMedia = jest.fn((query) => ({ matches: query.includes('reduced-motion'), addEventListener() {}, removeEventListener() {} }));
-    const { container, rerender } = render(<LaptopScreen laptop={IDLE} />);
+    const onWindow = jest.fn();
+    const { container, rerender } = render(<LaptopScreen laptop={IDLE} onWindow={onWindow} />);
     const moving = () => container.innerHTML.match(/animate-|transition/g);
     expect(moving()).toBeNull();
-    step(WINDOW_MS);
-    expect(shown()).toBe('recap');
-    step(WINDOW_MS);
-    step(WINDOW_MS);
-    expect(shown()).toBe('screensaver');
+    for (let i = 0; i < 5; i += 1) step(WINDOW_MS);
+    expect(shown()).toBe('leaderboard');
+    expect(onWindow.mock.calls.map(([id]) => id)).toEqual(['leaderboard']);
     expect(moving()).toBeNull();
     rerender(<LaptopScreen laptop={HUNT} />);
     expect(moving()).toBeNull();
+  });
+
+  test('held (its door hovered or focused): the window stays, then gets its full time after', () => {
+    const onWindow = jest.fn();
+    const { rerender } = render(<LaptopScreen laptop={IDLE} onWindow={onWindow} held />);
+    step(4000);
+    for (let i = 0; i < 3; i += 1) step(WINDOW_MS);
+    expect(shown()).toBe('leaderboard');
+    rerender(<LaptopScreen laptop={IDLE} onWindow={onWindow} />);
+    step(WINDOW_MS - 1);
+    expect(shown()).toBe('leaderboard');
+    step(1);
+    expect(shown()).toBe('recap');
+    expect(onWindow.mock.calls.map(([id]) => id)).toEqual(['leaderboard', 'recap']);
   });
 });
 

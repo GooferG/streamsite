@@ -258,6 +258,42 @@ test('a live preview that fails to load is dropped', () => {
   expect(screen.getByText('Live · 3')).toBeTruthy();
 });
 
+describe('holding (its door is hovered or focused)', () => {
+  test('the reel stays on what is on screen, then moves on a segment after the hold', () => {
+    const onSegment = jest.fn();
+    const { rerender } = render(<CouchTv tv={OFF} items={[STILL, CARD]} mode="stills" segmentMs={1000} onSegment={onSegment} held />);
+    act(() => jest.advanceTimersByTime(5000));
+    expect(screen.queryByTestId('tv-switch')).toBeNull();
+    expect(screen.getByTestId('tv-still')).toBeTruthy();
+    rerender(<CouchTv tv={OFF} items={[STILL, CARD]} mode="stills" segmentMs={1000} onSegment={onSegment} />);
+    act(() => jest.advanceTimersByTime(999));
+    expect(screen.queryByTestId('tv-switch')).toBeNull();
+    act(() => jest.advanceTimersByTime(1));
+    expect(screen.getByTestId('tv-switch')).toBeTruthy();
+    act(() => jest.advanceTimersByTime(STATIC_MS));
+    expect(onSegment).toHaveBeenLastCalledWith(CARD);
+  });
+
+  test('a commercial holds past its slot', () => {
+    const onSegment = jest.fn();
+    render(<CouchTv tv={OFF} items={[GSN, CARD]} mode="stills" onSegment={onSegment} held />);
+    act(() => jest.advanceTimersByTime(AD_MS * 3));
+    expect(screen.getByTestId('tv-ad')).toBeTruthy();
+    expect(screen.queryByTestId('tv-switch')).toBeNull();
+    expect(onSegment).toHaveBeenLastCalledWith(GSN);
+  });
+
+  test('a loop that ends while held waits for the hold to end', () => {
+    const { rerender } = render(<CouchTv tv={OFF} items={[VIDEO, CARD]} mode="video" held />);
+    fireEvent.ended(screen.getByTestId('tv-video'));
+    expect(screen.queryByTestId('tv-switch')).toBeNull();
+    rerender(<CouchTv tv={OFF} items={[VIDEO, CARD]} mode="video" />);
+    expect(screen.getByTestId('tv-switch')).toBeTruthy();
+    act(() => jest.advanceTimersByTime(STATIC_MS));
+    expect(screen.getByTestId('tv-card')).toBeTruthy();
+  });
+});
+
 describe('the segment clock', () => {
   test('loops replacing stills mid-segment (same length): the loop plays out, the stills clock is gone', () => {
     const { rerender } = render(<CouchTv tv={OFF} items={[STILL, CARD]} mode="video" segmentMs={1000} />);

@@ -160,6 +160,8 @@ test('phones: a tile grows into its page', async () => {
 });
 
 const page = () => screen.getByTestId('page').textContent;
+// During a commercial the TV door goes where the commercial points; its name keeps the TV's own news.
+const GSN_LABEL = 'TV: A Goofer Shopping Network commercial. Off the air. Back tomorrow at 11:00 AM for Bonus Hunt Time! Opens Store.';
 
 // Clicks a door and waits until its cover is gone; returns the covers it used.
 async function goThroughDoor(name) {
@@ -213,6 +215,141 @@ test('phones: the photo tile closes an iris too', async () => {
   expect(covers.cuts()).toEqual(['camera-iris']);
 });
 
+describe('focus after the camera', () => {
+  const door = (name) => screen.getByRole('link', { name });
+
+  test('Back lands on the door you left through', async () => {
+    renderSite(F.offair.input, true, { ...ZERO, pull: 1 });
+    await goThroughDoor(/^Tapes:/);
+    expect(page()).toBe('/vods');
+    await act(async () => nav(-1));
+    await waitFor(() => expect(document.activeElement).toBe(door(/^Tapes:/)));
+  });
+
+  test('Back through a thing (the iris) lands on it too', async () => {
+    renderSite();
+    await goThroughDoor(/^Photo:/);
+    await act(async () => nav(-1));
+    await waitFor(() => expect(document.activeElement).toBe(door(/^Photo:/)));
+  });
+
+  test('reduced motion: Back lands on the door too', async () => {
+    renderSite(F.offair.input, true, ZERO, true);
+    await goThroughDoor(/^TV guide:/);
+    await act(async () => nav(-1));
+    await waitFor(() => expect(document.activeElement).toBe(door(/^TV guide:/)));
+  });
+
+  test('phones: Back lands on the tile', async () => {
+    renderSite(F.offair.input, false);
+    await goThroughDoor(/^Remote:/);
+    expect(page()).toBe('/store');
+    await act(async () => nav(-1));
+    await waitFor(() => expect(document.activeElement).toBe(door(/^Remote:/)));
+  });
+
+  test('coming home by the nav takes no door', async () => {
+    renderSite();
+    await goThroughDoor(/^Tapes:/);
+    await act(async () => nav('/'));
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    });
+    expect(document.activeElement).toBe(document.body);
+  });
+});
+
+describe('watching inside the TV', () => {
+  const tvDoor = () => screen.getByRole('link', { name: /^TV:/ });
+  const room = () => document.querySelector('section[aria-label="Goofer\'s couch"]');
+  async function watch(input = F.live.input) {
+    const view = renderSite(input);
+    await act(async () => {
+      fireEvent.click(tvDoor(), { button: 0 });
+    });
+    const frame = await screen.findByTitle("Goofer's live stream");
+    return { view, frame, dialog: screen.getByRole('dialog', { name: "Goofer's stream" }) };
+  }
+  const follows = (a, b) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+
+  test('the buttons come before the player, and focus starts on Back to the couch', async () => {
+    const { frame } = await watch();
+    const back = screen.getByRole('button', { name: 'Back to the couch' });
+    const twitch = screen.getByRole('link', { name: 'Open on Twitch in a new tab' });
+    expect(follows(back, twitch)).toBe(true);
+    expect(follows(twitch, frame)).toBe(true);
+    expect(document.activeElement).toBe(back);
+    // It opens a new tab, says so, and reads at 5:1.
+    expect(twitch.getAttribute('target')).toBe('_blank');
+    expect(twitch.className).toContain('bg-onair-viewer-deep');
+  });
+
+  test('Tab stays inside: round from the last stop to the first and back', async () => {
+    const { frame, dialog } = await watch();
+    const back = screen.getByRole('button', { name: 'Back to the couch' });
+    fireEvent.keyDown(document, { key: 'Tab', shiftKey: true });
+    expect(document.activeElement).toBe(frame);
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(document.activeElement).toBe(back);
+    // Tabbing out past the player's own controls lands on the guard, which sends focus round.
+    dialog.querySelector('[data-focus-guard]').focus();
+    expect(document.activeElement).toBe(back);
+    // Focus somewhere outside (it can't get there by Tab) comes back in.
+    act(() => tvDoor().focus());
+    fireEvent.keyDown(document, { key: 'Tab' });
+    expect(dialog.contains(document.activeElement)).toBe(true);
+  });
+
+  test('the room behind is inert while it is open, and wakes when it closes', async () => {
+    const { dialog } = await watch();
+    expect(room().closest('[inert]')).toBeTruthy();
+    expect(dialog.closest('[inert]')).toBeNull();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Back to the couch' }));
+    });
+    expect(document.querySelector('[inert]')).toBeNull();
+  });
+
+  test('Back to the couch hands focus to the TV door', async () => {
+    await watch();
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Back to the couch' }));
+    });
+    expect(screen.queryByTitle("Goofer's live stream")).toBeNull();
+    expect(document.activeElement).toBe(tvDoor());
+  });
+
+  test('Escape hands focus to the TV door', async () => {
+    await watch();
+    await act(async () => {
+      fireEvent.keyDown(document, { key: 'Escape' });
+    });
+    expect(screen.queryByTitle("Goofer's live stream")).toBeNull();
+    expect(document.activeElement).toBe(tvDoor());
+  });
+
+  test('Back hands focus to the TV door', async () => {
+    await watch();
+    await act(async () => nav(-1));
+    expect(screen.queryByTitle("Goofer's live stream")).toBeNull();
+    expect(document.activeElement).toBe(tvDoor());
+  });
+
+  test('the stream ending hands focus to the TV door', async () => {
+    const { view } = await watch();
+    view.rerender(
+      <MemoryRouter initialEntries={['/']}>
+        <CameraProvider timings={ZERO}>
+          <Site input={F.offair.input} />
+        </CameraProvider>
+      </MemoryRouter>
+    );
+    expect(screen.queryByTitle("Goofer's live stream")).toBeNull();
+    expect(document.activeElement).toBe(tvDoor());
+    expect(document.querySelector('[inert]')).toBeNull();
+  });
+});
+
 describe('the TV door follows a commercial', () => {
   const tv = () => screen.getByRole('link', { name: /^TV:/ });
   const step = (ms) =>
@@ -236,7 +373,7 @@ describe('the TV door follows a commercial', () => {
     toGsn();
     expect(screen.getByTestId('tv-ad').getAttribute('data-ad')).toBe('gsn');
     expect(tv().getAttribute('href')).toBe('/store');
-    expect(tv().getAttribute('aria-label')).toBe('TV: A Goofer Shopping Network commercial. Opens Store.');
+    expect(tv().getAttribute('aria-label')).toBe(GSN_LABEL);
     expect(tv().querySelector('[data-label="tv"]').textContent).toContain('GSN commercial');
     step(AD_MS);
     step(STATIC_MS);
@@ -279,12 +416,56 @@ describe('the TV door follows a commercial', () => {
     }
   });
 
+  test('pointing at the TV door holds the reel, so the door never changes under you', () => {
+    renderSite();
+    fireEvent.pointerEnter(tv());
+    for (let i = 0; i < 5; i += 1) step(SEGMENT_MS);
+    expect(screen.queryByTestId('tv-switch')).toBeNull();
+    expect(tv().getAttribute('href')).toBe('/vods');
+    fireEvent.pointerLeave(tv());
+    toGsn();
+    expect(tv().getAttribute('href')).toBe('/store');
+    // Held on the commercial, it stays the store's door past the commercial's slot.
+    fireEvent.pointerEnter(tv());
+    step(AD_MS * 2);
+    expect(screen.getByTestId('tv-ad')).toBeTruthy();
+    expect(tv().getAttribute('href')).toBe('/store');
+    expect(tv().getAttribute('aria-label')).toBe(GSN_LABEL);
+    fireEvent.pointerLeave(tv());
+    step(AD_MS);
+    step(STATIC_MS);
+    expect(tv().getAttribute('href')).toBe('/vods');
+  });
+
+  test('focus on the TV door holds the reel too, until it moves on', () => {
+    renderSite();
+    fireEvent.focus(tv());
+    // The pointer passing over and away does not end a keyboard hold.
+    fireEvent.pointerEnter(tv());
+    fireEvent.pointerLeave(tv());
+    for (let i = 0; i < 5; i += 1) step(SEGMENT_MS);
+    expect(screen.queryByTestId('tv-switch')).toBeNull();
+    fireEvent.blur(tv());
+    toGsn();
+    expect(tv().getAttribute('href')).toBe('/store');
+  });
+
+  test('phones: the TV crop holds while touched or focused too', () => {
+    renderSite(F.offair.input, false);
+    fireEvent.focus(tv());
+    for (let i = 0; i < 5; i += 1) step(SEGMENT_MS);
+    expect(tv().getAttribute('href')).toBe('/vods');
+    fireEvent.blur(tv());
+    toGsn();
+    expect(tv().getAttribute('href')).toBe('/store');
+  });
+
   test('phones: the TV crop follows the commercial too', () => {
     renderSite(F.offair.input, false);
     toGsn();
     expect(tv().getAttribute('data-door')).toBe('tv');
     expect(tv().getAttribute('href')).toBe('/store');
-    expect(tv().getAttribute('aria-label')).toBe('TV: A Goofer Shopping Network commercial. Opens Store.');
+    expect(tv().getAttribute('aria-label')).toBe(GSN_LABEL);
     step(AD_MS);
     step(STATIC_MS);
     expect(tv().getAttribute('href')).toBe('/vods');
@@ -360,13 +541,49 @@ describe('the laptop door follows the window on screen', () => {
     }
     expect(screen.getByTestId('tv-ad').getAttribute('data-ad')).toBe('gsn');
     expect(tv().getAttribute('href')).toBe('/store');
-    expect(tv().getAttribute('aria-label')).toBe('TV: A Goofer Shopping Network commercial. Opens Store.');
+    expect(tv().getAttribute('aria-label')).toBe(GSN_LABEL);
     // By now the laptop has moved on from the board too; its door follows its own window.
     const onLaptop = document.querySelector('[data-window]').getAttribute('data-window');
     expect(onLaptop).not.toBe('leaderboard');
     const [href, page] = WINDOW_DOOR[onLaptop];
     expect(laptop().getAttribute('href')).toBe(href);
     expect(laptop().getAttribute('aria-label')).toMatch(new RegExp(`^Laptop: .* Opens ${page}\\.$`));
+  });
+
+  test('pointing at or focusing the laptop door holds its window', () => {
+    renderSite();
+    fireEvent.pointerEnter(laptop());
+    step(WINDOW_MS * 3);
+    expect(laptop().getAttribute('href')).toBe('/gamba/leaderboard');
+    expect(chip()).toContain('BEAN board');
+    fireEvent.pointerLeave(laptop());
+    step(WINDOW_MS);
+    expect(laptop().getAttribute('href')).toBe('/gamba/hunts');
+    fireEvent.focus(laptop());
+    step(WINDOW_MS * 3);
+    expect(laptop().getAttribute('href')).toBe('/gamba/hunts');
+    expect(chip()).toContain('Best hit 1,240x');
+    fireEvent.blur(laptop());
+    step(WINDOW_MS);
+    expect(chip()).toContain('Last 5 hunts');
+  });
+
+  test('holding one screen leaves the other running', () => {
+    renderSite();
+    fireEvent.pointerEnter(laptop());
+    for (let i = 0; i < 3; i += 1) {
+      step(SEGMENT_MS);
+      step(STATIC_MS);
+    }
+    expect(screen.getByTestId('tv-ad').getAttribute('data-ad')).toBe('gsn');
+    expect(laptop().getAttribute('href')).toBe('/gamba/leaderboard');
+  });
+
+  test('reduced motion: the laptop holds one window', () => {
+    renderSite(F.offair.input, true, ZERO, true);
+    for (let i = 0; i < 5; i += 1) step(WINDOW_MS);
+    expect(laptop().getAttribute('href')).toBe('/gamba/leaderboard');
+    expect(chip()).toContain('BEAN board');
   });
 
   test('phones have no laptop screen, so the tile keeps its own door', () => {

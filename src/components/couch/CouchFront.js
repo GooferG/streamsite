@@ -14,7 +14,7 @@ import { ART_ASPECT, LAYOUT, center, pctStyle, plateSrc, plateSrcSet } from './c
 // the doors, positioned in percent of the art on one stage the camera moves.
 export const ROOM_QUERY = '(min-width: 768px) and (min-aspect-ratio: 4/3)';
 
-function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, onSegment, onWindow, stage, onPlateError, now = Date.now() }) {
+function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, onSegment, onWindow, held = {}, onHold, stage, onPlateError, now = Date.now() }) {
   const { containerRef, stageRef, box } = stage;
   const navH = stage.navH;
   const base = LAYOUT.art.empty || LAYOUT.art.plate;
@@ -28,6 +28,7 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, onSegment
   const win = useWindowState();
   return (
     <section aria-label="Goofer's couch" style={{ marginTop: navH }}>
+      <h1 className="sr-only">Goofer's couch</h1>
       <div ref={containerRef} className="relative overflow-hidden bg-onair-surface-4" style={{ height: `calc(100svh - ${navH}px)` }}>
         <div
           ref={stageRef}
@@ -49,7 +50,7 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, onSegment
           <RoomToys toys={roomToys(LAYOUT, couch.theme)} />
           <WindowFront win={LAYOUT.window} state={win} theme={couch.theme} aspect={ART_ASPECT} />
           <Dressing layers={unlinked} />
-          <RoomDoors doors={couch.doors} covers={couch.covers} giveaway={couch.giveaway} onDoor={onDoor} box={box} />
+          <RoomDoors doors={couch.doors} covers={couch.covers} giveaway={couch.giveaway} onDoor={onDoor} onHold={onHold} box={box} />
           <Dressing layers={linked} links={links} />
           <span
             className={`couch-dim pointer-events-none absolute inset-0 ${live ? 'couch-dim--live' : ''}`}
@@ -57,10 +58,10 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, onSegment
             data-testid={live ? 'couch-glow' : undefined}
           />
           <span className="pointer-events-none absolute z-[2]" style={pctStyle(LAYOUT.screens.tv)}>
-            <CouchTv tv={couch.tv} items={items} mode={mode} flipTo={flipTo} onAutoplayBlocked={onAutoplayBlocked} onSegment={onSegment} />
+            <CouchTv tv={couch.tv} items={items} mode={mode} flipTo={flipTo} held={!!held.tv} onAutoplayBlocked={onAutoplayBlocked} onSegment={onSegment} />
           </span>
           <span className="pointer-events-none absolute z-[2]" style={pctStyle(LAYOUT.screens.laptop)}>
-            <LaptopScreen laptop={couch.laptop} bug={art && art.laptopBug} onWindow={onWindow} />
+            <LaptopScreen laptop={couch.laptop} bug={art && art.laptopBug} held={!!held.laptop} onWindow={onWindow} />
           </span>
         </div>
       </div>
@@ -69,7 +70,7 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, onSegment
 }
 
 export default function CouchFront(props) {
-  const { couch, items, mode, flipTo, onDoor, onAutoplayBlocked, onSegment, roomLayout, noArt = false } = props;
+  const { couch, items, mode, flipTo, onDoor, onAutoplayBlocked, onSegment, held = {}, onHold, roomLayout, noArt = false } = props;
   const [plateFailed, setPlateFailed] = useState(false);
   const failPlate = () => setPlateFailed(true);
   if (roomLayout && !noArt && !plateFailed) return <Room {...props} onPlateError={failPlate} />;
@@ -78,7 +79,24 @@ export default function CouchFront(props) {
   const navH = props.stage.navH;
   return (
     <div style={art ? undefined : { marginTop: navH }}>
-      {art && <TvCrop navH={navH} door={tv} tv={couch.tv} items={items} mode={mode} flipTo={flipTo} onDoor={onDoor} onAutoplayBlocked={onAutoplayBlocked} onSegment={onSegment} onPlateError={failPlate} theme={couch.theme} />}
+      <h1 className="sr-only">Goofer's couch</h1>
+      {art && (
+        <TvCrop
+          navH={navH}
+          door={tv}
+          tv={couch.tv}
+          items={items}
+          mode={mode}
+          flipTo={flipTo}
+          held={!!held.tv}
+          onDoor={onDoor}
+          onHold={onHold}
+          onAutoplayBlocked={onAutoplayBlocked}
+          onSegment={onSegment}
+          onPlateError={failPlate}
+          theme={couch.theme}
+        />
+      )}
       <DoorTiles doors={couch.doors} onDoor={onDoor} noArt={!art} skip={art ? ['tv'] : []} onPlateError={failPlate} />
     </div>
   );

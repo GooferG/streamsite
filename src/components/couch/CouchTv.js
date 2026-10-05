@@ -85,9 +85,13 @@ function Still({ src, moving }) {
   );
 }
 
-function Reel({ items, mode, segmentMs, onBlocked, onSegment }) {
+// `held`: the TV door is hovered or focused, so the segment on screen (and the
+// door that follows it) stays until it isn't; then the segment gets its full
+// time again. A loop that ends meanwhile waits for the hold to end.
+function Reel({ items, mode, segmentMs, held: doorHeld, onBlocked, onSegment }) {
   const [index, setIndex] = useState(0);
   const [switching, setSwitching] = useState(false);
+  const [due, setDue] = useState(false);
   const hidden = useTabHidden();
   const hold = mode === 'hold';
   const item = items.length ? items[index % items.length] : null;
@@ -96,9 +100,19 @@ function Reel({ items, mode, segmentMs, onBlocked, onSegment }) {
   const held = hold ? items.find(isPicture) || null : null;
   const heldCard = hold ? items.find((i) => i.kind === 'card') || null : null;
   const shown = hold ? held || heldCard : item;
+  const doorHeldRef = useRef(doorHeld);
+  doorHeldRef.current = doorHeld;
   const advance = useCallback(() => {
-    if (items.length > 1) setSwitching(true);
+    if (items.length <= 1) return;
+    if (doorHeldRef.current) setDue(true);
+    else setSwitching(true);
   }, [items.length]);
+
+  useEffect(() => {
+    if (doorHeld || !due) return;
+    setDue(false);
+    setSwitching(true);
+  }, [doorHeld, due]);
 
   // What is on screen, for the TV door (it follows a commercial); nothing once
   // the reel is gone.
@@ -110,6 +124,7 @@ function Reel({ items, mode, segmentMs, onBlocked, onSegment }) {
   useEffect(() => {
     setIndex(0);
     setSwitching(false);
+    setDue(false);
   }, [items.length]);
 
   useEffect(() => {
@@ -127,11 +142,11 @@ function Reel({ items, mode, segmentMs, onBlocked, onSegment }) {
   const kind = item ? item.kind : null;
   const ms = (item && item.ms) || segmentMs;
   useEffect(() => {
-    if (!kind || hold || hidden || switching) return undefined;
+    if (!kind || hold || hidden || switching || doorHeld) return undefined;
     if (kind === 'video' && mode === 'video') return undefined; // the loop ends itself
     const t = setTimeout(advance, ms);
     return () => clearTimeout(t);
-  }, [index, kind, ms, hold, mode, hidden, switching, advance]);
+  }, [index, kind, ms, hold, mode, hidden, switching, doorHeld, advance]);
 
   if (!item) return <StaticNoise className="absolute inset-0" testId="tv-static" />;
 
@@ -181,7 +196,7 @@ function LivePreview({ tv }) {
   );
 }
 
-export default function CouchTv({ tv, items, mode, flipTo = null, onAutoplayBlocked, onSegment, segmentMs = SEGMENT_MS }) {
+export default function CouchTv({ tv, items, mode, flipTo = null, held = false, onAutoplayBlocked, onSegment, segmentMs = SEGMENT_MS }) {
   // Report a refused autoplay at most once per mount, whatever the parent passes.
   const blockedRef = useRef(onAutoplayBlocked);
   blockedRef.current = onAutoplayBlocked;
@@ -207,7 +222,7 @@ export default function CouchTv({ tv, items, mode, flipTo = null, onAutoplayBloc
       {tv.state === 'waiting' && <StaticNoise className="absolute inset-0" testId="tv-static" />}
       {tv.state === 'live' && <LivePreview tv={tv} />}
       {tv.state === 'offair' && (
-        <Reel items={items} mode={mode} segmentMs={segmentMs} onBlocked={reportBlocked} onSegment={reportSegment} />
+        <Reel items={items} mode={mode} segmentMs={segmentMs} held={held} onBlocked={reportBlocked} onSegment={reportSegment} />
       )}
       {flipTo === 'gsn' && (
         <>

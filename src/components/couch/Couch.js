@@ -21,6 +21,16 @@ const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 export const aimFor = (id) => (id === 'tv' || id === 'remote' ? LAYOUT.screens.tv : LAYOUT.doors[id].rect);
 
 const saveData = () => typeof navigator !== 'undefined' && !!(navigator.connection && navigator.connection.saveData);
+const NOT_HELD = { tv: false, laptop: false };
+
+// Back lands on the door you left through (once the camera is back on the
+// room), unless focus already went somewhere else.
+function focusDoor(id) {
+  const active = document.activeElement;
+  if (active && active !== document.body && active.id !== 'main') return;
+  const door = document.querySelector(`[data-door="${id}"]`);
+  if (door) door.focus({ preventScroll: true });
+}
 
 export default function Couch({ input, noArt = false, introPullBack = false, introDone = true }) {
   const couch = useMemo(() => buildCouch(input), [input]);
@@ -45,6 +55,10 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
   const onSegment = useCallback((item) => setAd(item && item.kind === 'ad' ? item.ad : null), []);
   const [laptopWindow, setLaptopWindow] = useState(null);
   const shown = useMemo(() => withLaptopWindow(withCommercial(couch, ad), laptopWindow), [couch, ad, laptopWindow]);
+  // Neither screen changes while its door is hovered or focused, so neither
+  // door retargets under you (useDoorHold).
+  const [held, setHeld] = useState(NOT_HELD);
+  const onHold = useCallback((id, on) => setHeld((h) => (!(id in h) || h[id] === on ? h : { ...h, [id]: on })), []);
   const watching = isWatching(location, live);
   const inRoom = roomLayout && !noArt;
 
@@ -86,8 +100,9 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
     const back = camera.takeReturn();
     if (!back) return;
     const { doorId, cut } = back;
+    const land = () => focusDoor(doorId);
     if (inRoom && stageEl) {
-      camera.pullBack({ stage: stageEl, zoom: stage.zoomFor(aimFor(doorId)), cut, view: viewRect(window, navH) });
+      camera.pullBack({ stage: stageEl, zoom: stage.zoomFor(aimFor(doorId)), cut, view: viewRect(window, navH) }).then(land);
       return;
     }
     const tile = document.querySelector(`[data-door="${doorId}"]`);
@@ -95,7 +110,7 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
     const art = tile.querySelector('img[data-door-art]');
     const cutout = LAYOUT.doors[doorId] && LAYOUT.doors[doorId].cutout;
     const src = art && cutout ? art.currentSrc || art.src : null;
-    camera.shrinkInto({ rect: (src ? art : tile).getBoundingClientRect(), src, view: viewRect(window, navH), cut });
+    camera.shrinkInto({ rect: (src ? art : tile).getBoundingClientRect(), src, view: viewRect(window, navH), cut }).then(land);
     // Mount only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -147,6 +162,8 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
         onAutoplayBlocked={() => setBlocked(true)}
         onSegment={onSegment}
         onWindow={setLaptopWindow}
+        held={held}
+        onHold={onHold}
         stage={stage}
         roomLayout={roomLayout}
         noArt={noArt}

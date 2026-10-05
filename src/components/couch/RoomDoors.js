@@ -1,9 +1,10 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import useDoor from '../camera/useDoor';
 import { FOCUS, MONO } from '../onAir/classes';
 import { LAYOUT, pctStyle } from './couchLayout';
 import GameCases from './GameCases';
 import { resolveLabels } from './labelLayout';
+import useDoorHold, { withHold } from './useDoorHold';
 
 const LABEL_GAP = 4;
 
@@ -12,17 +13,22 @@ const LABEL_GAP = 4;
 // Cutouts lift on hover; the laptop doesn't, because its screen sits on top.
 const LIFT = ['tapes', 'guide', 'games', 'remote', 'photo'];
 
-function Label({ door, style, nudge }) {
+// The label is part of its door: a click on it opens the door, and the pointer
+// can rest on its open sentence. `folded` keeps the sentence shut (Escape).
+function Label({ door, style, nudge, folded }) {
   const [dx, dy] = nudge || [0, 0];
   return (
-    <span data-label={door.id} className="pointer-events-none absolute z-10 group-hover:z-20 group-focus-visible:z-20 -translate-x-1/2 -translate-y-full pb-1.5" style={{ ...style, marginLeft: dx, marginTop: dy }} aria-hidden="true">
+    <span data-label={door.id} className="absolute z-10 group-hover:z-20 group-focus-visible:z-20 -translate-x-1/2 -translate-y-full pb-1.5" style={{ ...style, marginLeft: dx, marginTop: dy }} aria-hidden="true">
       <span className="flex flex-col rounded-onair-tile bg-onair-surface-2/90 px-2.5 py-1.5 shadow-onair-row">
         <span className="flex items-center gap-2 whitespace-nowrap">
           <span className={`h-[7px] w-[7px] rounded-full ${door.lit ? 'bg-onair-signal' : 'bg-onair-ink-5'}`} />
           <span className={`${MONO} text-[0.625rem] tracking-[0.18em] text-onair-ink-4`}>{door.kicker}</span>
           <span className="font-onair text-[0.8125rem] font-bold text-onair-ink-1">{door.teaser}</span>
         </span>
-        <span className="hidden w-[18rem] pt-1 font-onair text-[0.8125rem] font-medium leading-snug text-onair-ink-2 group-hover:block group-focus-visible:block">
+        <span
+          data-label-sentence
+          className={`hidden w-[18rem] pt-1 font-onair text-[0.8125rem] font-medium leading-snug text-onair-ink-2 ${folded ? '' : 'group-hover:block group-focus-visible:block'}`}
+        >
           {door.sentence} <span className="text-onair-signal">Opens {door.destination}</span>
         </span>
       </span>
@@ -50,10 +56,29 @@ function NewSticker() {
   );
 }
 
-function RoomDoor({ door, covers, giveaway, onDoor, nudge }) {
+// Escape folds the open sentence away until the pointer leaves and focus goes.
+function useFold(active) {
+  const [folded, setFolded] = useState(false);
+  useEffect(() => {
+    if (!active) {
+      setFolded(false);
+      return undefined;
+    }
+    const onKey = (e) => {
+      if (e.key === 'Escape') setFolded(true);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [active]);
+  return folded;
+}
+
+function RoomDoor({ door, covers, giveaway, onDoor, onHold, nudge }) {
   const box = LAYOUT.doors[door.id];
   const go = useCallback((el) => onDoor(door, el), [door, onDoor]);
-  const props = useDoor(door.href, go);
+  const [active, hold] = useDoorHold(door.id, onHold);
+  const props = withHold(useDoor(door.href, go), hold);
+  const folded = useFold(active);
   const [ax, ay] = box.anchor;
   const [x, y, w, h] = box.rect;
   const anchor = { left: `${((ax - x) / w) * 100}%`, top: `${((ay - y) / h) * 100}%` };
@@ -69,7 +94,7 @@ function RoomDoor({ door, covers, giveaway, onDoor, nudge }) {
         {door.id === 'games' && <GameCases covers={covers} className={lift} />}
         {door.id === 'note' && giveaway && <StickyNote keyword={giveaway.keyword} />}
         {door.sticker === 'new' && <NewSticker />}
-        <Label door={door} style={anchor} nudge={nudge} />
+        <Label door={door} style={anchor} nudge={nudge} folded={folded} />
       </a>
     </li>
   );
@@ -77,7 +102,23 @@ function RoomDoor({ door, covers, giveaway, onDoor, nudge }) {
 
 // Resting labels are measured with whatever nudge they carry and that nudge is
 // taken back out, so every pass solves from zero and the result never drifts.
+// An open sentence (a hovered or focused door) is shut for the measure, so it
+// is the resting chip that gets placed.
 function measureLabels(list, applied) {
+  const sentences = Array.from(list.querySelectorAll('[data-label-sentence]'));
+  sentences.forEach((el) => {
+    el.style.display = 'none';
+  });
+  try {
+    return measureResting(list, applied);
+  } finally {
+    sentences.forEach((el) => {
+      el.style.display = '';
+    });
+  }
+}
+
+function measureResting(list, applied) {
   const stage = list.getBoundingClientRect();
   const scale = list.offsetWidth ? stage.width / list.offsetWidth : 1;
   const boxes = [];
@@ -130,7 +171,7 @@ function useLabelNudges(listRef, box, copy) {
   return nudges;
 }
 
-export default function RoomDoors({ doors, covers, giveaway, onDoor, box }) {
+export default function RoomDoors({ doors, covers, giveaway, onDoor, onHold, box }) {
   const listRef = useRef(null);
   const copy = doors.map((d) => `${d.id}|${d.kicker}|${d.teaser}`).join('/');
   const nudges = useLabelNudges(listRef, box, copy);
@@ -139,7 +180,7 @@ export default function RoomDoors({ doors, covers, giveaway, onDoor, box }) {
     // eslint-disable-next-line jsx-a11y/no-redundant-roles
     <ol ref={listRef} role="list" aria-label="Things in the room" className="pointer-events-none absolute inset-0">
       {doors.map((door) => (
-        <RoomDoor key={door.id} door={door} covers={covers} giveaway={giveaway} onDoor={onDoor} nudge={nudges[door.id]} />
+        <RoomDoor key={door.id} door={door} covers={covers} giveaway={giveaway} onDoor={onDoor} onHold={onHold} nudge={nudges[door.id]} />
       ))}
     </ol>
   );

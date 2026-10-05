@@ -10,7 +10,7 @@ const LIFT = ['tapes', 'guide', 'games', 'remote', 'photo'];
 
 function Label({ door, style }) {
   return (
-    <span className="pointer-events-none absolute z-10 -translate-x-1/2 -translate-y-full pb-1.5" style={style} aria-hidden="true">
+    <span className="pointer-events-none absolute z-10 group-hover:z-20 group-focus-visible:z-20 -translate-x-1/2 -translate-y-full pb-1.5" style={style} aria-hidden="true">
       <span className="flex flex-col rounded-onair-tile bg-onair-surface-2/90 px-2.5 py-1.5 shadow-onair-row">
         <span className="flex items-center gap-2 whitespace-nowrap">
           <span className={`h-[7px] w-[7px] rounded-full ${door.lit ? 'bg-onair-signal' : 'bg-onair-ink-5'}`} />
@@ -77,7 +77,7 @@ function RoomDoor({ door, covers, giveaway, onDoor }) {
 
 export default function RoomDoors({ doors, covers, giveaway, onDoor }) {
   return (
-    <ol aria-label="Things in the room" className="absolute inset-0">
+    <ol role="list" aria-label="Things in the room" className="absolute inset-0">
       {doors.map((door) => (
         <RoomDoor key={door.id} door={door} covers={covers} giveaway={giveaway} onDoor={onDoor} />
       ))}

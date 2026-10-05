@@ -138,11 +138,14 @@ body.brand-route {
 }
 
 /* The couch window's night (DESIGN.md §7, The couch). */
+:root {
+  --couch-star: #f1ead8;
+}
 .couch-sky {
   background: linear-gradient(180deg, #0b1020 0%, #18213a 60%, #2a2440 100%);
 }
 .couch-star {
-  background: #f1ead8;
+  background: var(--couch-star);
 }
 .couch-moon-dark {
   fill: #2b3046;
@@ -154,7 +157,7 @@ body.brand-route {
   fill: #f0a050;
 }
 .couch-shooting {
-  background: linear-gradient(90deg, transparent, #f1ead8);
+  background: linear-gradient(90deg, transparent, var(--couch-star));
 }
 .couch-plane {
   background: #e05a4a;

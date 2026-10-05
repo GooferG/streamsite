@@ -71,3 +71,17 @@ test('the doors layer lets pokes through to toys and the window; each door still
   expect(doorList().className).toContain('pointer-events-none');
   for (const li of doorList().children) expect(li.className).toContain('pointer-events-auto');
 });
+
+test('layers: the night is behind the plate, the window hit areas are behind the doors', () => {
+  render(<Room />);
+  const kids = Array.from(screen.getByTestId('couch-stage').children);
+  const at = (el) => kids.findIndex((k) => k === el || k.contains(el));
+  const plate = kids.findIndex((k) => k.tagName === 'IMG');
+  const outside = at(screen.getByTestId('window-outside'));
+  const sky = at(screen.getByTestId('couch-stage').querySelector('[data-toy="sky"]'));
+  const doors = at(doorList());
+  expect(outside).toBeGreaterThanOrEqual(0);
+  expect(outside).toBeLessThan(plate);
+  expect(sky).toBeGreaterThan(plate);
+  expect(sky).toBeLessThan(doors);
+});

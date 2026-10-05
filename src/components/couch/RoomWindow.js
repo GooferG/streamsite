@@ -62,27 +62,26 @@ export function WindowOutside({ win, state, now, theme, witch = null }) {
         <path d={moonPath(phase)} className={harvest ? 'couch-moon couch-moon--harvest' : 'couch-moon'} />
       </svg>
       {state.shooting ? (
-        <span key={`star-${state.shooting}`} data-testid="window-shooting" className="couch-shooting absolute left-[8%] top-[16%] h-[2px] w-[22%] motion-safe:animate-couch-shoot" />
+        <span key={`star-${state.shooting}`} data-testid="window-shooting" className="couch-shooting absolute left-[8%] top-[16%] h-[2px] w-[22%] motion-reduce:hidden motion-safe:animate-couch-shoot" />
       ) : null}
-      <span className="couch-plane absolute top-[24%] h-[3px] w-[3px] rounded-full motion-safe:animate-couch-cross" />
+      <span className="pointer-events-none absolute inset-x-0 top-[24%] motion-reduce:hidden motion-safe:animate-couch-cross">
+        <span className="couch-plane block h-[3px] w-[3px] rounded-full" />
+      </span>
       {harvest && (
-        <span data-testid="window-bats" className="absolute top-[30%] flex w-[30%] gap-[6%] motion-safe:animate-couch-cross" style={{ animationDuration: '31s' }}>
-          {[0, 1, 2, 3].map((i) => (
-            <svg key={i} viewBox="0 0 20 8" className="couch-bat w-1/4" style={{ marginTop: `${(i % 2) * 6}%` }}>
-              <path d={BAT} />
-            </svg>
-          ))}
+        <span className="pointer-events-none absolute inset-x-0 top-[30%] motion-safe:animate-couch-cross" style={{ animationDuration: '31s' }}>
+          <span data-testid="window-bats" className="flex w-[30%] gap-[6%]">
+            {[0, 1, 2, 3].map((i) => (
+              <svg key={i} viewBox="0 0 20 8" className="couch-bat w-1/4" style={{ marginTop: `${(i % 2) * 6}%` }}>
+                <path d={BAT} />
+              </svg>
+            ))}
+          </span>
         </span>
       )}
       {harvest && witch && state.witch ? (
-        <img
-          key={`witch-${state.witch}`}
-          src={witch}
-          alt=""
-          data-testid="window-witch"
-          className="absolute top-[20%] w-[22%] motion-safe:animate-couch-cross"
-          style={{ animationDuration: '4s', animationIterationCount: 1 }}
-        />
+        <span key={`witch-${state.witch}`} className="pointer-events-none absolute inset-x-0 top-[20%] motion-reduce:hidden motion-safe:animate-couch-cross" style={{ animationDuration: '4s', animationIterationCount: 1, animationFillMode: 'forwards' }}>
+          <img src={witch} alt="" data-testid="window-witch" className="block w-[22%]" />
+        </span>
       ) : null}
       {win.skyline && <img src={win.skyline.src} alt="" className="absolute" style={pctStyle(within(win.glass, win.skyline.rect))} />}
     </div>
@@ -92,6 +91,9 @@ export function WindowOutside({ win, state, now, theme, witch = null }) {
 export function WindowFront({ win, state, theme, aspect }) {
   if (!win || !win.glass) return null;
   const halloween = theme === 'halloween';
+  // Closed blinds cover the glass: only the cord answers until they are up.
+  const covered = Boolean(win.blinds) && !state.blindsUp;
+  const hit = covered ? 'pointer-events-none' : 'cursor-pointer';
   return (
     <>
       {win.blinds && (
@@ -105,15 +107,15 @@ export function WindowFront({ win, state, theme, aspect }) {
           />
         </span>
       )}
-      <span aria-hidden="true" data-toy="sky" onPointerDown={state.pokeSky} className="absolute z-[3] cursor-pointer" style={pctStyle(win.glass)} />
+      <span aria-hidden="true" data-toy="sky" onPointerDown={covered ? undefined : state.pokeSky} className={`absolute ${hit}`} style={pctStyle(win.glass)} />
       <span
         aria-hidden="true"
         data-toy="moon"
-        onPointerDown={() => state.pokeMoon(halloween)}
-        className="absolute z-[3] cursor-pointer rounded-full"
+        onPointerDown={covered ? undefined : () => state.pokeMoon(halloween)}
+        className={`absolute ${hit} rounded-full`}
         style={pctStyle(moonBox(win.glass, halloween, aspect))}
       />
-      {win.cord && <span aria-hidden="true" data-toy="cord" onPointerDown={state.pullCord} className="absolute z-[3] cursor-pointer" style={pctStyle(win.cord)} />}
+      {win.cord && <span aria-hidden="true" data-toy="cord" onPointerDown={state.pullCord} className="absolute cursor-pointer" style={pctStyle(win.cord)} />}
     </>
   );
 }

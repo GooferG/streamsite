@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { WindowFront, WindowOutside, moonBox, useWindowState } from '../RoomWindow';
 import { moonPath, moonPhase } from '../moon';
+import { ART_ASPECT, LAYOUT, intersects } from '../couchLayout';
 
 const WIN = {
   glass: [70, 10, 20, 40],
@@ -21,6 +22,7 @@ function Window({ theme = null, now = ECLIPSE, witch }) {
   );
 }
 const toy = (c, id) => c.querySelector(`[data-toy="${id}"]`);
+const raise = (c) => fireEvent.pointerDown(toy(c, 'cord'));
 
 test('moonPhase: a known new moon, half a month later, and a known full moon', () => {
   expect(moonPhase(NEW_MOON)).toBeCloseTo(0, 5);
@@ -48,6 +50,7 @@ test("the outside shows tonight's moon, stars and the skyline, all decorative", 
 
 test('tapping the sky sends a shooting star; tapping the moon makes it wink', () => {
   const { container } = render(<Window />);
+  raise(container);
   fireEvent.pointerDown(toy(container, 'sky'));
   expect(screen.getByTestId('window-shooting')).toBeTruthy();
   fireEvent.pointerDown(toy(container, 'moon'));
@@ -64,6 +67,7 @@ test('the cord rolls the blinds up and down', () => {
 
 test('Halloween: a harvest moon, bats, and every third moon tap a witch', () => {
   const { container } = render(<Window theme="halloween" witch="/witch.webp" />);
+  raise(container);
   expect(screen.getByTestId('window-moon').getAttribute('data-phase')).toBe('0.50');
   expect(screen.getByTestId('window-bats')).toBeTruthy();
   const moon = toy(container, 'moon');
@@ -89,4 +93,38 @@ test('no glass, no window', () => {
   }
   const { container } = render(<Bare />);
   expect(container.innerHTML).toBe('');
+});
+
+test('with the blinds down only the cord answers; the moon and sky wake when they are up', () => {
+  const { container } = render(<Window />);
+  expect(toy(container, 'sky').getAttribute('class')).toMatch(/pointer-events-none/);
+  fireEvent.pointerDown(toy(container, 'sky'));
+  fireEvent.pointerDown(toy(container, 'moon'));
+  expect(screen.queryByTestId('window-shooting')).toBeNull();
+  expect(screen.getByTestId('window-moon').getAttribute('class')).not.toMatch(/blink/);
+  raise(container);
+  expect(toy(container, 'sky').getAttribute('class')).not.toMatch(/pointer-events-none/);
+  fireEvent.pointerDown(toy(container, 'sky'));
+  expect(screen.getByTestId('window-shooting')).toBeTruthy();
+});
+
+test('moonPath crescents and gibbous moons, waxing and waning', () => {
+  expect(moonPath(0.1)).toBe('M 50 0 A 50 50 0 0 1 50 100 A 40.45 50 0 0 0 50 0 Z');
+  expect(moonPath(0.4)).toBe('M 50 0 A 50 50 0 0 1 50 100 A 40.45 50 0 0 1 50 0 Z');
+  expect(moonPath(0.6)).toBe('M 50 0 A 50 50 0 0 0 50 100 A 40.45 50 0 0 0 50 0 Z');
+  expect(moonPath(0.9)).toBe('M 50 0 A 50 50 0 0 0 50 100 A 40.45 50 0 0 1 50 0 Z');
+});
+
+test('moonPhase: the full moon of 26 October 2026', () => {
+  expect(Math.abs(moonPhase(Date.UTC(2026, 9, 26, 4)) - 0.5)).toBeLessThan(0.03);
+});
+
+test('the window toys and blinds never overlap a door', () => {
+  const win = LAYOUT.window;
+  const rects = [win.glass, win.cord, win.blinds && win.blinds.rect, moonBox(win.glass, false, ART_ASPECT), moonBox(win.glass, true, ART_ASPECT)].filter(Boolean);
+  for (const r of rects) {
+    for (const [id, door] of Object.entries(LAYOUT.doors)) {
+      expect([id, intersects(r, door.rect)]).toEqual([id, false]);
+    }
+  }
 });

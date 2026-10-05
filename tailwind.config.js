@@ -294,7 +294,7 @@ module.exports = {
           '15%': { opacity: '1' },
           to: { transform: 'translate(320%, 160%)', opacity: '0' },
         },
-        'couch-cross': { '0%': { left: '-35%' }, '60%,100%': { left: '110%' } },
+        'couch-cross': { '0%': { transform: 'translateX(-35%)' }, '60%,100%': { transform: 'translateX(110%)' } },
       },
       animation: {
         'slow-zoom': 'slow-zoom 18s ease-in-out infinite',

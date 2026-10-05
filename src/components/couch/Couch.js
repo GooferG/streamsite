@@ -113,6 +113,7 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
   return (
     <>
       <CouchFront
+        now={input.now}
         couch={couch}
         items={items}
         mode={mode}

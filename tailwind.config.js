@@ -286,6 +286,15 @@ module.exports = {
           '100%': { transform: 'translateY(-140%) scale(1)', opacity: '0' },
         },
         'couch-flicker': { '0%,100%': { opacity: '1' }, '20%': { opacity: '0.82' }, '45%': { opacity: '1' }, '70%': { opacity: '0.88' } },
+        // The couch window (spec: The window).
+        'couch-twinkle': { '0%,100%': { opacity: '0.85' }, '50%': { opacity: '0.35' } },
+        'couch-blink': { '0%,100%': { transform: 'scaleY(1)' }, '45%,55%': { transform: 'scaleY(0.12)' } },
+        'couch-shoot': {
+          from: { transform: 'translate(0, 0)', opacity: '0' },
+          '15%': { opacity: '1' },
+          to: { transform: 'translate(320%, 160%)', opacity: '0' },
+        },
+        'couch-cross': { '0%': { left: '-35%' }, '60%,100%': { left: '110%' } },
       },
       animation: {
         'slow-zoom': 'slow-zoom 18s ease-in-out infinite',
@@ -313,6 +322,10 @@ module.exports = {
         'couch-drop': 'couch-drop 2.4s ease-in-out',
         'couch-pop': 'couch-pop 0.9s ease-out forwards',
         'couch-flicker': 'couch-flicker 0.5s steps(2) infinite',
+        'couch-twinkle': 'couch-twinkle 3.2s ease-in-out infinite',
+        'couch-blink': 'couch-blink 0.7s ease-in-out',
+        'couch-shoot': 'couch-shoot 0.9s ease-out forwards',
+        'couch-cross': 'couch-cross 60s linear infinite',
       },
     },
   },

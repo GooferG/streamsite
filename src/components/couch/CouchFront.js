@@ -6,19 +6,21 @@ import RoomDoors from './RoomDoors';
 import TvCrop from './TvCrop';
 import Dressing from './Dressing';
 import RoomToys from './RoomToys';
+import { WindowFront, WindowOutside, useWindowState } from './RoomWindow';
 import { roomToys, themeArt } from './themes';
-import { LAYOUT, center, pctStyle, plateSrc, plateSrcSet } from './couchLayout';
+import { ART_ASPECT, LAYOUT, center, pctStyle, plateSrc, plateSrcSet } from './couchLayout';
 
 // The couch (spec: The room). Presentational: the art, the live screens and
 // the doors, positioned in percent of the art on one stage the camera moves.
 export const ROOM_QUERY = '(min-width: 768px) and (min-aspect-ratio: 4/3)';
 
-function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, onPlateError }) {
+function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, onPlateError, now = Date.now() }) {
   const { containerRef, stageRef, box } = stage;
   const base = LAYOUT.art.empty || LAYOUT.art.plate;
   const [tx, ty] = center(LAYOUT.screens.tv);
   const live = couch.tv.state === 'live';
   const art = themeArt(LAYOUT, couch.theme);
+  const win = useWindowState();
   return (
     <section aria-label="Goofer's couch" className="mt-[57px]">
       <div ref={containerRef} className="relative h-[calc(100svh-57px)] overflow-hidden bg-onair-surface-4">
@@ -28,6 +30,7 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, on
           className="absolute origin-top-left"
           style={box ? { left: box.left, top: box.top, width: box.width, height: box.height } : { inset: 0 }}
         >
+          <WindowOutside win={LAYOUT.window} state={win} now={now} theme={couch.theme} witch={art && art.witch} />
           <img
             src={plateSrc(base)}
             srcSet={plateSrcSet(base)}
@@ -40,6 +43,7 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, on
           />
           <Dressing layers={art && art.dressing} />
           <RoomToys toys={roomToys(LAYOUT, couch.theme)} />
+          <WindowFront win={LAYOUT.window} state={win} theme={couch.theme} aspect={ART_ASPECT} />
           <RoomDoors doors={couch.doors} covers={couch.covers} giveaway={couch.giveaway} onDoor={onDoor} />
           <span
             className={`couch-dim pointer-events-none absolute inset-0 ${live ? 'couch-dim--live' : ''}`}

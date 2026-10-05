@@ -1,7 +1,7 @@
 # The couch: home as Goofer's living room at 2 AM (On Air)
 
 **Date:** 2026-10-04
-**Status:** Approved in brainstorming (pending spec review)
+**Status:** Approved (spec review 2026-10-04)
 **Builds on:** `docs/superpowers/specs/2026-10-03-onair-nav-gamba-guide-design.md` (nav, channel static, On Air tokens), `docs/superpowers/specs/2026-10-03-gsn-store-design.md` (pure front + fixtures pattern, generated set-dressing art), `docs/superpowers/specs/2026-10-04-onair-vods-video-store-design.md` (stills reel on a TV, paper stickers, marker labels)
 
 ## Problem

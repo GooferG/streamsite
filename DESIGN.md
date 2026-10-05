@@ -310,7 +310,7 @@ Components unique to a streaming-channel hub. Their visual weight pulls more fro
 
 ## 7. On Air (site language)
 
-On Air is the softer broadcast look that replaces the hard-lined boxes: rounded, layered surfaces with inset highlights and drop shadows, a TV monitor stage, a perforated prediction slip. It started on the Hunts tab (`/gamba/hunts`) and is now the site's language: the nav runs it on every route, the store (`/store`, the Goofer Shopping Network), the schedule (`/schedule`, the Goofer Guide) and the video store (`/vods`, Goofer Video) are built on it, and other surfaces migrate one at a time by using the `onair` tokens and the primitives in `src/components/onAir/`. Until a page migrates, the seam between its legacy content and the On Air chrome is expected.
+On Air is the softer broadcast look that replaces the hard-lined boxes: rounded, layered surfaces with inset highlights and drop shadows, a TV monitor stage, a perforated prediction slip. It started on the Hunts tab (`/gamba/hunts`) and is now the site's language: the nav runs it on every route, the store (`/store`, the Goofer Shopping Network), the schedule (`/schedule`, the Goofer Guide), the video store (`/vods`, Goofer Video) and home (`/`, the couch) are built on it, and other surfaces migrate one at a time by using the `onair` tokens and the primitives in `src/components/onAir/`. Until a page migrates, the seam between its legacy content and the On Air chrome is expected.
 
 ### Tokens
 
@@ -318,14 +318,14 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 
 - **Colour roles:** `onair-signal` (#3ee0bf) is the signal: open, live state, positive result. `onair-winner` (#ff6a1a family) is the result moment. `onair-viewer` (#9146ff family) is "you" and Twitch actions. `onair-live` (#d83a1c) is the LIVE tally light only. `onair-loss` (#ff6b6b) is negative results and errors.
 - **Surfaces:** `onair-surface-1…4` step from #17151b to #0f0e12, `onair-surface-raised` (#3a3540) for the REPLAY pill; `onair-bezel-*` for the monitor frame; `onair-ticket-top/mid/bottom` for the slip.
-- **Paper:** `onair-paper` (label stock) and `onair-paper-ink` (the ink on it, about 13:1). Stickers use `onair-signal` and `onair-loss` as stock with paper ink. Goofer Video only.
+- **Paper:** `onair-paper` (label stock) and `onair-paper-ink` (the ink on it, about 13:1). Stickers use `onair-signal` and `onair-loss` as stock with paper ink. Goofer Video and the couch.
 - **Inks on colour:** `onair-screen-ink` / `-screen-dim` (warm CRT label tints, both at least as light as ink-5), `onair-winner-ink` (dark text on orange), `onair-winner-pale` (≥100x multipliers), `onair-viewer-ink` / `-viewer-muted` (text on the purple slip).
 - **Ink:** `onair-ink-1…7`, #ece8e1 down to #4a4550.
 - **Radii:** bezel 36, screen 26, card 24, row 18, inner 16, control 14, tile 10, case 6 and label 3 (Goofer Video's tape box and its labels).
 - **Depth:** `shadow-onair-card` and `shadow-onair-row` for resting surfaces; `shadow-onair-lit-winner` / `-lit-viewer` for lit rows and cards; `-well` for sunken fields, `-raised` for buttons, `-ticket` / `-ticket-top` for the slip.
 - **Glow tokens** (only for what may glow): `shadow-onair-live`, `-led` (on air only), `-winner-ring`, `-winner-chip`, `-dot-winner`, `-dot-viewer`.
 - **Pattern:** `bg-onair-track` is the meter's dotted track.
-- **Type:** `font-onair` (Bricolage Grotesque 500/700/800 — no 600 is loaded) for display and UI; `font-onair-mono` (JetBrains Mono 400/600/700) uppercase with 0.15–0.35em tracking for labels and data; `font-onair-marker` (Permanent Marker 400) for Goofer Video's handwritten labels and index cards only. Scale: 96 / 60 / 30 / 24 / 22 / 20 / 17 / 15 / 14 / 13 / 12 / 11 / 10; nothing below 10px. Display figures may shrink below the scale to fit their box (container-fitted, 2rem floor for the hero), with a currency code set at half size beside the figure.
+- **Type:** `font-onair` (Bricolage Grotesque 500/700/800 — no 600 is loaded) for display and UI; `font-onair-mono` (JetBrains Mono 400/600/700) uppercase with 0.15–0.35em tracking for labels and data; `font-onair-marker` (Permanent Marker 400) for Goofer Video's labels and index cards and the couch's sticky note and stickers only. Scale: 96 / 60 / 30 / 24 / 22 / 20 / 17 / 15 / 14 / 13 / 12 / 11 / 10; nothing below 10px. Display figures may shrink below the scale to fit their box (container-fitted, 2rem floor for the hero), with a currency code set at half size beside the figure.
 
 ### Navigation
 
@@ -362,6 +362,17 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 - **The marker.** `font-onair-marker` is for labels, index cards and the sign-off: 15px or larger, never for data. Dates, times, lengths and counts stay mono.
 - **The clerk is set dressing.** The night clerk (`public/gsn/video/`) appears only in the loading and empty states, always `aria-hidden`, and bows out when its art is missing.
 
+### The couch
+
+- **Home is Goofer's living room at 2 AM.** One illustrated room under the nav, sized like a cover image around the TV. Every object is a door to a channel: TV (the stream while live, else Vods), sticky note (Giveaway, only while one is open), laptop (Gamba), tapes (Vods), TV guide (Schedule), game cases (Gaming), remote (Store) and the framed photo (About). Every door and label sits inside the art's safe area (x 12.5-87.5 %, y 12-88 %).
+- **Labels glance, sentences explain.** Each door has a small mono kicker and teaser that is always visible; hover or focus opens its station-break sentence and "Opens ...".
+- **The camera.** A plain click zooms the room into the object (about 650 ms), the channel-change static covers the cut, the page tunes in. Back pulls the camera out to the couch. On phones a tile's art grows to fill the screen instead.
+- **The TV** plays the reel off air (loops or stills, with station-break cards), the live preview while live, and the stream inside the TV when clicked; watch mode clears its history entry when the stream ends. **The laptop** shows the hunt, the prediction round, or a bouncing GG screensaver.
+- **Phones** see a 4:3 crop of the TV above "On the coffee table" tiles. With no art, every door is a tile.
+- **Themes** dress the room on a calendar in `themes.js` (Halloween is October); `?theme=<id>` previews a real theme id and `?theme=none` turns dressing off. An unknown id falls back to the calendar.
+- **Toys** react to a poke and go nowhere: the lamp toggles, the controller rumbles, the can fizzes; Halloween adds the jack-o'-lantern, the spider and the candy bowl. Silent, pointer and touch only, never focusable. Under reduced motion a toy holds its art without moving.
+- **The window** shows an always-night outside behind transparent glass: tonight's real moon phase, stars, a Phoenix skyline and a plane; the moon winks, the sky throws a shooting star, the cord rolls the blinds. Halloween brings a harvest moon, bats and a witch. Window toys are inert only where the lowered blinds cover them.
+
 ### Named Rules
 
 **Depth, Not Borders.** On Air surfaces get an inset top highlight plus a drop shadow. No 1px border boxes around surfaces. Hairlines are allowed only as dividers inside one surface (table rows, the recap stat strip, the rule between the hero and its side stats), and a 1px inset edge highlight counts as depth, not a border. Form fields are the exception: a field keeps a visible resting boundary (about 3:1) so it reads as a field.
@@ -383,3 +394,17 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 **Art Never Carries Lettering.** Generated art (store item art, the GSN operator, the station ident; `scripts/gsn-art/`) has no text in it. Names, prices and the GSN bug are CSS. Art lives in `public/gsn/`.
 
 **The Operator Is Set Dressing.** GSN's recurring operator appears only in the order moment (standby, on the phone, shrug). Always `aria-hidden`; the visible text says what happened.
+
+**Doors Are Links.** Every couch object is a real anchor in one ordered list; modifier and middle clicks stay native, and only a plain click plays the camera. The list is `pointer-events-none` and each door `pointer-events-auto`, so a door always wins an overlap with a toy.
+
+**One Camera.** One layer moves, by transform only, for about a second at most; the static covers every page swap. Under reduced motion it is a short cross-fade.
+
+**Only The TV Casts Light.** The room is dim; the TV lights it only while live. The laptop screen turns on during a hunt but never glows.
+
+**Art Is Measured.** Couch positions come from the room's layout (`src/components/couch/rooms/<id>.json`), written by `scripts/couch-art/measure.py` from the masks; components never hand-tune a coordinate.
+
+**Rooms Are Swappable.** A room is its art plus its measured layout (names, screen skin, window, toys, theme art). Behaviour lives in code; a new era is a new folder and layout file.
+
+**Toys Light Themselves.** A toy may light itself while you play with it (a lit pumpkin is art with an opacity flicker); it never uses a glow token and lights nothing around it. Only the TV lights the room.
+
+**Dressing Never Covers A Door.** Theme dressing and toys are decorative (`aria-hidden`, pointer and touch only, never in the tab order) and never sit on a door or a label; the layout test enforces it.

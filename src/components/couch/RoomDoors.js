@@ -1,16 +1,20 @@
-import { useCallback } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import useDoor from '../camera/useDoor';
 import { FOCUS, MONO } from '../onAir/classes';
 import { LAYOUT, pctStyle, within } from './couchLayout';
+import { resolveLabels } from './labelLayout';
+
+const LABEL_GAP = 4;
 
 // The doors laid over the art (spec: Doors). One ordered list of real links:
 // its order is the tab order and the screen-reader structure of the room.
 // Cutouts lift on hover; the laptop doesn't, because its screen sits on top.
 const LIFT = ['tapes', 'guide', 'games', 'remote', 'photo'];
 
-function Label({ door, style }) {
+function Label({ door, style, nudge }) {
+  const [dx, dy] = nudge || [0, 0];
   return (
-    <span className="pointer-events-none absolute z-10 group-hover:z-20 group-focus-visible:z-20 -translate-x-1/2 -translate-y-full pb-1.5" style={style} aria-hidden="true">
+    <span data-label={door.id} className="pointer-events-none absolute z-10 group-hover:z-20 group-focus-visible:z-20 -translate-x-1/2 -translate-y-full pb-1.5" style={{ ...style, marginLeft: dx, marginTop: dy }} aria-hidden="true">
       <span className="flex flex-col rounded-onair-tile bg-onair-surface-2/90 px-2.5 py-1.5 shadow-onair-row">
         <span className="flex items-center gap-2 whitespace-nowrap">
           <span className={`h-[7px] w-[7px] rounded-full ${door.lit ? 'bg-onair-signal' : 'bg-onair-ink-5'}`} />
@@ -45,7 +49,7 @@ function NewSticker() {
   );
 }
 
-function RoomDoor({ door, covers, giveaway, onDoor }) {
+function RoomDoor({ door, covers, giveaway, onDoor, nudge }) {
   const box = LAYOUT.doors[door.id];
   const go = useCallback((el) => onDoor(door, el), [door, onDoor]);
   const props = useDoor(door.href, go);
@@ -69,19 +73,77 @@ function RoomDoor({ door, covers, giveaway, onDoor }) {
           )}
         {door.id === 'note' && giveaway && <StickyNote keyword={giveaway.keyword} />}
         {door.sticker === 'new' && <NewSticker />}
-        <Label door={door} style={anchor} />
+        <Label door={door} style={anchor} nudge={nudge} />
       </a>
     </li>
   );
 }
 
-export default function RoomDoors({ doors, covers, giveaway, onDoor }) {
+// Resting labels are measured with whatever nudge they carry and that nudge is
+// taken back out, so every pass solves from zero and the result never drifts.
+function measureLabels(list, applied) {
+  const stage = list.getBoundingClientRect();
+  const scale = list.offsetWidth ? stage.width / list.offsetWidth : 1;
+  const boxes = [];
+  list.querySelectorAll('[data-label]').forEach((el) => {
+    const id = el.getAttribute('data-label');
+    const r = el.getBoundingClientRect();
+    const [ax, ay] = applied[id] || [0, 0];
+    const door = el.closest('a');
+    boxes.push({
+      id,
+      x: (r.left - stage.left) / scale - ax,
+      y: (r.top - stage.top) / scale - ay,
+      w: r.width / scale,
+      h: r.height / scale,
+      objectW: door ? door.getBoundingClientRect().width / scale : 0,
+    });
+  });
+  return { boxes, bounds: { x: 0, y: 0, w: stage.width / scale, h: stage.height / scale } };
+}
+
+// Labels never stack: after layout, on a stage resize, new copy or loaded
+// fonts, nudge any resting labels that overlap (hover still raises its own).
+function useLabelNudges(listRef, box, copy) {
+  const [nudges, setNudges] = useState({});
+  const appliedRef = useRef(nudges);
+  appliedRef.current = nudges;
+  const width = box && box.width;
+  const height = box && box.height;
+
+  useLayoutEffect(() => {
+    const list = listRef.current;
+    if (!list) return undefined;
+    let live = true;
+    const run = () => {
+      if (!live) return;
+      const { boxes, bounds } = measureLabels(list, appliedRef.current);
+      const next = {};
+      resolveLabels(boxes, { bounds, gap: LABEL_GAP }).forEach((o) => {
+        if (o.dx || o.dy) next[o.id] = [o.dx, o.dy];
+      });
+      setNudges((cur) => (JSON.stringify(cur) === JSON.stringify(next) ? cur : next));
+    };
+    run();
+    if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) document.fonts.ready.then(run);
+    return () => {
+      live = false;
+    };
+  }, [listRef, width, height, copy]);
+
+  return nudges;
+}
+
+export default function RoomDoors({ doors, covers, giveaway, onDoor, box }) {
+  const listRef = useRef(null);
+  const copy = doors.map((d) => `${d.id}|${d.kicker}|${d.teaser}`).join('/');
+  const nudges = useLabelNudges(listRef, box, copy);
   return (
     // Safari drops list semantics under list-style none, so the role stays.
     // eslint-disable-next-line jsx-a11y/no-redundant-roles
-    <ol role="list" aria-label="Things in the room" className="pointer-events-none absolute inset-0">
+    <ol ref={listRef} role="list" aria-label="Things in the room" className="pointer-events-none absolute inset-0">
       {doors.map((door) => (
-        <RoomDoor key={door.id} door={door} covers={covers} giveaway={giveaway} onDoor={onDoor} />
+        <RoomDoor key={door.id} door={door} covers={covers} giveaway={giveaway} onDoor={onDoor} nudge={nudges[door.id]} />
       ))}
     </ol>
   );

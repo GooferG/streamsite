@@ -102,3 +102,51 @@ test('theme dressing paints over the toys and the window, under the doors', () =
     LAYOUT.themes = {};
   }
 });
+
+describe('labels never stack', () => {
+  const realRect = Element.prototype.getBoundingClientRect;
+  afterEach(() => {
+    Element.prototype.getBoundingClientRect = realRect;
+  });
+  // Two labels drawn on top of each other at rest; a nudge moves them like it would in a browser.
+  const rest = { tapes: [300, 200], guide: [320, 205] };
+  const rect = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top });
+  function mockRects() {
+    Element.prototype.getBoundingClientRect = function mocked() {
+      const id = this.getAttribute && this.getAttribute('data-label');
+      if (id && rest[id]) {
+        const [x, y] = rest[id];
+        return rect(x + (parseFloat(this.style.marginLeft) || 0), y + (parseFloat(this.style.marginTop) || 0), 140, 30);
+      }
+      if (this.getAttribute && this.getAttribute('role') === 'list') return rect(0, 0, 1000, 600);
+      if (this.getAttribute && this.getAttribute('data-door')) return rect(0, 0, 200, 100);
+      return rect(0, 0, 0, 0);
+    };
+  }
+  const placed = (id) => {
+    const el = document.querySelector(`[data-label="${id}"]`);
+    const [x, y] = rest[id];
+    return { x: x + (parseFloat(el.style.marginLeft) || 0), y: y + (parseFloat(el.style.marginTop) || 0), w: 140, h: 30 };
+  };
+
+  test('overlapping resting labels are moved apart, with a gap', () => {
+    mockRects();
+    render(<Room />);
+    const a = placed('tapes');
+    const b = placed('guide');
+    const apart = a.x + a.w + 4 <= b.x || b.x + b.w + 4 <= a.x || a.y + a.h + 4 <= b.y || b.y + b.h + 4 <= a.y;
+    expect(apart).toBe(true);
+    // Hit areas and names are untouched.
+    expect(screen.getByRole('link', { name: /^TV guide:/ })).toBeTruthy();
+    expect(document.querySelector('[data-label="guide"]').getAttribute('aria-hidden')).toBe('true');
+  });
+
+  test('labels that do not touch are not moved', () => {
+    mockRects();
+    rest.guide = [700, 400];
+    render(<Room />);
+    expect(placed('tapes')).toMatchObject({ x: 300, y: 200 });
+    expect(placed('guide')).toMatchObject({ x: 700, y: 400 });
+    rest.guide = [320, 205];
+  });
+});

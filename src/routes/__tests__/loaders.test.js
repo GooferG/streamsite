@@ -28,6 +28,13 @@ test('eager pages and external links resolve without loading anything', async ()
   spy.mockRestore();
 });
 
+test('a path named like an Object prototype key loads nothing and never throws', async () => {
+  for (const key of ['constructor', 'toString', 'hasOwnProperty', '__proto__', 'valueOf']) {
+    // eslint-disable-next-line no-await-in-loop
+    await expect(prefetchRoute(`/${key}`)).resolves.toBeUndefined();
+  }
+});
+
 test('a failed load is retried on the next prefetch and never rejects', async () => {
   const spy = jest
     .spyOn(PAGE_LOADERS, 'store')

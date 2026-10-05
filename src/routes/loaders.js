@@ -22,7 +22,8 @@ export function routeKey(href) {
 // next hover retries; the returned promise never rejects.
 export function prefetchRoute(href) {
   const key = routeKey(href);
-  if (!key || !PAGE_LOADERS[key]) return Promise.resolve();
+  // Own keys only: "/constructor" is no page.
+  if (!key || !Object.prototype.hasOwnProperty.call(PAGE_LOADERS, key)) return Promise.resolve();
   if (!started.has(key)) {
     started.set(
       key,

@@ -24,10 +24,10 @@ import { THEMES, isTheme } from './themes';
 //   lastVisit: ms | null (first visit) | undefined (storage unreadable), reel }
 
 export const DOOR_ORDER = ['tv', 'note', 'laptop', 'tapes', 'guide', 'games', 'remote', 'photo'];
+// The laptop's is the Gamba page its window points at (gambaPage).
 export const DESTINATION = {
   tv: 'Vods',
   note: 'Giveaway',
-  laptop: 'Gamba',
   tapes: 'Vods',
   guide: 'Schedule',
   games: 'Gaming',

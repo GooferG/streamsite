@@ -53,6 +53,22 @@ def bbox(mask, threshold=127):
     return [round(100 * x0 / w, 2), round(100 * y0 / h, 2), round(100 * (x1 - x0) / w, 2), round(100 * (y1 - y0) / h, 2)]
 
 
+def neon_hit(mask):
+    """The sign's pointer area: the hard part of the soft mask (within 2% of its
+    brightest pixel, so a dim mask still has one), minus the cord (rows
+    narrower than 30% of the widest row)."""
+    a = np.array(mask)
+    hard = a >= max(1, int(a.max()) * 250 / 255)
+    if not hard.any():
+        raise SystemExit("neon/mask.png is empty: no part of the sign to point at")
+    counts = hard.sum(axis=1)
+    keep = counts >= 0.3 * counts.max()
+    ys = np.nonzero(keep)[0]
+    xs = np.nonzero(hard[keep].any(axis=0))[0]
+    h, w = hard.shape
+    return [round(100 * xs.min() / w, 2), round(100 * ys.min() / h, 2), round(100 * (xs.max() + 1 - xs.min()) / w, 2), round(100 * (ys.max() + 1 - ys.min()) / h, 2)]
+
+
 def webp(img, out, max_kb):
     os.makedirs(os.path.dirname(out), exist_ok=True)
     for quality in range(86, 39, -4):
@@ -178,15 +194,7 @@ def main(work, room="90s"):
         for src, out in (("lit.png", "toy-neon.webp"), ("off.png", "toy-neon-off.webp")):
             img = Image.open(os.path.join(neon, src)).convert("RGB").resize(size)
             ok &= cutout(img, nm, rect, os.path.join(pub, out), NEON_KB)
-        # The pointer area is the sign's box: the hard part of the mask, minus the cord
-        # (rows narrower than 30% of the widest row).
-        hard = np.array(nm) >= 250
-        counts = hard.sum(axis=1)
-        keep = counts >= 0.3 * counts.max()
-        ys = np.nonzero(keep)[0]
-        xs = np.nonzero(hard[keep].any(axis=0))[0]
-        h, w = hard.shape
-        hit = [round(100 * xs.min() / w, 2), round(100 * ys.min() / h, 2), round(100 * (xs.max() + 1 - xs.min()) / w, 2), round(100 * (ys.max() + 1 - ys.min()) / h, 2)]
+        hit = neon_hit(nm)
         toys.append({"id": "neon", "effect": "neon", "rect": rect, "hit": hit, "art": {"idle": url("toy-neon.webp"), "active": url("toy-neon-off.webp")}})
 
     # Halloween: dressing and toys cut from the Halloween plate.

@@ -35,6 +35,10 @@ async function run(prompt) {
   for (let i = 0; i < 900; i += 1) {
     await new Promise((r) => setTimeout(r, 1000));
     const h = (await (await fetch(`${HOST}/history/${q.prompt_id}`)).json())[q.prompt_id];
+    if (h && h.status && h.status.status_str === 'error') {
+      const err = (h.status.messages || []).find(([type]) => type === 'execution_error');
+      throw new Error(err ? `${err[1].node_type}: ${err[1].exception_message}` : 'ComfyUI run failed');
+    }
     if (h) return h.outputs;
   }
   throw new Error('timed out waiting for ComfyUI');
@@ -68,6 +72,16 @@ if (cmd === 'mask') {
         prompt: what,
         output_mode: flag('separate') ? 'Separate' : 'Merged',
         confidence_threshold: Number(opt('threshold', '0.5')),
+        // The node lists these as optional but its segment() requires them.
+        max_segments: 0,
+        segment_pick: 0,
+        mask_blur: 0,
+        mask_offset: 0,
+        device: 'Auto',
+        invert_output: false,
+        unload_model: false,
+        background: 'Alpha',
+        background_color: '#222222',
       },
     },
     3: { class_type: 'SaveImage', inputs: { images: ['2', 2], filename_prefix: 'couch-mask' } },

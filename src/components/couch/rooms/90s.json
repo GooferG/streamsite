@@ -242,6 +242,26 @@
       "art": {
         "idle": "/couch/90s/toy-can.webp"
       }
+    },
+    {
+      "id": "neon",
+      "effect": "neon",
+      "rect": [
+        14.18,
+        2.95,
+        35.43,
+        41.21
+      ],
+      "hit": [
+        15.98,
+        6.12,
+        31.88,
+        20.96
+      ],
+      "art": {
+        "idle": "/couch/90s/toy-neon.webp",
+        "active": "/couch/90s/toy-neon-off.webp"
+      }
     }
   ],
   "themes": {

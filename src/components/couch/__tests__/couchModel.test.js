@@ -25,7 +25,7 @@ test('off air: TV, guide, tapes, laptop and games say the right things', () => {
   expect(door(c, 'tapes').sticker).toBe('new');
   // The sticker is art, so the name says it too.
   expect(door(c, 'tapes').label).toBe('Tapes: New tape. You missed Win Wednesdays. Thursday night, 4 hours 37. Opens Vods.');
-  expect(door(c, 'laptop').sentence).toBe('Last hunt paid $412 on $600. Best hit: 1,240x on Sugar Rush 1000.');
+  expect(door(c, 'laptop').sentence).toBe('Last hunt paid $412 on $600. Best hit: 1240x on Sugar Rush 1000.');
   expect(door(c, 'laptop').href).toBe('/gamba');
   expect(door(c, 'games').sentence).toBe('Lately: Path of Exile 2, 14 hours in two weeks. Last streamed: Slots.');
   expect(door(c, 'tv').label).toBe('TV: Off the air. Back tomorrow at 11:00 AM for Bonus Hunt Time! Opens Vods.');
@@ -50,6 +50,8 @@ test('live: the TV goes to the stream and lights up', () => {
   expect(unknown.label).toBe("TV: Goofer's live right now. Lean in to watch. Opens the stream.");
   const crowd = door(buildCouch({ ...F.live.input, stream: { ...F.live.input.stream, viewers: 1204 } }), 'tv');
   expect(crowd.sentence).toBe("Goofer's live right now. 1,204 watching. Lean in to watch.");
+  // The chip reads the count the same way.
+  expect(crowd.teaser).toBe('On now · 1,204');
   expect(c.tv.preview).toMatch(/live_user_gooferg-640x360\.jpg\?p=\d+$/);
   expect(c.tv.viewers).toBe(214);
   expect(c.tv.cards).toEqual([]);
@@ -273,8 +275,8 @@ describe('the laptop desktop', () => {
     });
     expect(laptop('recap')).toMatchObject({
       href: '/gamba/hunts',
-      teaser: 'Best hit 1,240x',
-      label: 'Laptop: Last hunt paid $412 on $600. Best hit: 1,240x on Sugar Rush 1000. Opens Hunts.',
+      teaser: 'Best hit 1240x',
+      label: 'Laptop: Last hunt paid $412 on $600. Best hit: 1240x on Sugar Rush 1000. Opens Hunts.',
     });
     expect(laptop('history')).toMatchObject({
       href: '/gamba/hunts',
@@ -342,7 +344,7 @@ describe('the laptop desktop', () => {
         href: '/store',
         label: 'TV: A Goofer Shopping Network commercial. Off the air. Back tomorrow at 11:00 AM for Bonus Hunt Time! Opens Store.',
       });
-      expect(door(both, 'laptop')).toMatchObject({ href: '/gamba/hunts', teaser: 'Best hit 1,240x' });
+      expect(door(both, 'laptop')).toMatchObject({ href: '/gamba/hunts', teaser: 'Best hit 1240x' });
       expect(door(both, 'laptop').label).toMatch(/ Opens Hunts\.$/);
       expect(both.doors.filter((d) => d.id !== 'tv' && d.id !== 'laptop')).toEqual(c.doors.filter((d) => d.id !== 'tv' && d.id !== 'laptop'));
     }

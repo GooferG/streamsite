@@ -474,26 +474,39 @@ describe('the TV door follows a commercial', () => {
     expect(tv().getAttribute('href')).toBe('/vods');
   });
 
-  test('focus on the TV door holds the reel too, until it moves on', () => {
+  test('keyboard focus on the TV door holds the reel too, until it moves on', () => {
     renderSite();
-    fireEvent.focus(tv());
+    // jsdom counts a focus() as :focus-visible, as a browser does after Tab.
+    act(() => tv().focus());
     // The pointer passing over and away does not end a keyboard hold.
     fireEvent.pointerEnter(tv());
     fireEvent.pointerLeave(tv());
     for (let i = 0; i < 5; i += 1) step(SEGMENT_MS);
     expect(screen.queryByTestId('tv-switch')).toBeNull();
-    fireEvent.blur(tv());
+    act(() => tv().blur());
     toGsn();
     expect(tv().getAttribute('href')).toBe('/store');
   });
 
-  test('phones: the TV crop holds while touched or focused too', () => {
+  test('phones: the TV crop holds while touched or keyboard-focused too', () => {
     renderSite(F.offair.input, false);
-    fireEvent.focus(tv());
+    // A finger on the crop (touch pointers enter and leave like a mouse).
+    fireEvent.pointerEnter(tv(), { pointerType: 'touch' });
     for (let i = 0; i < 5; i += 1) step(SEGMENT_MS);
+    expect(screen.queryByTestId('tv-switch')).toBeNull();
     expect(tv().getAttribute('href')).toBe('/vods');
-    fireEvent.blur(tv());
-    toGsn();
+    fireEvent.pointerLeave(tv(), { pointerType: 'touch' });
+    step(SEGMENT_MS);
+    expect(screen.getByTestId('tv-switch')).toBeTruthy();
+    step(STATIC_MS);
+    act(() => tv().focus());
+    for (let i = 0; i < 5; i += 1) step(SEGMENT_MS);
+    expect(screen.queryByTestId('tv-switch')).toBeNull();
+    act(() => tv().blur());
+    step(SEGMENT_MS);
+    step(STATIC_MS);
+    step(SEGMENT_MS);
+    step(STATIC_MS);
     expect(tv().getAttribute('href')).toBe('/store');
   });
 
@@ -526,8 +539,8 @@ describe('the laptop door follows the window on screen', () => {
     expect(chip()).toContain('BEAN board');
     step(WINDOW_MS);
     expect(laptop().getAttribute('href')).toBe('/gamba/hunts');
-    expect(laptop().getAttribute('aria-label')).toBe('Laptop: Last hunt paid $412 on $600. Best hit: 1,240x on Sugar Rush 1000. Opens Hunts.');
-    expect(chip()).toContain('Best hit 1,240x');
+    expect(laptop().getAttribute('aria-label')).toBe('Laptop: Last hunt paid $412 on $600. Best hit: 1240x on Sugar Rush 1000. Opens Hunts.');
+    expect(chip()).toContain('Best hit 1240x');
     step(WINDOW_MS);
     expect(laptop().getAttribute('aria-label')).toMatch(/Opens Hunts\.$/);
     expect(chip()).toContain('Last 5 hunts');
@@ -596,11 +609,11 @@ describe('the laptop door follows the window on screen', () => {
     fireEvent.pointerLeave(laptop());
     step(WINDOW_MS);
     expect(laptop().getAttribute('href')).toBe('/gamba/hunts');
-    fireEvent.focus(laptop());
+    act(() => laptop().focus());
     step(WINDOW_MS * 3);
     expect(laptop().getAttribute('href')).toBe('/gamba/hunts');
-    expect(chip()).toContain('Best hit 1,240x');
-    fireEvent.blur(laptop());
+    expect(chip()).toContain('Best hit 1240x');
+    act(() => laptop().blur());
     step(WINDOW_MS);
     expect(chip()).toContain('Last 5 hunts');
   });
@@ -628,5 +641,97 @@ describe('the laptop door follows the window on screen', () => {
     expect(laptop().getAttribute('href')).toBe('/gamba');
     step(WINDOW_MS);
     expect(laptop().getAttribute('href')).toBe('/gamba');
+  });
+});
+
+// A door focused by a script (Back, leaving the TV) or by a click has no
+// :focus-visible in a browser, so it must not hold its screen: a mouse user
+// would see the reel or the laptop freeze with no ring and no reason.
+describe('a door focused by a script holds nothing', () => {
+  const tv = () => screen.getByRole('link', { name: /^TV:/ });
+  const laptop = () => screen.getByRole('link', { name: /^Laptop:/ });
+  const step = (ms) =>
+    act(() => {
+      jest.advanceTimersByTime(ms);
+    });
+  const settle = async () => {
+    for (let i = 0; i < 20; i += 1) {
+      // eslint-disable-next-line no-await-in-loop
+      await act(async () => {
+        jest.advanceTimersByTime(20);
+      });
+    }
+  };
+  // jsdom counts any focus as :focus-visible; here it follows the browser.
+  const realMatches = Element.prototype.matches;
+  let keyboard = false;
+  beforeEach(() => {
+    jest.useFakeTimers();
+    keyboard = false;
+    Element.prototype.matches = function matches(selector) {
+      return selector === ':focus-visible' ? keyboard && realMatches.call(this, ':focus') : realMatches.call(this, selector);
+    };
+  });
+  afterEach(() => {
+    Element.prototype.matches = realMatches;
+    jest.useRealTimers();
+  });
+
+  async function throughAndBack(door, path) {
+    await act(async () => {
+      fireEvent.click(door(), { button: 0 });
+    });
+    await settle();
+    expect(page()).toBe(path);
+    await act(async () => nav(-1));
+    await settle();
+    expect(document.activeElement).toBe(door());
+  }
+
+  test('Back through the TV door: focus lands on it, and the reel moves on', async () => {
+    renderSite();
+    await throughAndBack(tv, '/vods');
+    expect(screen.queryByTestId('tv-card')).toBeNull();
+    step(SEGMENT_MS);
+    step(STATIC_MS);
+    expect(screen.getByTestId('tv-card')).toBeTruthy();
+  });
+
+  test('Back through the laptop door: focus lands on it, and the windows move on', async () => {
+    renderSite();
+    await throughAndBack(laptop, '/gamba/leaderboard');
+    expect(laptop().getAttribute('href')).toBe('/gamba/leaderboard');
+    step(WINDOW_MS);
+    expect(laptop().getAttribute('href')).toBe('/gamba/hunts');
+  });
+
+  test('the stream ending while you watch: focus lands on the TV door, and the reel runs', async () => {
+    const view = renderSite(F.live.input);
+    await act(async () => {
+      fireEvent.click(tv(), { button: 0 });
+    });
+    await settle();
+    expect(screen.getByTitle("Goofer's live stream")).toBeTruthy();
+    view.rerender(
+      <MemoryRouter initialEntries={['/']}>
+        <CameraProvider timings={ZERO}>
+          <Site input={F.offair.input} />
+        </CameraProvider>
+      </MemoryRouter>
+    );
+    await settle();
+    expect(document.activeElement).toBe(tv());
+    step(SEGMENT_MS);
+    step(STATIC_MS);
+    expect(screen.getByTestId('tv-card')).toBeTruthy();
+  });
+
+  test('a keyboard user coming Back (focus is visible) still holds the TV', async () => {
+    keyboard = true;
+    renderSite();
+    await throughAndBack(tv, '/vods');
+    for (let i = 0; i < 3; i += 1) step(SEGMENT_MS);
+    expect(screen.queryByTestId('tv-switch')).toBeNull();
+    expect(screen.queryByTestId('tv-card')).toBeNull();
   });
 });

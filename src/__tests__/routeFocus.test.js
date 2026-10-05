@@ -32,14 +32,27 @@ jest.mock('../components/controlRoom/StaffLayer', () => () => null);
 jest.mock('../components/GrainOverlay', () => () => null);
 jest.mock('../components/SiteFooter', () => () => null);
 jest.mock('../components/camera/CameraProvider', () => ({ children }) => children);
-// Home links to the tapes; with the flag set it puts focus on a field of its own as it mounts.
+// Home links to the tapes; with a flag set it puts focus on a field of its own
+// as it mounts, or opens a modal dialog portaled outside #main (like the
+// rental counter) and focuses that.
 let mockHomeFocuses = false;
+let mockHomeModal = false;
 jest.mock('../pages/HomePage', () => () => {
   const { Link } = require('react-router-dom');
+  const { createPortal } = require('react-dom');
   return (
     <div>
       <Link to="/vods">to the tapes</Link>
       {mockHomeFocuses && <input aria-label="find" autoFocus />}
+      {mockHomeModal &&
+        createPortal(
+          <div role="dialog" aria-modal="true" aria-label="Rental counter">
+            <button type="button" autoFocus>
+              Put it back
+            </button>
+          </div>,
+          global.document.body
+        )}
     </div>
   );
 });
@@ -74,6 +87,7 @@ jest.mock('../routes/loaders', () => {
 const KNOWN = /Error initializing Twitch API|App\.js Debug/;
 beforeEach(() => {
   mockHomeFocuses = false;
+  mockHomeModal = false;
   window.scrollTo = jest.fn();
   for (const method of ['error', 'log']) {
     const real = console[method];
@@ -130,6 +144,18 @@ test('a page that puts focus somewhere itself keeps it', async () => {
   fireEvent.click(await screen.findByRole('link', { name: 'home' }), { button: 0 });
   expect(await screen.findByText('to the tapes')).toBeTruthy();
   expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'find' }));
+});
+
+test('a modal dialog the new page opened keeps its focus', async () => {
+  render(
+    <MemoryRouter initialEntries={['/vods']}>
+      <App />
+    </MemoryRouter>
+  );
+  mockHomeModal = true;
+  fireEvent.click(await screen.findByRole('link', { name: 'home' }), { button: 0 });
+  expect(await screen.findByText('to the tapes')).toBeTruthy();
+  expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Put it back' }));
 });
 
 describe('titleFor', () => {

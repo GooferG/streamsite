@@ -49,7 +49,7 @@ describe('writeSharePages', () => {
     expect(home).toContain('property="og:url" content="https://goofer.tv/"');
     expect(board).toContain('property="og:url" content="https://goofer.tv/gamba/leaderboard"');
     expect(board).toContain('property="og:title" content="Leaderboard · GooferG"');
-    expect(board).toContain('<title>Goofer Live</title>');
+    expect(board).toContain('<title>GooferG</title>');
     expect(ogImage(home)).toMatch(/^https:\/\/goofer\.tv\/share\/home\.jpg\?v=[0-9a-f]{8}$/);
     expect(ogImage(board)).toMatch(/^https:\/\/goofer\.tv\/share\/leaderboard\.jpg\?v=[0-9a-f]{8}$/);
   });

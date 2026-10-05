@@ -35,16 +35,20 @@ test('whenAired', () => {
 });
 
 test('multiplier', () => {
-  expect(multiplier(1240)).toBe('1,240x');
+  // The Hunts tab's format (formatMultiplier): a tenth under 100, whole from 100.
+  expect(multiplier(1240)).toBe('1240x');
   expect(multiplier(48.5)).toBe('48.5x');
-  // Whole multipliers read whole, and rounding over 100 drops the tenth.
-  expect(multiplier(5)).toBe('5x');
-  expect(multiplier(99.95)).toBe('100x');
+  expect(multiplier(5)).toBe('5.0x');
+  expect(multiplier(99.95)).toBe('100.0x');
   expect(multiplier(99.94)).toBe('99.9x');
-  expect(multiplier(9.96)).toBe('10x');
+  expect(multiplier(9.96)).toBe('10.0x');
   expect(multiplier(0.43)).toBe('0.4x');
   expect(multiplier('12.25')).toBe('12.3x');
+  // Nothing to print is null, never the Hunts tab's dash, so no sentence carries one.
   expect(multiplier(undefined)).toBeNull();
+  expect(multiplier(null)).toBeNull();
+  expect(multiplier('')).toBeNull();
+  expect(multiplier('abc')).toBeNull();
 });
 
 test('a late show title drops its "!" when the sentence goes on', () => {
@@ -62,7 +66,7 @@ test('the sentences', () => {
     'A hunt is running. 14 of 23 bonuses opened, $412 back so far.'
   );
   expect(COPY.laptopLastHunt({ paid: 412, start: 600, best: { multi: 1240, slot: 'Sugar Rush 1000' } }).sentence).toBe(
-    'Last hunt paid $412 on $600. Best hit: 1,240x on Sugar Rush 1000.'
+    'Last hunt paid $412 on $600. Best hit: 1240x on Sugar Rush 1000.'
   );
   expect(COPY.tapes({ title: 'Win Wednesdays', when: 'Thursday night', length: '4 hours 37' }).sentence).toBe(
     'You missed Win Wednesdays. Thursday night, 4 hours 37.'

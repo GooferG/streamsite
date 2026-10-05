@@ -60,11 +60,11 @@ test('Escape folds an open sentence away until the pointer leaves', () => {
   expect(sentence()).not.toMatch(/group-(hover|focus-visible):block/);
   fireEvent.pointerLeave(guide);
   expect(sentence()).toContain('group-hover:block');
-  // Focused, the same.
-  fireEvent.focus(guide);
+  // Focused from the keyboard, the same.
+  act(() => guide.focus());
   fireEvent.keyDown(document, { key: 'Escape' });
   expect(sentence()).not.toMatch(/group-(hover|focus-visible):block/);
-  fireEvent.blur(guide);
+  act(() => guide.blur());
   expect(sentence()).toContain('group-focus-visible:block');
 });
 

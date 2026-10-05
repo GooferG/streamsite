@@ -13,7 +13,7 @@ export const WINDOW_MS = 7000;
 const NONE = [];
 
 // The screen's type, in container units and never below 10px. Figures are
-// mono without the labels' capitals, so a multiplier stays "1,240x".
+// mono without the labels' capitals, so a multiplier stays "1240x".
 const LABEL = `${MONO} text-[max(10px,4.5cqw)] tracking-[0.15em]`;
 const FIGURE = 'font-onair-mono text-[max(10px,4.5cqw)] tracking-[0.15em] tabular-nums';
 const TEXT = 'font-onair text-[max(10px,5cqw)]';

@@ -206,12 +206,14 @@ function StreamingSiteContent() {
 
   // A new page (a link, the nav, a door on the couch) takes focus on #main so
   // screen readers land on it; Back leaves focus to the page it returns to,
-  // and a page that put focus somewhere itself keeps it.
+  // and a page that put focus somewhere itself keeps it, in #main or in a
+  // modal dialog it portaled outside it (the rental counter, a stage moment).
   useEffect(() => {
     if (navType !== 'PUSH') return;
     const main = document.getElementById('main');
     const active = document.activeElement;
-    if (!main || (active !== main && main.contains(active))) return;
+    const placed = active && active !== main && (main?.contains(active) || active.closest?.('[aria-modal="true"]'));
+    if (!main || placed) return;
     main.focus({ preventScroll: true });
     // Page changes only: navType is read for the change that just happened.
     // eslint-disable-next-line react-hooks/exhaustive-deps

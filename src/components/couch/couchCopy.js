@@ -1,3 +1,4 @@
+import { formatMultiplier } from '../../utils/huntFormat';
 import { formatMoney, formatMoneyCompact } from '../../utils/money';
 import { calendarDay } from '../../utils/scheduleTime';
 import { formatUSD } from '../Leaderboard/format';
@@ -9,6 +10,8 @@ import { formatUSD } from '../Leaderboard/format';
 // the sentence it opens up to.
 
 export const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+// A head count, grouped like the nav's: "1,204".
+const count = (n) => Number(n).toLocaleString('en-US');
 const stop = (s) => (/[.!?]$/.test(s) ? s : `${s}.`);
 // A show title with more sentence after it drops its "!" ("Bonus Hunt Time!
 // should be on" reads as two sentences).
@@ -90,21 +93,20 @@ export const betMoney = (value, currency) => formatMoney(value, currency || null
 // A leaderboard wager, formatted the way the leaderboard page does.
 export const wager = (value) => formatUSD(value);
 
-// "1,240x", "48.5x", "5x": a tenth under 100 (none when it is whole), whole
-// above. The tenth comes first, so 99.95 reads "100x".
+// A hit's multiplier the way the Hunts tab prints it (formatMultiplier: "96.0x",
+// "1240x"). Nothing to print is null, never the Hunts tab's dash, so no
+// sentence on the couch carries one.
 export function multiplier(x) {
-  const n = Number(x);
-  if (!Number.isFinite(n)) return null;
-  const tenth = Math.round(n * 10) / 10;
-  return tenth >= 100 ? `${Math.round(n).toLocaleString('en-US')}x` : `${tenth}x`;
+  if (x == null || x === '' || !Number.isFinite(Number(x))) return null;
+  return formatMultiplier(x);
 }
 
 export const COPY = {
   tvWaiting: () => ({ kicker: 'TV', teaser: 'Tuning in', sentence: "Checking whether Goofer's on." }),
   tvLive: ({ viewers }) => ({
     kicker: 'TV',
-    teaser: viewers != null ? `On now · ${viewers}` : 'On now',
-    sentence: `Goofer's live right now.${viewers != null ? ` ${Number(viewers).toLocaleString('en-US')} watching.` : ''} Lean in to watch.`,
+    teaser: viewers != null ? `On now · ${count(viewers)}` : 'On now',
+    sentence: `Goofer's live right now.${viewers != null ? ` ${count(viewers)} watching.` : ''} Lean in to watch.`,
   }),
   tvNext: ({ title, day, clock }) => ({
     kicker: 'TV',

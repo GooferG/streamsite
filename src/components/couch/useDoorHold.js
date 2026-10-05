@@ -1,10 +1,32 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-// Whether a door is under the pointer or has focus. The TV and the laptop
-// doors follow what their screens show, so a screen holds still while you are
-// on its door (it never retargets under you): `onHold(id, on)` hears each
-// change, and `false` if the door goes away while held. Returns the flag and
-// the handlers for the door's <a> (see withHold).
+// Focus holds only when it is keyboard focus (:focus-visible). A door focused
+// by a click (browsers focus a link on mousedown) or by a script (Back lands on
+// the door, leaving the TV hands focus to it) shows no ring, so holding its
+// screen would freeze it with nothing to say why. Where :focus-visible is
+// unknown, focus counts after a key press and not after a pointer press.
+let lastInputKey = false;
+if (typeof document !== 'undefined') {
+  const lastInput = (key) => () => {
+    lastInputKey = key;
+  };
+  document.addEventListener('keydown', lastInput(true), true);
+  document.addEventListener('pointerdown', lastInput(false), true);
+}
+
+function keyboardFocus(el) {
+  try {
+    return el.matches(':focus-visible');
+  } catch (err) {
+    return lastInputKey;
+  }
+}
+
+// Whether a door is under the pointer or has keyboard focus. The TV and the
+// laptop doors follow what their screens show, so a screen holds still while
+// you are on its door (it never retargets under you): `onHold(id, on)` hears
+// each change, and `false` if the door goes away while held. Returns the flag
+// and the handlers for the door's <a> (see withHold).
 export default function useDoorHold(id, onHold) {
   const [active, setActive] = useState(false);
   const on = useRef({ hover: false, focus: false });
@@ -32,7 +54,7 @@ export default function useDoorHold(id, onHold) {
     () => ({
       onPointerEnter: () => set('hover', true),
       onPointerLeave: () => set('hover', false),
-      onFocus: () => set('focus', true),
+      onFocus: (e) => set('focus', keyboardFocus(e.currentTarget)),
       onBlur: () => set('focus', false),
     }),
     [set]

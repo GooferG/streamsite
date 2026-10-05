@@ -25,3 +25,9 @@ test('idle without a reset shows only the bug', () => {
   render(<LaptopScreen laptop={{ mode: 'idle', resetsIn: null, last: null }} />);
   expect(screen.queryByText(/Board resets/)).toBeNull();
 });
+
+test('screen text applies a 10px minimum floor', () => {
+  const { container } = render(<LaptopScreen laptop={{ mode: 'hunt', opened: 14, total: 23, back: 412, currency: null }} />);
+  const huntLabel = screen.getByText('Hunt live');
+  expect(huntLabel.className).toContain('max(10px,');
+});

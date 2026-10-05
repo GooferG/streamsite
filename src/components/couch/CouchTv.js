@@ -3,6 +3,7 @@ import { MONO } from '../onAir/classes';
 import StaticNoise from '../onAir/StaticNoise';
 import StatusLight from '../onAir/StatusLight';
 import TvCommercial from './TvCommercial';
+import { count } from './couchCopy';
 import { SCREEN_CLASS } from './couchLayout';
 import { SEGMENT_MS, STATIC_MS, isPicture } from './reel';
 
@@ -206,7 +207,7 @@ function LivePreview({ tv }) {
         <StaticNoise className="absolute inset-0" testId="tv-static" />
       )}
       <span className="absolute left-[4cqw] top-[4cqw]">
-        <StatusLight status="live">{tv.viewers != null ? `Live · ${tv.viewers}` : 'Live'}</StatusLight>
+        <StatusLight status="live">{tv.viewers != null ? `Live · ${count(tv.viewers)}` : 'Live'}</StatusLight>
       </span>
       <span className="absolute bottom-[4cqw] right-[4cqw] rounded-onair-tile bg-onair-signal px-[3cqw] py-[1.6cqw] font-onair text-[max(10px,3.6cqw)] font-bold text-onair-surface-4">
         Watch here

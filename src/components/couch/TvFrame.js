@@ -10,7 +10,8 @@ function inertOutside(el) {
   const marked = [];
   for (let node = el; node && node.parentElement && node !== document.body; node = node.parentElement) {
     Array.from(node.parentElement.children).forEach((sib) => {
-      if (sib === node || sib.hasAttribute('inert')) return;
+      // The staff control room stays live: staff can still work while watching.
+      if (sib === node || sib.hasAttribute('inert') || sib.hasAttribute('data-control-room')) return;
       sib.setAttribute('inert', '');
       marked.push(sib);
     });

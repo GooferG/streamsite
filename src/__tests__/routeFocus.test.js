@@ -134,6 +134,23 @@ test('Back does not move focus to #main (the page it returns to decides)', async
   expect(document.title).toBe('GooferG');
 });
 
+test('a new page scrolls to the top; Back to home keeps the scroll the couch landed on', async () => {
+  render(
+    <MemoryRouter initialEntries={['/']}>
+      <App />
+    </MemoryRouter>
+  );
+  fireEvent.click(await screen.findByText('to the tapes'), { button: 0 });
+  const back = await screen.findByRole('button', { name: 'back' });
+  expect(window.scrollTo).toHaveBeenCalledWith(0, 0);
+  window.scrollTo.mockClear();
+  await act(async () => {
+    fireEvent.click(back);
+  });
+  expect(await screen.findByText('to the tapes')).toBeTruthy();
+  expect(window.scrollTo).not.toHaveBeenCalled();
+});
+
 test('a page that puts focus somewhere itself keeps it', async () => {
   render(
     <MemoryRouter initialEntries={['/vods']}>

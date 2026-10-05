@@ -95,6 +95,18 @@ test('an open giveaway puts the handwritten note on the TV', () => {
   expect(note.getAttribute('href')).toBe('/giveaway');
 });
 
+test('the note sits above the TV picture and the room shade', () => {
+  const { container } = render(<Room fixture="giveaway" />);
+  const layer = (el) => Number((/(?:^|\s)z-\[(\d+)\](?:\s|$)/.exec(el.className) || [])[1] || 0);
+  const note = screen.getByRole('link', { name: /^Note:/ }).closest('li');
+  const screens = Array.from(container.querySelectorAll('[data-testid="couch-stage"] > span.absolute')).filter((el) => /z-\[2\]/.test(el.className));
+  expect(screens.length).toBeGreaterThan(0);
+  screens.forEach((el) => expect(layer(note)).toBeGreaterThan(layer(el)));
+  // The shade (.couch-dim, z-index 1) is below it too, and the labels (z-10) stay above.
+  expect(layer(note)).toBeGreaterThan(1);
+  expect(layer(note)).toBeLessThan(10);
+});
+
 test('a new tape wears a sticker', () => {
   render(<Room />);
   expect(inside(screen.getByRole('link', { name: /^Tapes:/ })).getByText('New')).toBeTruthy();

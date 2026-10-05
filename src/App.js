@@ -30,7 +30,6 @@ import {
   getTwitchVideos,
   getTwitchStreamInfo,
   getTwitchChannelInfo,
-  getTwitchFollowers,
   getGameNames,
 } from './utils/twitchApi';
 import {
@@ -118,13 +117,12 @@ function StreamingSiteContent() {
         const token = await getTwitchAccessToken();
         const userId = await getTwitchUserId(token);
 
-        const [clipsData, videosData, streamInfo, channelInfo, followersCount] =
+        const [clipsData, videosData, streamInfo, channelInfo] =
           await Promise.all([
             getTwitchClips(token, userId),
             getTwitchVideos(token, userId),
             getTwitchStreamInfo(token, userId),
             getTwitchChannelInfo(token, userId),
-            getTwitchFollowers(token, userId),
           ]);
 
         const gameIds = [
@@ -149,7 +147,7 @@ function StreamingSiteContent() {
         setIsLive(!!streamInfo);
         setStatusReady(true);
         setStreamData(streamInfo);
-        setChannelData({ ...channelInfo, followers: followersCount });
+        setChannelData(channelInfo);
         setLoading(false);
 
         console.log('App.js Debug - Stream Info:', streamInfo);
@@ -195,8 +193,13 @@ function StreamingSiteContent() {
     return () => document.body.classList.remove('brand-route');
   }, [isBrandRoute]);
 
+  // Back to the couch keeps the page where it is: on a phone the door tiles
+  // run below the fold, and the camera shrinks back into the one you left.
   useEffect(() => {
+    if (navType === 'POP' && location.pathname === '/') return;
     window.scrollTo(0, 0);
+    // Page changes only: navType is read for the change that just happened.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
   // The tab says which page this is.
@@ -291,7 +294,6 @@ function StreamingSiteContent() {
                 channelData={channelData}
                 isLive={isLive}
                 streamData={streamData}
-                loading={loading}
                 clips={clips}
                 videos={videos}
                 statusReady={statusReady}

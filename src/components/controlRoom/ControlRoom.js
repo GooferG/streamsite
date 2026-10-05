@@ -364,6 +364,7 @@ export default function ControlRoom({ isLive = false }) {
       )}
       <section
         ref={rootRef}
+        data-control-room=""
         role="dialog"
         aria-modal="false"
         aria-labelledby="cr-title"

@@ -111,9 +111,20 @@ describe('repo wiring', () => {
       const header = rule && rule.headers.find((h) => h.key === 'Cache-Control');
       return header && header.value;
     };
-    ['/tv/(.*)', '/couch/(.*)', '/gsn/(.*)'].forEach((source) =>
+    // The day rule skips the reel manifest, which has its own rule below.
+    const tv = '/tv/((?!reel/manifest.json$).*)';
+    [tv, '/couch/(.*)', '/gsn/(.*)'].forEach((source) =>
       expect([source, cache(source)]).toEqual([source, 'public, max-age=86400, stale-while-revalidate=604800'])
     );
+  });
+
+  // The manifest names the reel's current files, so a stale copy hides a new reel.
+  test('vercel.json never caches the reel manifest, and no day rule matches it', () => {
+    const rules = vercel.headers || [];
+    const manifest = '/tv/reel/manifest.json';
+    expect(rules.find((h) => h.source === manifest).headers).toEqual([{ key: 'Cache-Control', value: 'no-cache' }]);
+    const covering = rules.filter((h) => h.source !== manifest && new RegExp(`^${h.source}$`).test(manifest));
+    expect(covering).toEqual([]);
   });
 
   test('every share page has its screenshot', () => {

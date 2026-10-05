@@ -22,6 +22,11 @@ beforeEach(() => {
 });
 afterEach(() => jest.useRealTimers());
 
+test('the live badge groups the viewer count like the teaser', () => {
+  render(<CouchTv tv={{ state: 'live', preview: null, viewers: 1204, cards: [] }} items={[]} mode="stills" />);
+  expect(screen.getByText('Live · 1,204')).toBeTruthy();
+});
+
 test('waiting shows static and the whole TV is decorative', () => {
   render(<CouchTv tv={{ ...OFF, state: 'waiting' }} items={[]} mode="video" />);
   expect(screen.getByTestId('tv-static')).toBeTruthy();

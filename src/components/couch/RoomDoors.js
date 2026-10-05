@@ -13,6 +13,9 @@ const LABEL_GAP = 4;
 // its order is the tab order and the screen-reader structure of the room.
 // Cutouts lift on hover; the laptop doesn't, because its screen sits on top.
 const LIFT = ['tapes', 'guide', 'games', 'remote', 'photo'];
+// The note is stuck on the TV's glass, so it sits above the screen (z-2) and
+// the room's shade (z-1), under the labels (z-10).
+export const NOTE_LAYER = 'z-[3]';
 
 // The label is part of its door: a click on it opens the door, and the pointer
 // can rest on its open sentence. `folded` keeps the sentence shut (Escape).
@@ -87,7 +90,7 @@ function RoomDoor({ door, covers, giveaway, onDoor, onHold, nudge }) {
     ? 'transition-transform duration-200 ease-out motion-safe:group-hover:-translate-y-[2%] motion-safe:group-focus-visible:-translate-y-[2%] group-hover:drop-shadow-lg'
     : '';
   return (
-    <li className="pointer-events-auto absolute" style={pctStyle(box.rect)}>
+    <li className={`pointer-events-auto absolute ${door.id === 'note' ? NOTE_LAYER : ''}`} style={pctStyle(box.rect)}>
       <a {...props} aria-label={door.label} data-door={door.id} className={`group relative block h-full w-full rounded-onair-tile ${FOCUS}`}>
         {box.cutout && (
           <img src={box.cutout} alt="" data-door-art draggable={false} className={`absolute inset-0 h-full w-full ${lift}`} />

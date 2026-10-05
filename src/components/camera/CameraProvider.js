@@ -176,6 +176,8 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
     }
 
     return {
+      // Whether a move is running right now (the ref, so it is never a render behind).
+      isBusy: () => busyRef.current,
       // `view` is the rect `zoom` fills; the iris centres on it.
       async goThrough({ stage, zoom, href, doorId, state, cut = 'static', view }) {
         if (!start()) return;

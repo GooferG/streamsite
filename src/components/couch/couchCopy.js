@@ -11,7 +11,7 @@ import { formatUSD } from '../Leaderboard/format';
 
 export const plural = (n, one, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 // A head count, grouped like the nav's: "1,204".
-const count = (n) => Number(n).toLocaleString('en-US');
+export const count = (n) => Number(n).toLocaleString('en-US');
 const stop = (s) => (/[.!?]$/.test(s) ? s : `${s}.`);
 // A show title with more sentence after it drops its "!" ("Bonus Hunt Time!
 // should be on" reads as two sentences).

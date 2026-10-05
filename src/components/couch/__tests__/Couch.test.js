@@ -76,6 +76,16 @@ test('with reduced motion the remote skips the flip and still lands on the Store
   await waitFor(() => expect(screen.getByTestId('page').textContent).toBe('/store'));
 });
 
+test('a remote click while the camera is moving is ignored: no flip, one trip', async () => {
+  renderSite(F.offair.input, true, { ...ZERO, zoom: 200 });
+  await act(async () => {
+    fireEvent.click(screen.getByRole('link', { name: /^Tapes:/ }), { button: 0 });
+    fireEvent.click(screen.getByRole('link', { name: /^Remote:/ }), { button: 0 });
+  });
+  expect(screen.queryByTestId('tv-flip')).toBeNull();
+  await waitFor(() => expect(screen.getByTestId('page').textContent).toBe('/vods'));
+});
+
 test('leaving during the remote flip does not throw', async () => {
   const errors = [];
   const onRejection = (e) => errors.push(e);
@@ -248,6 +258,22 @@ describe('focus after the camera', () => {
     await waitFor(() => expect(document.activeElement).toBe(door(/^Remote:/)));
   });
 
+  test('phones: Back brings the tile into view before the camera shrinks into it', async () => {
+    const seen = [];
+    Element.prototype.scrollIntoView = jest.fn(function scroll() {
+      seen.push(this.getAttribute('data-door'));
+    });
+    try {
+      renderSite(F.offair.input, false);
+      await goThroughDoor(/^Remote:/);
+      expect(seen).toEqual([]);
+      await act(async () => nav(-1));
+      await waitFor(() => expect(seen).toEqual(['remote']));
+    } finally {
+      delete Element.prototype.scrollIntoView;
+    }
+  });
+
   test('coming home by the nav takes no door', async () => {
     renderSite();
     await goThroughDoor(/^Tapes:/);
@@ -332,6 +358,21 @@ describe('watching inside the TV', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Back to the couch' }));
     });
     expect(document.querySelector('[inert]')).toBeNull();
+  });
+
+  test('the staff control room is not made inert while watching', async () => {
+    const panel = document.createElement('section');
+    panel.setAttribute('data-control-room', '');
+    const button = document.createElement('button');
+    panel.appendChild(button);
+    document.body.appendChild(panel);
+    try {
+      await watch();
+      expect(panel.hasAttribute('inert')).toBe(false);
+      expect(room().closest('[inert]')).toBeTruthy();
+    } finally {
+      panel.remove();
+    }
   });
 
   test('Back to the couch hands focus to the TV door', async () => {

@@ -80,7 +80,9 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
         return;
       }
       // Reduced motion has no static and no zoom, so no flip either.
+      // A click during a move is ignored, so it must not flip the TV either.
       if (door.id === 'remote' && !prefersReducedMotion()) {
+        if (camera.isBusy()) return;
         setFlipTo('gsn');
         await wait(FLIP_MS);
         // Gone while the TV flipped: nothing left to zoom.
@@ -109,6 +111,8 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
     }
     const tile = document.querySelector(`[data-door="${doorId}"]`);
     if (!tile) return;
+    // The tile may be below the fold (a phone): bring it into view before measuring.
+    if (tile.scrollIntoView) tile.scrollIntoView({ block: 'nearest' });
     const art = tile.querySelector('img[data-door-art]');
     const cutout = LAYOUT.doors[doorId] && LAYOUT.doors[doorId].cutout;
     const src = art && cutout ? art.currentSrc || art.src : null;

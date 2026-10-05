@@ -1,5 +1,6 @@
-import { fireEvent, render, screen, within as inside } from '@testing-library/react';
+import { act, fireEvent, render, screen, within as inside } from '@testing-library/react';
 import CouchFront from '../CouchFront';
+import RoomDoors from '../RoomDoors';
 import { buildCouch } from '../couchModel';
 import { COUCH_FIXTURES as F } from '../couchFixtures';
 import useCouchStage from '../useCouchStage';
@@ -137,9 +138,13 @@ test('theme dressing paints over the toys and the window, under the doors', () =
 
 describe('labels never stack', () => {
   const realRect = Element.prototype.getBoundingClientRect;
+  beforeEach(() => jest.useFakeTimers());
   afterEach(() => {
     Element.prototype.getBoundingClientRect = realRect;
+    jest.useRealTimers();
   });
+  // The measure runs in the next animation frame.
+  const frame = () => act(() => jest.advanceTimersByTime(16));
   // Two labels drawn on top of each other at rest; a nudge moves them like it would in a browser.
   const rest = { tapes: [300, 200], guide: [320, 205] };
   const rect = (left, top, width, height) => ({ left, top, width, height, right: left + width, bottom: top + height, x: left, y: top });
@@ -170,6 +175,7 @@ describe('labels never stack', () => {
   test('overlapping resting labels are moved apart, with a gap', () => {
     mockRects();
     render(<Room />);
+    frame();
     const a = placed('tapes');
     const b = placed('guide');
     const apart = a.x + a.w + 4 <= b.x || b.x + b.w + 4 <= a.x || a.y + a.h + 4 <= b.y || b.y + b.h + 4 <= a.y;
@@ -185,6 +191,7 @@ describe('labels never stack', () => {
     opened = 'tapes';
     try {
       render(<Room />);
+      frame();
       expect(placed('tapes')).toMatchObject({ x: 300, y: 200 });
       expect(placed('guide')).toMatchObject({ x: 300, y: 140 });
       // The sentence shows again after the measure.
@@ -199,9 +206,43 @@ describe('labels never stack', () => {
     mockRects();
     rest.guide = [700, 400];
     render(<Room />);
+    frame();
     expect(placed('tapes')).toMatchObject({ x: 300, y: 200 });
     expect(placed('guide')).toMatchObject({ x: 700, y: 400 });
     rest.guide = [320, 205];
+  });
+
+  test('a resize, new copy and loaded fonts in one frame make one measure', async () => {
+    mockRects();
+    let measures = 0;
+    const mocked = Element.prototype.getBoundingClientRect;
+    Element.prototype.getBoundingClientRect = function counted() {
+      if (this.getAttribute && this.getAttribute('role') === 'list') measures += 1;
+      return mocked.call(this);
+    };
+    let ready;
+    Object.defineProperty(document, 'fonts', { configurable: true, value: { ready: new Promise((r) => (ready = r)) } });
+    try {
+      const couch = buildCouch(F.offair.input);
+      const doors = (teaser) => couch.doors.map((d) => (d.id === 'guide' ? { ...d, teaser } : d));
+      const box = (width) => ({ left: 0, top: 0, width, height: 600 });
+      const ui = (width, teaser) => <RoomDoors doors={doors(teaser)} covers={[]} onDoor={() => {}} onHold={() => {}} box={box(width)} />;
+      const { rerender } = render(ui(1000, 'a'));
+      rerender(ui(1100, 'a'));
+      rerender(ui(1100, 'b'));
+      await act(async () => ready());
+      expect(measures).toBe(0);
+      frame();
+      expect(measures).toBe(1);
+      // Placed in that one pass.
+      const a = placed('tapes');
+      const b = placed('guide');
+      expect(a.x + a.w + 4 <= b.x || b.x + b.w + 4 <= a.x || a.y + a.h + 4 <= b.y || b.y + b.h + 4 <= a.y).toBe(true);
+      frame();
+      expect(measures).toBe(1);
+    } finally {
+      delete document.fonts;
+    }
   });
 });
 
@@ -215,6 +256,11 @@ test('the room runs full height when there is no bar above it (home)', () => {
   expect(section.style.marginTop).toBe('0px');
   expect(section.querySelector(':scope > div').style.height).toBe('calc(100svh - 0px)');
   expect(section.outerHTML).not.toContain('57px');
+});
+
+test('the plate is asked for at the stage width, which outgrows the viewport on a 4:3 window', () => {
+  render(<Room />);
+  expect(screen.getByTestId('couch-stage').querySelector('img[srcset]').getAttribute('sizes')).toBe('max(100vw, 180svh)');
 });
 
 test('the room opens with a heading for screen readers', () => {

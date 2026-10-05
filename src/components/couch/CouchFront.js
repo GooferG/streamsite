@@ -37,10 +37,11 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, onSegment
           style={box ? { left: box.left, top: box.top, width: box.width, height: box.height } : { inset: 0 }}
         >
           <WindowOutside win={LAYOUT.window} state={win} now={now} theme={couch.theme} witch={art && art.witch} aspect={ART_ASPECT} />
+          {/* The stage covers the window, so on a narrow (4:3) one it runs the art's 1.8 aspect at full height: 180svh wide. */}
           <img
             src={plateSrc(base)}
             srcSet={plateSrcSet(base)}
-            sizes="100vw"
+            sizes="max(100vw, 180svh)"
             fetchPriority="high"
             alt=""
             draggable={false}

@@ -1,6 +1,14 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { coverBox, pctRect, viewRect, zoomTransform } from '../camera/cameraMath';
 
+// The container fills the window under the bar, so the window is the first
+// guess at its size: the first commit already has a box.
+function windowSize(navH) {
+  if (typeof window === 'undefined') return null;
+  const width = (document.documentElement && document.documentElement.clientWidth) || window.innerWidth;
+  return { width, height: Math.max(0, window.innerHeight - navH) };
+}
+
 // Measures the room's container, places the art over it like a cover image
 // around the focal point, and turns a rect in percent of the art into the
 // camera zoom that fills the view with it. Rects are computed from the box at
@@ -10,7 +18,7 @@ export default function useCouchStage(aspect, focal, navH) {
   const nodeRef = useRef(null);
   const stageRef = useRef(null);
   const [node, setNode] = useState(null);
-  const [size, setSize] = useState(null);
+  const [size, setSize] = useState(() => windowSize(navH));
 
   // A callback ref: the container can unmount and mount again (room <-> phone)
   // while this hook stays put, so the node lives in state and `.current` mirrors it.
@@ -20,20 +28,29 @@ export default function useCouchStage(aspect, focal, navH) {
   }, []);
   containerRef.current = node;
 
+  // The measure keeps the guess when it was right (no second render), and the
+  // size goes when the container does.
   useLayoutEffect(() => {
-    if (!node) {
-      setSize(null);
-      return undefined;
-    }
-    const read = () => setSize({ width: node.clientWidth, height: node.clientHeight });
+    if (!node) return undefined;
+    const read = () => {
+      const width = node.clientWidth;
+      const height = node.clientHeight;
+      setSize((s) => (s && s.width === width && s.height === height ? s : { width, height }));
+    };
     read();
+    let stop;
     if (typeof ResizeObserver !== 'function') {
       window.addEventListener('resize', read);
-      return () => window.removeEventListener('resize', read);
+      stop = () => window.removeEventListener('resize', read);
+    } else {
+      const ro = new ResizeObserver(read);
+      ro.observe(node);
+      stop = () => ro.disconnect();
     }
-    const ro = new ResizeObserver(read);
-    ro.observe(node);
-    return () => ro.disconnect();
+    return () => {
+      stop();
+      setSize(null);
+    };
   }, [node]);
 
   const zoomFor = useCallback(

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
 import useDoor from '../camera/useDoor';
 import { FOCUS, MONO } from '../onAir/classes';
 import { LAYOUT, pctStyle } from './couchLayout';
@@ -141,32 +142,50 @@ function measureResting(list, applied) {
 
 // Labels never stack: after layout, on a stage resize, new copy or loaded
 // fonts, nudge any resting labels that overlap (hover still raises its own).
+// Whatever asks, the measure runs at most once a frame, in that frame's
+// animation callback, and its nudges commit before the frame paints.
 function useLabelNudges(listRef, box, copy) {
   const [nudges, setNudges] = useState({});
   const appliedRef = useRef(nudges);
   appliedRef.current = nudges;
+  const frame = useRef(0);
   const width = box && box.width;
   const height = box && box.height;
 
-  useLayoutEffect(() => {
-    const list = listRef.current;
-    if (!list) return undefined;
-    let live = true;
-    const run = () => {
-      if (!live) return;
+  const schedule = useCallback(() => {
+    if (frame.current) return;
+    frame.current = window.requestAnimationFrame(() => {
+      frame.current = 0;
+      const list = listRef.current;
+      if (!list) return;
       const { boxes, bounds } = measureLabels(list, appliedRef.current);
       const next = {};
       resolveLabels(boxes, { bounds, gap: LABEL_GAP }).forEach((o) => {
         if (o.dx || o.dy) next[o.id] = [o.dx, o.dy];
       });
-      setNudges((cur) => (JSON.stringify(cur) === JSON.stringify(next) ? cur : next));
-    };
-    run();
-    if (typeof document !== 'undefined' && document.fonts && document.fonts.ready) document.fonts.ready.then(run);
+      flushSync(() => setNudges((cur) => (JSON.stringify(cur) === JSON.stringify(next) ? cur : next)));
+    });
+  }, [listRef]);
+
+  // A stage resize or new copy.
+  useLayoutEffect(() => {
+    schedule();
+  }, [schedule, width, height, copy]);
+
+  // Loaded fonts; and no measure left waiting once the doors are gone.
+  useEffect(() => {
+    let live = true;
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(() => {
+        if (live) schedule();
+      });
+    }
     return () => {
       live = false;
+      window.cancelAnimationFrame(frame.current);
+      frame.current = 0;
     };
-  }, [listRef, width, height, copy]);
+  }, [schedule]);
 
   return nudges;
 }

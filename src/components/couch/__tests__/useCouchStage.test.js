@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { coverBox } from '../../camera/cameraMath';
 import useCouchStage from '../useCouchStage';
 
 function Harness() {
@@ -32,4 +33,25 @@ test('the stage re-measures when its container unmounts and mounts again', () =>
   expect(screen.getByTestId('out').textContent).not.toBe('1000x500');
   dims.mockRestore();
   dimsH.mockRestore();
+});
+
+test('the first render already has a box, sized from the window under the bar, and the measure keeps it', () => {
+  const boxes = [];
+  function First() {
+    const { containerRef, box } = useCouchStage(2, [50, 50], 57);
+    boxes.push(box);
+    return <div ref={containerRef} />;
+  }
+  const dims = jest.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(window.innerWidth);
+  const dimsH = jest.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(window.innerHeight - 57);
+  try {
+    render(<First />);
+    const seeded = coverBox({ width: window.innerWidth, height: window.innerHeight - 57 }, 2, [50, 50]);
+    expect(boxes[0]).toEqual(seeded);
+    // Never a render without a box while the container measures.
+    boxes.forEach((b) => expect(b).toEqual(seeded));
+  } finally {
+    dims.mockRestore();
+    dimsH.mockRestore();
+  }
 });

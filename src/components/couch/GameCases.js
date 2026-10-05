@@ -10,7 +10,7 @@ const LEAN = [0, 3, 6];
 // peek out behind it. Each case has a dark header band, a hinge down its left
 // edge and a plastic gloss over the cover (colours in index.css, .couch-case*).
 export default function GameCases({ covers, className = '' }) {
-  const shown = (covers || []).slice(0, 3);
+  const shown = (covers || []).filter((c) => c && c.cover).slice(0, 3);
   if (!shown.length) return null;
   // A case at the games box's full height, in percent of the box's width.
   const width = Math.min(100, (100 * CASE_ASPECT) / rectAspect(LAYOUT.doors.games.rect));

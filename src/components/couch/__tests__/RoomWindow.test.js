@@ -16,7 +16,7 @@ function Window({ theme = null, now = ECLIPSE, witch }) {
   const state = useWindowState();
   return (
     <div>
-      <WindowOutside win={WIN} state={state} now={now} theme={theme} witch={witch} />
+      <WindowOutside win={WIN} state={state} now={now} theme={theme} witch={witch} aspect={16 / 9} />
       <WindowFront win={WIN} state={state} theme={theme} aspect={16 / 9} />
     </div>
   );
@@ -111,7 +111,7 @@ test('a moon under the blinds is inert until the cord is pulled', () => {
     const state = useWindowState();
     return (
       <div>
-        <WindowOutside win={covering} state={state} now={ECLIPSE} />
+        <WindowOutside win={covering} state={state} now={ECLIPSE} aspect={16 / 9} />
         <WindowFront win={covering} state={state} aspect={16 / 9} />
       </div>
     );
@@ -191,4 +191,30 @@ test('with the real layout the moon winks without pulling the cord', () => {
   expect(toy(container, 'moon').getAttribute('class')).not.toMatch(/pointer-events-none/);
   fireEvent.pointerDown(toy(container, 'moon'));
   expect(screen.getByTestId('window-moon').getAttribute('class')).toMatch(/animate-couch-blink/);
+});
+
+test('the drawn moon sits exactly on its hit box, in the real layout and with blinds', () => {
+  const cases = [
+    [LAYOUT.window, ART_ASPECT],
+    [WIN, 16 / 9],
+  ];
+  for (const [win, aspect] of cases) {
+    for (const theme of [null, 'halloween']) {
+      const state = { wink: 0, shooting: 0, witch: 0, blindsUp: false };
+      const { container, unmount } = render(
+        <div>
+          <WindowOutside win={win} state={state} now={ECLIPSE} theme={theme} aspect={aspect} />
+          <WindowFront win={win} state={{ ...state, pokeMoon() {}, pokeSky() {}, pullCord() {} }} theme={theme} aspect={aspect} />
+        </div>
+      );
+      const [gx, gy, gw, gh] = win.glass;
+      const svg = screen.getByTestId('window-moon').style;
+      const hit = toy(container, 'moon').style;
+      const drawn = [gx + (parseFloat(svg.left) / 100) * gw, gy + (parseFloat(svg.top) / 100) * gh, (parseFloat(svg.width) / 100) * gw];
+      expect(drawn[0]).toBeCloseTo(parseFloat(hit.left), 2);
+      expect(drawn[1]).toBeCloseTo(parseFloat(hit.top), 2);
+      expect(drawn[2]).toBeCloseTo(parseFloat(hit.width), 2);
+      unmount();
+    }
+  }
 });

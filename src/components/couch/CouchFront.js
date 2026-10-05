@@ -34,7 +34,7 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, stage, on
           className="absolute origin-top-left"
           style={box ? { left: box.left, top: box.top, width: box.width, height: box.height } : { inset: 0 }}
         >
-          <WindowOutside win={LAYOUT.window} state={win} now={now} theme={couch.theme} witch={art && art.witch} />
+          <WindowOutside win={LAYOUT.window} state={win} now={now} theme={couch.theme} witch={art && art.witch} aspect={ART_ASPECT} />
           <img
             src={plateSrc(base)}
             srcSet={plateSrcSet(base)}

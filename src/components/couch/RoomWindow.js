@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState } from 'react';
-import { intersects, pctStyle, within } from './couchLayout';
+import { ART_ASPECT, intersects, pctStyle, within } from './couchLayout';
 import { moonPath, moonPhase } from './moon';
 
 // The window (spec: The window). The glass is transparent in the room's art:
@@ -29,6 +29,14 @@ export function moonBox([gx, gy, gw, gh], harvest, aspect, blinds = null) {
   return [gx + (m.x / 100) * gw, y, w, h];
 }
 
+// The one place the moon is positioned: the hit box in percent of the art, and
+// the drawn moon in percent of the glass, from the same box.
+export function windowMoon(win, harvest, aspect) {
+  const box = moonBox(win.glass, harvest, aspect, win.blinds && win.blinds.rect);
+  const [gx, gy, gw, gh] = win.glass;
+  return { box, drawn: { left: `${((box[0] - gx) / gw) * 100}%`, top: `${((box[1] - gy) / gh) * 100}%`, width: `${(box[2] / gw) * 100}%` } };
+}
+
 export function useWindowState() {
   const [wink, setWink] = useState(0);
   const [shooting, setShooting] = useState(0);
@@ -45,11 +53,11 @@ export function useWindowState() {
   return { wink, shooting, witch, blindsUp, pokeMoon, pokeSky, pullCord };
 }
 
-export function WindowOutside({ win, state, now, theme, witch = null }) {
+export function WindowOutside({ win, state, now, theme, witch = null, aspect = ART_ASPECT }) {
   if (!win || !win.glass) return null;
   const harvest = theme === 'halloween';
   const phase = harvest ? 0.5 : moonPhase(now);
-  const m = harvest ? HARVEST : MOON;
+  const { drawn } = windowMoon(win, harvest, aspect);
   return (
     <div aria-hidden="true" data-testid="window-outside" className="couch-sky pointer-events-none absolute overflow-hidden" style={pctStyle(win.glass)}>
       {STARS.map(([x, y], i) => (
@@ -65,7 +73,7 @@ export function WindowOutside({ win, state, now, theme, witch = null }) {
         data-testid="window-moon"
         data-phase={phase.toFixed(2)}
         className={`absolute ${state.wink ? 'motion-safe:animate-couch-blink' : ''}`}
-        style={{ left: `${m.x}%`, top: `${m.y}%`, width: `${m.w}%` }}
+        style={drawn}
       >
         <circle cx="50" cy="50" r="50" className="couch-moon-dark" />
         <path d={moonPath(phase)} className={harvest ? 'couch-moon couch-moon--harvest' : 'couch-moon'} />
@@ -108,7 +116,7 @@ export function WindowFront({ win, state, theme, aspect }) {
   const blindsBottom = down ? Math.min(Math.max(win.blinds.rect[1] + win.blinds.rect[3], gy), glassBottom) : gy;
   const skyRect = down ? [gx, blindsBottom, gw, glassBottom - blindsBottom] : win.glass;
   const skyDead = down && skyRect[3] <= 0;
-  const box = moonBox(win.glass, halloween, aspect, win.blinds && win.blinds.rect);
+  const { box } = windowMoon(win, halloween, aspect);
   const moonDead = down && intersects(box, win.blinds.rect);
   const live = (dead) => (dead ? 'pointer-events-none' : 'cursor-pointer');
   return (

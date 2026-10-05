@@ -52,7 +52,7 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
         const art = el.querySelector('img[data-door-art]');
         const cutout = LAYOUT.doors[door.id] && LAYOUT.doors[door.id].cutout;
         const src = art && cutout ? art.currentSrc || art.src : null;
-        await camera.growFrom({ rect: (src ? art : el).getBoundingClientRect(), src, href: door.href, doorId: door.id, view: viewRect(window, navH) });
+        await camera.growFrom({ rect: (src ? art : el).getBoundingClientRect(), src, href: door.href, doorId: door.id, cut: door.cut, view: viewRect(window, navH) });
         return;
       }
       // Reduced motion has no static and no zoom, so no flip either.
@@ -62,7 +62,7 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
         // Gone while the TV flipped: nothing left to zoom.
         if (!stageEl.isConnected) return;
       }
-      await camera.goThrough({ stage: stageEl, zoom: stage.zoomFor(aimFor(door.id)), href: door.href, doorId: door.id });
+      await camera.goThrough({ stage: stageEl, zoom: stage.zoomFor(aimFor(door.id)), href: door.href, doorId: door.id, cut: door.cut });
     },
     [camera, inRoom, live, location.pathname, navigate, stage, navH]
   );
@@ -77,16 +77,17 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
     }
     const back = camera.takeReturn();
     if (!back) return;
+    const { doorId, cut } = back;
     if (inRoom && stageEl) {
-      camera.pullBack({ stage: stageEl, zoom: stage.zoomFor(aimFor(back)) });
+      camera.pullBack({ stage: stageEl, zoom: stage.zoomFor(aimFor(doorId)), cut });
       return;
     }
-    const tile = document.querySelector(`[data-door="${back}"]`);
+    const tile = document.querySelector(`[data-door="${doorId}"]`);
     if (!tile) return;
     const art = tile.querySelector('img[data-door-art]');
-    const cutout = LAYOUT.doors[back] && LAYOUT.doors[back].cutout;
+    const cutout = LAYOUT.doors[doorId] && LAYOUT.doors[doorId].cutout;
     const src = art && cutout ? art.currentSrc || art.src : null;
-    camera.shrinkInto({ rect: (src ? art : tile).getBoundingClientRect(), src, view: viewRect(window, navH) });
+    camera.shrinkInto({ rect: (src ? art : tile).getBoundingClientRect(), src, view: viewRect(window, navH), cut });
     // Mount only.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -97,7 +98,7 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
     if (!introPending.current || !introDone) return;
     introPending.current = false;
     const stageEl = stage.stageRef.current;
-    if (inRoom && stageEl) camera.pullBack({ stage: stageEl, zoom: stage.zoomFor(aimFor('tv')), duration: TIMINGS.introPull, withStatic: false });
+    if (inRoom && stageEl) camera.pullBack({ stage: stageEl, zoom: stage.zoomFor(aimFor('tv')), duration: TIMINGS.introPull, cut: null });
   }, [introDone, inRoom, camera, stage]);
 
   // Leaving "inside the TV" (Back, Esc, the button, or the stream ending).

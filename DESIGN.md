@@ -366,7 +366,7 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 
 - **Home is Goofer's living room at 2 AM.** One illustrated room under the nav, sized like a cover image around the TV. Every object is a door to a channel: TV (the stream while live, else Vods), sticky note (Giveaway, only while one is open), laptop (Gamba), tapes (Vods), TV guide (Schedule), game cases (Gaming), remote (Store) and the framed photo (About). Every door and label sits inside the art's safe area (x 12.5-87.5 %, y 12-88 %).
 - **Labels glance, sentences explain.** Each door has a small mono kicker and teaser that is always visible; hover or focus opens its station-break sentence and "Opens ...".
-- **The camera.** A plain click zooms the room into the object (about 650 ms), the channel-change static covers the cut, the page tunes in. Back pulls the camera out to the couch. On phones a tile's art grows to fill the screen instead.
+- **The camera.** A plain click zooms the room into the object (about 650 ms) and cuts by the door's kind: screens (TV, note, laptop, tapes, remote) cut to channel-change static and the page tunes in; things (photo, TV guide, game cases) close a black cartoon iris on the object and the page fades up. Back pulls the camera out to the couch; after a thing, the iris opens on it first. On phones a tile's art grows to fill the screen instead.
 - **The TV** plays the reel off air (loops or stills, with station-break cards), the live preview while live, and the stream inside the TV when clicked; watch mode clears its history entry when the stream ends. **The laptop** shows the hunt, the prediction round, or a bouncing GG screensaver.
 - **Phones** see a 4:3 crop of the TV above "On the coffee table" tiles. With no art, every door is a tile.
 - **Themes** dress the room on a calendar in `themes.js` (Halloween is October); `?theme=<id>` previews a real theme id and `?theme=none` turns dressing off. An unknown id falls back to the calendar.
@@ -397,7 +397,7 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 
 **Doors Are Links.** Every couch object is a real anchor in one ordered list; modifier and middle clicks stay native, and only a plain click plays the camera. The list is `pointer-events-none` and each door `pointer-events-auto`, so a door always wins an overlap with a toy.
 
-**One Camera.** One layer moves, by transform only, for about a second at most; the static covers every page swap. Under reduced motion it is a short cross-fade.
+**One Camera.** One layer moves, by transform only, for about a second at most; the door's cut (static for screens, the iris for things, itself moved by transform only) covers every page swap. Under reduced motion it is a short cross-fade.
 
 **Only The TV Casts Light.** The room is dim; the TV lights it only while live. The laptop screen turns on during a hunt but never glows.
 

@@ -1,4 +1,4 @@
-import { MAX_ZOOM, REST, coverBox, pctRect, toCss, viewRect, zoomTransform } from '../cameraMath';
+import { MAX_ZOOM, REST, coverBox, irisCircle, pctRect, toCss, viewRect, zoomTransform } from '../cameraMath';
 
 const mapped = (stage, z, p) => ({ x: stage.x + z.x + z.scale * p.x, y: stage.y + z.y + z.scale * p.y });
 
@@ -49,4 +49,17 @@ test('coverBox at 21:9 keeps the art covering the container', () => {
 
 test('viewRect is the window under the nav', () => {
   expect(viewRect({ innerWidth: 1280, innerHeight: 800 }, 57)).toEqual({ x: 0, y: 57, width: 1280, height: 743 });
+});
+
+test('irisCircle centres on the view, where a zoom puts the object, and starts past the farthest corner', () => {
+  const win = { innerWidth: 1000, innerHeight: 600 };
+  const full = irisCircle(viewRect(win, 0), win);
+  expect(full.x).toBe(500);
+  expect(full.y).toBe(300);
+  expect(full.r).toBeGreaterThanOrEqual(Math.hypot(500, 300));
+  // Under a bar the centre drops, and the hole still clears the far corners.
+  const barred = irisCircle(viewRect(win, 57), win);
+  expect(barred.x).toBe(500);
+  expect(barred.y).toBeCloseTo(57 + 543 / 2, 5);
+  expect(barred.r).toBeGreaterThanOrEqual(Math.hypot(500, barred.y));
 });

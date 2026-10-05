@@ -1,11 +1,12 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, useLocation, useNavigate } from 'react-router-dom';
+import { logCovers } from '../../../test/coverLog';
 import CameraProvider from '../../camera/CameraProvider';
 import Couch from '../Couch';
 import { COUCH_FIXTURES as F } from '../couchFixtures';
 
 jest.mock('../../../routes/loaders', () => ({ prefetchRoute: () => Promise.resolve() }));
-const ZERO = { zoom: 0, cut: 0, staticIn: 0, minHold: 0, maxHold: 0, tuneOut: 0, pull: 0, introPull: 0, fade: 0, grow: 0 };
+const ZERO = { zoom: 0, cut: 0, staticIn: 0, iris: 0, minHold: 0, maxHold: 0, tuneOut: 0, pull: 0, introPull: 0, fade: 0, grow: 0 };
 let nav;
 
 function Site({ input }) {
@@ -153,4 +154,58 @@ test('phones: a tile grows into its page', async () => {
     fireEvent.click(screen.getByRole('link', { name: /^TV guide:/ }), { button: 0 });
   });
   await waitFor(() => expect(screen.getByTestId('page').textContent).toBe('/schedule'));
+});
+
+const page = () => screen.getByTestId('page').textContent;
+
+// Clicks a door and waits until its cover is gone; returns the covers it used.
+async function goThroughDoor(name) {
+  const covers = logCovers();
+  await act(async () => {
+    fireEvent.click(screen.getByRole('link', { name }), { button: 0 });
+  });
+  await screen.findByTestId('page');
+  await waitFor(() => expect(screen.queryByTestId('camera-iris') || screen.queryByTestId('camera-static')).toBeNull());
+  covers.stop();
+  return covers;
+}
+
+test('the photo closes an iris on itself, never static', async () => {
+  renderSite();
+  const covers = await goThroughDoor(/^Photo:/);
+  expect(page()).toBe('/about');
+  expect(covers.cuts()).toEqual(['camera-iris']);
+});
+
+test('the TV guide closes an iris on itself, never static', async () => {
+  renderSite();
+  const covers = await goThroughDoor(/^TV guide:/);
+  expect(page()).toBe('/schedule');
+  expect(covers.cuts()).toEqual(['camera-iris']);
+});
+
+test('the laptop is a screen: it cuts to static', async () => {
+  renderSite();
+  const covers = await goThroughDoor(/^Laptop:/);
+  expect(page()).toMatch(/^\/gamba/);
+  expect(covers.cuts()).toEqual(['camera-static']);
+});
+
+test('Back through the photo opens the iris on the room and pulls back', async () => {
+  renderSite(F.offair.input, true, { ...ZERO, tuneOut: 20 });
+  await goThroughDoor(/^Photo:/);
+  const covers = logCovers();
+  await act(async () => nav(-1));
+  await waitFor(() => expect(screen.queryByTestId('camera-iris')).toBeNull());
+  covers.stop();
+  expect(covers.log).toContain('camera-iris:open');
+  expect(covers.cuts()).toEqual(['camera-iris']);
+  expect(screen.getByTestId('couch-stage').style.transform).toBe('');
+});
+
+test('phones: the photo tile closes an iris too', async () => {
+  renderSite(F.offair.input, false);
+  const covers = await goThroughDoor(/^Photo:/);
+  expect(page()).toBe('/about');
+  expect(covers.cuts()).toEqual(['camera-iris']);
 });

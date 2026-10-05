@@ -1,17 +1,22 @@
 import { createContext, useContext, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useNavigationType } from 'react-router-dom';
 import { prefetchRoute } from '../../routes/loaders';
+import { navHeightFor } from '../nav/navMetrics';
 import { prefersReducedMotion } from '../onAir/useChannelSwitch';
+import CameraIris from './CameraIris';
 import CameraStatic from './CameraStatic';
-import { REST, toCss, zoomTransform } from './cameraMath';
+import { REST, irisCircle, toCss, viewRect, zoomTransform } from './cameraMath';
 
 // The site's one camera (spec: The camera). It sits above the per-route
-// ErrorBoundary so a move survives the page swap: zoom into a door, cut to
-// static, change the page under it, tune in. Only transforms move.
+// ErrorBoundary so a move survives the page swap: zoom into a door, cut,
+// change the page under the cut, show it. Only transforms move. The cut is
+// the door's (Ruling R23): 'static' for screens (the page tunes in), 'iris'
+// for things (a black iris closes on the object, the page fades up).
 export const TIMINGS = {
   zoom: 650,
   cut: 520,
   staticIn: 120,
+  iris: 520,
   minHold: 250,
   maxHold: 1500,
   tuneOut: 300,
@@ -69,7 +74,8 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
   const navigate = useNavigate();
   const location = useLocation();
   const navType = useNavigationType();
-  const [staticPhase, setStaticPhase] = useState('off');
+  // The cut on screen: { cut: 'static' | 'iris', phase, at, duration } or null.
+  const [cover, setCover] = useState(null);
   const [ghost, setGhost] = useState(null);
   const [busy, setBusy] = useState(false);
   const busyRef = useRef(false);
@@ -98,28 +104,41 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
       setBusy(false);
     };
 
-    async function tuneIn() {
+    // One move's cut: show(phase, duration) puts it on screen. The iris centres
+    // on the view (`view`, else the window under the current page's bar).
+    function coverFor(cut, view) {
+      const at = cut === 'iris' ? irisCircle(view || viewRect(window, navHeightFor(locationRef.current.pathname)), window) : null;
+      return (phase, duration) => setCover({ cut, phase, at, duration });
+    }
+
+    // The new page appears once the hold is over: the static tunes out as the
+    // page settles like a picture locking on, or the black fades off it.
+    async function reveal(show, cut) {
       await wait(t.minHold);
       await frames(2);
       const main = document.getElementById('main');
-      if (main && typeof main.animate === 'function' && !prefersReducedMotion()) {
+      if (cut === 'static' && main && typeof main.animate === 'function' && !prefersReducedMotion()) {
         main.animate(SIGNAL_LOCK, { duration: 700, easing: 'cubic-bezier(0.2, 0.7, 0.3, 1)' });
       }
-      setStaticPhase('out');
+      show('out');
       await wait(t.tuneOut);
-      setStaticPhase('off');
+      setCover(null);
     }
 
-    // Zoom `el` from rest to `zoom`, bring the static up near the end, wait for
-    // the page chunk (bounded), then run `go` under the static and tune in.
+    // Zoom `el` from rest to `zoom` and bring the cut up over the end of it
+    // (the static fades in, the iris closes on the object), wait for the page
+    // chunk (bounded), then run `go` under the cut and show the page.
     // If the viewer navigates elsewhere meanwhile (the nav stays usable under
-    // the static), the move is dropped: no `go`, no stale door; `skipped` cleans up.
-    async function zoomAndCut(el, zoom, duration, load, go, skipped) {
+    // the cut), the move is dropped: no `go`, no stale door; `skipped` cleans up.
+    async function zoomAndCut({ el, zoom, duration, load, go, skipped, cut, view }) {
       const key = locationRef.current.key;
+      const show = coverFor(cut, view);
       const zooming = move(el, REST, zoom, duration, EASE_IN);
       await wait(t.cut);
-      setStaticPhase('in');
-      await Promise.all([zooming, wait(t.staticIn)]);
+      const coming = cut === 'iris' ? t.iris : t.staticIn;
+      show('in', coming);
+      await Promise.all([zooming, wait(coming)]);
+      show('hold');
       await Promise.race([load, wait(t.maxHold)]);
       if (locationRef.current.key === key) {
         go();
@@ -127,21 +146,39 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
         lastDoor.current = null;
         if (skipped) skipped();
       }
-      await tuneIn();
+      await reveal(show, cut);
+    }
+
+    // Back: the cut starts up over the object, then gives way as `pull` runs.
+    // The static fades as the pull starts; the iris opens on the object and
+    // the pull starts halfway through. No cut (the intro): just the pull.
+    async function uncover(cut, view, pull) {
+      if (cut) {
+        const show = coverFor(cut, view);
+        show('hold');
+        await frames(1);
+        if (cut === 'iris') {
+          show('open', t.tuneOut);
+          await wait(t.tuneOut / 2);
+        } else {
+          show('out');
+        }
+      }
+      await pull();
     }
 
     return {
-      async goThrough({ stage, zoom, href, doorId, state }) {
+      async goThrough({ stage, zoom, href, doorId, state, cut = 'static' }) {
         if (!start()) return;
         try {
           const load = prefetchRoute(href);
-          lastDoor.current = { doorId, path: basePath(href) };
+          lastDoor.current = { doorId, path: basePath(href), cut };
           if (prefersReducedMotion()) {
             await fade(stage, t.fade);
             navigate(href, { state });
             return;
           }
-          await zoomAndCut(stage, zoom, t.zoom, load, () => navigate(href, { state }));
+          await zoomAndCut({ el: stage, zoom, duration: t.zoom, load, go: () => navigate(href, { state }), cut });
         } finally {
           finish();
         }
@@ -155,13 +192,14 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
             navigate(path, { state });
             return;
           }
-          await zoomAndCut(stage, zoom, t.zoom, Promise.resolve(), () => navigate(path, { state }));
+          await zoomAndCut({ el: stage, zoom, duration: t.zoom, load: Promise.resolve(), go: () => navigate(path, { state }), cut: 'static' });
         } finally {
           finish();
         }
       },
 
-      async pullBack({ stage, zoom, duration, withStatic = true }) {
+      // `cut` is the door's ('static' | 'iris'), or null for a bare pull (the intro).
+      async pullBack({ stage, zoom, duration, cut = 'static' }) {
         if (!start()) return;
         try {
           if (prefersReducedMotion()) {
@@ -169,14 +207,9 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
             return;
           }
           setTransform(stage, zoom);
-          if (withStatic) {
-            setStaticPhase('hold');
-            await frames(1);
-            setStaticPhase('out');
-          }
-          await move(stage, zoom, REST, duration ?? t.pull, EASE_OUT);
+          await uncover(cut, null, () => move(stage, zoom, REST, duration ?? t.pull, EASE_OUT));
         } finally {
-          if (withStatic) setStaticPhase('off');
+          setCover(null);
           finish();
         }
       },
@@ -185,20 +218,21 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
         setTransform(stage, zoom);
       },
 
+      // The door Back came through, once: { doorId, cut } or null.
       takeReturn() {
         const arrived = seen.current.arrived;
         const door = lastDoor.current;
         if (!door || !arrived || arrived.type !== 'POP') return null;
         if (locationRef.current.pathname !== '/' || arrived.from !== door.path) return null;
         lastDoor.current = null;
-        return door.doorId;
+        return { doorId: door.doorId, cut: door.cut };
       },
 
-      async growFrom({ rect, src, href, doorId, view }) {
+      async growFrom({ rect, src, href, doorId, view, cut = 'static' }) {
         if (!start()) return;
         try {
           const load = prefetchRoute(href);
-          lastDoor.current = { doorId, path: basePath(href) };
+          lastDoor.current = { doorId, path: basePath(href), cut };
           if (prefersReducedMotion()) {
             navigate(href);
             return;
@@ -206,28 +240,34 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
           setGhost({ src, rect, transform: '' });
           await frames(1);
           const zoom = zoomTransform(rect, rect, view, { max: 6 });
-          await zoomAndCut(ghostRef.current, zoom, t.grow, load, () => {
-            navigate(href);
-            setGhost(null);
-          }, () => setGhost(null));
+          await zoomAndCut({
+            el: ghostRef.current,
+            zoom,
+            duration: t.grow,
+            load,
+            go: () => {
+              navigate(href);
+              setGhost(null);
+            },
+            skipped: () => setGhost(null),
+            cut,
+            view,
+          });
         } finally {
           finish();
         }
       },
 
-      async shrinkInto({ rect, src, view }) {
+      async shrinkInto({ rect, src, view, cut = 'static' }) {
         if (!start()) return;
         try {
           if (prefersReducedMotion()) return;
           const zoom = zoomTransform(rect, rect, view, { max: 6 });
           setGhost({ src, rect, transform: toCss(zoom) });
-          setStaticPhase('hold');
-          await frames(1);
-          setStaticPhase('out');
-          await move(ghostRef.current, zoom, REST, t.pull, EASE_OUT);
+          await uncover(cut, view, () => move(ghostRef.current, zoom, REST, t.pull, EASE_OUT));
         } finally {
           setGhost(null);
-          setStaticPhase('off');
+          setCover(null);
           finish();
         }
       },
@@ -266,7 +306,8 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
             style={ghostStyle}
           />
         ))}
-      <CameraStatic phase={staticPhase} />
+      <CameraStatic phase={cover && cover.cut === 'static' ? cover.phase : 'off'} />
+      <CameraIris iris={cover && cover.cut === 'iris' ? cover : null} />
     </CameraContext.Provider>
   );
 }

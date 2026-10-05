@@ -30,6 +30,9 @@ export const DESTINATION = {
   remote: 'Store',
   photo: 'About',
 };
+// How the camera cuts through a door (Ruling R23): screens cut to static,
+// things (the photo, the TV guide, the game cases) close a cartoon iris.
+export const DOOR_CUT = { guide: 'iris', games: 'iris', photo: 'iris' };
 const NEW_TAPE_MS = 72 * 3600000;
 const POLL_MS = 120000;
 const STEAM_COVER = (appid) => `https://cdn.cloudflare.steamstatic.com/steam/apps/${appid}/library_600x900.jpg`;
@@ -173,6 +176,7 @@ export function buildCouch(input) {
       ...copy[id],
       kicker,
       destination,
+      cut: DOOR_CUT[id] || 'static',
       label: `${kicker}: ${copy[id].sentence} Opens ${destination}.`,
       lit: (id === 'tv' && state === 'live') || (id === 'laptop' && laptop.mode !== 'idle') || id === 'note',
       sticker: id === 'tapes' && isNewTape(newest, input.lastVisit, input.now) ? 'new' : null,

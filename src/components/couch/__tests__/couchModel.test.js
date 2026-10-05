@@ -47,6 +47,20 @@ test('an open giveaway sticks the note on the TV, second in order', () => {
   expect(closed.doors.find((d) => d.id === 'note')).toBeUndefined();
 });
 
+test('screens cut to static; the photo, the TV guide and the games close an iris', () => {
+  const c = buildCouch(F.giveaway.input);
+  expect(Object.fromEntries(c.doors.map((d) => [d.id, d.cut]))).toEqual({
+    tv: 'static',
+    note: 'static',
+    laptop: 'static',
+    tapes: 'static',
+    guide: 'iris',
+    games: 'iris',
+    remote: 'static',
+    photo: 'iris',
+  });
+});
+
 test('a live hunt turns the laptop on and points it at Hunts', () => {
   const c = buildCouch(F.hunt.input);
   expect(c.laptop).toMatchObject({ mode: 'hunt', opened: 14, total: 23, back: 412 });

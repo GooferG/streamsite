@@ -48,3 +48,12 @@ export function coverBox(container, aspect, [fx, fy]) {
 
 // What a zoom fills: the window under the fixed nav.
 export const viewRect = (win, navH) => ({ x: 0, y: navH, width: win.innerWidth, height: win.innerHeight - navH });
+
+// The iris cut (Ruling R23) centres on the middle of the view, which is where a
+// zoom puts its object, and starts open just past the window's farthest corner.
+export function irisCircle(view, win) {
+  const x = view.x + view.width / 2;
+  const y = view.y + view.height / 2;
+  const far = Math.hypot(Math.max(x, win.innerWidth - x), Math.max(y, win.innerHeight - y));
+  return { x, y, r: Math.ceil(far) + 2 };
+}

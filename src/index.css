@@ -107,6 +107,15 @@ body.brand-route {
   from { opacity: 1; }
   to { opacity: 0; }
 }
+/* The iris cut for things (CameraIris): a square, clear inside its circle
+   (80% of the half side) and black in the corners, with a 1px edge; the
+   camera scales it. 'out' fades the black off the new page. */
+.camera-iris-hole {
+  background: radial-gradient(circle closest-side, transparent calc(80% - 1px), #000 80%);
+}
+.camera-iris-out {
+  animation: camera-static-out 300ms ease-out both;
+}
 
 /* The couch (DESIGN.md §7, The couch). Screen dressing over the TV and the
    laptop: scanlines, a curvature vignette and glass glare. */

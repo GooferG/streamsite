@@ -108,6 +108,17 @@ module.exports = function (app) {
     }
   });
 
+  // /api/steam-games needs STEAM_API_KEY (server-only): dev reads the deployed function.
+  app.use(
+    '/api/steam-games',
+    createProxyMiddleware({
+      target: DEPLOYED_API_TARGET,
+      changeOrigin: true,
+      secure: true,
+      pathRewrite: { '^/api/steam-games': '/api/steam-games' },
+    })
+  );
+
   // /api/me/* needs Firebase admin — proxy to the deployed functions.
   app.use(
     '/api/me',

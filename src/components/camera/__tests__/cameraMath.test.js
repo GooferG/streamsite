@@ -23,6 +23,16 @@ test('zoomTransform never passes the cap', () => {
   expect(z.scale).toBe(MAX_ZOOM);
 });
 
+test('zoomTransform rests on a target or view with no size, never NaN', () => {
+  const stage = { x: 0, y: 0, width: 1000, height: 600 };
+  const view = { x: 0, y: 0, width: 1000, height: 600 };
+  expect(zoomTransform(stage, { x: 500, y: 300, width: 0, height: 0 }, view)).toBe(REST);
+  expect(zoomTransform(stage, { x: 500, y: 300, width: 10, height: 0 }, view)).toBe(REST);
+  expect(zoomTransform(stage, { x: 500, y: 300, width: 10, height: 10 }, { ...view, height: 0 })).toBe(REST);
+  // A window shorter than the nav: no view left to fill.
+  expect(zoomTransform(stage, { x: 500, y: 300, width: 10, height: 10 }, viewRect({ innerWidth: 400, innerHeight: 40 }, 57))).toBe(REST);
+});
+
 test('toCss writes translate then scale', () => {
   expect(toCss({ scale: 2, x: -10, y: 5.5 })).toBe('translate(-10px, 5.5px) scale(2)');
   expect(toCss(REST)).toBe('translate(0px, 0px) scale(1)');
@@ -49,6 +59,8 @@ test('coverBox at 21:9 keeps the art covering the container', () => {
 
 test('viewRect is the window under the nav', () => {
   expect(viewRect({ innerWidth: 1280, innerHeight: 800 }, 57)).toEqual({ x: 0, y: 57, width: 1280, height: 743 });
+  // Never a negative height, even in a window shorter than the nav.
+  expect(viewRect({ innerWidth: 400, innerHeight: 40 }, 57)).toEqual({ x: 0, y: 57, width: 400, height: 0 });
 });
 
 test('irisCircle centres on the view, where a zoom puts the object, and starts past the farthest corner', () => {

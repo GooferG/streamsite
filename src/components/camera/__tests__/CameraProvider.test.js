@@ -119,6 +119,52 @@ test('enterInPlace keeps the path and sets the state', async () => {
   expect(where()).toBe('/|{"watch":true}');
 });
 
+test('enterInPlace keeps the query too (a dev ?fixture= survives watching)', async () => {
+  let loc;
+  function Spot() {
+    loc = useLocation();
+    cam = useCamera();
+    return null;
+  }
+  render(
+    <MemoryRouter initialEntries={['/?fixture=live']}>
+      <CameraProvider timings={ZERO}>
+        <Spot />
+      </CameraProvider>
+    </MemoryRouter>
+  );
+  await act(() => cam.enterInPlace({ stage: document.createElement('div'), zoom: ZOOM, state: { watch: true } }));
+  expect([loc.pathname, loc.search, loc.state]).toEqual(['/', '?fixture=live', { watch: true }]);
+});
+
+test('a page change hands out a new navigate, but the camera stays the same object and uses the new one', async () => {
+  // react-router gives a new navigate whenever the path changes; the stub's is stable, so wrap it.
+  const router = require('react-router-dom');
+  const real = router.useNavigate;
+  const calls = [];
+  const spy = jest.spyOn(router, 'useNavigate').mockImplementation(() => {
+    const nav = real();
+    const { pathname } = router.useLocation();
+    return (...args) => {
+      calls.push(pathname);
+      nav(...args);
+    };
+  });
+  try {
+    renderCam();
+    const first = cam;
+    act(() => nav('/vods'));
+    expect(where()).toBe('/vods|null');
+    expect(cam).toBe(first);
+    await act(() => cam.goThrough({ stage: document.createElement('div'), zoom: ZOOM, href: '/store', doorId: 'remote' }));
+    expect(where()).toBe('/store|null');
+    // The camera navigated with the navigate made for /vods, not the first page's.
+    expect(calls[calls.length - 1]).toBe('/vods');
+  } finally {
+    spy.mockRestore();
+  }
+});
+
 test('growFrom grows a ghost, navigates and removes it', async () => {
   renderCam();
   await act(() =>

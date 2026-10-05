@@ -60,6 +60,8 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
   const [held, setHeld] = useState(NOT_HELD);
   const onHold = useCallback((id, on) => setHeld((h) => (!(id in h) || h[id] === on ? h : { ...h, [id]: on })), []);
   const watching = isWatching(location, live);
+  // Watching changes only the state: the page and its query (a dev ?fixture=) stay.
+  const here = location.pathname + location.search;
   const inRoom = roomLayout && !noArt;
 
   const onDoor = useCallback(
@@ -67,7 +69,7 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
       const stageEl = stage.stageRef.current;
       if (door.id === 'tv' && live) {
         if (inRoom && stageEl) await camera.enterInPlace({ stage: stageEl, zoom: stage.zoomFor(aimFor('tv')), state: { watch: true } });
-        else navigate(location.pathname, { state: { watch: true } });
+        else navigate(here, { state: { watch: true } });
         return;
       }
       if (!inRoom || !stageEl) {
@@ -86,7 +88,7 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
       }
       await camera.goThrough({ stage: stageEl, zoom: stage.zoomFor(aimFor(door.id)), href: door.href, doorId: door.id, cut: door.cut, view: viewRect(window, navH) });
     },
-    [camera, inRoom, live, location.pathname, navigate, stage, navH]
+    [camera, inRoom, live, here, navigate, stage, navH]
   );
 
   // On mount: start inside the TV for the intro, or pull back from the door we
@@ -142,13 +144,13 @@ export default function Couch({ input, noArt = false, introPullBack = false, int
   // reconnect does not reopen the frame and Back is not a dead press.
   const stale = !live && !!(location.state && location.state.watch);
   useEffect(() => {
-    if (stale) navigate(location.pathname, { replace: true, state: null });
-  }, [stale, location.pathname, navigate]);
+    if (stale) navigate(here, { replace: true, state: null });
+  }, [stale, here, navigate]);
 
   const exitWatch = useCallback(() => {
-    if (location.key === 'default') navigate(location.pathname, { replace: true, state: null });
+    if (location.key === 'default') navigate(here, { replace: true, state: null });
     else navigate(-1);
-  }, [location.key, location.pathname, navigate]);
+  }, [location.key, here, navigate]);
 
   return (
     <>

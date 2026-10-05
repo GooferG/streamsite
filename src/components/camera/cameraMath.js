@@ -18,8 +18,10 @@ export function pctRect(box, [px, py, pw, ph]) {
 }
 
 // The zoom that centres `target` (a rect inside `stage`, both measured at
-// rest) in `view` and fills `fill` of its tighter side, capped at `max`.
+// rest) in `view` and fills `fill` of its tighter side, capped at `max`. A
+// target or view with no size has nothing to fill: rest.
 export function zoomTransform(stage, target, view, { fill = ZOOM_FILL, max = MAX_ZOOM } = {}) {
+  if (!(target.width > 0 && target.height > 0 && view.width > 0 && view.height > 0)) return REST;
   const scale = Math.min(max, fill * Math.min(view.width / target.width, view.height / target.height));
   const cx = target.x - stage.x + target.width / 2;
   const cy = target.y - stage.y + target.height / 2;
@@ -46,8 +48,9 @@ export function coverBox(container, aspect, [fx, fy]) {
   };
 }
 
-// What a zoom fills: the window under the fixed nav.
-export const viewRect = (win, navH) => ({ x: 0, y: navH, width: win.innerWidth, height: win.innerHeight - navH });
+// What a zoom fills: the window under the fixed nav (no height left in a
+// window shorter than the nav).
+export const viewRect = (win, navH) => ({ x: 0, y: navH, width: win.innerWidth, height: Math.max(0, win.innerHeight - navH) });
 
 // The iris cut (Ruling R23) centres on the middle of the view, which is where a
 // zoom puts its object, and starts open just past the window's farthest corner.

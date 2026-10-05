@@ -74,7 +74,10 @@ function fade(el, duration) {
 }
 
 export default function CameraProvider({ children, timings = TIMINGS }) {
-  const navigate = useNavigate();
+  // Held in a ref: the router hands out a new navigate on every page change,
+  // which must not rebuild the camera (and re-render everything that uses it).
+  const navigateRef = useRef(null);
+  navigateRef.current = useNavigate();
   const location = useLocation();
   const navType = useNavigationType();
   // The cut on screen: { cut: 'static' | 'iris', phase, at, duration } or null.
@@ -96,6 +99,7 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
 
   const api = useMemo(() => {
     const t = timings;
+    const navigate = (...args) => navigateRef.current(...args);
     const start = () => {
       if (busyRef.current) return false;
       busyRef.current = true;
@@ -190,10 +194,11 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
         }
       },
 
+      // Same page (and query, so a dev ?fixture= stays), new state.
       async enterInPlace({ stage, zoom, state }) {
         if (!start()) return;
         try {
-          const path = locationRef.current.pathname;
+          const path = locationRef.current.pathname + locationRef.current.search;
           if (prefersReducedMotion()) {
             navigate(path, { state });
             return;
@@ -282,7 +287,7 @@ export default function CameraProvider({ children, timings = TIMINGS }) {
         }
       },
     };
-  }, [navigate, timings]);
+  }, [timings]);
 
   const value = useMemo(() => ({ ...api, busy }), [api, busy]);
   const ghostStyle = ghost && {

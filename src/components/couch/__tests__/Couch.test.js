@@ -259,6 +259,30 @@ describe('focus after the camera', () => {
   });
 });
 
+test.each([
+  ['the room', true],
+  ['a phone', false],
+])('watching from %s keeps the page query (a dev ?fixture= survives)', async (_, room) => {
+  let loc;
+  function Here() {
+    loc = useLocation();
+    return <Couch input={F.live.input} />;
+  }
+  window.matchMedia = jest.fn((query) => ({ matches: query.includes('reduced-motion') ? false : room, addEventListener() {}, removeEventListener() {} }));
+  render(
+    <MemoryRouter initialEntries={['/?fixture=live']}>
+      <CameraProvider timings={ZERO}>
+        <Here />
+      </CameraProvider>
+    </MemoryRouter>
+  );
+  await act(async () => {
+    fireEvent.click(screen.getByRole('link', { name: /^TV:/ }), { button: 0 });
+  });
+  expect(await screen.findByTitle("Goofer's live stream")).toBeTruthy();
+  expect([loc.pathname, loc.search]).toEqual(['/', '?fixture=live']);
+});
+
 describe('watching inside the TV', () => {
   const tvDoor = () => screen.getByRole('link', { name: /^TV:/ });
   const room = () => document.querySelector('section[aria-label="Goofer\'s couch"]');

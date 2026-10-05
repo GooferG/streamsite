@@ -125,6 +125,10 @@ body.brand-route {
     radial-gradient(ellipse at 50% 50%, transparent 58%, rgb(0 0 0 / 0.45)),
     linear-gradient(160deg, rgb(255 255 255 / 0.07), transparent 38%);
 }
+/* The channel-change static's fixed scanlines (onAir/StaticNoise). */
+.onair-scanlines {
+  background-image: repeating-linear-gradient(0deg, rgb(0 0 0 / 0.3) 0 1px, transparent 1px 3px);
+}
 .couch-flip-static {
   animation: camera-static-out 300ms ease-in both;
 }

@@ -55,6 +55,12 @@ test('a late show title drops its "!" when the sentence goes on', () => {
   expect(COPY.tvLate({ title: 'Bonus Hunt Time!' }).sentence).toBe('Bonus Hunt Time should be on by now. Give him a minute.');
   expect(COPY.guideLate({ title: 'Bonus Hunt Time!' }).sentence).toBe('Next up: Bonus Hunt Time, due now.');
   expect(COPY.guideLate({ title: 'Sunday Slots' }).sentence).toBe('Next up: Sunday Slots, due now.');
+  // The guide's title runs on into the day and time too.
+  expect(COPY.guide({ title: 'Bonus Hunt Time!', day: 'tomorrow', clock: '11:00 AM', until: '14 hours' }).sentence).toBe(
+    'Next up: Bonus Hunt Time tomorrow at 11:00 AM, in 14 hours.'
+  );
+  expect(COPY.guideDay({ title: 'Bonus Hunt Time!', day: 'Monday' }).sentence).toBe('Next up: Bonus Hunt Time on Monday.');
+  expect(COPY.guideDay({ title: 'Sunday Slots', day: 'today' }).sentence).toBe('Next up: Sunday Slots today.');
 });
 
 test('the sentences', () => {
@@ -72,7 +78,7 @@ test('the sentences', () => {
     'You missed Win Wednesdays. Thursday night, 4 hours 37.'
   );
   expect(COPY.guide({ title: 'Bonus Hunt Time!', day: 'Monday', clock: '11:00 AM', until: '1 day 1 hour' }).sentence).toBe(
-    'Next up: Bonus Hunt Time! on Monday at 11:00 AM, in 1 day 1 hour.'
+    'Next up: Bonus Hunt Time on Monday at 11:00 AM, in 1 day 1 hour.'
   );
   expect(COPY.noteOpen({ keyword: '!goof', prize: '$25.00 bonus buy' }).sentence).toBe(
     "Giveaway's open. Type !goof in chat for a $25.00 bonus buy."

@@ -13,6 +13,10 @@ import { ART_ASPECT, LAYOUT, center, pctStyle, plateSrc, plateSrcSet } from './c
 // The couch (spec: The room). Presentational: the art, the live screens and
 // the doors, positioned in percent of the art on one stage the camera moves.
 export const ROOM_QUERY = '(min-width: 768px) and (min-aspect-ratio: 4/3)';
+// The plate's width on screen: the viewport, or on a window narrower than the
+// art the stage at full height, the art's aspect times the height (up to the
+// next whole svh), so a swapped room asks for its own width.
+const PLATE_SIZES = `max(100vw, ${Math.ceil(ART_ASPECT * 100)}svh)`;
 
 function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, onSegment, onWindow, held = {}, onHold, stage, onPlateError, now = Date.now() }) {
   const { containerRef, stageRef, box } = stage;
@@ -37,11 +41,11 @@ function Room({ couch, items, mode, flipTo, onDoor, onAutoplayBlocked, onSegment
           style={box ? { left: box.left, top: box.top, width: box.width, height: box.height } : { inset: 0 }}
         >
           <WindowOutside win={LAYOUT.window} state={win} now={now} theme={couch.theme} witch={art && art.witch} aspect={ART_ASPECT} />
-          {/* The stage covers the window, so on a narrow (4:3) one it runs the art's 1.8 aspect at full height: 180svh wide. */}
+          {/* The stage covers the window, so on a narrow (4:3) one it runs the art's aspect at full height (PLATE_SIZES). */}
           <img
             src={plateSrc(base)}
             srcSet={plateSrcSet(base)}
-            sizes="max(100vw, 180svh)"
+            sizes={PLATE_SIZES}
             fetchPriority="high"
             alt=""
             draggable={false}

@@ -6,8 +6,6 @@
 export const TILE = 128; // pixels a side; each shows as a 2px grain
 const GRAIN = 2;
 const LEVELS = 16; // greys, 4 bits a pixel
-// Fixed scanlines over the moving noise.
-const SCANLINES = { backgroundImage: 'repeating-linear-gradient(0deg, rgb(0 0 0 / 0.3) 0 1px, transparent 1px 3px)' };
 
 // A random grey, contrasty the way the old contrast(1.6) filter made it: about
 // a fifth of the grains black and a fifth white.
@@ -59,7 +57,8 @@ export default function StaticNoise({ className = '', style, testId = 'onair-sta
         className="absolute inset-[-64px] opacity-[0.85] motion-safe:animate-onair-static"
         style={{ backgroundImage: `url(${staticTile()})`, backgroundSize: `${TILE * GRAIN}px`, imageRendering: 'pixelated' }}
       />
-      <div className="absolute inset-0" style={SCANLINES} />
+      {/* Fixed scanlines over the moving noise (index.css). */}
+      <div className="onair-scanlines absolute inset-0" />
       <div className="absolute inset-x-0 h-[30%] motion-safe:animate-onair-roll bg-gradient-to-b from-transparent via-white/[0.35] to-transparent" />
     </div>
   );

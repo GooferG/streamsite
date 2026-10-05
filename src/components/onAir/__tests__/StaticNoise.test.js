@@ -35,6 +35,15 @@ test('the noise is one tile, drawn once, moved by a transform-only stepped anima
   expect(animation['onair-static']).toMatch(/steps\(1\)/);
 });
 
+test('the scanlines are a class, so their colour lives in index.css', () => {
+  render(<StaticNoise testId="tv-static" />);
+  const el = screen.getByTestId('tv-static');
+  expect(el.querySelector('.onair-scanlines')).toBeTruthy();
+  expect(el.innerHTML).not.toMatch(/rgb\(|rgba\(|repeating-linear-gradient/);
+  const css = require('fs').readFileSync(require('path').resolve(__dirname, '../../../index.css'), 'utf8');
+  expect(css).toMatch(/\.onair-scanlines\s*\{[^}]*repeating-linear-gradient/);
+});
+
 test('the tile is a grey noise bitmap, made once', () => {
   const url = staticTile();
   expect(staticTile()).toBe(url);

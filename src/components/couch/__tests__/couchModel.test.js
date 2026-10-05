@@ -20,7 +20,7 @@ test('off air: TV, guide, tapes, laptop and games say the right things', () => {
   expect(c.doors.map((d) => d.id)).toEqual(['tv', 'laptop', 'tapes', 'guide', 'games', 'remote', 'photo']);
   expect(door(c, 'tv').sentence).toBe('Off the air. Back tomorrow at 11:00 AM for Bonus Hunt Time!');
   expect(door(c, 'tv').href).toBe('/vods');
-  expect(door(c, 'guide').sentence).toBe('Next up: Bonus Hunt Time! tomorrow at 11:00 AM, in 1 day 1 hour.');
+  expect(door(c, 'guide').sentence).toBe('Next up: Bonus Hunt Time tomorrow at 11:00 AM, in 1 day 1 hour.');
   expect(door(c, 'tapes').sentence).toBe('You missed Win Wednesdays. Thursday night, 4 hours 37.');
   expect(door(c, 'tapes').sticker).toBe('new');
   // The sticker is art, so the name says it too.

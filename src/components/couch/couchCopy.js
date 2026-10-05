@@ -171,9 +171,9 @@ export const COPY = {
   guide: ({ title, day, clock, until }) => ({
     kicker: 'TV guide',
     teaser: `${cap(shortDay(day))} ${clock}`,
-    sentence: `Next up: ${title} ${onDay(day)} at ${clock}, in ${until}.`,
+    sentence: `Next up: ${mid(title)} ${onDay(day)} at ${clock}, in ${until}.`,
   }),
-  guideDay: ({ title, day }) => ({ kicker: 'TV guide', teaser: cap(shortDay(day)), sentence: `Next up: ${title} ${onDay(day)}.` }),
+  guideDay: ({ title, day }) => ({ kicker: 'TV guide', teaser: cap(shortDay(day)), sentence: `Next up: ${mid(title)} ${onDay(day)}.` }),
   guideLate: ({ title }) => ({ kicker: 'TV guide', teaser: 'Running late', sentence: `Next up: ${mid(title)}, due now.` }),
   guideLoading: () => ({ kicker: 'TV guide', teaser: 'Tuning in', sentence: 'Checking the guide.' }),
   guideNone: () => ({ kicker: 'TV guide', teaser: 'This week', sentence: 'Nothing on the books yet. The guide has the week.' }),

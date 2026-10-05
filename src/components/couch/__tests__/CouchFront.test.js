@@ -260,7 +260,11 @@ test('the room runs full height when there is no bar above it (home)', () => {
 
 test('the plate is asked for at the stage width, which outgrows the viewport on a 4:3 window', () => {
   render(<Room />);
-  expect(screen.getByTestId('couch-stage').querySelector('img[srcset]').getAttribute('sizes')).toBe('max(100vw, 180svh)');
+  // The art's aspect at full height, rounded up: a swapped room asks for its own width.
+  const sizes = screen.getByTestId('couch-stage').querySelector('img[srcset]').getAttribute('sizes');
+  expect(sizes).toBe(`max(100vw, ${Math.ceil(ART_ASPECT * 100)}svh)`);
+  // The 90s room is 2560 by 1422, a little over 1.8.
+  expect(sizes).toBe('max(100vw, 181svh)');
 });
 
 test('the room opens with a heading for screen readers', () => {

@@ -137,6 +137,24 @@ service cloud.firestore {
       }
     }
 
+    // Goofer Ball — rounds and balls are public (overlay, CH 42, control
+    // room). Claims and did-you-mean lists are server-only. All writes go
+    // through api/admin/ball.js and the !slot command (firebase-admin).
+    match /ball_rounds/{id} {
+      allow read: if true;
+      allow write: if false;
+      match /balls/{ballId} {
+        allow read: if true;
+        allow write: if false;
+      }
+      match /claims/{claimId} {
+        allow read, write: if false;
+      }
+      match /choices/{twitchId} {
+        allow read, write: if false;
+      }
+    }
+
     // EventSub message dedupe cache — internal use only.
     match /eventsub_seen/{id} {
       allow read, write: if false;

@@ -102,3 +102,17 @@ test('the matcher does not judge bonus buys (the command does)', () => {
   expect(m.kind).toBe('exact');
   expect(m.slot.bonusBuy).toBe(false);
 });
+
+test('a word that only starts a one-word name does not beat names containing the exact word', () => {
+  const small = buildSlotIndex(
+    [
+      { rainbetSlug: 'book-of-dead', name: 'Book of Dead', bonusBuy: true },
+      { rainbetSlug: 'dead-or-alive', name: 'Dead or Alive', bonusBuy: true },
+      { rainbetSlug: 'deadwood', name: 'Deadwood', bonusBuy: true },
+    ],
+    {},
+  );
+  const m = matchSlot(small, 'dead');
+  expect(m.kind).toBe('ambiguous');
+  expect(m.options.map((s) => s.name)).toEqual(['Book of Dead', 'Dead or Alive', 'Deadwood']);
+});

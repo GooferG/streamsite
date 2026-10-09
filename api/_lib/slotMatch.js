@@ -126,11 +126,19 @@ export function matchSlot(index, query) {
   if (nick) return { kind: 'alias', slot: publicSlot(nick) };
 
   const qTokens = q.split(' ');
+  // Rank by how many typed words did not match a name word exactly, then by
+  // extra name words, so "dead" prefers names containing the word Dead over a
+  // one-word name that merely starts with it.
   const candidates = index.slots
     .filter((s) => qTokens.every((qt) => s.tokens.some((t) => tokenClose(qt, t))))
-    .map((s) => ({ s, extra: s.tokens.length - qTokens.length }))
-    .sort((a, b) => a.extra - b.extra || a.s.name.length - b.s.name.length || a.s.name.localeCompare(b.s.name));
-  if (candidates.length === 1 || (candidates.length > 1 && candidates[0].extra < candidates[1].extra)) {
+    .map((s) => ({
+      s,
+      inexact: qTokens.filter((qt) => !s.tokens.includes(qt)).length,
+      extra: s.tokens.length - qTokens.length,
+    }))
+    .sort((a, b) => a.inexact - b.inexact || a.extra - b.extra || a.s.name.length - b.s.name.length || a.s.name.localeCompare(b.s.name));
+  const better = (a, b) => a.inexact < b.inexact || (a.inexact === b.inexact && a.extra < b.extra);
+  if (candidates.length === 1 || (candidates.length > 1 && better(candidates[0], candidates[1]))) {
     return { kind: 'guess', slot: publicSlot(candidates[0].s) };
   }
   if (candidates.length > 1) {

@@ -3,7 +3,7 @@ import { adminDb, FieldValue } from '../_lib/firebaseAdmin.js';
 import { isFollower, rolesFromBadges } from '../_lib/chatRoles.js';
 import { messageHasKeyword } from '../_lib/giveawayKeyword.js';
 import { markChatted } from '../_lib/watchtimeStore.js';
-import { handleSlotCommand } from '../_lib/slotCommand.js';
+import { handleSlotCommand, parseSlotCommand } from '../_lib/slotCommand.js';
 
 // Twitch EventSub webhook receiver.
 //
@@ -123,7 +123,7 @@ async function handleChatMessage(event) {
 
   // Goofer Ball: !slot calls a slot into the drum. It has its own try/catch,
   // so a ball failure never blocks giveaway entries (and the reverse).
-  if (/^!slot/i.test(text.trim())) {
+  if (parseSlotCommand(text) !== null) {
     try {
       await handleSlotCommand(event);
     } catch (err) {

@@ -207,3 +207,38 @@ test('catalogue down: refused with a retry line', async () => {
   await run('!slot gates of olympus');
   expect(replies()).toEqual(['@Viewer1 slot list is down, try again in a minute.']);
 });
+
+test('invisible 7TV and Chatterino characters are ignored', async () => {
+  const cgj = String.fromCodePoint(0x34f);
+  const tag = String.fromCodePoint(0xe0000);
+  expect(parseSlotCommand(`!slot 2${cgj}`)).toBe('2');
+  expect(parseSlotCommand(`!slot${tag}`)).toBe('');
+  seedOpen();
+  await run('!slot big bass');
+  await run(`!slot 2${cgj}`, {}, NOW + 11_000);
+  expect(ball().slotName).toBe('Big Bass Bonanza');
+});
+
+test('after a catalogue failure, !slot does not retry upstream for a minute', async () => {
+  seedOpen();
+  getSlotCatalog.mockRejectedValue(new Error('down'));
+  await run('!slot gates of olympus', { chatter_user_id: 'v1' }, NOW);
+  await run('!slot gates of olympus', { chatter_user_id: 'v2' }, NOW + 30_000);
+  expect(getSlotCatalog).toHaveBeenCalledTimes(1);
+  expect(replies()).toEqual([
+    '@Viewer1 slot list is down, try again in a minute.',
+    '@Viewer1 slot list is down, try again in a minute.',
+  ]);
+  await run('!slot gates of olympus', { chatter_user_id: 'v3' }, NOW + 61_000);
+  expect(getSlotCatalog).toHaveBeenCalledTimes(2);
+});
+
+test('a stale index answers at once while the refresh runs in the background', async () => {
+  seedOpen();
+  await run('!slot sugar rush', { chatter_user_id: 'v1' }, NOW);
+  getSlotCatalog.mockReturnValue(new Promise(() => {}));
+  const stale = NOW + 7 * 60 * 60 * 1000;
+  await run('!slot Gates of Olympus', { chatter_user_id: 'v2' }, stale);
+  expect(ball('v2').slotName).toBe('Gates of Olympus');
+  expect(getSlotCatalog).toHaveBeenCalledTimes(2);
+});

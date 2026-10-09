@@ -9,7 +9,8 @@
 // SDK locks pessimistically instead, but for these handlers the outcome is the
 // same: two interleaved runTransaction calls on one document end with one
 // winner and one caller that sees the other's write. Query reads inside a
-// transaction are not version-checked.
+// transaction are not version-checked. A doc ref also has create(), which
+// throws an Error with code 6 (ALREADY_EXISTS) when the doc exists.
 
 export function createFakeFirestore() {
   let docs = new Map();
@@ -83,6 +84,10 @@ export function createFakeFirestore() {
       path,
       get: async () => snapshotOf(path),
       set: async (data, opts) => write(path, 'set', data, opts),
+      create: async (data) => {
+        if (docs.has(path)) throw Object.assign(new Error('fake firestore: document already exists: ' + path), { code: 6 });
+        write(path, 'set', data);
+      },
       update: async (data) => write(path, 'update', data),
       delete: async () => remove(path),
       collection: (name) => collectionRef(`${path}/${name}`),

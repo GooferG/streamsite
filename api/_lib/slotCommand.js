@@ -10,43 +10,61 @@ import { buildSlotIndex, matchSlot } from './slotMatch.js';
 import { CHOICE_TTL_MS, REPLY_COOLDOWN_MS, entryDecision, replyText, slotKey } from './ballRules.js';
 
 const CATALOG_TTL_MS = 6 * 60 * 60 * 1000;
+const CATALOG_RETRY_MS = 60 * 1000;
 const MAX_QUERY = 80;
 const COOLDOWN_CAP = 5000;
+// Invisible characters 7TV and Chatterino append to a repeated message:
+// format characters, U+034F and the tag block.
+const INVISIBLE = /[\p{Cf}\u034F\u{E0000}-\u{E007F}]/gu;
 
-let catalog = { index: null, at: 0, pending: null };
+const emptyCatalog = () => ({ index: null, at: 0, pending: null, failedAt: null });
+let catalog = emptyCatalog();
 const lastReply = new Map();
 
 export function __resetSlotCommandForTests() {
-  catalog = { index: null, at: 0, pending: null };
+  catalog = emptyCatalog();
   lastReply.clear();
 }
 
 // '' for a bare !slot, the argument for !slot <text>, null when the message
 // isn't the command (!slots, or text before it).
 export function parseSlotCommand(text) {
-  const m = /^!slot(?:\s+([\s\S]*))?$/i.exec(String(text || '').trim());
+  const m = /^!slot(?:\s+([\s\S]*))?$/i.exec(String(text || '').replace(INVISIBLE, '').trim());
   if (!m) return null;
   return (m[1] || '').trim().slice(0, MAX_QUERY);
 }
 
-// The catalogue index, built once per warm instance and refreshed every 6h.
-// A failed refresh keeps the old index: a stale list beats refusing everyone.
+function refreshCatalog(now) {
+  const pending = getSlotCatalog()
+    .then((rows) => {
+      if (!rows || rows.length === 0) throw new Error('EMPTY_CATALOG');
+      catalog = { index: buildSlotIndex(rows), at: now, pending: null, failedAt: null };
+      return catalog.index;
+    })
+    .catch((err) => {
+      catalog.pending = null;
+      catalog.failedAt = now;
+      if (catalog.index) return catalog.index;
+      throw err;
+    });
+  catalog.pending = pending;
+  return pending;
+}
+
+// The catalogue index, built once per warm instance. A stale index is served
+// at once while a background refresh runs (at most one a minute after a
+// failure); with no index at all a failed refresh is not retried for a minute,
+// so a down upstream never makes every !slot wait.
 async function slotIndex(now) {
-  if (catalog.index && now - catalog.at < CATALOG_TTL_MS) return catalog.index;
-  if (!catalog.pending) {
-    catalog.pending = getSlotCatalog()
-      .then((rows) => {
-        if (!rows || rows.length === 0) throw new Error('EMPTY_CATALOG');
-        catalog = { index: buildSlotIndex(rows), at: now, pending: null };
-        return catalog.index;
-      })
-      .catch((err) => {
-        catalog.pending = null;
-        if (catalog.index) return catalog.index;
-        throw err;
-      });
+  if (catalog.index) {
+    if (now - catalog.at >= CATALOG_TTL_MS && !catalog.pending && (catalog.failedAt == null || now - catalog.failedAt >= CATALOG_RETRY_MS)) {
+      refreshCatalog(now).catch(() => {});
+    }
+    return catalog.index;
   }
-  return catalog.pending;
+  if (catalog.pending) return catalog.pending;
+  if (catalog.failedAt != null && now - catalog.failedAt < CATALOG_RETRY_MS) throw new Error('CATALOG_RETRY_WAIT');
+  return refreshCatalog(now);
 }
 
 const silent = (outcome) => ({ handled: true, outcome, replied: false });

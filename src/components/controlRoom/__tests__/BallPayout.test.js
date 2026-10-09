@@ -89,3 +89,91 @@ test('HuntLink: pick the live hunt, or unlink', async () => {
   fireEvent.click(screen.getByRole('button', { name: 'Unlink' }));
   await waitFor(() => expect(ballAction).toHaveBeenLastCalledWith({ action: 'link_hunt', id: 'r1', huntId: null }));
 });
+
+test('a hunt row can be overridden with Edit', async () => {
+  render(<BallPayout round={ROUND} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Edit ball 1' }));
+  const input = screen.getByLabelText('Multiplier for ball 1');
+  expect(input.value).toBe('412');
+  fireEvent.change(input, { target: { value: '600' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+  await waitFor(() =>
+    expect(ballAction).toHaveBeenCalledWith({ action: 'preview_settle', id: 'r1', overrides: { 1: { multiplier: '600', win: '412', bonusIndex: null } } })
+  );
+});
+
+test('an unparseable multiplier is flagged and blocks Preview', () => {
+  render(<BallPayout round={ROUND} />);
+  const input = screen.getByLabelText('Multiplier for ball 2');
+  fireEvent.change(input, { target: { value: '1,250' } });
+  expect(input.getAttribute('aria-invalid')).toBe('true');
+  expect(screen.getByText('Not a number')).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Preview' }).disabled).toBe(true);
+  fireEvent.change(input, { target: { value: '   ' } });
+  expect(screen.getByRole('button', { name: 'Preview' }).disabled).toBe(false);
+});
+
+test('rows show win and bet; unmatched and unopened rows are told apart', () => {
+  const { unmount } = render(<BallPayout round={ROUND} />);
+  expect(screen.getByText('win 412 · bet 1')).toBeTruthy();
+  expect(screen.getByText('Not opened yet')).toBeTruthy();
+  expect(screen.getByLabelText('Win for ball 2')).toBeTruthy();
+  unmount();
+  useBallHunt.mockReturnValue({ hunt: { bonuses: [{ slot: 'Gates of Olympus', multiplier: 412 }] }, stale: false, loading: false });
+  render(<BallPayout round={ROUND} />);
+  expect(screen.getByText('No hunt row: type it')).toBeTruthy();
+  expect(screen.queryByText('Not opened yet')).toBeNull();
+});
+
+test('a duplicate hunt row can be picked', async () => {
+  useBallHunt.mockReturnValue({
+    hunt: { bonuses: [{ slot: 'Gates of Olympus', multiplier: 412, win: 412 }, { slot: 'Gates of Olympus', multiplier: 90, win: 90 }] },
+    stale: false,
+    loading: false,
+  });
+  render(<BallPayout round={ROUND} />);
+  expect(screen.getByRole('option', { name: 'Hunt row 2 · 90x · win 90' })).toBeTruthy();
+  fireEvent.change(screen.getByLabelText('Hunt row for ball 1'), { target: { value: '1' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+  await waitFor(() =>
+    expect(ballAction).toHaveBeenCalledWith({ action: 'preview_settle', id: 'r1', overrides: { 1: { multiplier: '', win: '', bonusIndex: 1 } } })
+  );
+});
+
+test('hunt outage: the message shows and typed numbers still pay out', async () => {
+  useBallHunt.mockReturnValue({ hunt: null, stale: true, loading: false });
+  ballAction.mockResolvedValueOnce({ ...PREVIEW, data: { ...PREVIEW.data, huntError: 'COMMUNITYHUNTS_UNAVAILABLE' } });
+  render(<BallPayout round={ROUND} />);
+  fireEvent.change(screen.getByLabelText('Multiplier for ball 1'), { target: { value: '412' } });
+  fireEvent.change(screen.getByLabelText('Multiplier for ball 2'), { target: { value: '10' } });
+  fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+  expect(await screen.findByText('Hunt unavailable (COMMUNITYHUNTS_UNAVAILABLE). Type every multiplier to pay out.')).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Hold to pay out' }));
+  fireEvent.click(screen.getByRole('button', { name: 'Press again to pay out' }));
+  await waitFor(() =>
+    expect(ballAction).toHaveBeenLastCalledWith({
+      action: 'settle',
+      id: 'r1',
+      overrides: { 1: { multiplier: '412', win: '', bonusIndex: null }, 2: { multiplier: '10', win: '', bonusIndex: null } },
+      expectDrawNo: 1,
+    })
+  );
+});
+
+test('a preview that returns after an edit is dropped', async () => {
+  let release;
+  ballAction.mockReturnValueOnce(new Promise((res) => { release = res; }));
+  render(<BallPayout round={ROUND} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Preview' }));
+  fireEvent.change(screen.getByLabelText('Multiplier for ball 2'), { target: { value: '9' } });
+  release(PREVIEW);
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Preview' }).disabled).toBe(false));
+  expect(screen.queryByText(/wins 200 tickets/)).toBeNull();
+});
+
+test('HuntLink: says so when there are no hunts', () => {
+  useCommunityHunts.mockReturnValue({ live: null, recent: [], loading: false, error: null });
+  render(<HuntLink round={{ ...ROUND, huntId: null }} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Link hunt' }));
+  expect(screen.getByText('No hunts yet.')).toBeTruthy();
+});

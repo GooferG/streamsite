@@ -12,6 +12,7 @@ function Picker({ onPick, busy }) {
   const list = [live, ...(recent || []).filter((h) => !live || h.id !== live.id)].filter(Boolean).slice(0, 6);
   if (loading) return <p className="cr-lbl mt-2">Tuning…</p>;
   if (error && list.length === 0) return <p className="mt-2 text-xs font-mono text-red-destructive">communityhunts.gg is unavailable.</p>;
+  if (list.length === 0) return <p className="mt-2 text-xs font-mono text-white/55">No hunts yet.</p>;
   return (
     <ul className="mt-2 space-y-1">
       {list.map((h) => (

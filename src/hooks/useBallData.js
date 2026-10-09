@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { collection, getDocs, limit as fLimit, orderBy, query, startAfter, where } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useTwitchAuth } from '../contexts/TwitchAuthContext';
@@ -21,33 +21,62 @@ export default function useBallData() {
   const { hunt, stale } = useBallHunt(round ? round.huntId : null, { enabled: active });
   const auth = useTwitchAuth();
   const me = (auth && auth.twitchUser && auth.twitchUser.twitchId) || null;
-  const [past, setPast] = useState({ rounds: [], loading: true, more: false, cursor: null, error: false });
+  const [past, setPast] = useState({ rounds: [], loading: true, more: false, error: false });
+  // Only the latest request may apply; a Load more can't run on top of another.
+  const seq = useRef(0);
+  const busy = useRef(false);
+  const cursor = useRef(null);
 
-  const loadPast = useCallback(async (cursor = null) => {
-    setPast((p) => ({ ...p, loading: true }));
+  const loadPast = useCallback(async (after = null) => {
+    const mine = ++seq.current;
+    busy.current = true;
+    setPast((p) => ({ ...p, loading: true, error: false }));
     try {
       const constraints = [where('status', '==', 'settled'), orderBy('settledAt', 'desc')];
-      if (cursor) constraints.push(startAfter(cursor));
+      if (after) constraints.push(startAfter(after));
       constraints.push(fLimit(PAGE));
       const snap = await getDocs(query(collection(db, 'ball_rounds'), ...constraints));
+      if (mine !== seq.current) return;
+      busy.current = false;
       const rounds = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      cursor.current = snap.docs.length ? snap.docs[snap.docs.length - 1] : after;
       setPast((p) => ({
-        rounds: cursor ? [...p.rounds, ...rounds] : rounds,
+        rounds: after ? [...p.rounds, ...rounds] : rounds,
         loading: false,
         more: snap.docs.length === PAGE,
-        cursor: snap.docs[snap.docs.length - 1] || p.cursor,
         error: false,
       }));
     } catch {
+      if (mine !== seq.current) return;
+      busy.current = false;
       setPast((p) => ({ ...p, loading: false, error: true }));
     }
   }, []);
 
-  // A settle moves the newest round into the archive: reload page one.
+  // Page one once the round is known, then again only when a new round
+  // settles (it moves into the archive).
+  const roundKnown = round !== undefined;
   const settledId = round && round.status === 'settled' ? round.id : null;
+  const seenSettled = useRef(false);
   useEffect(() => {
-    loadPast(null);
-  }, [loadPast, settledId]);
+    if (!roundKnown) return;
+    if (seenSettled.current === false) {
+      seenSettled.current = settledId;
+      loadPast(null);
+    } else if (settledId && settledId !== seenSettled.current) {
+      seenSettled.current = settledId;
+      loadPast(null);
+    }
+  }, [roundKnown, settledId, loadPast]);
+
+  useEffect(() => () => {
+    seq.current += 1;
+  }, []);
+
+  const loadMore = useCallback(() => {
+    if (busy.current || !cursor.current) return;
+    loadPast(cursor.current);
+  }, [loadPast]);
 
   return {
     round,
@@ -61,6 +90,6 @@ export default function useBallData() {
     pastLoading: past.loading,
     pastError: past.error,
     hasMore: past.more,
-    loadMore: () => loadPast(past.cursor),
+    loadMore,
   };
 }

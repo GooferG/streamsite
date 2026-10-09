@@ -139,3 +139,31 @@ test('rack board with few rows has no "earlier" row', () => {
   expect(screen.getAllByRole('listitem')).toHaveLength(5);
   expect(screen.queryByText(/earlier/)).toBeNull();
 });
+
+test('corner box shows a scratched draw struck through, muted', () => {
+  const round = { ...ROUND, rack: [...ROUND.rack, { drawNo: 2, slotName: 'Le Bandit', displayName: 'Pupper', scratched: true }] };
+  render(<CornerBox round={round} balls={BALLS} />);
+  const chip = screen.getByText('02');
+  expect(chip.className).toContain('line-through');
+  expect(chip.className).toContain('opacity-50');
+  expect(screen.getByText('01').className).not.toContain('line-through');
+});
+
+test('rack board lists a scratched draw struck through with the word Scratched', () => {
+  const round = { ...ROUND, rack: [...ROUND.rack, { drawNo: 2, slotName: 'Le Bandit', displayName: 'Pupper', scratched: true }] };
+  const rows = [{ drawNo: 1, slotName: 'Gates of Olympus', displayName: 'CoolGuy', multiplier: 412, thumb: null }];
+  render(<RackBoard round={round} rows={rows} />);
+  const items = screen.getAllByRole('listitem');
+  expect(items).toHaveLength(2);
+  expect(items[1].textContent).toContain('Scratched');
+  expect(screen.getByText('Le Bandit').className).toContain('line-through');
+});
+
+test('rack board counts scratched rows toward the eight-row cap', () => {
+  const rack = Array.from({ length: 10 }, (_, i) => ({ drawNo: i + 1, slotName: `Slot ${i + 1}`, displayName: `V${i + 1}`, scratched: i === 9 }));
+  render(<RackBoard round={{ ...ROUND, rack }} rows={many(9)} />);
+  const items = screen.getAllByRole('listitem');
+  expect(items).toHaveLength(9);
+  expect(items[7].textContent).toContain('Scratched');
+  expect(items[8].textContent).toBe('+2 earlier');
+});

@@ -133,3 +133,72 @@ export function arrivals(prev, balls) {
   }
   return out;
 }
+
+// When a draw may show on CH 42: the same moment its chat line is due, so the
+// page never spoils what the stream hasn't revealed yet.
+export const revealAt = (entry) => drawAnnounceDueAt(entry);
+
+export function settleRevealAt(round) {
+  const at = tsMillis(round && round.settledAt);
+  return at == null ? null : at + STREAM_DELAY_MS;
+}
+
+// CH 42 data as the stream audience has seen it by `now`: draws and settles
+// still inside the reveal delay are held back. `nextAt` is the earliest
+// pending reveal (or null) so the page knows when to look again.
+export function spoilerSafe({ round, balls, past }, now) {
+  let nextAt = null;
+  const note = (t) => {
+    if (t != null && t > now && (nextAt == null || t < nextAt)) nextAt = t;
+  };
+  const safePast = (past || []).filter((r) => {
+    const t = settleRevealAt(r);
+    if (t != null && t > now) {
+      note(t);
+      return false;
+    }
+    return true;
+  });
+  if (!round) return { round, balls, past: safePast, nextAt };
+  const hidden = new Set();
+  const rack = (round.rack || []).filter((e) => {
+    const t = revealAt(e);
+    if (t != null && t > now) {
+      hidden.add(e.drawNo);
+      note(t);
+      return false;
+    }
+    return true;
+  });
+  let out = hidden.size ? { ...round, rack } : round;
+  const settleAt = round.status === 'settled' ? settleRevealAt(round) : null;
+  if (settleAt != null && settleAt > now) {
+    note(settleAt);
+    const { winner, results, settledAt, ...rest } = out; // eslint-disable-line no-unused-vars
+    out = { ...rest, status: 'closed' };
+  }
+  const safeBalls = hidden.size
+    ? (balls || []).map((b) => (b.drawNo != null && hidden.has(b.drawNo) ? { ...b, status: 'drum', drawNo: null } : b))
+    : balls;
+  return { round: out, balls: safeBalls, past: safePast, nextAt };
+}
+
+// liveRows/settledRows skip scratched draws; every screen shows them struck
+// through, in draw order.
+export function withScratched(round, rows) {
+  const scratched = ((round && round.rack) || [])
+    .filter((e) => e.scratched)
+    .map((e) => ({
+      drawNo: e.drawNo,
+      twitchId: e.twitchId,
+      twitchName: e.twitchName || null,
+      displayName: e.displayName || null,
+      slotId: e.slotId,
+      slotName: e.slotName,
+      thumb: e.thumb || null,
+      multiplier: null,
+      scratched: true,
+    }));
+  if (!scratched.length) return rows;
+  return [...rows, ...scratched].sort((a, b) => a.drawNo - b.drawNo);
+}

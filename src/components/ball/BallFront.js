@@ -5,7 +5,7 @@ import ChannelSet from './ChannelSet';
 import DrumRig from './DrumRig';
 import SlotFinder from './SlotFinder';
 import { settledRows } from '../../utils/ballResults';
-import { drawnEntries, drumBalls, formatMulti, isActive, leaderRow, liveRows, pad2, prizeText, takenSlots, who } from '../../utils/ball';
+import { drawnEntries, drumBalls, formatMulti, isActive, leaderRow, liveRows, pad2, prizeText, spoilerSafe, takenSlots, who, withScratched } from '../../utils/ball';
 import { tsMillis } from '../../utils/giveaway';
 import './ball.css';
 
@@ -17,8 +17,8 @@ function dayLabel(ts) {
 }
 
 // A panel that folds away below lg (phones see the essentials first).
-function Fold({ id, title, aside, children }) {
-  const [open, setOpen] = useState(false);
+function Fold({ id, title, aside, defaultOpen = false, children }) {
+  const [open, setOpen] = useState(defaultOpen);
   return (
     <Panel as="section" aria-labelledby={id} className="p-4">
       <div className="flex items-baseline justify-between gap-3">
@@ -27,15 +27,18 @@ function Fold({ id, title, aside, children }) {
         </h2>
         {aside && <span className={LABEL}>{aside}</span>}
       </div>
-      <button type="button" aria-expanded={open} onClick={() => setOpen((o) => !o)} className={`${MONO} mt-2 text-[0.6875rem] tracking-[0.18em] text-onair-ink-4 lg:hidden`}>
+      <button type="button" aria-expanded={open} aria-controls={`${id}-body`} onClick={() => setOpen((o) => !o)} className={`${MONO} mt-2 text-[0.6875rem] tracking-[0.18em] text-onair-ink-4 lg:hidden`}>
         {open ? 'Hide' : 'Show'}
+        <span className="sr-only">{` ${title}`}</span>
       </button>
-      <div className={open ? 'mt-3 block' : 'mt-3 hidden lg:block'}>{children}</div>
+      <div id={`${id}-body`} className={open ? 'mt-3 block' : 'mt-3 hidden lg:block'}>
+        {children}
+      </div>
     </Panel>
   );
 }
 
-function ActiveFacts({ round, drum }) {
+function ActiveFacts({ round, drum, ready }) {
   return (
     <>
       <p className="mt-3">
@@ -43,7 +46,7 @@ function ActiveFacts({ round, drum }) {
           ● {round.status === 'open' ? 'Drum open' : 'Lineup closed'}
         </span>
       </p>
-      <p className="mt-2 font-display text-[clamp(2.5rem,6vw,4rem)] leading-none text-white">{drum.length}</p>
+      <p className="mt-2 font-display text-[clamp(2.5rem,6vw,4rem)] leading-none text-white">{ready ? drum.length : '—'}</p>
       <p className={`${MONO} text-[0.6875rem] font-bold tracking-[0.2em] text-onair-wgoof-title-dim`}>
         {`Balls in the drum · ${drawnEntries(round).length} drawn`}
       </p>
@@ -54,21 +57,21 @@ function ActiveFacts({ round, drum }) {
   );
 }
 
-function SetStrip({ round, balls, still, lastWinner, children }) {
+function SetStrip({ round, balls, still, lastWinner, ready, roundError }) {
   const active = isActive(round);
   const drum = drumBalls(balls);
   return (
     <section aria-labelledby="ball-title" className="relative overflow-hidden rounded-onair-card shadow-onair-card">
       <ChannelSet fine={null} title={false} bug={false} live={false} />
-      <div className="relative flex flex-wrap items-center gap-5 p-5 sm:p-6">
-        <DrumRig balls={drum} count={drum.length} still={still} className="w-28 shrink-0 sm:w-40" />
-        <div className="min-w-[12rem] flex-1">
+      <div className="relative flex items-center gap-4 p-4 sm:gap-5 sm:p-6">
+        <DrumRig balls={drum} count={drum.length} still={still} className="w-20 shrink-0 sm:w-40" />
+        <div className="min-w-0 flex-1">
           <h2 id="ball-title" className="gb-title font-display text-[clamp(1.75rem,4vw,3rem)] uppercase leading-none">
             Goofer Ball
           </h2>
           <p className={`${MONO} mt-1 text-[0.6875rem] font-bold tracking-[0.28em] text-onair-wgoof-title-dim`}>WGOOF · Channel 42 · Nightly draw</p>
           {active ? (
-            <ActiveFacts round={round} drum={drum} />
+            <ActiveFacts round={round} drum={drum} ready={ready} />
           ) : (
             <>
               {lastWinner && (
@@ -76,11 +79,12 @@ function SetStrip({ round, balls, still, lastWinner, children }) {
                   {`Last winning ball: ${lastWinner.winner.slotName} · ${formatMulti(lastWinner.winner.multiplier)} · @${who(lastWinner.winner)}`}
                 </p>
               )}
-              <p className="mt-2 text-[0.9375rem] text-onair-wgoof-title">Drum's closed. Next draw whenever the drum opens on stream.</p>
+              <p className="mt-2 text-[0.9375rem] text-onair-wgoof-title">
+                {roundError ? 'No signal from Channel 42.' : "Drum's closed. Next draw whenever the drum opens on stream."}
+              </p>
             </>
           )}
         </div>
-        {children}
       </div>
     </section>
   );
@@ -90,7 +94,7 @@ const BALL_STATUS = { drum: 'In the drum', drawn: 'On the rack', scratched: 'Scr
 
 function YourBall({ ball }) {
   return (
-    <Panel as="section" aria-labelledby="ball-mine" className="p-4 ring-1 ring-onair-signal/40">
+    <Panel as="section" aria-labelledby="ball-mine" lit="viewer" className="p-4">
       <h2 id="ball-mine" className="text-[1.125rem] font-extrabold">
         Your ball
       </h2>
@@ -118,15 +122,16 @@ function DrumList({ balls, me }) {
           className="w-full rounded-onair-tile border border-white/10 bg-transparent px-3 py-2 font-onair-mono text-[0.75rem] text-onair-ink-1 placeholder:text-onair-ink-5"
         />
       </label>
-      <ul className="mt-2">
+      <ul className="mt-2 max-h-[28rem] overflow-y-auto">
         {list.map((b) => (
           <li key={b.id} className={`flex items-center gap-3 border-t border-white/5 px-1 py-1.5 ${b.twitchId === me ? 'rounded-onair-tile bg-onair-signal/10' : ''}`}>
             <span className="gb-ball h-4 w-4 shrink-0 rounded-full" aria-hidden="true" />
-            <span className="min-w-0 flex-1 truncate text-[0.875rem] font-bold">
+            <span className={`min-w-0 flex-1 truncate text-[0.875rem] font-bold ${b.status === 'scratched' ? 'text-onair-ink-5 line-through' : ''}`}>
               {b.slotName}
               <span className="block font-onair-mono text-[0.6875rem] font-normal text-onair-viewer-light">@{who(b)}</span>
             </span>
             {b.twitchId === me && <span className={`${MONO} text-[0.625rem] tracking-[0.15em] text-onair-signal`}>Your ball</span>}
+            {b.status === 'scratched' && <span className={`${MONO} text-[0.625rem] tracking-[0.15em] text-onair-ink-5`}>Scratched</span>}
             {b.twitchId !== me && b.status === 'drawn' && <span className={`${MONO} text-[0.625rem] tracking-[0.15em] text-onair-winner-light`}>On the rack</span>}
           </li>
         ))}
@@ -136,8 +141,9 @@ function DrumList({ balls, me }) {
 }
 
 function RackPanel({ round, hunt, stale }) {
-  const rows = liveRows(round, hunt);
-  const leader = leaderRow(rows);
+  const live = liveRows(round, hunt);
+  const leader = leaderRow(live);
+  const rows = withScratched(round, live);
   const aside = round.huntId ? (stale ? 'Stale · retrying' : 'Live from the hunt · 60s') : 'No hunt linked yet';
   return (
     <Panel as="section" aria-labelledby="ball-rack" className="p-4">
@@ -152,14 +158,18 @@ function RackPanel({ round, hunt, stale }) {
       ) : (
         <ol className="mt-2">
           {rows.map((r) => (
-            <li key={r.drawNo} className="flex items-center gap-3 border-t border-white/5 py-1.5">
+            <li key={r.drawNo} className={`flex items-center gap-3 border-t border-white/5 py-1.5 ${r.scratched ? 'text-onair-ink-5' : ''}`}>
               <span className="gb-ball flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-onair-mono text-[0.625rem] font-bold text-onair-paper-ink">{pad2(r.drawNo)}</span>
-              <span className="min-w-0 flex-1 truncate text-[0.875rem] font-bold">
+              <span className={`min-w-0 flex-1 truncate text-[0.875rem] font-bold ${r.scratched ? 'line-through' : ''}`}>
                 {r.slotName}
                 <span className="block font-onair-mono text-[0.6875rem] font-normal text-onair-viewer-light">@{who(r)}</span>
               </span>
               {leader && leader.drawNo === r.drawNo && <span className={`${MONO} text-[0.625rem] tracking-[0.15em] text-onair-winner-light`}>Leader</span>}
-              <span className={`font-display text-[1.25rem] ${leader && leader.drawNo === r.drawNo ? 'text-onair-winner' : 'text-onair-ink-1'}`}>{formatMulti(r.multiplier)}</span>
+              {r.scratched ? (
+                <span className={`${MONO} text-[0.625rem] tracking-[0.15em]`}>Scratched</span>
+              ) : (
+                <span className={`font-display text-[1.25rem] ${leader && leader.drawNo === r.drawNo ? 'text-onair-winner' : 'text-onair-ink-1'}`}>{formatMulti(r.multiplier)}</span>
+              )}
             </li>
           ))}
         </ol>
@@ -185,17 +195,17 @@ function PastRow({ round }) {
       <button
         type="button"
         aria-expanded={open}
-        aria-label={`Show the rack for ${day}`}
         onClick={() => setOpen((o) => !o)}
         className={`${MONO} mt-1 text-[0.625rem] tracking-[0.18em] text-onair-ink-4`}
       >
         {open ? 'Hide rack' : 'Rack'}
+        <span className="sr-only">{` ${day} ${w.slotName}`}</span>
       </button>
       {open && (
         <ul className="mt-1.5 flex flex-wrap gap-1.5">
-          {settledRows(round).map((r) => (
-            <li key={r.drawNo} className={`${MONO} rounded-full bg-white/5 px-2.5 py-1 text-[0.625rem] tracking-[0.15em] text-onair-ink-3`}>
-              {`${pad2(r.drawNo)} ${r.slotName} ${formatMulti(r.multiplier)}`}
+          {withScratched(round, settledRows(round)).map((r) => (
+            <li key={r.drawNo} className={`${MONO} rounded-full bg-white/5 px-2.5 py-1 text-[0.625rem] tracking-[0.15em] ${r.scratched ? 'text-onair-ink-5 line-through' : 'text-onair-ink-3'}`}>
+              {`${pad2(r.drawNo)} ${r.slotName} ${r.scratched ? 'Scratched' : formatMulti(r.multiplier)}`}
             </li>
           ))}
         </ul>
@@ -204,19 +214,20 @@ function PastRow({ round }) {
   );
 }
 
-function PastDraws({ past, loading, error, hasMore, onLoadMore }) {
+function PastDraws({ past, loading, error, hasMore, onLoadMore, defaultOpen }) {
   const settled = past.filter((r) => r.winner);
   return (
-    <Fold id="ball-past" title="Past draws" aside="Winning balls">
+    <Fold id="ball-past" title="Past draws" aside="Winning balls" defaultOpen={defaultOpen}>
       {settled.length === 0 && !loading && <p className="text-[0.875rem] text-onair-ink-4">{error ? 'No signal from the archive.' : 'No draws yet.'}</p>}
       <ul>
         {settled.map((r) => (
           <PastRow key={r.id} round={r} />
         ))}
       </ul>
+      {settled.length > 0 && error && <p className="mt-3 text-[0.875rem] text-onair-ink-4">Could not load more draws.</p>}
       {hasMore && (
-        <button type="button" onClick={onLoadMore} className={`${MONO} mt-3 text-[0.6875rem] tracking-[0.18em] text-onair-ink-3`}>
-          Load more
+        <button type="button" disabled={loading} onClick={onLoadMore} className={`${MONO} mt-3 text-[0.6875rem] tracking-[0.18em] text-onair-ink-3 disabled:opacity-60`}>
+          {loading ? 'Loading…' : 'Load more'}
         </button>
       )}
     </Fold>
@@ -224,35 +235,36 @@ function PastDraws({ past, loading, error, hasMore, onLoadMore }) {
 }
 
 // CH 42 · Goofer Ball (spec: Site page). Pure: data comes in as props from
-// useBallData (or a fixture).
-export default function BallFront({ round, balls = [], hunt = null, stale = false, me = null, past = [], pastLoading = false, pastError = false, hasMore = false, onLoadMore, still = false }) {
-  if (round === undefined) {
+// useBallData (or a fixture). Draws and settles are held back until their
+// chat lines are due (spoilerSafe), judged against `now`.
+export default function BallFront({ round: rawRound, balls: rawBalls = [], ballsReady = true, roundError = false, hunt = null, stale = false, me = null, past: rawPast = [], pastLoading = false, pastError = false, hasMore = false, onLoadMore, still = false, now = Date.now() }) {
+  if (rawRound === undefined) {
     return (
       <p role="status" className={`gb-site ${MONO} px-4 py-16 text-center text-xs font-bold tracking-[0.25em] text-onair-ink-3 motion-safe:animate-pulse`}>
         Tuning to Channel 42…
       </p>
     );
   }
+  const { round, balls, past } = spoilerSafe({ round: rawRound, balls: rawBalls, past: rawPast }, now);
   const active = isActive(round);
   const lastWinner = (round && round.status === 'settled' && round.winner ? round : null) || past.find((r) => r.winner) || null;
-  const mine = active && me ? balls.find((b) => b.twitchId === me) : null;
+  const mine = active && ballsReady && me ? balls.find((b) => b.twitchId === me) : null;
   return (
     <div className="gb-site space-y-4 font-onair text-onair-ink-1">
-      <SetStrip round={round} balls={active ? balls : []} still={still} lastWinner={lastWinner}>
-        {active && round.status === 'open' && (
-          <div className="w-full lg:w-[24rem]">
-            <SlotFinder taken={takenSlots(round, balls)} />
-          </div>
-        )}
-      </SetStrip>
+      <SetStrip round={round} balls={active ? balls : []} still={still} lastWinner={lastWinner} ready={ballsReady} roundError={roundError} />
+      {active && round.status === 'open' && (
+        <div className="lg:max-w-[28rem]">
+          <SlotFinder taken={takenSlots(round, balls)} />
+        </div>
+      )}
       {mine && <YourBall ball={mine} />}
       {active && (
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
           <RackPanel round={round} hunt={hunt} stale={stale} />
           <DrumList balls={balls} me={me} />
         </div>
       )}
-      <PastDraws past={past} loading={pastLoading} error={pastError} hasMore={hasMore} onLoadMore={onLoadMore} />
+      <PastDraws past={past} loading={pastLoading} error={pastError} hasMore={hasMore} onLoadMore={onLoadMore} defaultOpen={!active} />
     </div>
   );
 }

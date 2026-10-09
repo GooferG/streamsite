@@ -97,7 +97,7 @@ export function fixturePast(now) {
 
 // CH 42 (BallFront props) for /gamba/ball?fixture=...
 export function frontFixture(key, now) {
-  const base = { roundError: false, hunt: null, stale: false, me: null, past: fixturePast(now), pastLoading: false, pastError: false, hasMore: false, ballsReady: true, still: true };
+  const base = { roundError: false, hunt: null, stale: false, me: null, past: fixturePast(now), pastLoading: false, pastError: false, hasMore: false, ballsReady: true, still: true, now };
   if (key === 'open') return { ...base, round: fixtureRound(now, { rack: fixtureRack(now, 2) }), balls: fixtureBalls(now, { drawn: 2 }), me: 'fx4' };
   if (key === 'rack') return { ...base, round: fixtureRound(now, { huntId: 'fx-hunt', rack: fixtureRack(now, 4) }), balls: fixtureBalls(now, { drawn: 4 }), hunt: FIXTURE_HUNT };
   if (key === 'closed') {

@@ -1,4 +1,4 @@
-import { formatMulti, leaderRow, pad2, prizeText, who } from '../../utils/ball';
+import { formatMulti, leaderRow, pad2, prizeText, who, withScratched } from '../../utils/ball';
 import './ball.css';
 
 export const RACK_ROWS_MAX = 8;
@@ -16,8 +16,9 @@ const ROW = 'grid grid-cols-[1.5rem_1.75rem_1fr_auto] items-center gap-2 border-
 
 // Tonight's rack (spec: OBS overlay, state 3): the drawn balls with their
 // multipliers as the bonuses open, the leader highlighted.
-export default function RackBoard({ round, rows = [], stale = false, position = 'left-8 top-8' }) {
-  const leader = leaderRow(rows);
+export default function RackBoard({ round, rows: liveRowsIn = [], stale = false, position = 'left-8 top-8' }) {
+  const leader = leaderRow(liveRowsIn);
+  const rows = withScratched(round, liveRowsIn);
   const shown = visibleRows(rows, leader);
   const hidden = rows.length - shown.length;
   const footer =
@@ -43,15 +44,15 @@ export default function RackBoard({ round, rows = [], stale = false, position = 
         {shown.map((r) => (
           <li
             key={r.drawNo}
-            className={`${ROW} text-onair-paper-ink ${leader && leader.drawNo === r.drawNo ? 'bg-onair-winner-pale' : 'bg-onair-paper'}`}
+            className={`${ROW} text-onair-paper-ink ${leader && leader.drawNo === r.drawNo ? 'bg-onair-winner-pale' : 'bg-onair-paper'} ${r.scratched ? 'opacity-60' : ''}`}
           >
             <span>{pad2(r.drawNo)}</span>
             {r.thumb ? <img src={r.thumb} alt="" className="h-5 w-7 rounded-[2px] object-cover" /> : <span className="gb-decal h-5 w-7 rounded-[2px]" />}
-            <span className="min-w-0 truncate">
+            <span className={`min-w-0 truncate ${r.scratched ? 'line-through' : ''}`}>
               {r.slotName}
               <span className="block text-[0.625rem] opacity-70">@{who(r)}</span>
             </span>
-            <span className="font-display text-[1.125rem] normal-case tracking-normal">{formatMulti(r.multiplier)}</span>
+            <span className="font-display text-[1.125rem] normal-case tracking-normal">{r.scratched ? <span className="font-onair-mono text-[0.625rem] uppercase tracking-[0.15em]">Scratched</span> : formatMulti(r.multiplier)}</span>
           </li>
         ))}
         {hidden > 0 && (

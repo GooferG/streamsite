@@ -1,5 +1,5 @@
 import DrumRig from './DrumRig';
-import { drawnEntries, drumBalls, pad2, prizeText } from '../../utils/ball';
+import { drumBalls, pad2, prizeText } from '../../utils/ball';
 import './ball.css';
 
 function Toast({ toast, below }) {
@@ -22,7 +22,7 @@ function Toast({ toast, below }) {
 // the !slot command, the prize and the rack so far, plus arrival toasts.
 export default function CornerBox({ round, balls = [], toast = null, position = 'left-8 bottom-8', still = false, ready = true }) {
   const drum = drumBalls(balls);
-  const drawn = drawnEntries(round);
+  const drawn = (round && round.rack) || [];
   return (
     <div className={`absolute ${position} w-[min(30rem,40vw)] font-onair`}>
       <div className="relative shadow-onair-card">
@@ -50,7 +50,7 @@ export default function CornerBox({ round, balls = [], toast = null, position = 
             {drawn.length > 0 && (
               <ol className="mt-1.5 flex flex-wrap gap-1" aria-label="Drawn">
                 {drawn.map((e) => (
-                  <li key={e.drawNo} className="gb-chip flex h-5 w-5 items-center justify-center rounded-full text-[0.625rem]">
+                  <li key={e.drawNo} className={`gb-chip flex h-5 w-5 items-center justify-center rounded-full text-[0.625rem] ${e.scratched ? 'line-through opacity-50' : ''}`} title={e.scratched ? 'Scratched' : undefined}>
                     {pad2(e.drawNo)}
                   </li>
                 ))}

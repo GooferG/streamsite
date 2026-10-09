@@ -17,6 +17,10 @@ import {
   pendingDrawAnnounces,
   prizeText,
   recentBalls,
+  revealAt,
+  settleRevealAt,
+  spoilerSafe,
+  withScratched,
   takenSlots,
   winnerMoment,
 } from '../ball';
@@ -136,4 +140,56 @@ test('arrivals: new balls and swaps, never drawn or unchanged ones', () => {
     { id: 'c:s4', name: 'C', slotName: 'Four', kind: 'new' },
     { id: 'd:s5', name: 'D', slotName: 'Five', kind: 'new' },
   ]);
+});
+
+describe('spoilerSafe', () => {
+  const draw = (n, ms, extra = {}) => e(n, { drawnAt: at(ms), ...extra });
+  const DUE = DRAW_REVEAL_MS + 3000;
+
+  test('revealAt and settleRevealAt are the chat line times', () => {
+    expect(revealAt(draw(1, T))).toBe(T + DUE);
+    expect(settleRevealAt({ settledAt: at(T) })).toBe(T + 3000);
+    expect(settleRevealAt({})).toBeNull();
+  });
+
+  test('a draw inside the delay leaves the rack and its ball goes back in the drum', () => {
+    const round = { id: 'r', status: 'open', rack: [draw(1, T - 60_000), draw(2, T - 2000)] };
+    const balls = [
+      { id: 'a', status: 'drawn', drawNo: 1 },
+      { id: 'b', status: 'drawn', drawNo: 2 },
+      { id: 'c', status: 'drum', drawNo: null },
+    ];
+    const out = spoilerSafe({ round, balls, past: [] }, T);
+    expect(out.round.rack.map((x) => x.drawNo)).toEqual([1]);
+    expect(out.balls[1]).toEqual({ id: 'b', status: 'drum', drawNo: null });
+    expect(out.balls[0].status).toBe('drawn');
+    expect(out.nextAt).toBe(T - 2000 + DUE);
+    const later = spoilerSafe({ round, balls, past: [] }, T + 12_000);
+    expect(later.round.rack).toHaveLength(2);
+    expect(later.balls[1].status).toBe('drawn');
+    expect(later.nextAt).toBeNull();
+  });
+
+  test('a fresh settle shows as closed without winner or results; old past rounds filter out', () => {
+    const settled = { id: 'r', status: 'settled', rack: [], settledAt: at(T - 1000), winner: { drawNo: 1 }, results: { 1: {} } };
+    const out = spoilerSafe({ round: settled, balls: [], past: [settled, { id: 'old', status: 'settled', settledAt: at(T - 99_000), winner: {} }] }, T);
+    expect(out.round.status).toBe('closed');
+    expect(out.round.winner).toBeUndefined();
+    expect(out.round.results).toBeUndefined();
+    expect(out.past.map((r) => r.id)).toEqual(['old']);
+    expect(out.nextAt).toBe(T - 1000 + 3000);
+    expect(spoilerSafe({ round: settled, balls: [], past: [settled] }, T + 2000).round.status).toBe('settled');
+  });
+
+  test('null and undefined rounds pass through', () => {
+    expect(spoilerSafe({ round: undefined, balls: [], past: [] }, T).round).toBeUndefined();
+    expect(spoilerSafe({ round: null, balls: [], past: [] }, T).nextAt).toBeNull();
+  });
+});
+
+test('withScratched merges scratched draws in draw order', () => {
+  const round = { rack: [e(1), e(2, { scratched: true }), e(3)] };
+  const rows = [{ drawNo: 1, multiplier: 5 }, { drawNo: 3, multiplier: null }];
+  expect(withScratched(round, rows).map((r) => [r.drawNo, !!r.scratched])).toEqual([[1, false], [2, true], [3, false]]);
+  expect(withScratched({ rack: [e(1)] }, rows)).toBe(rows);
 });

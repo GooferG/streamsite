@@ -15,7 +15,7 @@ const ROUND = {
 };
 const BONUSES = [
   { slot: 'gates of olympus', bet: 1, win: 412, multiplier: 412 },
-  { slot: 'Wanted Dead or a Wild', bet: '2', win: '176', multiplier: '88' },
+  { slot: 'Wanted: Dead or a Wild!', bet: '2', win: '176', multiplier: '88' },
   { slot: 'The Dog House', bet: 1, win: 900, multiplier: 900 },
   { slot: 'Sugar Rush 1000', bet: 1, win: null, multiplier: null },
   { slot: 'Not On The Rack', bet: 1, win: 5000, multiplier: 5000 },
@@ -54,6 +54,21 @@ describe.each([
     expect(m.rankRows(rows).map((r) => r.drawNo)).toEqual([2, 3, 1]);
     expect(m.winnerOf(rows).drawNo).toBe(2);
     expect(m.winnerOf([{ drawNo: 1, multiplier: null }])).toBeNull();
+  });
+
+  test('normName folds case, punctuation, leading "the", "&" and accents', () => {
+    expect(m.normName('The Dog House!')).toBe('dog house');
+    expect(m.normName('Fire & Roses Joker')).toBe('fire and roses joker');
+    expect(m.normName('Piñata Wins')).toBe('pinata wins');
+  });
+
+  test('a blank manual multiplier with a bonusIndex does not become a manual result', () => {
+    expect(m.resultRows(ROUND, BONUSES, { 1: { multiplier: '', win: '', bonusIndex: 0 } })[0]).toMatchObject({ multiplier: 412, source: 'hunt' });
+  });
+
+  test('a name that normalizes to empty never matches a bonus row', () => {
+    const round = { rack: [{ drawNo: 1, twitchId: 'a', displayName: 'X', slotId: 'k', slotName: '鬼', thumb: null, scratched: false }] };
+    expect(m.resultRows(round, [{ slot: null, multiplier: 5000 }])[0]).toMatchObject({ multiplier: null, matchCount: 0 });
   });
 
   test('sanitizeOverrides keeps only usable entries', () => {

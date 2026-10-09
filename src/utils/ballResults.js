@@ -48,10 +48,11 @@ export function sanitizeOverrides(input) {
 export function resultRows(round, bonuses = [], overrides = {}) {
   const rack = ((round && round.rack) || []).filter((e) => !e.scratched);
   const list = Array.isArray(bonuses) ? bonuses : [];
+  const safe = sanitizeOverrides(overrides);
   return rack.map((e) => {
     const key = normName(e.slotName);
-    const matches = list.filter((b) => b && normName(b.slot) === key);
-    const o = (overrides && overrides[e.drawNo]) || null;
+    const matches = key ? list.filter((b) => b && normName(b.slot) === key) : [];
+    const o = safe[e.drawNo] || null;
     const picked = o && o.bonusIndex != null ? matches[o.bonusIndex] || null : matches[0] || null;
     const base = {
       drawNo: e.drawNo,

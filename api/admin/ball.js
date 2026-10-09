@@ -2,12 +2,15 @@ import { randomInt } from 'node:crypto';
 import { adminDb, FieldValue, Timestamp } from '../_lib/firebaseAdmin.js';
 import { applyCors, requireAdmin } from '../_lib/verifyAuth.js';
 import { CommunityHuntsError, getHunt } from '../_lib/communityHunts.js';
+import { prizeLabel } from '../_lib/predictionRewards.js';
+import { resultRows, sanitizeOverrides, winnerOf } from '../_lib/ballResults.js';
 import { sendChannelMessage } from '../_lib/twitchChat.js';
 import {
   ACTIVE_STATUSES,
   DRAW_REVEAL_MS,
   drawKey,
   drawLine,
+  formatMulti,
   hasPrize,
   openedLine,
   resultsLine,
@@ -111,6 +114,29 @@ async function announceQuietly(ref, event, drawNo, nowMs) {
   } catch (err) {
     console.error('ball chat announce failed', err);
     return { posted: false, reason: err.code || err.message };
+  }
+}
+
+// Settling (and previewing it) needs a closed round, so no draw can change
+// between the preview and the payout.
+function assertClosed(round) {
+  if (round.status === 'settled' || round.settledAt) throw new ActionError(400, 'ALREADY_SETTLED');
+  if (round.status !== 'closed') throw new ActionError(400, 'NOT_CLOSED');
+}
+
+// The linked hunt's bonus rows. A communityhunts outage leaves an empty list
+// and a flag, so a fully manual payout table can still settle.
+async function huntBonuses(round) {
+  if (!round.huntId) return { bonuses: [], huntError: null };
+  try {
+    const hunt = await getHunt(round.huntId);
+    if (!hunt) return { bonuses: [], huntError: 'HUNT_NOT_FOUND' };
+    return { bonuses: Array.isArray(hunt.bonuses) ? hunt.bonuses : [], huntError: null };
+  } catch (err) {
+    if (err instanceof CommunityHuntsError) {
+      return { bonuses: [], huntError: err.status === 404 ? 'HUNT_NOT_FOUND' : 'COMMUNITYHUNTS_UNAVAILABLE' };
+    }
+    throw err;
   }
 }
 
@@ -264,7 +290,95 @@ export default async function handler(req, res) {
       return res.status(200).json({ ok: true, announce });
     }
 
-    // SETTLE-ACTIONS (Task 7)
+    if (action === 'preview_settle') {
+      const snap = await ref.get();
+      if (!snap.exists) return res.status(404).json({ error: 'NOT_FOUND' });
+      const round = snap.data();
+      assertClosed(round);
+      const { bonuses, huntError } = await huntBonuses(round);
+      const rows = resultRows(round, bonuses, sanitizeOverrides(payload.overrides));
+      return res.status(200).json({ ok: true, rows, winner: winnerOf(rows), prize: round.prize, huntError });
+    }
+
+    if (action === 'settle') {
+      const snap = await ref.get();
+      if (!snap.exists) return res.status(404).json({ error: 'NOT_FOUND' });
+      assertClosed(snap.data());
+      const overrides = sanitizeOverrides(payload.overrides);
+      // Network first; the transaction re-checks the round and re-ranks.
+      const { bonuses } = await huntBonuses(snap.data());
+      const winner = await mutate(ref, async (tx, current) => {
+        assertClosed(current);
+        const rows = resultRows(current, bonuses, overrides);
+        const top = winnerOf(rows);
+        if (!top) throw new ActionError(400, 'NO_RESULTS');
+        const now = FieldValue.serverTimestamp();
+        const prize = current.prize || { tickets: 0, prize: null };
+        const multi = formatMulti(top.multiplier);
+
+        const results = {};
+        for (const r of rows) {
+          if (r.multiplier != null) results[r.drawNo] = { multiplier: r.multiplier, win: r.win, bet: r.bet, source: r.source };
+        }
+
+        if (prize.tickets > 0) {
+          // set+merge so a viewer who never signed in still gets paid.
+          tx.set(
+            adminDb.collection('users').doc(top.twitchId),
+            { tickets: FieldValue.increment(prize.tickets), totalEarned: FieldValue.increment(prize.tickets), updatedAt: now },
+            { merge: true }
+          );
+          tx.set(adminDb.collection('ticket_ledger').doc(), {
+            userId: top.twitchId,
+            delta: prize.tickets,
+            reason: 'goofer_ball',
+            refId: id,
+            note: `Goofer Ball winner — ${top.slotName} ${multi}`,
+            createdAt: now,
+          });
+        }
+
+        let redemptionId = null;
+        const label = prizeLabel(prize.prize);
+        if (label) {
+          const redemptionRef = adminDb.collection('redemptions').doc();
+          redemptionId = redemptionRef.id;
+          tx.set(redemptionRef, {
+            userId: top.twitchId,
+            twitchName: top.twitchName,
+            displayName: top.displayName,
+            profileImageUrl: null,
+            itemId: id,
+            itemName: `Goofer Ball · ${top.slotName} ${multi}`,
+            cost: 0,
+            kind: 'goofer_ball',
+            status: 'pending',
+            note: label,
+            prizeKind: prize.prize.kind,
+            prizeAmount: prize.prize.amount,
+            ballRoundId: id,
+            createdAt: now,
+            fulfilledAt: null,
+          });
+        }
+
+        const winnerDoc = {
+          drawNo: top.drawNo,
+          twitchId: top.twitchId,
+          twitchName: top.twitchName,
+          displayName: top.displayName,
+          slotId: top.slotId,
+          slotName: top.slotName,
+          thumb: top.thumb,
+          multiplier: top.multiplier,
+          win: top.win,
+          redemptionId,
+        };
+        tx.update(ref, { results, winner: winnerDoc, status: 'settled', settledAt: now, settledBy: admin.email });
+        return winnerDoc;
+      });
+      return res.status(200).json({ ok: true, winner });
+    }
 
     return res.status(400).json({ error: 'UNKNOWN_ACTION' });
   } catch (err) {

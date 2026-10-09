@@ -273,3 +273,93 @@ test('unknown actions', async () => {
   seedRound('r1');
   expect((await call({ action: 'explode', id: 'r1' })).body).toEqual({ error: 'UNKNOWN_ACTION' });
 });
+
+describe('payout', () => {
+  const RACK = [
+    entry(1, 'a', { slotName: 'Gates of Olympus' }),
+    entry(2, 'b', { slotName: 'Wanted Dead or a Wild' }),
+    entry(3, 'c', { slotName: 'The Dog House', scratched: true }),
+    entry(4, 'd', { slotName: 'Sugar Rush 1000' }),
+  ];
+  const BONUSES = [
+    { slot: 'Gates of Olympus', bet: 1, win: 412, multiplier: 412 },
+    { slot: 'Wanted Dead or a Wild', bet: 2, win: 176, multiplier: 88 },
+    { slot: 'The Dog House', bet: 1, win: 9000, multiplier: 9000 },
+    { slot: 'Sugar Rush 1000', bet: 1, win: null, multiplier: null },
+  ];
+
+  beforeEach(() => {
+    getHunt.mockResolvedValue({ id: 'h1', bonuses: BONUSES });
+  });
+
+  test('preview needs a closed round and writes nothing', async () => {
+    seedRound('r1', { rack: RACK, huntId: 'h1' });
+    expect((await call({ action: 'preview_settle', id: 'r1' })).body).toEqual({ error: 'NOT_CLOSED' });
+    seedRound('r1', { status: 'closed', rack: RACK, huntId: 'h1' });
+    const before = __fake.snapshot();
+    const res = await call({ action: 'preview_settle', id: 'r1', overrides: { 4: { multiplier: '41', win: '41' } } });
+    expect(res.body).toMatchObject({ ok: true, huntError: null, winner: { drawNo: 1, multiplier: 412 } });
+    expect(res.body.rows.map((r) => [r.drawNo, r.multiplier, r.source])).toEqual([
+      [1, 412, 'hunt'],
+      [2, 88, 'hunt'],
+      [4, 41, 'manual'],
+    ]);
+    expect(__fake.snapshot()).toEqual(before);
+  });
+
+  test('a communityhunts outage still previews from manual numbers', async () => {
+    seedRound('r1', { status: 'closed', rack: RACK, huntId: 'h1' });
+    getHunt.mockRejectedValue(new CommunityHuntsError('UPSTREAM', 502));
+    const res = await call({ action: 'preview_settle', id: 'r1', overrides: { 2: { multiplier: 7 } } });
+    expect(res.body).toMatchObject({ huntError: 'COMMUNITYHUNTS_UNAVAILABLE', winner: { drawNo: 2, multiplier: 7 } });
+  });
+
+  test('settle pays the top multiplier: tickets, ledger, redemption, results; only once', async () => {
+    seedRound('r1', { status: 'closed', rack: RACK, huntId: 'h1' });
+    const res = await call({ action: 'settle', id: 'r1' });
+    expect(res.body.ok).toBe(true);
+    const r = round();
+    expect(r.status).toBe('settled');
+    expect(r.settledBy).toBe('owner@test');
+    expect(r.results).toEqual({
+      1: { multiplier: 412, win: 412, bet: 1, source: 'hunt' },
+      2: { multiplier: 88, win: 176, bet: 2, source: 'hunt' },
+    });
+    expect(r.winner).toMatchObject({ drawNo: 1, twitchId: 'a', displayName: 'A', slotName: 'Gates of Olympus', multiplier: 412, win: 412 });
+    expect(__fake.read('users/a')).toMatchObject({ tickets: 200, totalEarned: 200 });
+    const [ledger] = __fake.paths('ticket_ledger').map((p) => __fake.read(p));
+    expect(ledger).toMatchObject({ userId: 'a', delta: 200, reason: 'goofer_ball', refId: 'r1', note: 'Goofer Ball winner — Gates of Olympus 412x' });
+    const [redemption] = __fake.paths('redemptions').map((p) => __fake.read(p));
+    expect(redemption).toMatchObject({
+      userId: 'a',
+      kind: 'goofer_ball',
+      status: 'pending',
+      cost: 0,
+      note: '$5',
+      prizeKind: 'cash',
+      prizeAmount: 5,
+      ballRoundId: 'r1',
+      itemName: 'Goofer Ball · Gates of Olympus 412x',
+    });
+    expect(r.winner.redemptionId).toBe(__fake.paths('redemptions')[0].split('/').pop());
+    expect((await call({ action: 'settle', id: 'r1' })).body).toEqual({ error: 'ALREADY_SETTLED' });
+    expect(__fake.read('users/a').tickets).toBe(200);
+  });
+
+  test('tickets only: no redemption; nothing to rank: NO_RESULTS', async () => {
+    seedRound('r1', { status: 'closed', rack: RACK, huntId: 'h1', prize: { tickets: 50, prize: null } });
+    await call({ action: 'settle', id: 'r1' });
+    expect(__fake.paths('redemptions')).toEqual([]);
+    expect(round().winner.redemptionId).toBeNull();
+    seedRound('r2', { status: 'closed', rack: [entry(1, 'd', { slotName: 'Sugar Rush 1000' })], huntId: 'h1' });
+    expect((await call({ action: 'settle', id: 'r2' })).body).toEqual({ error: 'NO_RESULTS' });
+  });
+
+  test('the results line posts only after settle', async () => {
+    seedRound('r1', { status: 'closed', rack: RACK, huntId: 'h1' });
+    expect((await call({ action: 'announce', id: 'r1', event: 'results' })).body).toEqual({ error: 'NOT_SETTLED' });
+    await call({ action: 'settle', id: 'r1' });
+    expect((await call({ action: 'announce', id: 'r1', event: 'results' })).body.announce).toEqual({ posted: true });
+    expect(sendChannelMessage).toHaveBeenCalledWith("🎱 Tonight's winning ball: Gates of Olympus at 412x. @A wins 200 tickets + $5.");
+  });
+});

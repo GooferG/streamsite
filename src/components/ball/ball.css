@@ -5,6 +5,7 @@
 .gb-burst { background: repeating-conic-gradient(from 0deg at 52% 38%, theme('colors.white / 7%') 0 5deg, transparent 5deg 13deg); }
 .gb-desk { background: linear-gradient(180deg, theme('colors.onair.wgoof.desk'), theme('colors.onair.wgoof.desk-deep')); border-top: 3px solid theme('colors.onair.wgoof.trim'); }
 .gb-title { color: theme('colors.onair.wgoof.title'); text-shadow: 2px 0 theme('colors.onair.loss / 55%'), -2px 0 theme('colors.onair.signal.DEFAULT / 45%'); }
+.gb-multi { text-shadow: 3px 3px 0 theme("colors.onair.winner.ink"); }
 .gb-scan { background: repeating-linear-gradient(0deg, theme('colors.white / 3.5%') 0 1px, transparent 1px 3px); mix-blend-mode: screen; }
 .gb-vig { background: radial-gradient(ellipse at center, transparent 55%, theme('colors.black / 55%') 100%); }
 .gb-ball { background: radial-gradient(circle at 34% 30%, theme('colors.white'), theme('colors.onair.paper.DEFAULT') 45%, theme('colors.onair.wgoof.shade') 100%); box-shadow: 0 18px 40px theme('colors.black / 55%'); }

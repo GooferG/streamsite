@@ -8,12 +8,12 @@ export default function DrumRig({ balls = [], count, blowing = false, still = fa
   return (
     <div className={className} aria-hidden="true">
       <div className="relative">
-        {tube && (
-          <div className="gb-tube absolute -top-[24%] left-1/2 h-[24%] w-[7%] -translate-x-1/2 rounded-t-[6px]">
-            {riding && <div className="gb-ball gb-rise absolute bottom-0 left-0 aspect-square w-full rounded-full" />}
-          </div>
-        )}
         <div className="relative aspect-square">
+          {tube && (
+            <div className="gb-tube absolute bottom-full left-1/2 h-[22%] w-[7%] -translate-x-1/2 rounded-t-[6px]">
+              {riding && <div className="gb-ball gb-rise absolute bottom-0 left-0 aspect-square w-full rounded-full" />}
+            </div>
+          )}
           <div className="absolute inset-[3%] overflow-hidden rounded-full">
             <DrumCanvas balls={balls} count={count} blowing={blowing} still={still} className="h-full w-full" />
           </div>

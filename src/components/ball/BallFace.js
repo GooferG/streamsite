@@ -1,11 +1,12 @@
 import { pad2, who } from '../../utils/ball';
 import './ball.css';
 
+// Callers pass `absolute ...`, which is also the containing block for the children below.
 // The drawn ball in close-up: "BALL 03", the slot art as a round decal (the
 // slot name until art exists), and the caller stamped on the band.
 export default function BallFace({ entry, spinning = false, className = '' }) {
   return (
-    <div className={`gb-ball relative aspect-square rounded-full ${spinning ? 'gb-spin-in' : ''} ${className}`}>
+    <div className={`gb-ball aspect-square rounded-full ${spinning ? 'gb-spin-in' : ''} ${className}`}>
       <p className="absolute inset-x-0 top-[5%] text-center font-onair-mono text-[clamp(0.625rem,1.1vw,1.125rem)] font-bold uppercase tracking-[0.15em] text-onair-paper-ink/75">
         Ball {pad2(entry.drawNo)}
       </p>

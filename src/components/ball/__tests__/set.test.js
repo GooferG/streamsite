@@ -3,6 +3,8 @@ import DrawTakeover from '../DrawTakeover';
 import WinnerCard from '../WinnerCard';
 import ChannelSet, { FINE_PRINT } from '../ChannelSet';
 
+jest.mock('../DrumRig', () => (props) => <div data-testid="rig" data-count={props.count} />);
+
 beforeEach(() => {
   jest.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
 });
@@ -64,4 +66,11 @@ test('winner card', () => {
   expect(screen.getByText('412x')).toBeTruthy();
   expect(screen.getByText('@CoolGuy wins 200 tickets + $5')).toBeTruthy();
   expect(screen.getByText('Results certified by the Goofer Gaming Commission (one guy). Drawn nightly at 4:20.')).toBeTruthy();
+});
+
+test('the drum count: empty drum with a known count is 0, unknown count keeps placeholders', () => {
+  const { getByTestId, rerender } = render(<DrawTakeover entry={ENTRY} rack={[ENTRY]} balls={[]} left={0} elapsed={1000} sound={sound()} />);
+  expect(getByTestId('rig').getAttribute('data-count')).toBe('0');
+  rerender(<DrawTakeover entry={ENTRY} rack={[ENTRY]} balls={[]} left={null} elapsed={1000} sound={sound()} />);
+  expect(getByTestId('rig').getAttribute('data-count')).toBe('24');
 });

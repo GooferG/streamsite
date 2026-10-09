@@ -28,19 +28,19 @@ export default function DrawTakeover({ entry, rack = [], balls = [], left = null
   const blowing = phase === 'blower' || phase === 'tube';
   const shown = phase === 'spin' || phase === 'hold' || phase === 'out';
   const lower = phase === 'hold' || phase === 'out';
-  const earlier = rack.filter((e) => !e.scratched && e.drawNo < entry.drawNo);
-  const onRack = lower ? [...earlier, entry] : earlier;
+  const earlier = rack.filter((e) => !e.scratched && e.drawNo < entry.drawNo).slice(-12);
+  const onRack = (lower ? [...earlier, entry] : earlier).slice(-12);
 
   return (
     <div className={`fixed inset-0 ${phase === 'out' ? 'gb-cut-out' : ''}`} role="presentation">
       <ChannelSet>
         <DrumRig
           balls={balls}
-          count={balls.length || 24}
+          count={left == null && balls.length === 0 ? 24 : balls.length}
           blowing={blowing}
           tube
           riding={phase === 'tube'}
-          className="absolute left-[7%] top-[14%] w-[30%]"
+          className="absolute left-[7%] top-[12%] w-[28%]"
         />
         {shown && <BallFace entry={entry} spinning={phase === 'spin'} className="absolute left-[46%] top-[16%] w-[28%]" />}
         {onRack.length > 0 && (

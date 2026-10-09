@@ -84,6 +84,42 @@ test('useBallHunt polls every 60s and keeps the last hunt when a poll fails', as
   jest.useRealTimers();
 });
 
+test('useBallHunt waits while hidden and loads when the tab becomes visible', async () => {
+  Object.defineProperty(document, 'hidden', { configurable: true, get: () => true });
+  global.fetch = jest.fn().mockResolvedValue({ ok: true, json: async () => ({ hunt: { id: 'h1' } }) });
+  const { result } = renderHook(() => useBallHunt('h1'));
+  expect(global.fetch).not.toHaveBeenCalled();
+  Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+  act(() => document.dispatchEvent(new Event('visibilitychange')));
+  expect(global.fetch).toHaveBeenCalledTimes(1);
+  await waitFor(() => expect(result.current.hunt).toEqual({ id: 'h1' }));
+});
+
+test('useBallHunt ignores a late older response', async () => {
+  Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
+  const deferred = () => {
+    let resolve;
+    const promise = new Promise((r) => {
+      resolve = r;
+    });
+    return { promise, resolve };
+  };
+  const first = deferred();
+  const second = deferred();
+  global.fetch = jest.fn().mockReturnValueOnce(first.promise).mockReturnValueOnce(second.promise);
+  const { result } = renderHook(() => useBallHunt('h1'));
+  act(() => document.dispatchEvent(new Event('visibilitychange')));
+  expect(global.fetch).toHaveBeenCalledTimes(2);
+  await act(async () => {
+    second.resolve({ ok: true, json: async () => ({ hunt: { id: 'new' } }) });
+  });
+  await waitFor(() => expect(result.current.hunt).toEqual({ id: 'new' }));
+  await act(async () => {
+    first.resolve({ ok: true, json: async () => ({ hunt: { id: 'old' } }) });
+  });
+  expect(result.current.hunt).toEqual({ id: 'new' });
+});
+
 test('useBallHunt does nothing without a hunt id', () => {
   global.fetch = jest.fn();
   const { result } = renderHook(() => useBallHunt(null));

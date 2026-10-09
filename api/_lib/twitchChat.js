@@ -30,7 +30,7 @@ export function chatSenderId() {
     : process.env.TWITCH_BROADCASTER_ID || null;
 }
 
-export async function sendChannelMessage(text) {
+export async function sendChannelMessage(text, { replyTo } = {}) {
   const broadcasterId = process.env.TWITCH_BROADCASTER_ID;
   if (!broadcasterId) throw new Error('MISSING_TWITCH_BROADCASTER_ID');
   if (!text || !text.trim()) throw new Error('EMPTY_MESSAGE');
@@ -45,6 +45,8 @@ export async function sendChannelMessage(text) {
     broadcaster_id: broadcasterId,
     sender_id: senderId,
     message: clipped,
+    // Threads the line under a viewer's message (the !slot replies).
+    ...(replyTo ? { reply_parent_message_id: replyTo } : {}),
   });
 
   // Twitch returns data[0].is_sent and a drop_reason if filtered.

@@ -168,3 +168,21 @@ test('search ignores case, punctuation, a leading The and spaces', () => {
   fireEvent.change(screen.getByLabelText('Search slots'), { target: { value: 'doghouse' } });
   expect(screen.getByRole('button', { name: 'Copy !slot The Dog House' })).toBeTruthy();
 });
+
+test('an expanded past rack shows a scratched draw struck through', () => {
+  const past = frontFixture('offair', NOW).past.map((r, i) => (i === 0 ? { ...r, rack: r.rack.map((e) => (e.drawNo === 2 ? { ...e, scratched: true } : e)) } : r));
+  render(<BallFront {...frontFixture('offair', NOW)} round={past[0]} past={past} onLoadMore={jest.fn()} />);
+  const region = within(screen.getByRole('region', { name: 'Past draws' }));
+  fireEvent.click(region.getAllByRole('button', { name: /^Rack/ })[0]);
+  const chip = region.getByText('02 Wanted Dead or a Wild Scratched');
+  expect(chip.className).toContain('line-through');
+});
+
+test('a scratched ball in the drum list is tagged Scratched', () => {
+  const props = frontFixture('open', NOW);
+  const balls = props.balls.map((b) => (b.id === 'fx6' ? { ...b, status: 'scratched' } : b));
+  render(<BallFront {...props} balls={balls} onLoadMore={jest.fn()} />);
+  const drum = within(screen.getByRole('region', { name: 'In the drum' }));
+  expect(drum.getByText('Scratched')).toBeTruthy();
+  expect(drum.getByText('Le Bandit').className).toContain('line-through');
+});

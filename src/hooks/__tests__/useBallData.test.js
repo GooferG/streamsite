@@ -1,5 +1,5 @@
 import { act, renderHook, waitFor } from '@testing-library/react';
-import { getDocs } from 'firebase/firestore';
+import { getDocs, startAfter } from 'firebase/firestore';
 import useBallData from '../useBallData';
 import useBallRound from '../useBallRound';
 import useBallsFeed from '../useBallsFeed';
@@ -13,7 +13,7 @@ jest.mock('firebase/firestore', () => ({
   limit: () => null,
   orderBy: () => null,
   query: () => 'q',
-  startAfter: (c) => c,
+  startAfter: jest.fn(),
   where: () => null,
 }));
 jest.mock('../../contexts/TwitchAuthContext', () => ({ useTwitchAuth: () => ({ twitchUser: { twitchId: 'me1' } }) }));
@@ -37,6 +37,7 @@ beforeEach(() => {
   useBallHunt.mockReturnValue({ hunt: null, stale: false });
   usePageVisible.mockReturnValue(true);
   getDocs.mockResolvedValue(page('a', 3));
+  startAfter.mockImplementation((c) => c);
 });
 
 test('the balls listener runs only while a round is active and the tab is visible', async () => {
@@ -63,7 +64,8 @@ test('the archive waits for the first round snapshot', async () => {
 });
 
 test('load more appends page two after the cursor', async () => {
-  getDocs.mockResolvedValueOnce(page('a', 20)).mockResolvedValueOnce(page('b', 5));
+  const first = page('a', 20);
+  getDocs.mockResolvedValueOnce(first).mockResolvedValueOnce(page('b', 5));
   const { result } = renderHook(() => useBallData());
   await waitFor(() => expect(result.current.past).toHaveLength(20));
   expect(result.current.hasMore).toBe(true);
@@ -71,6 +73,7 @@ test('load more appends page two after the cursor', async () => {
   await waitFor(() => expect(result.current.past).toHaveLength(25));
   expect(result.current.hasMore).toBe(false);
   expect(result.current.past[20].id).toBe('b0');
+  expect(startAfter).toHaveBeenCalledWith(first.docs[19]);
 });
 
 test('a double tap on load more fetches one page', async () => {
@@ -122,4 +125,16 @@ test('a failed load more keeps the list and flags the error', async () => {
   await act(async () => result.current.loadMore());
   await waitFor(() => expect(result.current.pastError).toBe(true));
   expect(result.current.past).toHaveLength(20);
+});
+
+test('a just-settled round keeps the balls and hunt live through the hold; an old one does not', async () => {
+  useBallRound.mockReturnValue({ round: { id: 'r1', status: 'settled', huntId: 'h', settledAt: { toMillis: () => Date.now() } }, error: false });
+  const { rerender } = renderHook(() => useBallData());
+  expect(useBallsFeed).toHaveBeenLastCalledWith('r1', { enabled: true });
+  expect(useBallHunt).toHaveBeenLastCalledWith('h', { enabled: true });
+  useBallRound.mockReturnValue({ round: { id: 'r1', status: 'settled', huntId: 'h', settledAt: { toMillis: () => Date.now() - 10_000 } }, error: false });
+  rerender();
+  expect(useBallsFeed).toHaveBeenLastCalledWith('r1', { enabled: false });
+  expect(useBallHunt).toHaveBeenLastCalledWith('h', { enabled: false });
+  await waitFor(() => expect(getDocs).toHaveBeenCalled());
 });

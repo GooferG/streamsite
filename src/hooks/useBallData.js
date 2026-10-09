@@ -6,7 +6,7 @@ import useBallRound from './useBallRound';
 import useBallsFeed from './useBallsFeed';
 import useBallHunt from './useBallHunt';
 import usePageVisible from './usePageVisible';
-import { isActive } from '../utils/ball';
+import { isActive, settleRevealAt } from '../utils/ball';
 
 const PAGE = 20;
 
@@ -16,7 +16,10 @@ const PAGE = 20;
 export default function useBallData() {
   const visible = usePageVisible();
   const { round, error } = useBallRound();
-  const active = isActive(round);
+  // A settle is held back on CH 42 for the stream delay; the rack and drum
+  // stay live (and visible) until then.
+  const holding = !!round && round.status === 'settled' && (settleRevealAt(round) ?? 0) > Date.now();
+  const active = isActive(round) || holding;
   const { balls, ready } = useBallsFeed(round ? round.id : null, { enabled: active && visible });
   const { hunt, stale } = useBallHunt(round ? round.huntId : null, { enabled: active });
   const auth = useTwitchAuth();

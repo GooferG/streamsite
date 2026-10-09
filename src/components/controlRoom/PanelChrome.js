@@ -21,8 +21,8 @@ export default function PanelChrome({
   leds,
   tab,
   onTab,
-  stage,
-  onStage,
+  reveals,
+  onReveals,
   hideLiveBadge,
   onHideLiveBadge,
   docked,
@@ -66,15 +66,24 @@ export default function PanelChrome({
           )}
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-1">
-          <button
-            type="button"
-            aria-pressed={stage}
-            onClick={() => onStage(!stage)}
-            title="Play reveals full screen on this browser"
-            className={`cr-switch ${stage ? 'is-on' : ''}`}
-          >
-            Stage
-          </button>
+          <div role="radiogroup" aria-label="Reveals play on" className="flex items-center gap-0.5">
+            {[
+              ['overlay', 'OBS', 'Full-screen reveals play in the OBS overlays'],
+              ['stage', 'Stage', 'Full-screen reveals play on this browser; the OBS overlays skip them'],
+            ].map(([mode, label, title]) => (
+              <button
+                key={mode}
+                type="button"
+                role="radio"
+                aria-checked={reveals === mode}
+                title={title}
+                onClick={() => onReveals(mode)}
+                className={`cr-switch ${reveals === mode ? 'is-on' : ''}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
           {/* Escape is caught here, not on the menu: focus usually stays on
               the trigger, and an uncaught Escape minimizes the whole panel. */}
           <div

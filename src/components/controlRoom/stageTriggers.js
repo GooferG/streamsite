@@ -1,3 +1,4 @@
+import { drawMoment, winnerMoment } from '../../utils/ball';
 import { LOCK_HOLD_MS, REVEAL_MS, pickKey, tsMillis } from '../../utils/giveaway';
 
 export const STAGE_FRESH_MS = 10_000;
@@ -26,4 +27,18 @@ export function resultsMoment(round, lastId, now) {
   const at = tsMillis(round.settledAt);
   if (at == null || now - at >= STAGE_FRESH_MS) return null;
   return { kind: 'results', key: round.id, endsAt: now + RESULTS_HOLD_MS, round };
+}
+
+// A Goofer Ball draw that just landed: the same takeover the OBS overlay
+// plays, timed off drawnAt, so Stage and OBS are frame-for-frame the same.
+export function ballDrawMoment(round, lastKey, now) {
+  const m = drawMoment(round, now);
+  if (!m || m.key === lastKey || now - m.at >= STAGE_FRESH_MS) return null;
+  return { kind: 'ball-draw', key: m.key, at: m.at, endsAt: m.endsAt, entry: m.entry, round };
+}
+
+export function ballWinnerMoment(round, lastKey, now) {
+  const m = winnerMoment(round, now);
+  if (!m || m.key === lastKey) return null;
+  return { kind: 'ball-winner', key: m.key, at: m.at, endsAt: m.endsAt, round };
 }

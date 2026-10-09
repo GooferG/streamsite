@@ -3,6 +3,8 @@ import { useLocation } from 'react-router-dom';
 import { collection, orderBy, query, where, limit as fLimit } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from './AuthContext';
+import useBroadcastSettings from '../hooks/useBroadcastSettings';
+import { writeReveals } from '../utils/broadcast';
 import { useDriverLock } from '../hooks/useDriverLock';
 import useGiveawayClock from '../components/admin/giveaways/useGiveawayClock';
 import useWinnerAnnounce from '../components/admin/giveaways/useWinnerAnnounce';
@@ -40,6 +42,7 @@ const giveawaysQuery = () =>
     fLimit(5)
   );
 const roundsQuery = () => query(collection(db, 'hunts'), orderBy('createdAt', 'desc'), fLimit(3));
+const ballRoundsQuery = () => query(collection(db, 'ball_rounds'), orderBy('openedAt', 'desc'), fLimit(1));
 const redemptionsQuery = () =>
   query(
     collection(db, 'redemptions'),
@@ -59,6 +62,9 @@ export function ControlRoomProvider({ children }) {
   const giveawaysFeed = useLiveQuery(giveawaysQuery, enabled);
   const roundsFeed = useLiveQuery(roundsQuery, enabled);
   const redemptionsFeed = useLiveQuery(redemptionsQuery, enabled);
+  const ballFeed = useLiveQuery(ballRoundsQuery, enabled);
+  const ballRound = ballFeed.docs[0] || null;
+  const broadcast = useBroadcastSettings(enabled);
   const giveaways = giveawaysFeed.docs;
   const rounds = roundsFeed.docs;
   const redemptions = redemptionsFeed.docs;
@@ -120,6 +126,15 @@ export function ControlRoomProvider({ children }) {
     };
   }, []);
   const setStage = useCallback((on) => setStore((s) => ({ ...s, stage: !!on })), []);
+  // The shared reveals switch: OBS or this browser's Stage, never both.
+  const setReveals = useCallback(
+    (mode) => {
+      const next = mode === 'stage' ? 'stage' : 'overlay';
+      setStore((s) => ({ ...s, stage: next === 'stage' }));
+      Promise.resolve(writeReveals(next)).catch(() => pushWarning('Could not save where reveals play. Try again.'));
+    },
+    [pushWarning]
+  );
   const setHideLiveBadge = useCallback((on) => setStore((s) => ({ ...s, hideLiveBadge: !!on })), []);
 
   // The Redeem tab calls this while it's on screen. The mark only moves forward.
@@ -142,8 +157,10 @@ export function ControlRoomProvider({ children }) {
     rounds,
     activeRound: activeRoundOf(rounds),
     latestRound,
-    dataLost: giveawaysFeed.error || roundsFeed.error || redemptionsFeed.error,
-    dataGaveUp: giveawaysFeed.gaveUp || roundsFeed.gaveUp || redemptionsFeed.gaveUp,
+    ballRound,
+    reveals: broadcast.reveals,
+    dataLost: giveawaysFeed.error || roundsFeed.error || redemptionsFeed.error || ballFeed.error,
+    dataGaveUp: giveawaysFeed.gaveUp || roundsFeed.gaveUp || redemptionsFeed.gaveUp || ballFeed.gaveUp,
     redemptions,
     redeem: {
       pending: redemptions.length,
@@ -170,6 +187,7 @@ export function ControlRoomProvider({ children }) {
     panelActions,
     prefs: { stage: store.stage, hideLiveBadge: store.hideLiveBadge, redeemFilter: store.redeemFilter },
     setStage,
+    setReveals,
     setHideLiveBadge,
     ducked,
     setDucked,

@@ -1,4 +1,4 @@
-import { RESULTS_HOLD_MS, giveawayMoment, resultsMoment } from '../stageTriggers';
+import { RESULTS_HOLD_MS, ballDrawMoment, ballWinnerMoment, giveawayMoment, resultsMoment } from '../stageTriggers';
 import { LOCK_HOLD_MS, REVEAL_MS } from '../../../utils/giveaway';
 
 const NOW = 1_700_000_000_000;
@@ -44,4 +44,28 @@ test('a fresh settle stages once, for 8s', () => {
   expect(resultsMoment(round, 'r1', NOW)).toBeNull();
   expect(resultsMoment({ ...round, settledAt: at(NOW - 11_000) }, null, NOW)).toBeNull();
   expect(resultsMoment({ ...round, status: 'locked' }, null, NOW)).toBeNull();
+});
+
+describe('Goofer Ball moments', () => {
+  const at2 = (ms) => ({ toMillis: () => ms });
+  const NOW = 10_000_000;
+  const round = (agoMs, extra = {}) => ({
+    id: 'r1',
+    status: 'open',
+    rack: [{ drawNo: 2, slotName: 'Gates of Olympus', displayName: 'CoolGuy', drawnAt: at2(NOW - agoMs), scratched: false }],
+    ...extra,
+  });
+
+  test('a fresh draw takes the stage once', () => {
+    const m = ballDrawMoment(round(500), null, NOW);
+    expect(m).toMatchObject({ kind: 'ball-draw', key: 'r1:2', at: NOW - 500, endsAt: NOW - 500 + 8000 });
+    expect(ballDrawMoment(round(500), 'r1:2', NOW)).toBeNull();
+    expect(ballDrawMoment(round(9000), null, NOW)).toBeNull();
+  });
+
+  test('a fresh settle plays the winner card', () => {
+    const settled = { id: 'r1', status: 'settled', settledAt: at2(NOW - 1000), winner: { drawNo: 2 }, rack: [] };
+    expect(ballWinnerMoment(settled, null, NOW)).toMatchObject({ kind: 'ball-winner', key: 'r1:winner', endsAt: NOW - 1000 + 12000 });
+    expect(ballWinnerMoment(settled, 'r1:winner', NOW)).toBeNull();
+  });
 });

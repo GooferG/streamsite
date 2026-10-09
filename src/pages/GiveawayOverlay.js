@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import useOverlaySound from '../hooks/useOverlaySound';
+import useBroadcastSettings from '../hooks/useBroadcastSettings';
 import { useGiveawayFeed } from '../hooks/useGiveawayFeed';
 import { useClock } from '../hooks/useClock';
 import {
@@ -488,6 +489,10 @@ export default function GiveawayOverlay() {
   const live = useGiveawayFeed({ enabled: !demo });
   const demoFeed = useDemoFeed(demo);
   const { giveaway, entries, firstMessage } = demo ? demoFeed : live;
+  // Stage mode: a staff browser plays the full-screen reveal, so OBS skips
+  // it (the entry and now-playing cards stay).
+  const { reveals } = useBroadcastSettings(!demo);
+  const fullScreen = demo || reveals !== 'stage';
 
   // The browser source must be see-through. OBS injects a transparent body by
   // default; this covers a plain browser tab and custom CSS setups too.
@@ -523,7 +528,7 @@ export default function GiveawayOverlay() {
 
   let body = null;
   if (giveaway) {
-    if ((giveaway.status === 'rolling' && giveaway.winner) || holding) {
+    if (fullScreen && ((giveaway.status === 'rolling' && giveaway.winner) || holding)) {
       // Same element for rolling and the post-confirm hold, so confirming
       // doesn't remount the screen and replay its intro.
       body = (

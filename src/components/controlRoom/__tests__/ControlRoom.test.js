@@ -70,6 +70,8 @@ function makeCr(overrides = {}) {
     },
     prefs: { stage: false, hideLiveBadge: false },
     setStage: jest.fn(),
+    reveals: 'overlay',
+    setReveals: jest.fn(),
     setHideLiveBadge: jest.fn(),
     ...rest,
   };
@@ -224,8 +226,9 @@ test('a held-down backtick does not keep toggling', () => {
 
 test('header controls call the right actions', () => {
   show();
-  fireEvent.click(screen.getByRole('button', { name: 'Stage' }));
-  expect(cr.setStage).toHaveBeenCalledWith(true);
+  fireEvent.click(screen.getByRole('radio', { name: 'Stage' }));
+  expect(cr.setReveals).toHaveBeenCalledWith('stage');
+  expect(screen.getByRole('radio', { name: 'OBS' }).getAttribute('aria-checked')).toBe('true');
   fireEvent.click(screen.getByRole('button', { name: 'Dock to the right' }));
   expect(cr.panelActions.dock).toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'Panel options' }));

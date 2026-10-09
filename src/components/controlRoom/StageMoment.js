@@ -7,7 +7,9 @@ import { pickKey } from '../../utils/giveaway';
 import { CrtStyles } from '../giveaway/RevealScreen';
 import RevealStage from '../giveaway/RevealStage';
 import PredictionWinnersReveal from '../PredictionWinnersReveal';
-import { giveawayMoment, resultsMoment } from './stageTriggers';
+import DrawTakeover from '../ball/DrawTakeover';
+import WinnerCard from '../ball/WinnerCard';
+import { ballDrawMoment, ballWinnerMoment, giveawayMoment, resultsMoment } from './stageTriggers';
 import { MOTION, prefersReducedMotion } from './motion';
 import './controlRoom.css';
 
@@ -31,9 +33,9 @@ export default function StageMoment() {
   // settle) is never born already leaving just because the previous one was
   // on its way out when it arrived.
   const [leavingKey, setLeavingKey] = useState(null);
-  const staged = useRef({ pick: null, round: null });
+  const staged = useRef({ pick: null, round: null, ballDraw: null, ballWinner: null });
   const leaving = !!moment && leavingKey === moment.key;
-  const now = useClock({ intervalMs: 250, active: !!moment && !leaving });
+  const now = useClock({ intervalMs: moment && moment.kind === 'ball-draw' ? 100 : 250, active: !!moment && !leaving });
   const { setDucked } = cr;
 
   useEffect(() => {
@@ -49,6 +51,22 @@ export default function StageMoment() {
     staged.current.round = m.key;
     setMoment(m);
   }, [round]);
+
+  const ballRound = cr.ballRound;
+  useEffect(() => {
+    const t = Date.now();
+    const draw = ballDrawMoment(ballRound, staged.current.ballDraw, t);
+    if (draw) {
+      staged.current.ballDraw = draw.key;
+      setMoment(draw);
+      return;
+    }
+    const win = ballWinnerMoment(ballRound, staged.current.ballWinner, t);
+    if (win) {
+      staged.current.ballWinner = win.key;
+      setMoment(win);
+    }
+  }, [ballRound]);
 
   const over = !!moment && (now >= moment.endsAt || !stillOnStage(moment, giveaway));
   useEffect(() => {
@@ -121,6 +139,10 @@ export default function StageMoment() {
         </p>
       </>
     );
+  } else if (moment.kind === 'ball-draw') {
+    body = <DrawTakeover entry={moment.entry} rack={moment.round.rack || []} elapsed={now - moment.at} />;
+  } else if (moment.kind === 'ball-winner') {
+    body = <WinnerCard round={moment.round} />;
   }
 
   return createPortal(

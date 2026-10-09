@@ -11,6 +11,7 @@ import useTuningPhrase, { TUNING_PHRASES } from '../hooks/useTuningPhrase';
 // Code-split the heavier tools so they only download when opened. The slot
 // catalogue itself is fetched from /api/slots on first use (useSlotCatalog).
 const SlotPicker = lazy(() => import('../components/SlotPicker'));
+const BallChannel = lazy(() => import('../components/ball/BallChannel'));
 const BonusBattle = lazy(() => import('../components/BonusBattle'));
 
 // While a tool chunk loads: its own label, then the broadcast tuning phrases.
@@ -69,6 +70,11 @@ export default function GambaPage() {
           {toolId === 'wheel' && (
             <Suspense fallback={<ToolLoading label="Tuning slot signal…" />}>
               <SlotPicker />
+            </Suspense>
+          )}
+          {toolId === 'ball' && (
+            <Suspense fallback={<ToolLoading label="Tuning to Channel 42…" />}>
+              <BallChannel />
             </Suspense>
           )}
         </div>

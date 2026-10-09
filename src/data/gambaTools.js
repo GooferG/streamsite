@@ -1,13 +1,14 @@
-import { Gamepad2, Layers, LayoutGrid, Radio, Swords } from 'lucide-react';
+import { CircleDot, Gamepad2, Layers, LayoutGrid, Radio, Swords } from 'lucide-react';
 
 // Canonical Gamba channel list: the single source for the nav menu and side
 // sheet, the in-page tuner, the hub, the home list and the Hunts monitor.
-// Channel numbers follow the On Air handoff: Hub 00, tools 01–04.
+// Channel numbers follow the On Air handoff: Hub 00, tools 01–04, Goofer Ball 42 (a 420 nod).
 export const GAMBA_TOOLS = [
   { id: 'leaderboard', label: 'Leaderboard', icon: Radio, channel: 1, path: '/gamba/leaderboard' },
   { id: 'hunts', label: 'Hunts', icon: Layers, channel: 2, path: '/gamba/hunts' },
   { id: 'bonus-battle', label: 'Bonus Battle', icon: Swords, channel: 3, path: '/gamba/bonus-battle' },
   { id: 'wheel', label: 'Slot Picker', icon: Gamepad2, channel: 4, path: '/gamba/wheel' },
+  { id: 'ball', label: 'Goofer Ball', icon: CircleDot, channel: 42, path: '/gamba/ball' },
 ];
 
 export const GAMBA_HUB = { id: 'hub', label: 'Hub', icon: LayoutGrid, channel: 0, path: '/gamba' };

@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import GambaTuner, { resetTunerMemory, tunedRecently } from '../GambaTuner';
 import { GAMBA_CHANNELS } from '../../../data/gambaTools';
 
+const pos = (i) => ((i + 0.5) / 6) * 100;
 const at = (id) => GAMBA_CHANNELS.find((c) => c.id === id);
 
 function renderTuner(id) {
@@ -37,7 +38,7 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-test('five channel links with CH numbers; the current one is the page', () => {
+test('six channel links with CH numbers; the current one is the page', () => {
   renderTuner('hunts');
   const links = within(nav()).getAllByRole('link').filter((a) => /^CH/.test(a.textContent));
   expect(links.map((a) => [a.textContent, a.getAttribute('href')])).toEqual([
@@ -46,6 +47,7 @@ test('five channel links with CH numbers; the current one is the page', () => {
     ['CH 02Hunts', '/gamba/hunts'],
     ['CH 03Bonus Battle', '/gamba/bonus-battle'],
     ['CH 04Slot Picker', '/gamba/wheel'],
+    ['CH 42Goofer Ball', '/gamba/ball'],
   ]);
   expect(links[2].getAttribute('aria-current')).toBe('page');
   expect(links[1].getAttribute('aria-current')).toBeNull();
@@ -53,10 +55,13 @@ test('five channel links with CH numbers; the current one is the page', () => {
 
 test('steppers name their target and wrap at both ends', () => {
   const { unmount } = renderTuner('hub');
-  expect(screen.getByRole('link', { name: 'Previous channel: Slot Picker' }).getAttribute('href')).toBe('/gamba/wheel');
+  expect(screen.getByRole('link', { name: 'Previous channel: Goofer Ball' }).getAttribute('href')).toBe('/gamba/ball');
   expect(screen.getByRole('link', { name: 'Next channel: Leaderboard' }).getAttribute('href')).toBe('/gamba/leaderboard');
   unmount();
-  renderTuner('wheel');
+  const { unmount: unmount2 } = renderTuner('wheel');
+  expect(screen.getByRole('link', { name: 'Next channel: Goofer Ball' }).getAttribute('href')).toBe('/gamba/ball');
+  unmount2();
+  renderTuner('ball');
   expect(screen.getByRole('link', { name: 'Next channel: Hub' }).getAttribute('href')).toBe('/gamba');
 });
 
@@ -72,9 +77,9 @@ test('null current reads as the hub', () => {
 test('the phone readout names the channel and its position', () => {
   renderTuner('hunts');
   const readout = screen.getByTestId('tuner-readout');
-  expect(readout.textContent).toMatch(/CH 02\s*Hunts\s*· 3 of 5/);
+  expect(readout.textContent).toMatch(/CH 02\s*Hunts\s*· 3 of 6/);
   expect(within(readout).getByText('Hunts').className).toContain('text-[0.9375rem]');
-  const position = within(readout).getByText(/3 of 5/);
+  const position = within(readout).getByText(/3 of 6/);
   expect(position.className).toContain('text-xs');
   expect(position.className).not.toContain('text-[0.625rem]');
 });
@@ -87,19 +92,19 @@ test('the band and needle are set dressing', () => {
 
 test('first visit: the needle starts on its channel', () => {
   renderTuner('hunts');
-  expect(needle().style.left).toBe('50%');
+  expect(parseFloat(needle().style.left)).toBeCloseTo(pos(2));
 });
 
 test('a channel change inside Gamba: the needle starts on the old channel and slides after two frames', async () => {
   const first = renderTuner('hunts');
   first.unmount();
   renderTuner('wheel');
-  expect(needle().style.left).toBe('50%');
+  expect(parseFloat(needle().style.left)).toBeCloseTo(pos(2));
   await frame();
   // One frame paints the start position; the target is set on the next.
-  expect(needle().style.left).toBe('50%');
+  expect(parseFloat(needle().style.left)).toBeCloseTo(pos(2));
   await frame();
-  expect(needle().style.left).toBe('90%');
+  expect(parseFloat(needle().style.left)).toBeCloseTo(pos(4));
 });
 
 test('the start position is right on the first commit, before any later layout read', () => {
@@ -120,7 +125,8 @@ test('the start position is right on the first commit, before any later layout r
       <Probe />
     </MemoryRouter>
   );
-  expect(seen).toEqual(['50%']);
+  expect(seen).toHaveLength(1);
+  expect(parseFloat(seen[0])).toBeCloseTo(pos(2));
 });
 
 test('App renders the new page before the old tuner unmounts: the new needle still starts on the old channel', () => {
@@ -130,7 +136,7 @@ test('App renders the new page before the old tuner unmounts: the new needle sti
       <GambaTuner current={at('wheel')} />
     </MemoryRouter>
   );
-  expect(next.container.querySelector('[data-testid="tuner-needle"]').style.left).toBe('50%');
+  expect(parseFloat(next.container.querySelector('[data-testid="tuner-needle"]').style.left)).toBeCloseTo(pos(2));
 });
 
 test('a return visit long after the tuner went away starts in place', async () => {
@@ -139,10 +145,10 @@ test('a return visit long after the tuner went away starts in place', async () =
   first.unmount();
   setNow(10000 + 1501);
   renderTuner('wheel');
-  expect(needle().style.left).toBe('90%');
+  expect(parseFloat(needle().style.left)).toBeCloseTo(pos(4));
   await frame();
   await frame();
-  expect(needle().style.left).toBe('90%');
+  expect(parseFloat(needle().style.left)).toBeCloseTo(pos(4));
 });
 
 test('tunedRecently: while a tuner is on screen, then only within 1500ms of its unmount', () => {
@@ -168,5 +174,5 @@ test('reduced motion: the needle jumps straight to the new channel', () => {
   const first = renderTuner('hunts');
   first.unmount();
   renderTuner('wheel');
-  expect(needle().style.left).toBe('90%');
+  expect(parseFloat(needle().style.left)).toBeCloseTo(pos(4));
 });

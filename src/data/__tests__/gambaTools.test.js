@@ -13,17 +13,19 @@ test('tools carry the handoff channel numbers and their paths', () => {
     ['hunts', 2, '/gamba/hunts'],
     ['bonus-battle', 3, '/gamba/bonus-battle'],
     ['wheel', 4, '/gamba/wheel'],
+    ['ball', 42, '/gamba/ball'],
   ]);
 });
 
 test('the hub is channel 00 and leads the channel list', () => {
   expect(GAMBA_HUB).toMatchObject({ id: 'hub', label: 'Hub', channel: 0, path: '/gamba' });
-  expect(GAMBA_CHANNELS.map((c) => c.channel)).toEqual([0, 1, 2, 3, 4]);
+  expect(GAMBA_CHANNELS.map((c) => c.channel)).toEqual([0, 1, 2, 3, 4, 42]);
 });
 
 test('channelLabel pads to two digits', () => {
   expect(channelLabel(GAMBA_HUB)).toBe('CH 00');
   expect(channelLabel(GAMBA_TOOLS[1])).toBe('CH 02');
+  expect(channelLabel(GAMBA_TOOLS[4])).toBe('CH 42');
 });
 
 test('subchannelLabel prefixes the parent nav code', () => {
@@ -35,6 +37,7 @@ test('channelForPath maps /gamba routes to their channel', () => {
   expect(channelForPath('/gamba')).toBe(GAMBA_HUB);
   expect(channelForPath('/gamba/')).toBe(GAMBA_HUB);
   expect(channelForPath('/gamba/hunts').id).toBe('hunts');
+  expect(channelForPath('/gamba/ball').id).toBe('ball');
   expect(channelForPath('/gamba/nope')).toBeNull();
   expect(channelForPath('/schedule')).toBeNull();
   expect(channelForPath('/')).toBeNull();

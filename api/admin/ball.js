@@ -117,8 +117,9 @@ async function announceQuietly(ref, event, drawNo, nowMs) {
   }
 }
 
-// Settling (and previewing it) needs a closed round, so no draw can change
-// between the preview and the payout.
+// Settling (and previewing it) needs a closed round, so no new draw can land
+// between the preview and the payout. Scratches are still allowed on a closed
+// round, so settle re-reads and re-ranks the rack inside its transaction.
 function assertClosed(round) {
   if (round.status === 'settled' || round.settledAt) throw new ActionError(400, 'ALREADY_SETTLED');
   if (round.status !== 'closed') throw new ActionError(400, 'NOT_CLOSED');
@@ -306,12 +307,25 @@ export default async function handler(req, res) {
       assertClosed(snap.data());
       const overrides = sanitizeOverrides(payload.overrides);
       // Network first; the transaction re-checks the round and re-ranks.
-      const { bonuses } = await huntBonuses(snap.data());
+      const fetchedHuntId = snap.data().huntId || null;
+      const { bonuses, huntError } = await huntBonuses(snap.data());
+      if (huntError) {
+        // Hunt numbers are missing: only a table that is fully manual may settle.
+        const manual = (snap.data().rack || [])
+          .filter((e) => !e.scratched)
+          .every((e) => overrides[e.drawNo] && overrides[e.drawNo].multiplier != null);
+        if (!manual) throw new ActionError(502, huntError);
+      }
+      const expectDrawNo = Number(payload.expectDrawNo);
       const winner = await mutate(ref, async (tx, current) => {
         assertClosed(current);
+        if ((current.huntId || null) !== fetchedHuntId) throw new ActionError(409, 'HUNT_CHANGED');
         const rows = resultRows(current, bonuses, overrides);
         const top = winnerOf(rows);
         if (!top) throw new ActionError(400, 'NO_RESULTS');
+        if (Number.isInteger(expectDrawNo) && expectDrawNo > 0 && top.drawNo !== expectDrawNo) {
+          throw new ActionError(409, 'WINNER_CHANGED');
+        }
         const now = FieldValue.serverTimestamp();
         const prize = current.prize || { tickets: 0, prize: null };
         const multi = formatMulti(top.multiplier);

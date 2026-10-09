@@ -362,4 +362,60 @@ describe('payout', () => {
     expect((await call({ action: 'announce', id: 'r1', event: 'results' })).body.announce).toEqual({ posted: true });
     expect(sendChannelMessage).toHaveBeenCalledWith("🎱 Tonight's winning ball: Gates of Olympus at 412x. @A wins 200 tickets + $5.");
   });
+
+  const noPayout = () => {
+    expect(__fake.read('users/a')).toBeUndefined();
+    expect(__fake.paths('ticket_ledger')).toEqual([]);
+    expect(__fake.paths('redemptions')).toEqual([]);
+  };
+  const closedFields = { status: 'closed', rack: RACK, huntId: 'h1' };
+
+  test('a communityhunts outage blocks a partly manual settle, but a fully manual table settles', async () => {
+    seedRound('r1', closedFields);
+    getHunt.mockRejectedValue(new CommunityHuntsError('UPSTREAM', 502));
+    const res = await call({ action: 'settle', id: 'r1', overrides: { 4: { multiplier: 41 } } });
+    expect(res.statusCode).toBe(502);
+    expect(res.body).toEqual({ error: 'COMMUNITYHUNTS_UNAVAILABLE' });
+    expect(round().status).toBe('closed');
+    noPayout();
+    const ok = await call({
+      action: 'settle',
+      id: 'r1',
+      overrides: { 1: { multiplier: 5 }, 2: { multiplier: 9 }, 4: { multiplier: 3 } },
+    });
+    expect(ok.body.ok).toBe(true);
+    expect(round().winner).toMatchObject({ drawNo: 2, multiplier: 9 });
+  });
+
+  test('expectDrawNo guards against a changed winner', async () => {
+    seedRound('r1', closedFields);
+    const bad = await call({ action: 'settle', id: 'r1', expectDrawNo: 2 });
+    expect(bad.statusCode).toBe(409);
+    expect(bad.body).toEqual({ error: 'WINNER_CHANGED' });
+    expect(round().status).toBe('closed');
+    noPayout();
+    expect((await call({ action: 'settle', id: 'r1', expectDrawNo: 1 })).body.ok).toBe(true);
+  });
+
+  test('a hunt relinked mid-settle is refused', async () => {
+    seedRound('r1', closedFields);
+    getHunt.mockImplementation(async () => {
+      seedRound('r1', { ...closedFields, huntId: 'h2' });
+      return { id: 'h1', bonuses: BONUSES };
+    });
+    const res = await call({ action: 'settle', id: 'r1' });
+    expect(res.statusCode).toBe(409);
+    expect(res.body).toEqual({ error: 'HUNT_CHANGED' });
+    noPayout();
+  });
+
+  test('a round settled mid-settle is refused inside the transaction', async () => {
+    seedRound('r1', closedFields);
+    getHunt.mockImplementation(async () => {
+      seedRound('r1', { ...closedFields, status: 'settled', settledAt: ts(NOW) });
+      return { id: 'h1', bonuses: BONUSES };
+    });
+    expect((await call({ action: 'settle', id: 'r1' })).body).toEqual({ error: 'ALREADY_SETTLED' });
+    noPayout();
+  });
 });

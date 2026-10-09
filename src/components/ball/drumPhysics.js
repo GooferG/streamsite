@@ -23,13 +23,22 @@ function spawn(rand, r) {
 
 export function createDrum(count, { seed = 7, r = BALL_R } = {}) {
   const rand = seeded(seed);
-  return { r, rand, balls: Array.from({ length: count }, () => spawn(rand, r)) };
+  const balls = Array.from({ length: count }, (_, i) => ({ id: `n${i}`, ...spawn(rand, r) }));
+  return { r, rand, balls, byId: new Map(balls.map((b) => [b.id, b])) };
 }
 
-// Grow or shrink the simulated pile without disturbing the balls that stay.
-export function resizeDrum(drum, count) {
-  while (drum.balls.length < count) drum.balls.push({ ...spawn(drum.rand, drum.r), y: -0.6 });
-  if (drum.balls.length > count) drum.balls.length = count;
+// Match the simulated pile to a list of ball ids. Survivors keep their
+// position and velocity, new ids drop in from the top, removed ids vanish,
+// and drum.balls follows the order of ids.
+export function syncDrum(drum, ids) {
+  const next = new Map();
+  const balls = ids.map((id) => {
+    const ball = drum.byId.get(id) || { id, ...spawn(drum.rand, drum.r), y: -0.6 };
+    next.set(id, ball);
+    return ball;
+  });
+  drum.byId = next;
+  drum.balls = balls;
 }
 
 function keepInside(b, limit) {
@@ -49,6 +58,7 @@ function keepInside(b, limit) {
 export function stepDrum(drum, dt, jet = 0) {
   const { balls, r, rand } = drum;
   const limit = 1 - r;
+  const drag = Math.pow(DRAG, dt * 60);
   for (const b of balls) {
     b.vy += GRAVITY * dt;
     // The blower: an upward push, strongest low in the drum.
@@ -58,32 +68,35 @@ export function stepDrum(drum, dt, jet = 0) {
     }
     b.x += b.vx * dt;
     b.y += b.vy * dt;
-    b.vx *= DRAG;
-    b.vy *= DRAG;
+    b.vx *= drag;
+    b.vy *= drag;
     keepInside(b, limit);
   }
-  for (let i = 0; i < balls.length; i += 1) {
-    for (let j = i + 1; j < balls.length; j += 1) {
-      const a = balls[i];
-      const b = balls[j];
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const d = Math.hypot(dx, dy) || 1e-6;
-      if (d >= 2 * r) continue;
-      const nx = dx / d;
-      const ny = dy / d;
-      const push = (2 * r - d) / 2;
-      a.x -= nx * push;
-      a.y -= ny * push;
-      b.x += nx * push;
-      b.y += ny * push;
-      const rel = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
-      if (rel < 0) {
-        const k = (BALL_BOUNCE * rel) / 2;
-        a.vx += k * nx;
-        a.vy += k * ny;
-        b.vx -= k * nx;
-        b.vy -= k * ny;
+  // Relax the overlaps a few times so a packed pile settles.
+  for (let pass = 0; pass < 3; pass += 1) {
+    for (let i = 0; i < balls.length; i += 1) {
+      for (let j = i + 1; j < balls.length; j += 1) {
+        const a = balls[i];
+        const b = balls[j];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const d = Math.hypot(dx, dy) || 1e-6;
+        if (d >= 2 * r) continue;
+        const nx = dx / d;
+        const ny = dy / d;
+        const push = (2 * r - d) / 2;
+        a.x -= nx * push;
+        a.y -= ny * push;
+        b.x += nx * push;
+        b.y += ny * push;
+        const rel = (b.vx - a.vx) * nx + (b.vy - a.vy) * ny;
+        if (rel < 0) {
+          const k = (BALL_BOUNCE * rel) / 2;
+          a.vx += k * nx;
+          a.vy += k * ny;
+          b.vx -= k * nx;
+          b.vy -= k * ny;
+        }
       }
     }
   }

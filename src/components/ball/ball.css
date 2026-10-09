@@ -25,6 +25,7 @@
 @keyframes gb-cut-out { to { opacity: 0; } }
 .gb-toast-in { animation: gb-toast-in 0.3s ease-out both; }
 @keyframes gb-toast-in { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+/* OBS overlays don't honour reduced motion (spec); CH 42's root carries gb-site. */
 @media (prefers-reduced-motion: reduce) {
-  .gb-spin-in, .gb-rise, .gb-static, .gb-toast-in, .gb-cut-out { animation: none; }
+  .gb-site .gb-spin-in, .gb-site .gb-rise, .gb-site .gb-static, .gb-site .gb-toast-in, .gb-site .gb-cut-out { animation: none; }
 }

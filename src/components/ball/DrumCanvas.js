@@ -1,8 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { BALL_R, createDrum, resizeDrum, stepDrum } from './drumPhysics';
+import { BALL_R, createDrum, stepDrum, syncDrum } from './drumPhysics';
 import { CANVAS, DECALS } from './canvasPalette';
 
 export const MAX_BALLS = 60;
+const SETTLE_STEPS = 300;
+const STILL_JET = 0.22;
 
 function hash(s) {
   let h = 0;
@@ -10,21 +12,45 @@ function hash(s) {
   return Math.abs(h);
 }
 
+function settle(drum) {
+  for (let i = 0; i < SETTLE_STEPS; i += 1) stepDrum(drum, 1 / 60, STILL_JET);
+}
+
 // The balls inside the glass. One canvas, a requestAnimationFrame loop that
 // pauses with the tab, at most MAX_BALLS drawn ("+N more" past that). Each
-// ball wears its slot art as a round decal once the image loads.
+// ball wears its slot art as a round decal once the image loads. Still mode
+// (reduced motion) settles the pile once and redraws on change, never loops.
+// The root is relative and fills its parent: callers must not position it.
 export default function DrumCanvas({ balls = [], count, blowing = false, still = false, maxBalls = MAX_BALLS, className = '' }) {
   const canvasRef = useRef(null);
   const total = count ?? balls.length;
   const shown = Math.min(total, maxBalls);
+  const ids = balls.length
+    ? balls.slice(0, shown).map((b, i) => String(b.id || b.slotId || `n${i}`))
+    : Array.from({ length: shown }, (_, i) => `n${i}`);
+  const idsKey = ids.join('|');
   const drumRef = useRef(null);
-  if (!drumRef.current) drumRef.current = createDrum(shown);
+  if (!drumRef.current) {
+    drumRef.current = createDrum(0);
+    syncDrum(drumRef.current, ids);
+  }
   const live = useRef({ balls, blowing });
   live.current = { balls, blowing };
+  const drawRef = useRef(null);
 
+  // New ids drop in from the top; in still mode the pile re-settles.
   useEffect(() => {
-    resizeDrum(drumRef.current, shown);
-  }, [shown]);
+    syncDrum(drumRef.current, idsKey ? idsKey.split('|') : []);
+    if (still) {
+      settle(drumRef.current);
+      if (drawRef.current) drawRef.current();
+    }
+  }, [idsKey, still]);
+
+  // Fresh ball data (art, tints) redraws a still drum.
+  useEffect(() => {
+    if (still && drawRef.current) drawRef.current();
+  }, [balls, still]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -35,6 +61,9 @@ export default function DrumCanvas({ balls = [], count, blowing = false, still =
       if (!url) return null;
       if (!images.has(url)) {
         const img = new Image();
+        img.onload = () => {
+          if (still) draw();
+        };
         img.src = url;
         images.set(url, img);
       }
@@ -42,7 +71,7 @@ export default function DrumCanvas({ balls = [], count, blowing = false, still =
       return img.complete && img.naturalWidth > 0 ? img : null;
     };
 
-    const draw = () => {
+    function draw() {
       const w = canvas.clientWidth;
       const h = canvas.clientHeight;
       const dpr = window.devicePixelRatio || 1;
@@ -56,7 +85,8 @@ export default function DrumCanvas({ balls = [], count, blowing = false, still =
       const cx = w / 2;
       const cy = h / 2;
       const br = BALL_R * R;
-      const data = live.current.balls;
+      const data = new Map();
+      live.current.balls.forEach((b, i) => data.set(String(b.id || b.slotId || `n${i}`), b));
       drumRef.current.balls.forEach((b, i) => {
         const x = cx + b.x * R;
         const y = cy + b.y * R;
@@ -68,7 +98,7 @@ export default function DrumCanvas({ balls = [], count, blowing = false, still =
         ctx.beginPath();
         ctx.arc(x, y, br, 0, Math.PI * 2);
         ctx.fill();
-        const ball = data[i];
+        const ball = data.get(b.id);
         const decal = br * 0.52;
         const art = imageFor(ball && ball.thumb);
         ctx.save();
@@ -82,11 +112,20 @@ export default function DrumCanvas({ balls = [], count, blowing = false, still =
         }
         ctx.restore();
       });
-    };
+    }
+    drawRef.current = draw;
 
     if (still) {
       draw();
-      return undefined;
+      let ro = null;
+      if (typeof ResizeObserver !== 'undefined') {
+        ro = new ResizeObserver(() => draw());
+        ro.observe(canvas);
+      }
+      return () => {
+        drawRef.current = null;
+        if (ro) ro.disconnect();
+      };
     }
     let raf = 0;
     let last = 0;
@@ -94,18 +133,21 @@ export default function DrumCanvas({ balls = [], count, blowing = false, still =
       const dt = last ? Math.min(0.033, (t - last) / 1000) : 1 / 60;
       last = t;
       if (!document.hidden) {
-        stepDrum(drumRef.current, dt, live.current.blowing ? 1 : 0.22);
+        stepDrum(drumRef.current, dt, live.current.blowing ? 1 : STILL_JET);
         draw();
       }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
+    return () => {
+      drawRef.current = null;
+      cancelAnimationFrame(raf);
+    };
   }, [still]);
 
   const more = total - shown;
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative h-full w-full ${className}`}>
       <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" aria-hidden="true" />
       {more > 0 && (
         <span className="absolute bottom-[10%] left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-black/60 px-2 py-0.5 font-onair-mono text-[0.625rem] font-bold uppercase tracking-[0.15em] text-white">

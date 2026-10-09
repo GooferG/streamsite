@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react';
-import { BALL_R, createDrum, stepDrum } from '../drumPhysics';
+import { BALL_R, createDrum, stepDrum, syncDrum } from '../drumPhysics';
 import DrumCanvas from '../DrumCanvas';
 import DrumRig from '../DrumRig';
 
@@ -42,6 +42,45 @@ test('DrumCanvas: a canvas, and "+N more" past the cap', () => {
 test('DrumCanvas: a plain count works without ball data', () => {
   const { queryByText } = render(<DrumCanvas count={12} />);
   expect(queryByText(/more/)).toBeNull();
+});
+
+test('syncDrum: survivors stay put, new ids spawn above the pile, removed ids go, order follows ids', () => {
+  const drum = createDrum(0);
+  syncDrum(drum, ['a', 'b', 'c']);
+  for (let i = 0; i < 120; i += 1) stepDrum(drum, 1 / 60, 0);
+  const before = { ...drum.byId.get('c') };
+  syncDrum(drum, ['c', 'd', 'a']);
+  expect(drum.balls.map((b) => b.id)).toEqual(['c', 'd', 'a']);
+  expect(drum.byId.has('b')).toBe(false);
+  expect(drum.byId.get('c')).toEqual(before);
+  expect(drum.byId.get('d').y).toBeLessThan(0);
+});
+
+test('DrumRig: positioning is the caller\'s, and no element is both relative and absolute', () => {
+  const { container } = render(<DrumRig count={3} tube riding className="absolute left-[7%] w-[30%]" />);
+  const root = container.firstChild;
+  expect(root.classList.contains('absolute')).toBe(true);
+  for (const el of container.querySelectorAll('*')) {
+    expect(el.classList.contains('relative') && el.classList.contains('absolute')).toBe(false);
+  }
+  expect(container.querySelector('canvas').parentElement.classList.contains('h-full')).toBe(true);
+  expect(container.querySelector('.gb-stand').classList.contains('aspect-[5/2]')).toBe(true);
+  expect(container.querySelector('.gb-base').classList.contains('aspect-[74/9]')).toBe(true);
+});
+
+test('DrumCanvas still mode: draws once, and again when a ball arrives', () => {
+  const ctx = {
+    setTransform: jest.fn(), clearRect: jest.fn(), beginPath: jest.fn(), arc: jest.fn(), fill: jest.fn(),
+    save: jest.fn(), restore: jest.fn(), clip: jest.fn(), drawImage: jest.fn(),
+    createRadialGradient: jest.fn(() => ({ addColorStop: jest.fn() })),
+  };
+  HTMLCanvasElement.prototype.getContext.mockReturnValue(ctx);
+  const mk = (n) => Array.from({ length: n }, (_, i) => ({ id: `b${i}`, slotId: `s${i}` }));
+  const { rerender } = render(<DrumCanvas balls={mk(3)} still />);
+  expect(ctx.arc).toHaveBeenCalled();
+  ctx.arc.mockClear();
+  rerender(<DrumCanvas balls={mk(4)} still />);
+  expect(ctx.arc).toHaveBeenCalled();
 });
 
 test('DrumRig: tube and riding ball are optional', () => {

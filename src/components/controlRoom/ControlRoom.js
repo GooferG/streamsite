@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useControlRoom } from '../../contexts/ControlRoomContext';
 import { pickKey } from '../../utils/giveaway';
+import { isActive } from '../../utils/ball';
 import { isOpenMode } from './storage';
 import {
   NAV_H,
@@ -18,7 +19,7 @@ import {
   snapToCorner,
 } from './geometry';
 import { MOTION, flipFrom, prefersReducedMotion } from './motion';
-import { tabLeds, tallies } from './panelStatus';
+import { ballChip, tabLeds, tallies } from './panelStatus';
 import { useMediaQuery } from './useMediaQuery';
 import PanelChrome from './PanelChrome';
 import ResizeHandles from './ResizeHandles';
@@ -27,6 +28,7 @@ import WarningStrip from './WarningStrip';
 import GiveawayTab from './GiveawayTab';
 import PredictTab from './PredictTab';
 import RedeemTab from './RedeemTab';
+import BallTab from './BallTab';
 import './controlRoom.css';
 
 const TYPING_TAGS = ['INPUT', 'TEXTAREA', 'SELECT'];
@@ -322,6 +324,7 @@ export default function ControlRoom({ isLive = false }) {
           warnings={cr.warnings}
           dataLost={cr.dataLost}
           redeem={cr.redeem}
+          ball={ballChip(cr.ballRound, cr.balls)}
           anchor={narrow ? { left: 16, bottom: 16 } : pillAnchor(panel.corner, panel.restoreTo)}
           onOpen={panelActions.open}
         />
@@ -374,7 +377,7 @@ export default function ControlRoom({ isLive = false }) {
         <PanelChrome
           tallies={tallies({ isLive, giveaway: cr.giveaway, activeRound: cr.activeRound, redeem: cr.redeem })}
           dataLost={cr.dataLost}
-          leds={tabLeds({ giveaway: cr.giveaway, activeRound: cr.activeRound, redeem: cr.redeem })}
+          leds={tabLeds({ giveaway: cr.giveaway, activeRound: cr.activeRound, redeem: cr.redeem, ballRound: cr.ballRound })}
           tab={panel.tab}
           onTab={switchTab}
           reveals={cr.reveals}
@@ -401,10 +404,15 @@ export default function ControlRoom({ isLive = false }) {
               {cr.dataGaveUp ? 'Live data lost. Reload to reconnect.' : 'Live data lost. Reconnecting…'}
             </p>
           )}
+          {isActive(cr.ballRound) && !isLive && (
+            <p className="mb-3 text-xs text-orange-admin font-mono">Goofer Ball still open (stream is offline).</p>
+          )}
           {panel.tab === 'predict' ? (
             <PredictTab />
           ) : panel.tab === 'redeem' ? (
             <RedeemTab />
+          ) : panel.tab === 'ball' ? (
+            <BallTab />
           ) : (
             <GiveawayTab scopeRef={rootRef} />
           )}

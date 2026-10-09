@@ -83,3 +83,7 @@ test('price, name and error fallbacks', () => {
   expect(redemptionErrorText('NOT_FOUND')).toBe("This one's gone.");
   expect(redemptionErrorText('INTERNAL')).toBe("Didn't go through. Try again.");
 });
+
+test('Goofer Ball prizes group under Payouts', () => {
+  expect(kindGroup('goofer_ball')).toBe('payouts');
+});

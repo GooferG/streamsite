@@ -8,6 +8,9 @@ import { writeReveals } from '../utils/broadcast';
 import { useDriverLock } from '../hooks/useDriverLock';
 import useGiveawayClock from '../components/admin/giveaways/useGiveawayClock';
 import useWinnerAnnounce from '../components/admin/giveaways/useWinnerAnnounce';
+import useBallsFeed from '../hooks/useBallsFeed';
+import { isActive } from '../utils/ball';
+import { useBallDrawAnnounce, useBallResultsAnnounce } from '../components/controlRoom/useBallAnnounce';
 import useResultsAnnounce from '../components/admin/predictions/useResultsAnnounce';
 import { useWarnings } from '../components/controlRoom/useWarnings';
 import { useLiveQuery } from '../components/controlRoom/useLiveQuery';
@@ -64,6 +67,11 @@ export function ControlRoomProvider({ children }) {
   const redemptionsFeed = useLiveQuery(redemptionsQuery, enabled);
   const ballFeed = useLiveQuery(ballRoundsQuery, enabled);
   const ballRound = ballFeed.docs[0] || null;
+  // Balls only while a drum is active: the tab, the pill chip and the draw
+  // guard read them; nothing listens between rounds.
+  const { balls, ready: ballsReady } = useBallsFeed(ballRound ? ballRound.id : null, {
+    enabled: enabled && isActive(ballRound),
+  });
   const broadcast = useBroadcastSettings(enabled);
   const giveaways = giveawaysFeed.docs;
   const rounds = roundsFeed.docs;
@@ -79,6 +87,8 @@ export function ControlRoomProvider({ children }) {
   const announce = useWinnerAnnounce(currentPick, { armed });
   const latestRound = rounds[0] || null;
   const results = useResultsAnnounce(latestRound, { armed });
+  const ballDrawAnnounce = useBallDrawAnnounce(ballRound, { armed });
+  const ballResults = useBallResultsAnnounce(ballRound, { armed });
 
   const [store, setStore] = useState(readStore);
   const storeRef = useRef(store);
@@ -166,6 +176,10 @@ export function ControlRoomProvider({ children }) {
     activeRound: activeRoundOf(rounds),
     latestRound,
     ballRound,
+    balls,
+    ballsReady,
+    ballDrawAnnounce,
+    ballResults,
     reveals: broadcast.reveals,
     dataLost: giveawaysFeed.error || roundsFeed.error || redemptionsFeed.error || ballFeed.error,
     dataGaveUp: giveawaysFeed.gaveUp || roundsFeed.gaveUp || redemptionsFeed.gaveUp || ballFeed.gaveUp,

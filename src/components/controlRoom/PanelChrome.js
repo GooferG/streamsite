@@ -6,8 +6,9 @@ const TABS = [
   ['giveaway', 'Giveaway'],
   ['predict', 'Predict'],
   ['redeem', 'Redeem'],
+  ['ball', 'Ball'],
 ];
-const ADMIN_HREF = { giveaway: '/admin/giveaways', predict: '/admin/hunts', redeem: '/admin/redemptions' };
+const ADMIN_HREF = { giveaway: '/admin/giveaways', predict: '/admin/hunts', redeem: '/admin/redemptions', ball: '/gamba/ball' };
 
 function Tally({ on, tone, children }) {
   return <span className={`cr-tally tone-${tone} ${on ? 'is-on' : ''}`}>{children}</span>;

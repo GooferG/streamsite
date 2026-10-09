@@ -363,13 +363,13 @@ test('the Redeem tab shows its body', () => {
   expect(screen.getByText('redeem tab body')).toBeTruthy();
 });
 
-test('ArrowLeft from Giveaway wraps to Redeem', () => {
+test('ArrowLeft from Giveaway wraps to Ball', () => {
   show();
   fireEvent.keyDown(screen.getByRole('tab', { name: /giveaway/i }), { key: 'ArrowLeft' });
   act(() => {
     jest.advanceTimersByTime(240);
   });
-  expect(cr.panelActions.setTab).toHaveBeenCalledWith('redeem');
+  expect(cr.panelActions.setTab).toHaveBeenCalledWith('ball');
 });
 
 test('pending redemptions light the RED tally and pulse the Redeem LED while unseen', () => {

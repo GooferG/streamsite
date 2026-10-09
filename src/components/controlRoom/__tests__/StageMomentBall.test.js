@@ -25,6 +25,20 @@ test('a fresh draw plays the takeover on Stage', () => {
   expect(screen.getByText('Called in by @CoolGuy')).toBeTruthy();
 });
 
+test('the draw takeover gets the real drum', () => {
+  const drum = [{ id: 'b', status: 'drum', slotName: 'Sugar Rush' }, { id: 'a', status: 'drawn', slotName: 'X' }, { id: 'c', status: 'drum', slotName: 'Dog' }];
+  useControlRoom.mockReturnValue({
+    giveaway: null, latestRound: null, setDucked: jest.fn(), balls: drum, ballsReady: true,
+    ballRound: { id: 'r1', status: 'open', rack: [entry(Date.now() - 6000)] },
+  });
+  const spy = jest.spyOn(require('../../ball/DrawTakeover'), 'default');
+  render(<StageMoment />);
+  const props = spy.mock.calls[0][0];
+  expect(props.balls.map((b) => b.id)).toEqual(['b', 'c']);
+  expect(props.left).toBe(2);
+  spy.mockRestore();
+});
+
 test('an old draw never plays', () => {
   const { container } = show({ id: 'r1', status: 'open', rack: [entry(Date.now() - 60_000)] });
   expect(container.textContent).toBe('');

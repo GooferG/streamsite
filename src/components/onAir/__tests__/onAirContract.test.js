@@ -15,6 +15,7 @@ const DIRS = [
   'src/components/vods',
   'src/components/couch',
   'src/components/camera',
+  'src/components/ball',
 ];
 // Nav chrome that lives outside the nav folder, scanned with the nav (the Gamba tuner is chrome too).
 const CONTROL_ROOM_BUTTON = 'src/components/controlRoom/ControlRoomButton.js';
@@ -25,6 +26,8 @@ const RAW_COLOUR_EXEMPT = [
   'src/components/store/storeFixtures.js',
   'src/components/vods/videoStoreFixtures.js',
   'src/components/couch/couchFixtures.js',
+  'src/components/ball/canvasPalette.js',
+  'src/components/ball/ballFixtures.js',
 ];
 
 const read = (rel) => [rel, fs.readFileSync(path.join(ROOT, rel), 'utf8')];
@@ -90,6 +93,7 @@ test('Tokens: no raw colours or bare radii in the Hunts, Store, schedule, nav, G
           rel.startsWith('src/components/store/') ||
           rel.startsWith('src/components/schedule/') ||
           rel.startsWith('src/components/vods/') ||
+          rel.startsWith('src/components/ball/') ||
           isCouch(rel) ||
           isNavChrome(rel)) &&
         !RAW_COLOUR_EXEMPT.includes(rel),
@@ -167,4 +171,18 @@ test('Readable Labels: paper ink holds 7:1 on label stock and 4.5:1 on the signa
   expect(contrast(onair.paper.ink, onair.paper.DEFAULT)).toBeGreaterThanOrEqual(7);
   expect(contrast(onair.paper.ink, onair.signal.DEFAULT)).toBeGreaterThanOrEqual(4.5);
   expect(contrast(onair.paper.ink, onair.loss)).toBeGreaterThanOrEqual(4.5);
+});
+
+test('Tokens: the WGOOF Channel 42 colours stay on the Goofer Ball set', () => {
+  const outside = srcFiles('src')
+    .filter((rel) => !rel.startsWith('src/components/ball/'))
+    .filter((rel) => fs.readFileSync(path.join(ROOT, rel), 'utf8').includes('wgoof'));
+  expect(outside).toEqual([]);
+});
+
+test('Tokens: the drum canvas palette mirrors the tailwind tokens', () => {
+  const { CANVAS } = require('../../ball/canvasPalette');
+  expect(CANVAS.paper).toBe(onair.paper.DEFAULT);
+  expect(CANVAS.ink).toBe(onair.paper.ink);
+  expect(CANVAS.shade).toBe(onair.wgoof.shade);
 });

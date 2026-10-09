@@ -3,6 +3,7 @@ import { adminDb, FieldValue } from '../_lib/firebaseAdmin.js';
 import { isFollower, rolesFromBadges } from '../_lib/chatRoles.js';
 import { messageHasKeyword } from '../_lib/giveawayKeyword.js';
 import { markChatted } from '../_lib/watchtimeStore.js';
+import { handleSlotCommand } from '../_lib/slotCommand.js';
 
 // Twitch EventSub webhook receiver.
 //
@@ -17,6 +18,7 @@ import { markChatted } from '../_lib/watchtimeStore.js';
 // For `channel.chat.message`:
 //   0. Mark the chatter in watch_chat/{windowId} so the watch-time tick can
 //      pay the chat bonus (api/cron/watchtime-tick.js).
+//   0b. Messages starting with !slot go to api/_lib/slotCommand.js (Goofer Ball).
 //   1. If giveaway in 'rolling' state and message is from the rolled winner
 //      (or 'playing' and from the winner whose bonus is on stream),
 //      write to giveaways/{id}/winner_messages.
@@ -117,6 +119,16 @@ async function handleChatMessage(event) {
     await markChatted(chatterId, chatterLogin);
   } catch (err) {
     console.warn('markChatted failed', chatterId, err.message);
+  }
+
+  // Goofer Ball: !slot calls a slot into the drum. It has its own try/catch,
+  // so a ball failure never blocks giveaway entries (and the reverse).
+  if (/^!slot/i.test(text.trim())) {
+    try {
+      await handleSlotCommand(event);
+    } catch (err) {
+      console.error('slot command failed', err);
+    }
   }
 
   const chatRoles = rolesFromBadges(event.badges);

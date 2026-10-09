@@ -24,6 +24,8 @@ const ERROR_TEXT = {
   NOT_DRAWN: 'That ball is not on the rack.',
   ALREADY_SCRATCHED: 'Already scratched.',
   HUNT_NOT_FOUND: 'That hunt is gone.',
+  WINNER_CHANGED: 'The winner changed since your preview. Preview again.',
+  HUNT_CHANGED: 'The linked hunt changed. Preview again.',
   COMMUNITYHUNTS_UNAVAILABLE: 'communityhunts.gg is unavailable. Type the numbers in.',
   NOT_AUTHENTICATED: 'Signed out. Sign in again at /admin.',
 };

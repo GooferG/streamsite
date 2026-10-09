@@ -324,7 +324,7 @@ export default function ControlRoom({ isLive = false }) {
           warnings={cr.warnings}
           dataLost={cr.dataLost}
           redeem={cr.redeem}
-          ball={ballChip(cr.ballRound, cr.balls)}
+          ball={ballChip(cr.ballRound, cr.balls, cr.ballsReady)}
           anchor={narrow ? { left: 16, bottom: 16 } : pillAnchor(panel.corner, panel.restoreTo)}
           onOpen={panelActions.open}
         />

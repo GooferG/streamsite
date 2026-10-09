@@ -29,6 +29,8 @@ function show(cr) {
   useControlRoom.mockReturnValue({
     ballRound: null,
     balls: [],
+    ballsReady: true,
+    reveals: 'overlay',
     giveaway: null,
     ballDrawAnnounce: QUIET,
     ballResults: { posted: false, posting: false, error: null, retry: jest.fn() },
@@ -74,7 +76,7 @@ test('Draw waits while a ball or a giveaway reveal is on screen', () => {
   const { unmount } = show({ ballRound: { ...OPEN, lastDrawAt: at(Date.now() - 1000) }, balls: BALLS });
   expect(screen.getByRole('button', { name: 'Ball on screen…' }).disabled).toBe(true);
   unmount();
-  show({ ballRound: OPEN, balls: BALLS, giveaway: { status: 'rolling', rolledAt: at(Date.now() - 1000) } });
+  show({ ballRound: OPEN, balls: BALLS, giveaway: { status: 'rolling', winner: { displayName: 'W' }, rolledAt: at(Date.now() - 1000) } });
   expect(screen.getByRole('button', { name: 'Giveaway on screen…' }).disabled).toBe(true);
 });
 
@@ -124,4 +126,80 @@ test('a failed draw line offers Retry', () => {
   show({ ballRound: OPEN, balls: BALLS, ballDrawAnnounce: { error: 'CHAT_DROPPED:x', retry } });
   fireEvent.click(screen.getByRole('button', { name: 'Retry chat line' }));
   expect(retry).toHaveBeenCalled();
+});
+
+const ROLLING = { status: 'rolling', winner: { displayName: 'W' }, rolledAt: at(Date.now() - 60_000) };
+
+test('a rolling giveaway blocks Draw on OBS however long ago it rolled', () => {
+  show({ ballRound: OPEN, balls: BALLS, giveaway: ROLLING });
+  expect(screen.getByRole('button', { name: 'Giveaway on screen…' }).disabled).toBe(true);
+});
+
+test('in Stage mode the same old roll no longer blocks Draw', () => {
+  show({ ballRound: OPEN, balls: BALLS, giveaway: ROLLING, reveals: 'stage' });
+  expect(screen.getByRole('button', { name: 'Draw ball' }).disabled).toBe(false);
+});
+
+test('the Locked-in hold blocks Draw', () => {
+  show({
+    ballRound: OPEN,
+    balls: BALLS,
+    giveaway: { status: 'playing', playing: { fromConfirm: true, startedAt: at(Date.now() - 1000) } },
+  });
+  expect(screen.getByRole('button', { name: 'Giveaway on screen…' }).disabled).toBe(true);
+});
+
+test('the drum count is a dash until the balls snapshot lands', () => {
+  show({ ballRound: OPEN, balls: [], ballsReady: false });
+  expect(screen.getByText('—')).toBeTruthy();
+});
+
+test('Scratch is disabled while an action is running', async () => {
+  let release;
+  ballAction.mockReturnValue(new Promise((r) => { release = r; }));
+  show({ ballRound: OPEN, balls: BALLS });
+  fireEvent.click(screen.getByRole('button', { name: 'Draw ball' }));
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Scratch' }).disabled).toBe(true));
+  release({ ok: true, status: 200, data: { ok: true } });
+  await waitFor(() => expect(screen.getByRole('button', { name: 'Scratch' }).disabled).toBe(false));
+});
+
+test('a refused open chat line offers Retry, which re-posts the opened line', async () => {
+  ballAction.mockResolvedValueOnce({ ok: true, status: 200, data: { ok: true, id: 'r9', announce: { posted: false, reason: 'CHAT_DROPPED:x' } } });
+  const { rerender } = show({});
+  fireEvent.click(screen.getByRole('button', { name: 'Open the drum' }));
+  await waitFor(() => expect(ballAction).toHaveBeenCalled());
+  useControlRoom.mockReturnValue({
+    ballRound: { ...OPEN, id: 'r9' },
+    balls: BALLS,
+    ballsReady: true,
+    reveals: 'overlay',
+    giveaway: null,
+    ballDrawAnnounce: QUIET,
+    ballResults: { posted: false, posting: false, error: null, retry: jest.fn() },
+  });
+  rerender(<BallTab />);
+  expect(await screen.findByText(/Chat line failed: CHAT_DROPPED:x/)).toBeTruthy();
+  ballAction.mockResolvedValue({ ok: true, status: 200, data: { ok: true, announce: { posted: true } } });
+  fireEvent.click(screen.getByRole('button', { name: 'Retry chat line' }));
+  await waitFor(() => expect(ballAction).toHaveBeenCalledWith({ action: 'announce', id: 'r9', event: 'opened' }));
+});
+
+test('settled: the winner line, and Retry when the results line failed', () => {
+  const retry = jest.fn();
+  show({
+    ballRound: { id: 'r1', status: 'settled', prize: OPEN.prize, settledAt: at(Date.now() - 1000), winner: { displayName: 'CoolGuy', slotName: 'Gates of Olympus', multiplier: 412 } },
+    ballResults: { posted: false, posting: false, error: 'CHAT_DROPPED:x', retry },
+  });
+  expect(screen.getByText(/@CoolGuy · Gates of Olympus/)).toBeTruthy();
+  fireEvent.click(screen.getByRole('button', { name: 'Retry chat line' }));
+  expect(retry).toHaveBeenCalled();
+});
+
+test('settled long ago and never posted: not posted, with Retry', () => {
+  show({
+    ballRound: { id: 'r1', status: 'settled', prize: OPEN.prize, settledAt: at(Date.now() - 3_600_000), winner: { displayName: 'CoolGuy', slotName: 'X', multiplier: 2 } },
+  });
+  expect(screen.getByText(/Chat line not posted\./)).toBeTruthy();
+  expect(screen.getByRole('button', { name: 'Retry chat line' })).toBeTruthy();
 });

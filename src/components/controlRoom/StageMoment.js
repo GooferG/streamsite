@@ -147,10 +147,16 @@ export default function StageMoment() {
       </>
     );
   } else if (moment.kind === 'ball-draw') {
-    body = <DrawTakeover entry={moment.entry} rack={moment.round.rack || []}
-        balls={drumBalls(cr.balls || [])}
-        left={cr.ballsReady ? drumBalls(cr.balls || []).length : null}
-        elapsed={now - moment.at} />;
+    const drum = drumBalls(cr.balls || []);
+    body = (
+      <DrawTakeover
+        entry={moment.entry}
+        rack={moment.round.rack || []}
+        balls={drum}
+        left={cr.ballsReady ? drum.length : null}
+        elapsed={now - moment.at}
+      />
+    );
   } else if (moment.kind === 'ball-winner') {
     body = <WinnerCard round={moment.round} />;
   }

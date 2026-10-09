@@ -9,8 +9,11 @@ const TOO_EARLY_RETRY_MS = 1500;
 // ahead of the video). Driving tab only; the server claims each line, so
 // several staff tabs still post once.
 export function useBallDrawAnnounce(round, { armed = true } = {}) {
-  const [error, setError] = useState(null);
+  // Failures are kept per round and per draw: one draw's success never hides
+  // another's failure, and another round's never shows.
+  const [state, setState] = useState({ roundId: null, failed: {} });
   const tried = useRef(new Set());
+  const retryTimers = useRef(new Set());
   const id = round ? round.id : null;
   const pending = round ? pendingDrawAnnounces(round, Date.now()) : [];
   const pendingKey = pending.map((e) => e.drawNo).join(',');
@@ -18,20 +21,35 @@ export function useBallDrawAnnounce(round, { armed = true } = {}) {
   const postRef = useRef(null);
   const post = useCallback(
     async (drawNo, again = true) => {
-      const { ok, status, data } = await ballAction({ action: 'announce', id, event: 'draw', drawNo });
+      const { ok, data } = await ballAction({ action: 'announce', id, event: 'draw', drawNo });
       // TOO_EARLY: this browser's clock runs ahead of the server's. Once more.
-      if (status === 409 && again) {
-        setTimeout(() => postRef.current(drawNo, false), TOO_EARLY_RETRY_MS);
+      if (data && data.error === 'TOO_EARLY' && again) {
+        const t = setTimeout(() => {
+          retryTimers.current.delete(t);
+          postRef.current(drawNo, false);
+        }, TOO_EARLY_RETRY_MS);
+        retryTimers.current.add(t);
         return;
       }
-      setError(announceProblem(ok, data));
+      const problem = announceProblem(ok, data);
+      setState((s) => {
+        const failed = s.roundId === id ? { ...s.failed } : {};
+        if (problem) failed[drawNo] = problem;
+        else delete failed[drawNo];
+        return { roundId: id, failed };
+      });
     },
     [id]
   );
   postRef.current = post;
 
+  const clearRetries = () => {
+    retryTimers.current.forEach(clearTimeout);
+    retryTimers.current.clear();
+  };
+
   useEffect(() => {
-    if (!armed || !id) return undefined;
+    if (!armed || !id) return clearRetries;
     const timers = pending
       .filter((e) => !tried.current.has(`${id}:${e.drawNo}`))
       .map((e) =>
@@ -40,15 +58,25 @@ export function useBallDrawAnnounce(round, { armed = true } = {}) {
           postRef.current(e.drawNo);
         }, Math.max(0, drawAnnounceDueAt(e) - Date.now()))
       );
-    return () => timers.forEach(clearTimeout);
+    return () => {
+      timers.forEach(clearTimeout);
+      clearRetries();
+    };
     // pendingKey stands in for `pending`, which is a new array every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [armed, id, pendingKey]);
 
+  const failed = state.roundId === id ? state.failed : {};
+  const failedNos = Object.keys(failed);
+  const error = failedNos.length ? failed[failedNos[0]] : null;
+
   const retry = useCallback(() => {
-    setError(null);
-    pendingDrawAnnounces(round, Date.now()).forEach((e) => postRef.current(e.drawNo));
-  }, [round]);
+    const now = Date.now();
+    (round ? round.rack || [] : [])
+      .filter((e) => failed[e.drawNo] && drawAnnounceDueAt(e) != null && drawAnnounceDueAt(e) <= now)
+      .forEach((e) => postRef.current(e.drawNo));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [round, state]);
 
   return { error, retry };
 }

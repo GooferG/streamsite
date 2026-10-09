@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { useBallDrawAnnounce, useBallResultsAnnounce } from '../useBallAnnounce';
 import { ballAction } from '../ballApi';
 
@@ -38,4 +38,31 @@ test('results post after the stream delay, once', async () => {
   const round = { id: 'r1', status: 'settled', settledAt: at(Date.now() - 4000), winner: { drawNo: 1 }, announced: {} };
   renderHook(() => useBallResultsAnnounce(round, { armed: true }));
   await waitFor(() => expect(ballAction).toHaveBeenCalledWith({ action: 'announce', id: 'r1', event: 'results' }));
+});
+
+test('one draw succeeding never clears another draw failure; retry re-posts only the failed one', async () => {
+  ballAction.mockImplementation(async (body) =>
+    body.drawNo === 1
+      ? { ok: true, status: 200, data: { ok: true, announce: { posted: false, reason: 'CHAT_DROPPED:x' } } }
+      : { ok: true, status: 200, data: { ok: true, announce: { posted: true } } }
+  );
+  const round = { id: 'r1', rack: [entry(1, 30_000), entry(2, 20_000)], announced: { draws: {} } };
+  const { result } = renderHook(() => useBallDrawAnnounce(round, { armed: true }));
+  await waitFor(() => expect(ballAction).toHaveBeenCalledTimes(2));
+  await waitFor(() => expect(result.current.error).toBe('CHAT_DROPPED:x'));
+  ballAction.mockClear();
+  await act(async () => {
+    result.current.retry();
+  });
+  expect(ballAction).toHaveBeenCalledTimes(1);
+  expect(ballAction).toHaveBeenCalledWith({ action: 'announce', id: 'r1', event: 'draw', drawNo: 1 });
+});
+
+test('a failure from another round never shows', async () => {
+  ballAction.mockResolvedValue({ ok: true, status: 200, data: { ok: true, announce: { posted: false, reason: 'CHAT_DROPPED:x' } } });
+  const r1 = { id: 'r1', rack: [entry(1, 30_000)], announced: { draws: {} } };
+  const { result, rerender } = renderHook(({ round }) => useBallDrawAnnounce(round, { armed: true }), { initialProps: { round: r1 } });
+  await waitFor(() => expect(result.current.error).toBe('CHAT_DROPPED:x'));
+  rerender({ round: { id: 'r2', rack: [], announced: { draws: {} } } });
+  expect(result.current.error).toBeNull();
 });

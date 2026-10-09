@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import { useControlRoom } from '../../contexts/ControlRoomContext';
 import { useClock } from '../../hooks/useClock';
 import { LOCK_HOLD_MS, REVEAL_MS, tsMillis } from '../../utils/giveaway';
-import { DRAW_REVEAL_MS, drawnEntries, drumBalls, formatMulti, isActive, pad2, prizeText, recentBalls, who } from '../../utils/ball';
+import { AUTO_POST_WINDOW_MS, DRAW_REVEAL_MS, drawnEntries, drumBalls, formatMulti, isActive, pad2, prizeText, recentBalls, who } from '../../utils/ball';
 import { inputCls } from '../admin/predictions/shared';
+import { announceProblem, ballAction } from './ballApi';
 import { useBallRun } from './useBallRun';
 import BallPayout from './BallPayout';
 import HuntLink from './HuntLink';
@@ -47,13 +48,46 @@ export function PrizeFields({ form, setForm }) {
   );
 }
 
-// A giveaway winner reveal (or its lock hold) is on the OBS overlay right now.
-function giveawayOnScreen(giveaway, now) {
-  const at = tsMillis(giveaway && giveaway.rolledAt);
-  return !!giveaway && giveaway.status === 'rolling' && at != null && now - at < REVEAL_MS + LOCK_HOLD_MS;
+// A giveaway winner reveal (or its lock hold) is on screen right now. On the
+// OBS overlay the winner screen stays up for as long as the giveaway is
+// rolling with a winner, until staff confirm or reroll. Stage plays one timed
+// reveal from rolledAt. The Locked-in hold runs from playing.startedAt.
+function giveawayOnScreen(giveaway, now, reveals) {
+  if (!giveaway) return false;
+  if (giveaway.status === 'rolling') {
+    if (reveals !== 'stage') return !!giveaway.winner;
+    const at = tsMillis(giveaway.rolledAt);
+    return at != null && now - at < REVEAL_MS + LOCK_HOLD_MS;
+  }
+  if (giveaway.status === 'playing' && giveaway.playing && giveaway.playing.fromConfirm) {
+    const started = tsMillis(giveaway.playing.startedAt);
+    return started != null && now - started < LOCK_HOLD_MS;
+  }
+  return false;
 }
 
-function OpenForm({ initial }) {
+// A staff action that also posts a chat line: when the line was refused (not
+// "already posted" or "scratched"), say so and offer a retry.
+function useChatCheck() {
+  const [fail, setFail] = useState(null);
+  const track = (result, { id, event, drawNo }) => {
+    if (!result || !result.ok) return;
+    const target = id || (result.data && result.data.id);
+    const problem = announceProblem(true, { announce: result.data && result.data.announce });
+    setFail(problem ? { id: target, event, drawNo, reason: problem } : null);
+  };
+  const retry = async () => {
+    if (!fail) return;
+    const body = { action: 'announce', id: fail.id, event: fail.event };
+    if (fail.drawNo != null) body.drawNo = fail.drawNo;
+    const { ok, data } = await ballAction(body);
+    const problem = announceProblem(ok, data);
+    setFail(problem ? { ...fail, reason: problem } : null);
+  };
+  return { fail, track, retry };
+}
+
+function OpenForm({ initial, track }) {
   const [form, setForm] = useState(() => prizeForm(initial));
   const [follow, setFollow] = useState(true);
   const { busy, error, run } = useBallRun();
@@ -68,7 +102,7 @@ function OpenForm({ initial }) {
         type="button"
         className="cr-btn is-go w-full"
         disabled={!!busy}
-        onClick={() => run({ action: 'open', prize: prizePayload(form), requireFollow: follow })}
+        onClick={async () => track(await run({ action: 'open', prize: prizePayload(form), requireFollow: follow }), { event: 'opened' })}
       >
         Open the drum
       </button>
@@ -79,6 +113,8 @@ function OpenForm({ initial }) {
 
 function LastWinner({ round, results }) {
   const w = round.winner;
+  const settledMs = tsMillis(round.settledAt);
+  const stale = !results.posted && settledMs != null && Date.now() - settledMs > AUTO_POST_WINDOW_MS;
   return (
     <div>
       <p className="cr-lbl">last winning ball</p>
@@ -87,8 +123,16 @@ function LastWinner({ round, results }) {
       </p>
       <p className="cr-lbl mt-1">{`won ${prizeText(round.prize)}`}</p>
       <p className="mt-1 text-xs font-mono text-white/55">
-        {results.posted ? 'Chat line posted.' : results.posting ? 'Posting to chat…' : results.error ? `Chat line failed: ${results.error}` : 'Chat line due after the stream delay.'}
-        {results.error && (
+        {results.posted
+          ? 'Chat line posted.'
+          : results.posting
+            ? 'Posting to chat…'
+            : results.error
+              ? `Chat line failed: ${results.error}`
+              : stale
+                ? 'Chat line not posted.'
+                : 'Chat line due after the stream delay.'}
+        {!results.posted && !results.posting && (results.error || stale) && (
           <button type="button" className="ml-2 underline" onClick={results.retry}>
             Retry chat line
           </button>
@@ -141,7 +185,7 @@ function PrizeLine({ round, run, busy }) {
   );
 }
 
-function Rack({ round, run, confirm, setConfirm }) {
+function Rack({ round, run, confirm, setConfirm, busy, track }) {
   const rack = round.rack || [];
   if (rack.length === 0) return <p className="cr-lbl mt-3">No balls drawn yet.</p>;
   return (
@@ -157,15 +201,16 @@ function Rack({ round, run, confirm, setConfirm }) {
               <button
                 type="button"
                 className="cr-btn is-go flex-none px-2"
-                onClick={() => {
+                disabled={!!busy}
+                onClick={async () => {
                   setConfirm(null);
-                  run({ action: 'scratch', id: round.id, drawNo: e.drawNo });
+                  track(await run({ action: 'scratch', id: round.id, drawNo: e.drawNo }), { id: round.id, event: 'scratch', drawNo: e.drawNo });
                 }}
               >
                 Confirm scratch
               </button>
             ) : (
-              <button type="button" className="cr-btn flex-none px-2" onClick={() => setConfirm(`scratch:${e.drawNo}`)}>
+              <button type="button" className="cr-btn flex-none px-2" disabled={!!busy} onClick={() => setConfirm(`scratch:${e.drawNo}`)}>
                 Scratch
               </button>
             ))}
@@ -213,7 +258,7 @@ function TwoPress({ id, confirm, setConfirm, label, confirmLabel, onConfirm, dis
   );
 }
 
-function ActiveRound({ round, balls, giveaway, drawAnnounce }) {
+function ActiveRound({ round, balls, ready, giveaway, reveals, drawAnnounce, track }) {
   const { busy, error, run } = useBallRun();
   const [confirm, setConfirm] = useState(null);
   const now = useClock({ intervalMs: 500 });
@@ -221,7 +266,7 @@ function ActiveRound({ round, balls, giveaway, drawAnnounce }) {
   const drawn = drawnEntries(round);
   const last = tsMillis(round.lastDrawAt);
   const ballBusy = last != null && now < last + DRAW_REVEAL_MS;
-  const gvwBusy = giveawayOnScreen(giveaway, now);
+  const gvwBusy = giveawayOnScreen(giveaway, now, reveals);
   const open = round.status === 'open';
 
   return (
@@ -233,7 +278,7 @@ function ActiveRound({ round, balls, giveaway, drawAnnounce }) {
         </div>
         <div className="text-right">
           <p className="cr-lbl">in the drum</p>
-          <p className="cr-big text-orange-admin">{drum.length}</p>
+          <p className="cr-big text-orange-admin">{ready ? drum.length : '—'}</p>
         </div>
         <div className="text-right">
           <p className="cr-lbl">drawn</p>
@@ -252,7 +297,7 @@ function ActiveRound({ round, balls, giveaway, drawAnnounce }) {
           {ballBusy ? 'Ball on screen…' : gvwBusy ? 'Giveaway on screen…' : 'Draw ball'}
         </button>
       )}
-      <Rack round={round} run={run} confirm={confirm} setConfirm={setConfirm} />
+      <Rack round={round} run={run} confirm={confirm} setConfirm={setConfirm} busy={busy} track={track} />
       {open && <JustIn balls={balls} />}
       {!open && <BallPayout round={round} />}
       <div className="mt-3 flex gap-2">
@@ -299,10 +344,20 @@ function ActiveRound({ round, balls, giveaway, drawAnnounce }) {
 export default function BallTab() {
   const cr = useControlRoom();
   const round = cr.ballRound;
+  const chat = useChatCheck();
   return (
     <div>
       {isActive(round) ? (
-        <ActiveRound round={round} balls={cr.balls || []} giveaway={cr.giveaway} drawAnnounce={cr.ballDrawAnnounce} />
+        <ActiveRound
+          key={round.id}
+          round={round}
+          balls={cr.balls || []}
+          ready={!!cr.ballsReady}
+          giveaway={cr.giveaway}
+          reveals={cr.reveals}
+          drawAnnounce={cr.ballDrawAnnounce}
+          track={chat.track}
+        />
       ) : (
         <>
           {round && round.status === 'settled' && round.winner ? (
@@ -314,8 +369,16 @@ export default function BallTab() {
               <p className="mt-2 text-sm text-white/55">No drum open.</p>
             </>
           )}
-          <OpenForm key={round ? round.id : 'none'} initial={round && round.prize} />
+          <OpenForm key={round ? round.id : 'none'} initial={round && round.prize} track={chat.track} />
         </>
+      )}
+      {chat.fail && round && chat.fail.id === round.id && (
+        <p className="mt-2 text-xs font-mono text-red-destructive">
+          {`Chat line failed: ${chat.fail.reason}`}
+          <button type="button" className="ml-2 underline" onClick={chat.retry}>
+            Retry chat line
+          </button>
+        </p>
       )}
       <div className="mt-4 flex justify-end">
         <Link to="/gamba/ball" className="cr-lbl hover:text-white-body">

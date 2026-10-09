@@ -51,9 +51,9 @@ export function tabLeds({ giveaway, activeRound, redeem, ballRound }) {
 }
 
 // The pill's Goofer Ball chip while the drum is open: balls in the drum.
-export function ballChip(ballRound, balls) {
+export function ballChip(ballRound, balls, ready = true) {
   if (!ballRound || ballRound.status !== 'open') return null;
-  return { label: `BALL ${drumBalls(balls).length}` };
+  return { label: ready ? `BALL ${drumBalls(balls).length}` : 'BALL —' };
 }
 
 // The pill's redemption chip, or null when nothing is pending.

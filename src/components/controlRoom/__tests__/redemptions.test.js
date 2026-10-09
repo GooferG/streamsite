@@ -31,6 +31,7 @@ test('kinds group into stream and payouts; anything else only shows under All', 
   ]);
   expect(kindLabel('prediction')).toBe('PREDICTION');
   expect(kindLabel(undefined)).toBe('ITEM');
+  expect(kindLabel('goofer_ball')).toBe('GOOFER BALL');
 });
 
 test('filters and their counts', () => {

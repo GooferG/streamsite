@@ -60,6 +60,7 @@ test('the Ball tab LED and the pill chip', () => {
   expect(tabLeds({ ballRound: { status: 'closed' } }).ball).toBe('pulse');
   expect(tabLeds({ ballRound: { status: 'settled' } }).ball).toBe('off');
   expect(ballChip({ status: 'open' }, [{ status: 'drum' }, { status: 'drawn' }, { status: 'drum' }])).toEqual({ label: 'BALL 2' });
+  expect(ballChip({ status: 'open' }, [], false)).toEqual({ label: 'BALL —' });
   expect(ballChip({ status: 'closed' }, [])).toBeNull();
   expect(ballChip(null, null)).toBeNull();
 });

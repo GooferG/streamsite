@@ -39,6 +39,17 @@ test('the draw takeover gets the real drum', () => {
   spy.mockRestore();
 });
 
+test('the takeover left count is unknown until the balls snapshot lands', () => {
+  useControlRoom.mockReturnValue({
+    giveaway: null, latestRound: null, setDucked: jest.fn(), balls: [], ballsReady: false,
+    ballRound: { id: 'r1', status: 'open', rack: [entry(Date.now() - 6000)] },
+  });
+  const spy = jest.spyOn(require('../../ball/DrawTakeover'), 'default');
+  render(<StageMoment />);
+  expect(spy.mock.calls[0][0].left).toBeNull();
+  spy.mockRestore();
+});
+
 test('an old draw never plays', () => {
   const { container } = show({ id: 'r1', status: 'open', rack: [entry(Date.now() - 60_000)] });
   expect(container.textContent).toBe('');

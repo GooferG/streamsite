@@ -14,7 +14,7 @@ export function kindGroup(kind) {
   return PAYOUT_KINDS.includes(kind) ? 'payouts' : 'other';
 }
 
-export const kindLabel = (kind) => String(kind || 'item').toUpperCase();
+export const kindLabel = (kind) => String(kind || 'item').replace(/_/g, ' ').toUpperCase();
 
 // Store orders cost tickets; prizes cost nothing, so they show no price.
 export const showsCost = (r) => Number(r && r.cost) > 0;

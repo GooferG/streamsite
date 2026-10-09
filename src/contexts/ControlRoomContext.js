@@ -69,7 +69,7 @@ export function ControlRoomProvider({ children }) {
   const ballRound = ballFeed.docs[0] || null;
   // Balls only while a drum is active: the tab, the pill chip and the draw
   // guard read them; nothing listens between rounds.
-  const { balls, ready: ballsReady } = useBallsFeed(ballRound ? ballRound.id : null, {
+  const { balls, ready: ballsReady, error: ballsError } = useBallsFeed(ballRound ? ballRound.id : null, {
     enabled: enabled && isActive(ballRound),
   });
   const broadcast = useBroadcastSettings(enabled);
@@ -181,7 +181,7 @@ export function ControlRoomProvider({ children }) {
     ballDrawAnnounce,
     ballResults,
     reveals: broadcast.reveals,
-    dataLost: giveawaysFeed.error || roundsFeed.error || redemptionsFeed.error || ballFeed.error,
+    dataLost: giveawaysFeed.error || roundsFeed.error || redemptionsFeed.error || ballFeed.error || ballsError,
     dataGaveUp: giveawaysFeed.gaveUp || roundsFeed.gaveUp || redemptionsFeed.gaveUp || ballFeed.gaveUp,
     redemptions,
     redeem: {

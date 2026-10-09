@@ -68,3 +68,43 @@ export function overlayFixture(key, now) {
   }
   return null;
 }
+
+function pastRound(now, i, multi, prize) {
+  const day = now - i * 86_400_000;
+  const rack = fixtureRack(day, 3);
+  return {
+    id: `fx-past-${i}`,
+    status: 'settled',
+    prize,
+    rack,
+    settledAt: at(day),
+    results: {
+      1: { multiplier: multi, win: multi, bet: 1, source: 'hunt' },
+      2: { multiplier: 12, win: 12, bet: 1, source: 'hunt' },
+      3: { multiplier: 3.5, win: 3.5, bet: 1, source: 'manual' },
+    },
+    winner: { ...rack[0], multiplier: multi, win: multi, redemptionId: null },
+  };
+}
+
+export function fixturePast(now) {
+  return [
+    pastRound(now, 1, 412, FIXTURE_PRIZE),
+    pastRound(now, 3, 96, { tickets: 300, prize: null }),
+    pastRound(now, 6, 1204, { tickets: 200, prize: { kind: 'bonus', amount: 10 } }),
+  ];
+}
+
+// CH 42 (BallFront props) for /gamba/ball?fixture=...
+export function frontFixture(key, now) {
+  const base = { roundError: false, hunt: null, stale: false, me: null, past: fixturePast(now), pastLoading: false, pastError: false, hasMore: false, ballsReady: true, still: true };
+  if (key === 'open') return { ...base, round: fixtureRound(now, { rack: fixtureRack(now, 2) }), balls: fixtureBalls(now, { drawn: 2 }), me: 'fx4' };
+  if (key === 'rack') return { ...base, round: fixtureRound(now, { huntId: 'fx-hunt', rack: fixtureRack(now, 4) }), balls: fixtureBalls(now, { drawn: 4 }), hunt: FIXTURE_HUNT };
+  if (key === 'closed') {
+    return { ...base, round: fixtureRound(now, { status: 'closed', huntId: 'fx-hunt', rack: fixtureRack(now, 4) }), balls: fixtureBalls(now, { drawn: 4 }), hunt: FIXTURE_HUNT };
+  }
+  if (key === 'settled' || key === 'offair') return { ...base, round: base.past[0], balls: [] };
+  if (key === 'empty') return { ...base, round: null, balls: [], past: [] };
+  if (key === 'loading') return { ...base, round: undefined, balls: [], past: [], pastLoading: true };
+  return null;
+}

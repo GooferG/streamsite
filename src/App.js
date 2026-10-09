@@ -358,14 +358,15 @@ function StreamingSiteContent() {
 // and nothing opaque behind them.
 function AppShell() {
   const location = useLocation();
-  if (location.pathname === '/giveaway-overlay') {
+  const path = location.pathname.replace(/\/+$/, '') || '/';
+  if (path === '/giveaway-overlay') {
     return (
       <Suspense fallback={null}>
         <GiveawayOverlay />
       </Suspense>
     );
   }
-  if (location.pathname === '/ball-overlay') {
+  if (path === '/ball-overlay') {
     return (
       <Suspense fallback={null}>
         <BallOverlay />

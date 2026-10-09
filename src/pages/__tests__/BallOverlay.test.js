@@ -94,3 +94,44 @@ test('the corner follows ?pos', () => {
   const { container } = show(base, { url: '/ball-overlay?pos=tr' });
   expect(container.querySelector('.right-8.top-8')).toBeTruthy();
 });
+
+describe('a moment that has just ended', () => {
+  const T = 1_900_000_000_000;
+  let nowSpy;
+  beforeEach(() => {
+    nowSpy = jest.spyOn(Date, 'now').mockReturnValue(T);
+  });
+  afterEach(() => {
+    nowSpy.mockRestore();
+  });
+
+  function again(view, round) {
+    useBallRound.mockReturnValue({ round, error: false });
+    view.rerender(
+      <MemoryRouter initialEntries={['/ball-overlay']}>
+        <BallOverlay />
+      </MemoryRouter>
+    );
+  }
+
+  test('the draw takeover gives way to the corner box (no frozen stale clock)', () => {
+    const mk = () => ({ ...base, rack: [drawn(T - 7990)] });
+    const view = show(mk());
+    expect(screen.getByText(/Called in by/)).toBeTruthy();
+    for (const later of [T + 20, T + 60_000]) {
+      nowSpy.mockReturnValue(later);
+      again(view, mk());
+      expect(screen.queryByText(/Called in by/)).toBeNull();
+      expect(screen.getByText('2 balls')).toBeTruthy();
+    }
+  });
+
+  test('the winner card goes away after its hold', () => {
+    const mk = () => ({ ...base, status: 'settled', settledAt: at(T - 11_990), rack: [drawn(T - 600_000)], winner: { ...drawn(0), multiplier: 412 } });
+    const view = show(mk());
+    expect(screen.getByText("Tonight's winning ball")).toBeTruthy();
+    nowSpy.mockReturnValue(T + 3_600_000);
+    again(view, mk());
+    expect(screen.queryByText("Tonight's winning ball")).toBeNull();
+  });
+});

@@ -78,12 +78,17 @@ export default function BallOverlay() {
   }, []);
 
   const round = data.round;
-  const probe = drawMoment(round, Date.now()) || winnerMoment(round, Date.now());
-  const now = useClock({ fast: !!probe, active: !!probe });
-  const moment = drawMoment(round, now) || winnerMoment(round, now);
   // Stage mode: a staff browser plays the full-screen moments; OBS keeps
   // only the corner cards, so nothing plays twice.
   const fullScreen = reveals !== 'stage';
+  const drawProbe = drawMoment(round, Date.now());
+  const probe = drawProbe || winnerMoment(round, Date.now());
+  // Only the full-screen draw needs frame-accurate time; a winner hold (or a
+  // draw in Stage mode) just has to unmount on time.
+  const now = useClock({ fast: !!drawProbe && fullScreen, intervalMs: 250, active: !!probe });
+  // Gate on the live probe: once the clock stops, `now` is stale and would
+  // keep a finished moment on screen forever.
+  const moment = probe ? drawMoment(round, now) || winnerMoment(round, now) : null;
 
   let body = null;
   if (moment && fullScreen && moment.kind === 'draw') {

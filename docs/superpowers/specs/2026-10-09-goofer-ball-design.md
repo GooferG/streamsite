@@ -47,7 +47,7 @@ The site has nothing like this. The old hunt-suggest flow is gone, and the `/sug
 
 ## Round lifecycle
 
-```
+```text
 open ──draw / scratch──▶ open ──close──▶ closed ──settle──▶ settled
   ▲                                         │
   └───────────────reopen────────────────────┘
@@ -152,6 +152,7 @@ The result is `{ kind: 'exact'|'alias'|'guess'|'ambiguous'|'none', slot?, option
 | No open round | silent |
 
 **Chat plumbing.**
+
 - `sendChannelMessage` in `api/_lib/twitchChat.js` gains an optional `{ replyTo }` that sets Helix `reply_parent_message_id`. The id comes from the EventSub event's `message_id`.
 - Each viewer gets at most one reply per 10 seconds. This is tracked in memory per warm instance, so it's best effort.
 - The bot is a mod (100 messages per 30 seconds).

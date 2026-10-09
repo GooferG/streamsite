@@ -127,8 +127,8 @@ No counter lives on the round doc. Entries never write the round doc, so a rush 
 **Matcher** (`api/_lib/slotMatch.js`, pure). Steps, in order:
 
 1. **Normalize:** lowercase, strip accents, `&` → `and`, drop punctuation and a leading "the", collapse spaces. Also compare a space-free form, so "doghouse" equals "The Dog House".
-2. **Nicknames:** `api/_lib/slotAliases.js` maps nickname → catalogue name (gates, sugar, doghouse, wanted, bonanza, …). An alias whose target isn't in the catalogue is ignored.
-3. **Exact name:** a normalized or space-free full-name match wins outright.
+2. **Exact name:** a normalized or space-free full-name match wins outright.
+3. **Nicknames (only when no slot has that exact name):** `api/_lib/slotAliases.js` maps nickname → catalogue name (gates, sugar, doghouse, wanted, bonanza, …). An alias whose target isn't in the catalogue is ignored.
 4. **Partial:** candidates contain every query token, allowing a typo or two per token (edit distance ≤1 for tokens of 5+ chars, ≤2 for 8+). The candidate with strictly the fewest extra tokens wins ("plain version wins": "gates of olympus" gets the original, not 1000 or Xmas). A tie is ambiguous, and the top 3 are offered.
 5. **Fuzzy fallback:** whole-string similarity, accepted only above a threshold with a clear margin over the runner-up. Otherwise the top 3 are offered, and if none are close, it's not found.
 
@@ -229,7 +229,7 @@ Draws can't overlap. Two staff browsers or a double click get `DRAW_BUSY` until 
   - `useBallResultsAnnounce` posts the results line.
   - `/admin/*` pages don't need a ball page in v1.
 - **Pill:** a `BALL 42` chip (balls in the drum) while a round is open.
-- **Warning strip:** "Goofer Ball still open" when a round is active and the stream is offline.
+- **Warning line:** "Goofer Ball still open" shows as a line in the panel body (like the data-lost line) while a round is active and the stream is offline. It can't be dismissed while it's true.
 - **Stage.** `stageTriggers.js` gains:
   - `ballDrawMoment`: fresh `drawnAt`, ends `DRAW_REVEAL_MS` later.
   - `ballWinnerMoment`: fresh `settledAt`, held `WINNER_HOLD_MS`.

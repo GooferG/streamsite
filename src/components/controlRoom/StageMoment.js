@@ -13,7 +13,13 @@ import { ballDrawMoment, ballWinnerMoment, giveawayMoment, resultsMoment } from 
 import { MOTION, prefersReducedMotion } from './motion';
 import './controlRoom.css';
 
-function stillOnStage(moment, giveaway) {
+function stillOnStage(moment, giveaway, ballRound) {
+  if (moment && moment.kind === 'ball-draw') {
+    // A scratched or superseded draw leaves the stage; the next one replaces it.
+    const rack = (ballRound && ballRound.rack) || [];
+    const latest = rack[rack.length - 1];
+    return !!ballRound && ballRound.id === moment.round.id && !!latest && latest.drawNo === moment.entry.drawNo && !latest.scratched;
+  }
   if (!moment || moment.kind !== 'giveaway') return true;
   return !!giveaway && pickKey(giveaway) === moment.key && ['rolling', 'playing'].includes(giveaway.status);
 }
@@ -68,7 +74,7 @@ export default function StageMoment() {
     }
   }, [ballRound]);
 
-  const over = !!moment && (now >= moment.endsAt || !stillOnStage(moment, giveaway));
+  const over = !!moment && (now >= moment.endsAt || !stillOnStage(moment, giveaway, ballRound));
   useEffect(() => {
     if (over && !leaving) setLeavingKey(moment.key);
   }, [over, leaving, moment]);

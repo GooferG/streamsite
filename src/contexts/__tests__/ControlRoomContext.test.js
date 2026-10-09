@@ -233,7 +233,7 @@ test('resize actions store the size, and reset clears it', () => {
   expect(latest.panel).toMatchObject({ mode: 'float', rect: null, size: null, dockW: null });
 });
 
-test('setReveals writes the shared switch and moves this browser’s Stage pref with it', () => {
+test('setReveals writes the shared switch and moves this browser Stage pref with it', () => {
   mount();
   act(() => latest.setReveals('stage'));
   expect(writeReveals).toHaveBeenCalledWith('stage');
@@ -247,4 +247,14 @@ test('the newest Goofer Ball round is on the context', () => {
   mockData.ball_rounds = [{ id: 'b1', status: 'open', rack: [] }];
   mount();
   expect(latest.ballRound).toMatchObject({ id: 'b1', status: 'open' });
+});
+
+test('a failed reveals write puts this browser Stage pref back and warns', async () => {
+  writeReveals.mockRejectedValue(new Error('denied'));
+  mount();
+  await act(async () => {
+    latest.setReveals('stage');
+  });
+  expect(latest.prefs.stage).toBe(false);
+  expect(latest.warnings.map((w) => w.message)).toEqual(['Could not save where reveals play. Try again.']);
 });

@@ -39,6 +39,6 @@ export function ballDrawMoment(round, lastKey, now) {
 
 export function ballWinnerMoment(round, lastKey, now) {
   const m = winnerMoment(round, now);
-  if (!m || m.key === lastKey) return null;
+  if (!m || m.key === lastKey || now - m.at >= STAGE_FRESH_MS) return null;
   return { kind: 'ball-winner', key: m.key, at: m.at, endsAt: m.endsAt, round };
 }

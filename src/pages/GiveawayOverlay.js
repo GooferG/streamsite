@@ -491,8 +491,8 @@ export default function GiveawayOverlay() {
   const { giveaway, entries, firstMessage } = demo ? demoFeed : live;
   // Stage mode: a staff browser plays the full-screen reveal, so OBS skips
   // it (the entry and now-playing cards stay).
-  const { reveals } = useBroadcastSettings(!demo);
-  const fullScreen = demo || reveals !== 'stage';
+  const broadcast = useBroadcastSettings(!demo);
+  const fullScreen = demo || (broadcast.ready && broadcast.reveals !== 'stage');
 
   // The browser source must be see-through. OBS injects a transparent body by
   // default; this covers a plain browser tab and custom CSS setups too.

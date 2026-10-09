@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { collection, orderBy, query, where, limit as fLimit } from 'firebase/firestore';
 import { db } from '../config/firebase';
@@ -81,6 +81,8 @@ export function ControlRoomProvider({ children }) {
   const results = useResultsAnnounce(latestRound, { armed });
 
   const [store, setStore] = useState(readStore);
+  const storeRef = useRef(store);
+  storeRef.current = store;
   // Staff only: viewers never get a localStorage key.
   useEffect(() => {
     if (enabled) writeStore(store);
@@ -130,8 +132,14 @@ export function ControlRoomProvider({ children }) {
   const setReveals = useCallback(
     (mode) => {
       const next = mode === 'stage' ? 'stage' : 'overlay';
+      const prevStage = storeRef.current.stage;
       setStore((s) => ({ ...s, stage: next === 'stage' }));
-      Promise.resolve(writeReveals(next)).catch(() => pushWarning('Could not save where reveals play. Try again.'));
+      Promise.resolve(writeReveals(next)).catch(() => {
+        // The write failed: put this browser's Stage back so it can't play
+        // alongside the OBS overlays.
+        setStore((s) => ({ ...s, stage: prevStage }));
+        pushWarning('Could not save where reveals play. Try again.');
+      });
     },
     [pushWarning]
   );

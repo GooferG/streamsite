@@ -68,4 +68,9 @@ describe('Goofer Ball moments', () => {
     expect(ballWinnerMoment(settled, null, NOW)).toMatchObject({ kind: 'ball-winner', key: 'r1:winner', endsAt: NOW - 1000 + 12000 });
     expect(ballWinnerMoment(settled, 'r1:winner', NOW)).toBeNull();
   });
+
+  test('a settle seen 11s late does not replay the winner card', () => {
+    const settled = { id: 'r1', status: 'settled', settledAt: at2(NOW - 11_000), winner: { drawNo: 2 }, rack: [] };
+    expect(ballWinnerMoment(settled, null, NOW)).toBeNull();
+  });
 });

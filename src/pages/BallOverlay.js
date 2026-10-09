@@ -63,7 +63,7 @@ export default function BallOverlay() {
   const live = useLiveBall(liveEnabled);
   const demoData = useDemo(demo);
   const data = fixture || demoData || live;
-  const { reveals } = useBroadcastSettings(liveEnabled);
+  const broadcast = useBroadcastSettings(liveEnabled);
   const { toast, push } = useToasts();
   useBallArrivals(data.balls, data.ready, push);
 
@@ -80,7 +80,7 @@ export default function BallOverlay() {
   const round = data.round;
   // Stage mode: a staff browser plays the full-screen moments; OBS keeps
   // only the corner cards, so nothing plays twice.
-  const fullScreen = reveals !== 'stage';
+  const fullScreen = !liveEnabled || (broadcast.ready && broadcast.reveals !== 'stage');
   const drawProbe = drawMoment(round, Date.now());
   const probe = drawProbe || winnerMoment(round, Date.now());
   // Only the full-screen draw needs frame-accurate time; a winner hold (or a

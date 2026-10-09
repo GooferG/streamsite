@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { act, render, screen } from '@testing-library/react';
 import StageMoment from '../StageMoment';
 import { useControlRoom } from '../../../contexts/ControlRoomContext';
 import { useGiveawayFeed } from '../../../hooks/useGiveawayFeed';
@@ -15,6 +15,7 @@ function show(ballRound) {
 }
 
 beforeEach(() => {
+  jest.useFakeTimers();
   jest.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
   useGiveawayFeed.mockReturnValue({ giveaway: null, entries: [], firstMessage: null });
 });
@@ -40,3 +41,16 @@ test('a fresh settle plays the winner card', () => {
   });
   expect(screen.getByText("Tonight's winning ball")).toBeTruthy();
 });
+
+test('a draw scratched while it plays leaves the stage', () => {
+  const round = { id: 'r1', status: 'open', rack: [entry(Date.now() - 6000)] };
+  useControlRoom.mockReturnValue({ giveaway: null, latestRound: null, ballRound: round, setDucked: jest.fn() });
+  const view = render(<StageMoment />);
+  expect(screen.getByText('Called in by @CoolGuy')).toBeTruthy();
+  const scratched = { ...round, rack: [{ ...round.rack[0], scratched: true }] };
+  useControlRoom.mockReturnValue({ giveaway: null, latestRound: null, ballRound: scratched, setDucked: jest.fn() });
+  view.rerender(<StageMoment />);
+  act(() => jest.advanceTimersByTime(1000));
+  expect(screen.queryByText('Called in by @CoolGuy')).toBeNull();
+});
+afterEach(() => jest.useRealTimers());

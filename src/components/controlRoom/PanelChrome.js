@@ -13,7 +13,7 @@ function Tally({ on, tone, children }) {
   return <span className={`cr-tally tone-${tone} ${on ? 'is-on' : ''}`}>{children}</span>;
 }
 
-// Top strip (tally lights, Stage switch, menu, window buttons) and the
+// Top strip (tally lights, reveals switch, menu, window buttons) and the
 // hardware-style tabs. The strip is the drag handle.
 export default function PanelChrome({
   tallies,

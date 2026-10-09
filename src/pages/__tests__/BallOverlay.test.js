@@ -30,7 +30,7 @@ function show(round, { reveals = 'overlay', hunt = null, url = '/ball-overlay' }
   useBallRound.mockReturnValue({ round, error: false });
   useBallsFeed.mockReturnValue({ balls: BALLS, ready: true, error: false });
   useBallHunt.mockReturnValue({ hunt, stale: false, loading: false });
-  useBroadcastSettings.mockReturnValue({ reveals });
+  useBroadcastSettings.mockReturnValue({ reveals, ready: true });
   return render(
     <MemoryRouter initialEntries={[url]}>
       <BallOverlay />

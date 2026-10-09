@@ -224,6 +224,12 @@ test('a held-down backtick does not keep toggling', () => {
   expect(cr.panelActions.open).not.toHaveBeenCalled();
 });
 
+test('the Stage radio is checked when the shared switch says stage', () => {
+  show({ reveals: 'stage' });
+  expect(screen.getByRole('radio', { name: 'Stage' }).getAttribute('aria-checked')).toBe('true');
+  expect(screen.getByRole('radio', { name: 'OBS' }).getAttribute('aria-checked')).toBe('false');
+});
+
 test('header controls call the right actions', () => {
   show();
   fireEvent.click(screen.getByRole('radio', { name: 'Stage' }));

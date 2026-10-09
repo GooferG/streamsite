@@ -22,9 +22,9 @@ const ROLLING = {
   rolledAt: at(Date.now() - 1000),
 };
 
-function show(reveals) {
+function show(reveals, ready = true) {
   useGiveawayFeed.mockReturnValue({ giveaway: ROLLING, entries: [], firstMessage: null });
-  useBroadcastSettings.mockReturnValue({ reveals });
+  useBroadcastSettings.mockReturnValue({ reveals, ready });
   return render(
     <MemoryRouter initialEntries={['/giveaway-overlay']}>
       <GiveawayOverlay />
@@ -39,5 +39,11 @@ test('OBS mode plays the reveal', () => {
 
 test('Stage mode: the OBS overlay skips the full-screen reveal', () => {
   show('stage');
+  expect(screen.queryByText('reveal stage')).toBeNull();
+  expect(screen.getByText('Bonus buy $50')).toBeTruthy();
+});
+
+test('the mode not known yet: OBS holds the full-screen reveal', () => {
+  show('overlay', false);
   expect(screen.queryByText('reveal stage')).toBeNull();
 });

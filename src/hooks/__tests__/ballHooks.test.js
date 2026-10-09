@@ -129,7 +129,7 @@ test('useBallHunt does nothing without a hunt id', () => {
 
 test('useBroadcastSettings: stage only when the doc says so', () => {
   const { result } = renderHook(() => useBroadcastSettings());
-  expect(result.current.reveals).toBe('overlay');
+  expect(result.current).toEqual({ reveals: 'overlay', ready: false });
   act(() => listeners['settings/broadcast'].next({ exists: () => true, data: () => ({ reveals: 'stage' }) }));
   expect(result.current.reveals).toBe('stage');
   act(() => listeners['settings/broadcast'].next({ exists: () => false, data: () => undefined }));
@@ -154,4 +154,11 @@ test('usePageVisible', () => {
   Object.defineProperty(document, 'hidden', { configurable: true, get: () => false });
   act(() => document.dispatchEvent(new Event('visibilitychange')));
   expect(result.current).toBe(true);
+});
+
+test('useBroadcastSettings: an error is ready, as overlay', () => {
+  const { result } = renderHook(() => useBroadcastSettings());
+  expect(result.current.ready).toBe(false);
+  act(() => listeners['settings/broadcast'].fail(new Error('x')));
+  expect(result.current).toEqual({ reveals: 'overlay', ready: true });
 });

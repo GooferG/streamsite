@@ -12,7 +12,7 @@ export function placeLabel(place) {
   return PLACE_LABELS[place] || `${place}th`;
 }
 
-function sanitizePrize(prize) {
+export function sanitizePrize(prize) {
   if (!prize || !PRIZE_KINDS.includes(prize.kind)) return null;
   const amount = Number(prize.amount);
   if (!Number.isFinite(amount) || amount <= 0 || amount > MAX_PRIZE_AMOUNT) return null;

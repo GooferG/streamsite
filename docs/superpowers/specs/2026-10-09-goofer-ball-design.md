@@ -172,7 +172,7 @@ The result is `{ kind: 'exact'|'alias'|'guess'|'ambiguous'|'none', slot?, option
 | `reopen` | closed | `status: 'open'` | `NOT_CLOSED` |
 | `cancel` | open or closed | `status: 'cancelled'` | `FINAL` |
 | `link_hunt` | open or closed | Set `huntId` (`null` unlinks) | `HUNT_NOT_FOUND` |
-| `preview_settle` | closed, hunt or overrides | Build the results table (below), return rows and winner. No writes. | `NOT_CLOSED`, `NO_RESULTS` |
+| `preview_settle` | closed, hunt or overrides | Build the results table (below), return rows and winner (`winner: null` with the rows when nothing has a result yet, so the payout table has rows to type into). No writes. | `NOT_CLOSED` |
 | `settle` | closed | Transaction, see Results and payout | `NOT_CLOSED`, `ALREADY_SETTLED`, `NO_RESULTS` |
 | `announce` | — | Claim `announced.<key>` once in a transaction, then post the line | `ALREADY_ANNOUNCED` (soft) |
 
@@ -200,7 +200,7 @@ Draws can't overlap. Two staff browsers or a double click get `DRAW_BUSY` until 
   - One row per drawn, non-scratched ball, showing the hunt's multiplier, win and bet.
   - Unmatched rows are highlighted for manual entry, and any row can be overridden (`source: 'manual'`).
   - If communityhunts is unreachable, a fully manual table still settles.
-- **Ranking:** multiplier, then win, then `drawNo`. `NO_RESULTS` is returned if no drawn ball has a result.
+- **Ranking:** multiplier, then win, then `drawNo`. `settle` returns `NO_RESULTS` if no drawn ball has a result; `preview_settle` returns `winner: null` with the rows instead.
 - **`preview_settle`** re-reads the hunt on the server, merges the overrides, ranks, and returns `{ rows, winner, prize }`.
 - **`settle`** is one transaction:
   - It re-checks `status == 'closed'` and writes `results`, `winner`, `status: 'settled'` and `settledAt`.

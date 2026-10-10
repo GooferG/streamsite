@@ -330,7 +330,7 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 ### Navigation
 
 - **The bar is the TV's bezel.** Fixed, 57px (`NAV_H` in `src/components/nav/navMetrics.js`), bezel gradient with `shadow-onair-bar`, no border.
-- **Channels.** Pages carry codes 01–08 (Home … About), shown as mono chyron labels from `xl`; labels only from `lg`; below `lg` the side sheet. Gamba (04) lists its tools as subchannels `4-0 … 4-4` in the nav; inside `/gamba` they read `CH 00 … CH 04`.
+- **Channels.** Pages carry codes 01–08 (Home … About), shown as mono chyron labels from `xl`; labels only from `lg`; below `lg` the side sheet. Gamba (04) lists its tools as subchannels `4-0 … 4-4` in the nav; inside `/gamba` they read `CH 00 … CH 04` and `CH 42`.
 - **Active.** Teal text on a faint teal wash (`aria-current="page"`, or `"true"` for a section). No underline.
 - **Power LED and tally.** The LED is set dressing and glows only while live. Live shows the red `StatusLight` tally with the viewer count; off air shows a dim readout with the next scheduled stream. Neither appears until a Twitch poll has succeeded.
 - **Menus** are disclosures (`onAir/Popover`), not `role="menu"`.
@@ -339,7 +339,7 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 
 ### Gamba tuner and guide
 
-- **The tuner is labelled channels under a tuning band.** The segments are real links; the band and needle are set dressing. The needle slides about 300ms from the previous channel and jumps under reduced motion. ◀ ▶ step through the channels and wrap. Below `md` the stepper and a "CH 02 Hunts · 3 of 5" readout carry it.
+- **The tuner is labelled channels under a tuning band.** The segments are real links; the band and needle are set dressing. The needle slides about 300ms from the previous channel and jumps under reduced motion. ◀ ▶ step through the channels and wrap. Channels run 00–04 and 42: Goofer Ball is CH 42 (a 420 nod). The tuner lists the channels from `lg`, with the "CH 0x" prefix from `xl` (sr-only below). Phones and tablets get the stepper and a readout instead ("CH 42 Goofer Ball · 6 of 6").
 - **The hub is the guide channel.** One featured monitor: Hunts while a hunt is live or a round is open or locked, the leaderboard otherwise. The channel-change static plays when the takeover starts or ends, never on first load.
 - **What's on.** One link row per tool. The lit row is the channel on the monitor; only the LIVE light glows.
 
@@ -361,6 +361,24 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 - **The rental counter.** One click plays a tape in an overlay with the back of its box beside it. The tape timeline marks each clip at its offset, and a mark seeks the VOD. A clip's back links to its tape while the VOD is in the archive. Focus is trapped and goes back to the box.
 - **The marker.** `font-onair-marker` is for labels, index cards and the sign-off: 15px or larger, never for data. Dates, times, lengths and counts stay mono.
 - **The clerk is set dressing.** The night clerk (`public/gsn/video/`) appears only in the loading and empty states (and in Goofer Video's commercial on the couch TV), always `aria-hidden`, and bows out when its art is missing.
+
+### Channel 42 (Goofer Ball)
+
+Goofer Ball is WGOOF Channel 42: a cheap 90s local-TV lottery draw, not a casino.
+
+- **Set:** a faded blue starburst backdrop, a wood desk, a "● Live 4:20" bug, a "42" station bug, and fine print ("Drawn nightly at 4:20. Supervised by the Goofer Gaming Commission. Odds are odds. Not a real lottery.").
+- **Colours:** the set uses the `onair.wgoof` tokens. They appear only under `src/components/ball/`, through `ball.css` (`theme()`) and token classes, and the contract test holds them there. The drum canvas mirrors them in `canvasPalette.js`.
+- **Type:**
+  - Titles and the lower third are Anton (`font-display`), uppercase.
+  - Labels are JetBrains Mono.
+  - The lower third is `onair.winner` over `onair.paper`.
+- **The drum:** canvas balls between the code-drawn glass and the stand. Each ball wears its slot art as a decal. All lettering is real text.
+- **There is no host:** the streamer's webcam is the host.
+- **The OBS overlay** rests in a corner box and takes over the screen only for a draw (8s) and the winner card (12s).
+- **CH 42 layout:** the set strip is on top. From `lg`, "Call one in" and "Your ball" stack in a 24rem column beside it. On phones the order is strip, Call one in, Your ball, rack, drum list (folded), past draws (folded while a round is live). Below the strip these are regular On Air panels.
+- **No spoilers:** CH 42 and the Gamba hub row hold each draw until its chat line is due (`drawnAt + DRAW_REVEAL_MS + STREAM_DELAY_MS`), and hold a settle for `STREAM_DELAY_MS`. This uses `spoilerSafe` in `src/utils/ball.js` on a `useRevealClock` timer, so the site never runs ahead of the stream.
+- **Scratched draws:** every screen (CH 42 rack, past racks, drum list, overlay rack board and corner chips) shows a scratched draw struck through and labelled "Scratched", in draw order.
+- **Reduced motion:** on CH 42 the drum renders still and the reveal animations drop.
 
 ### The couch
 

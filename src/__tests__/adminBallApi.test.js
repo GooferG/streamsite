@@ -430,3 +430,16 @@ describe('payout', () => {
     noPayout();
   });
 });
+
+describe('scratch line waits for the draw line', () => {
+  test('a scratch before the draw line is due posts nothing; the announce posts it once due', async () => {
+    seedRound('r1', { rack: [entry(1, 'a', { slotName: 'Gates of Olympus', drawnAt: ts(NOW - 9000) })] });
+    seedBall('r1', 'a', { status: 'drawn', drawNo: 1 });
+    const res = await call({ action: 'scratch', id: 'r1', drawNo: 1 });
+    expect(res.body).toMatchObject({ ok: true, announce: { posted: false, reason: 'later' } });
+    expect(sendChannelMessage).not.toHaveBeenCalled();
+    Date.now.mockReturnValue(NOW + 2000);
+    const later = await call({ action: 'announce', id: 'r1', event: 'scratch', drawNo: 1 });
+    expect(later.body.announce).toEqual({ posted: true });
+  });
+});

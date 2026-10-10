@@ -382,6 +382,7 @@ export default function ControlRoom({ isLive = false }) {
           onTab={switchTab}
           reveals={cr.reveals}
           onReveals={cr.setReveals}
+          canSetReveals={!!cr.isOwner}
           hideLiveBadge={cr.prefs.hideLiveBadge}
           onHideLiveBadge={cr.setHideLiveBadge}
           docked={docked}
@@ -402,6 +403,11 @@ export default function ControlRoom({ isLive = false }) {
           {cr.dataLost && (
             <p className="mb-3 text-xs text-red-destructive font-mono">
               {cr.dataGaveUp ? 'Live data lost. Reload to reconnect.' : 'Live data lost. Reconnecting…'}
+            </p>
+          )}
+          {cr.reveals === 'stage' && !cr.prefs.stage && (
+            <p className="mb-3 text-xs text-orange-admin font-mono">
+              {cr.revealsBy ? `Reveals play on ${cr.revealsBy}'s Stage — OBS skips them.` : 'Reveals play on the Stage browser — OBS skips them.'}
             </p>
           )}
           {isActive(cr.ballRound) && !isLive && (

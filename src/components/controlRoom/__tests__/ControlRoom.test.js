@@ -71,6 +71,8 @@ function makeCr(overrides = {}) {
     prefs: { stage: false, hideLiveBadge: false },
     setStage: jest.fn(),
     reveals: 'overlay',
+    revealsBy: null,
+    isOwner: true,
     setReveals: jest.fn(),
     setHideLiveBadge: jest.fn(),
     ...rest,
@@ -228,6 +230,27 @@ test('the Stage radio is checked when the shared switch says stage', () => {
   show({ reveals: 'stage' });
   expect(screen.getByRole('radio', { name: 'Stage' }).getAttribute('aria-checked')).toBe('true');
   expect(screen.getByRole('radio', { name: 'OBS' }).getAttribute('aria-checked')).toBe('false');
+});
+
+test('a non-owner sees where reveals play as text, with no switch', () => {
+  show({ isOwner: false, reveals: 'stage', prefs: { stage: true, hideLiveBadge: false } });
+  expect(screen.queryByRole('radio')).toBeNull();
+  expect(screen.getByText('Reveals: Stage')).toBeTruthy();
+});
+
+test('Stage-elsewhere line shows only when stage mode is on and this browser is not playing it', () => {
+  const line = /Reveals play on/;
+  show({ reveals: 'stage', revealsBy: 'owner@test' });
+  expect(screen.getByText("Reveals play on owner@test's Stage — OBS skips them.")).toBeTruthy();
+  document.body.innerHTML = '';
+  show({ reveals: 'stage' });
+  expect(screen.getByText('Reveals play on the Stage browser — OBS skips them.')).toBeTruthy();
+  document.body.innerHTML = '';
+  show({ reveals: 'stage', prefs: { stage: true, hideLiveBadge: false } });
+  expect(screen.queryByText(line)).toBeNull();
+  document.body.innerHTML = '';
+  show({ reveals: 'overlay' });
+  expect(screen.queryByText(line)).toBeNull();
 });
 
 test('header controls call the right actions', () => {

@@ -66,3 +66,44 @@ test('a failure from another round never shows', async () => {
   rerender({ round: { id: 'r2', rack: [], announced: { draws: {} } } });
   expect(result.current.error).toBeNull();
 });
+
+describe('scratch lines', () => {
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  test('a scratch line is not posted before that draw\'s line time, then once', async () => {
+    // Drawn 5s ago: the draw line would be due in 6s.
+    const scratched = { ...entry(1, 5_000), scratched: true };
+    const round = { id: 'r1', rack: [scratched], announced: { draws: {}, scratches: {} } };
+    renderHook(() => useBallDrawAnnounce(round, { armed: true }));
+    act(() => {
+      jest.advanceTimersByTime(5_500);
+    });
+    expect(ballAction).not.toHaveBeenCalled();
+    await act(async () => {
+      jest.advanceTimersByTime(1_000);
+    });
+    expect(ballAction).toHaveBeenCalledTimes(1);
+    expect(ballAction).toHaveBeenCalledWith({ action: 'announce', id: 'r1', event: 'scratch', drawNo: 1 });
+  });
+});
+
+test('a TOO_EARLY retry survives a new draw landing', async () => {
+  jest.useFakeTimers();
+  try {
+    ballAction.mockResolvedValueOnce({ ok: false, status: 409, data: { error: 'TOO_EARLY' } });
+    const r1 = { id: 'r1', rack: [entry(1, 30_000)], announced: { draws: {} } };
+    const { rerender } = renderHook(({ round }) => useBallDrawAnnounce(round, { armed: true }), { initialProps: { round: r1 } });
+    await act(async () => {
+      jest.advanceTimersByTime(10);
+    });
+    expect(ballAction).toHaveBeenCalledTimes(1);
+    rerender({ round: { ...r1, rack: [entry(1, 30_000), entry(2, 0)] } });
+    await act(async () => {
+      jest.advanceTimersByTime(1600);
+    });
+    expect(ballAction.mock.calls.filter(([b]) => b.drawNo === 1)).toHaveLength(2);
+  } finally {
+    jest.useRealTimers();
+  }
+});

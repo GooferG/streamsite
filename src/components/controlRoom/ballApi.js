@@ -40,6 +40,6 @@ export function ballErrorText(code, status) {
 // was already posted, or the draw was scratched).
 export function announceProblem(ok, data) {
   const r = data && data.announce;
-  if (ok && r && (r.posted || r.reason === 'already' || r.reason === 'scratched')) return null;
+  if (ok && r && (r.posted || r.reason === 'already' || r.reason === 'scratched' || r.reason === 'later')) return null;
   return (r && r.reason) || (data && data.error) || 'unknown';
 }

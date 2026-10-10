@@ -39,7 +39,13 @@ service cloud.firestore {
     // Schedule doc — public read, staff write.
     match /settings/{docId} {
       allow read: if true;
-      allow write: if isStaff();
+      allow write: if isStaff() && docId != 'broadcast';
+    }
+
+    // Where reveals play (OBS or Stage): only the owner flips it.
+    match /settings/broadcast {
+      allow read: if true;
+      allow write: if isOwner();
     }
 
     // Game suggestions — public read, viewer can write only their own doc

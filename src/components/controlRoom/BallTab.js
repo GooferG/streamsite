@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useControlRoom } from '../../contexts/ControlRoomContext';
 import { useClock } from '../../hooks/useClock';
-import { LOCK_HOLD_MS, REVEAL_MS, tsMillis } from '../../utils/giveaway';
-import { AUTO_POST_WINDOW_MS, DRAW_REVEAL_MS, drawnEntries, drumBalls, formatMulti, isActive, pad2, prizeText, recentBalls, who } from '../../utils/ball';
+import { LOCK_HOLD_MS, REVEAL_MS, STREAM_DELAY_MS, tsMillis } from '../../utils/giveaway';
+import { AUTO_POST_WINDOW_MS, DRAW_REVEAL_MS, WINNER_HOLD_MS, drawnEntries, drumBalls, formatMulti, isActive, pad2, prizeText, recentBalls, who } from '../../utils/ball';
 import { inputCls } from '../admin/predictions/shared';
 import { announceProblem, ballAction } from './ballApi';
 import { useBallRun } from './useBallRun';
@@ -87,7 +87,7 @@ function useChatCheck() {
   return { fail, track, retry };
 }
 
-function OpenForm({ initial, track }) {
+function OpenForm({ initial, track, waitForResults = false }) {
   const [form, setForm] = useState(() => prizeForm(initial));
   const [follow, setFollow] = useState(true);
   const { busy, error, run } = useBallRun();
@@ -101,11 +101,13 @@ function OpenForm({ initial, track }) {
       <button
         type="button"
         className="cr-btn is-go w-full"
-        disabled={!!busy}
+        disabled={!!busy || waitForResults}
+        title={waitForResults ? 'Wait for the results line' : undefined}
         onClick={async () => track(await run({ action: 'open', prize: prizePayload(form), requireFollow: follow }), { event: 'opened' })}
       >
         Open the drum
       </button>
+      {waitForResults && <p className="text-xs font-mono text-white/55">Wait for the results line</p>}
       {error && <p className="text-xs font-mono text-red-destructive">{error}</p>}
     </div>
   );
@@ -185,12 +187,18 @@ function PrizeLine({ round, run, busy }) {
   );
 }
 
-function Rack({ round, run, confirm, setConfirm, busy, track }) {
+function Rack({ round, run, confirm, setConfirm, busy, track, now }) {
   const rack = round.rack || [];
   if (rack.length === 0) return <p className="cr-lbl mt-3">No balls drawn yet.</p>;
   return (
     <ol className="mt-3 space-y-1" aria-label="Rack">
-      {rack.map((e) => (
+      {rack.map((e) => {
+        // Scratching mid-reveal would cut the takeover short (the server
+        // refuses it too).
+        const drawnAt = tsMillis(e.drawnAt);
+        const revealing = drawnAt != null && now < drawnAt + DRAW_REVEAL_MS;
+        const hint = revealing ? 'Wait for the reveal' : undefined;
+        return (
         <li key={e.drawNo} className="flex items-center gap-2 text-sm">
           <span className="font-mono text-white/45">{pad2(e.drawNo)}</span>
           <span className={`min-w-0 flex-1 truncate ${e.scratched ? 'text-white/40 line-through' : 'text-white-body'}`}>
@@ -201,7 +209,8 @@ function Rack({ round, run, confirm, setConfirm, busy, track }) {
               <button
                 type="button"
                 className="cr-btn is-go flex-none px-2"
-                disabled={!!busy}
+                disabled={!!busy || revealing}
+                title={hint}
                 onClick={async () => {
                   setConfirm(null);
                   track(await run({ action: 'scratch', id: round.id, drawNo: e.drawNo }), { id: round.id, event: 'scratch', drawNo: e.drawNo });
@@ -210,12 +219,13 @@ function Rack({ round, run, confirm, setConfirm, busy, track }) {
                 Confirm scratch
               </button>
             ) : (
-              <button type="button" className="cr-btn flex-none px-2" disabled={!!busy} onClick={() => setConfirm(`scratch:${e.drawNo}`)}>
+              <button type="button" className="cr-btn flex-none px-2" disabled={!!busy || revealing} title={hint} onClick={() => setConfirm(`scratch:${e.drawNo}`)}>
                 Scratch
               </button>
             ))}
         </li>
-      ))}
+        );
+      })}
     </ol>
   );
 }
@@ -297,7 +307,7 @@ function ActiveRound({ round, balls, ready, giveaway, reveals, drawAnnounce, tra
           {ballBusy ? 'Ball on screen…' : gvwBusy ? 'Giveaway on screen…' : 'Draw ball'}
         </button>
       )}
-      <Rack round={round} run={run} confirm={confirm} setConfirm={setConfirm} busy={busy} track={track} />
+      <Rack round={round} run={run} confirm={confirm} setConfirm={setConfirm} busy={busy} track={track} now={now} />
       {open && <JustIn balls={balls} />}
       {!open && <BallPayout round={round} />}
       <div className="mt-3 flex gap-2">
@@ -345,6 +355,13 @@ export default function BallTab() {
   const cr = useControlRoom();
   const round = cr.ballRound;
   const chat = useChatCheck();
+  // A reopen right after a settle would swap the round the results line is
+  // posted from: hold the button until that line has gone out.
+  const settledMs = tsMillis(round && round.settledAt);
+  const holdingResults =
+    !!round && round.status === 'settled' && !!round.winner && !(round.announced && round.announced.results) && settledMs != null;
+  const now = useClock({ intervalMs: 500, active: holdingResults });
+  const waitForResults = holdingResults && now < settledMs + STREAM_DELAY_MS + WINNER_HOLD_MS;
   return (
     <div>
       {isActive(round) ? (
@@ -369,7 +386,7 @@ export default function BallTab() {
               <p className="mt-2 text-sm text-white/55">No drum open.</p>
             </>
           )}
-          <OpenForm key={round ? round.id : 'none'} initial={round && round.prize} track={chat.track} />
+          <OpenForm key={round ? round.id : 'none'} initial={round && round.prize} track={chat.track} waitForResults={waitForResults} />
         </>
       )}
       {chat.fail && round && chat.fail.id === round.id && (

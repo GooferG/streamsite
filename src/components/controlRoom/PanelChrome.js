@@ -24,6 +24,7 @@ export default function PanelChrome({
   onTab,
   reveals,
   onReveals,
+  canSetReveals,
   hideLiveBadge,
   onHideLiveBadge,
   docked,
@@ -67,6 +68,13 @@ export default function PanelChrome({
           )}
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-1">
+          {!canSetReveals ? (
+            // Only the owner flips the shared switch; staff just see where
+            // reveals play.
+            <span className="cr-switch is-on" title="Only the owner changes where reveals play">
+              {reveals === 'stage' ? 'Reveals: Stage' : 'Reveals: OBS'}
+            </span>
+          ) : (
           <div role="radiogroup" aria-label="Reveals play on" className="flex items-center gap-0.5">
             {[
               ['overlay', 'OBS', 'Full-screen reveals play in the OBS overlays'],
@@ -85,6 +93,7 @@ export default function PanelChrome({
               </button>
             ))}
           </div>
+          )}
           {/* Escape is caught here, not on the menu: focus usually stays on
               the trigger, and an uncaught Escape minimizes the whole panel. */}
           <div

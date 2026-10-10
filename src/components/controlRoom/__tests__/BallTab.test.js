@@ -203,3 +203,35 @@ test('settled long ago and never posted: not posted, with Retry', () => {
   expect(screen.getByText(/Chat line not posted\./)).toBeTruthy();
   expect(screen.getByRole('button', { name: 'Retry chat line' })).toBeTruthy();
 });
+
+test('Scratch waits for that draw\'s reveal to finish', () => {
+  const fresh = { ...OPEN, rack: [{ ...OPEN.rack[0], drawnAt: at(Date.now() - 2000) }], lastDrawAt: at(Date.now() - 2000) };
+  show({ ballRound: fresh, balls: BALLS });
+  const btn = screen.getByRole('button', { name: 'Scratch' });
+  expect(btn.disabled).toBe(true);
+  expect(btn.getAttribute('title')).toBe('Wait for the reveal');
+});
+
+describe('open the drum after a settle', () => {
+  const settled = (agoMs, announced = {}) => ({
+    ...OPEN,
+    status: 'settled',
+    winner: { drawNo: 1, slotName: 'Gates of Olympus', displayName: 'CoolGuy', multiplier: 5 },
+    settledAt: at(Date.now() - agoMs),
+    announced,
+  });
+
+  test('is held until the results line has gone out', () => {
+    show({ ballRound: settled(5000) });
+    expect(screen.getByRole('button', { name: 'Open the drum' }).disabled).toBe(true);
+    expect(screen.getByText('Wait for the results line')).toBeTruthy();
+  });
+
+  test('is free once the line is posted, or the hold has passed', () => {
+    const { unmount } = show({ ballRound: settled(5000, { results: at(1) }) });
+    expect(screen.getByRole('button', { name: 'Open the drum' }).disabled).toBe(false);
+    unmount();
+    show({ ballRound: settled(30_000) });
+    expect(screen.getByRole('button', { name: 'Open the drum' }).disabled).toBe(false);
+  });
+});

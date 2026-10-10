@@ -1,13 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { STREAM_DELAY_MS, tsMillis } from '../../utils/giveaway';
-import { AUTO_POST_WINDOW_MS, drawAnnounceDueAt, pendingDrawAnnounces } from '../../utils/ball';
+import { AUTO_POST_WINDOW_MS, drawAnnounceDueAt, pendingDrawAnnounces, pendingScratchAnnounces } from '../../utils/ball';
 import { announceProblem, ballAction } from './ballApi';
 
 const TOO_EARLY_RETRY_MS = 1500;
 
 // Posts each draw's chat line once the reveal has played on stream (chat runs
-// ahead of the video). Driving tab only; the server claims each line, so
-// several staff tabs still post once.
+// ahead of the video), and each scratch line no earlier than that draw's own
+// line time. Driving tab only; the server claims each line, so several staff
+// tabs still post once.
 export function useBallDrawAnnounce(round, { armed = true } = {}) {
   // Failures are kept per round and per draw: one draw's success never hides
   // another's failure, and another round's never shows.
@@ -16,17 +17,20 @@ export function useBallDrawAnnounce(round, { armed = true } = {}) {
   const retryTimers = useRef(new Set());
   const id = round ? round.id : null;
   const pending = round ? pendingDrawAnnounces(round, Date.now()) : [];
-  const pendingKey = pending.map((e) => e.drawNo).join(',');
+  const pendingScratches = round ? pendingScratchAnnounces(round, Date.now()) : [];
+  const pendingKey = `${pending.map((e) => e.drawNo).join(',')}|${pendingScratches.map((e) => e.drawNo).join(',')}`;
 
   const postRef = useRef(null);
   const post = useCallback(
-    async (drawNo, again = true) => {
-      const { ok, data } = await ballAction({ action: 'announce', id, event: 'draw', drawNo });
+    async (drawNo, again = true, event = 'draw') => {
+      const failKey = event === 'draw' ? drawNo : `s${drawNo}`;
+      const { ok, data } = await ballAction({ action: 'announce', id, event, drawNo });
       // TOO_EARLY: this browser's clock runs ahead of the server's. Once more.
-      if (data && data.error === 'TOO_EARLY' && again) {
+      const later = event === 'scratch' && data && data.announce && data.announce.reason === 'later';
+      if (((data && data.error === 'TOO_EARLY') || later) && again) {
         const t = setTimeout(() => {
           retryTimers.current.delete(t);
-          postRef.current(drawNo, false);
+          postRef.current(drawNo, false, event);
         }, TOO_EARLY_RETRY_MS);
         retryTimers.current.add(t);
         return;
@@ -34,8 +38,8 @@ export function useBallDrawAnnounce(round, { armed = true } = {}) {
       const problem = announceProblem(ok, data);
       setState((s) => {
         const failed = s.roundId === id ? { ...s.failed } : {};
-        if (problem) failed[drawNo] = problem;
-        else delete failed[drawNo];
+        if (problem) failed[failKey] = problem;
+        else delete failed[failKey];
         return { roundId: id, failed };
       });
     },
@@ -43,13 +47,18 @@ export function useBallDrawAnnounce(round, { armed = true } = {}) {
   );
   postRef.current = post;
 
-  const clearRetries = () => {
-    retryTimers.current.forEach(clearTimeout);
-    retryTimers.current.clear();
-  };
+  // A TOO_EARLY / later retry belongs to its round: only leaving the round
+  // (or unmounting) cancels it. A new draw landing must not silently drop it.
+  useEffect(() => {
+    const timers = retryTimers.current;
+    return () => {
+      timers.forEach(clearTimeout);
+      timers.clear();
+    };
+  }, [id]);
 
   useEffect(() => {
-    if (!armed || !id) return clearRetries;
+    if (!armed || !id) return undefined;
     const timers = pending
       .filter((e) => !tried.current.has(`${id}:${e.drawNo}`))
       .map((e) =>
@@ -58,10 +67,18 @@ export function useBallDrawAnnounce(round, { armed = true } = {}) {
           postRef.current(e.drawNo);
         }, Math.max(0, drawAnnounceDueAt(e) - Date.now()))
       );
-    return () => {
-      timers.forEach(clearTimeout);
-      clearRetries();
-    };
+    // max(now, the draw line's time): a scratch never beats its draw's line.
+    pendingScratches
+      .filter((e) => !tried.current.has(`${id}:s${e.drawNo}`))
+      .forEach((e) =>
+        timers.push(
+          setTimeout(() => {
+            tried.current.add(`${id}:s${e.drawNo}`);
+            postRef.current(e.drawNo, true, 'scratch');
+          }, Math.max(0, drawAnnounceDueAt(e) - Date.now()))
+        )
+      );
+    return () => timers.forEach(clearTimeout);
     // pendingKey stands in for `pending`, which is a new array every render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [armed, id, pendingKey]);
@@ -72,9 +89,11 @@ export function useBallDrawAnnounce(round, { armed = true } = {}) {
 
   const retry = useCallback(() => {
     const now = Date.now();
-    (round ? round.rack || [] : [])
-      .filter((e) => failed[e.drawNo] && drawAnnounceDueAt(e) != null && drawAnnounceDueAt(e) <= now)
-      .forEach((e) => postRef.current(e.drawNo));
+    (round ? round.rack || [] : []).forEach((e) => {
+      if (drawAnnounceDueAt(e) == null || drawAnnounceDueAt(e) > now) return;
+      if (failed[e.drawNo]) postRef.current(e.drawNo);
+      if (failed[`s${e.drawNo}`]) postRef.current(e.drawNo, true, 'scratch');
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [round, state]);
 

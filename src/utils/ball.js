@@ -126,6 +126,16 @@ export function pendingDrawAnnounces(round, now) {
   });
 }
 
+// Scratched draws whose scratch line hasn't posted. Like a draw line, it goes
+// out no earlier than the draw's own line time (see drawAnnounceDueAt).
+export function pendingScratchAnnounces(round, now) {
+  const done = (round && round.announced && round.announced.scratches) || {};
+  return ((round && round.rack) || []).filter((e) => {
+    const at = tsMillis(e.drawnAt);
+    return e.scratched && !done[drawKey(e.drawNo)] && at != null && now - at <= AUTO_POST_WINDOW_MS;
+  });
+}
+
 // What each ball looked like at the last snapshot: status and slot.
 export function ballSignature(balls) {
   return new Map((balls || []).map((b) => [b.id, `${b.status}:${b.slotId}`]));

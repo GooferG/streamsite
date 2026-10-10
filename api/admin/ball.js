@@ -8,6 +8,7 @@ import { sendChannelMessage } from '../_lib/twitchChat.js';
 import {
   ACTIVE_STATUSES,
   DRAW_REVEAL_MS,
+  STREAM_DELAY_MS,
   drawKey,
   drawLine,
   formatMulti,
@@ -76,6 +77,10 @@ async function announceEvent(ref, event, drawNo, nowMs) {
         text = drawLine(entry);
       } else {
         if (!entry.scratched) throw new ActionError(400, 'NOT_SCRATCHED');
+        // Never before that draw's own line time; the control-room engine
+        // posts it then (useBallAnnounce).
+        const drawn = tsMs(entry.drawnAt);
+        if (drawn != null && nowMs < drawn + DRAW_REVEAL_MS + STREAM_DELAY_MS) return { skip: 'later' };
         text = scratchLine(entry);
       }
       field = `announced.${bucket}.${drawKey(entry.drawNo)}`;

@@ -258,3 +258,15 @@ test('a failed reveals write puts this browser Stage pref back and warns', async
   expect(latest.prefs.stage).toBe(false);
   expect(latest.warnings.map((w) => w.message)).toEqual(['Could not save where reveals play. Try again.']);
 });
+
+test('a failed balls feed stops saying Reconnecting: dataGaveUp follows ballsError', () => {
+  mockData.ball_rounds = [{ id: 'br1', status: 'open' }];
+  onSnapshot.mockImplementation((path, next, fail) => {
+    if (path === 'ball_rounds/br1/balls') fail(new Error('denied'));
+    else next({ docs: (mockData[path] || []).map((row) => ({ id: row.id, data: () => row })) });
+    return () => {};
+  });
+  mount();
+  expect(latest.dataLost).toBeTruthy();
+  expect(latest.dataGaveUp).toBeTruthy();
+});

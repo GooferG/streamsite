@@ -58,7 +58,7 @@ const redemptionsQuery = () =>
 // route (so /admin and the floating panel share one engine), plus the panel's
 // per-browser state. Timers only fire in the tab that holds the driver lock.
 export function ControlRoomProvider({ children }) {
-  const { isStaff } = useAuth();
+  const { isStaff, isOwner } = useAuth();
   const { pathname } = useLocation();
   const enabled = !!isStaff && controlRoomAllowed(pathname);
 
@@ -181,8 +181,10 @@ export function ControlRoomProvider({ children }) {
     ballDrawAnnounce,
     ballResults,
     reveals: broadcast.reveals,
+    revealsBy: broadcast.updatedBy,
+    isOwner: !!isOwner,
     dataLost: giveawaysFeed.error || roundsFeed.error || redemptionsFeed.error || ballFeed.error || ballsError,
-    dataGaveUp: giveawaysFeed.gaveUp || roundsFeed.gaveUp || redemptionsFeed.gaveUp || ballFeed.gaveUp,
+    dataGaveUp: giveawaysFeed.gaveUp || roundsFeed.gaveUp || redemptionsFeed.gaveUp || ballFeed.gaveUp || ballsError,
     redemptions,
     redeem: {
       pending: redemptions.length,

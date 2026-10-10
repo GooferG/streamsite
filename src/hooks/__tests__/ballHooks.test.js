@@ -129,7 +129,7 @@ test('useBallHunt does nothing without a hunt id', () => {
 
 test('useBroadcastSettings: stage only when the doc says so', () => {
   const { result } = renderHook(() => useBroadcastSettings());
-  expect(result.current).toEqual({ reveals: 'overlay', ready: false });
+  expect(result.current).toEqual({ reveals: 'overlay', updatedBy: null, ready: false });
   act(() => listeners['settings/broadcast'].next({ exists: () => true, data: () => ({ reveals: 'stage' }) }));
   expect(result.current.reveals).toBe('stage');
   act(() => listeners['settings/broadcast'].next({ exists: () => false, data: () => undefined }));
@@ -156,9 +156,17 @@ test('usePageVisible', () => {
   expect(result.current).toBe(true);
 });
 
-test('useBroadcastSettings: an error is ready, as overlay', () => {
+test('useBroadcastSettings: an error is ready, as overlay when nothing was known', () => {
   const { result } = renderHook(() => useBroadcastSettings());
   expect(result.current.ready).toBe(false);
   act(() => listeners['settings/broadcast'].fail(new Error('x')));
-  expect(result.current).toEqual({ reveals: 'overlay', ready: true });
+  expect(result.current).toEqual({ reveals: 'overlay', updatedBy: null, ready: true });
+});
+
+test('useBroadcastSettings: an error keeps the last known mode', () => {
+  const { result } = renderHook(() => useBroadcastSettings());
+  act(() => listeners['settings/broadcast'].next({ exists: () => true, data: () => ({ reveals: 'stage', updatedBy: 'owner@test' }) }));
+  expect(result.current).toEqual({ reveals: 'stage', updatedBy: 'owner@test', ready: true });
+  act(() => listeners['settings/broadcast'].fail(new Error('x')));
+  expect(result.current).toEqual({ reveals: 'stage', updatedBy: 'owner@test', ready: true });
 });

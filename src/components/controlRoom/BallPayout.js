@@ -52,10 +52,16 @@ export default function BallPayout({ round }) {
   latestKey.current = key;
   const bonuses = (hunt && hunt.bonuses) || [];
   const rows = resultRows(round, bonuses, overrides);
-  const anyInvalid = Object.values(edits).some(isInvalid);
+  // A row that shows the hunt's number has no inputs, so a stale invalid
+  // value behind it must not lock Preview.
+  const showsInputs = (r) => r.source !== 'hunt' || !blank((edits[r.drawNo] || EMPTY).multiplier);
+  const anyInvalid = rows.some((r) => showsInputs(r) && isInvalid(edits[r.drawNo] || EMPTY));
 
+  // Linking another hunt starts the table over: edits (and any bonusIndex)
+  // were typed against the old hunt's rows.
   useEffect(() => {
     setPreview(null);
+    setEdits({});
   }, [round.huntId]);
 
   const edit = (drawNo, patch) => {
@@ -85,7 +91,7 @@ export default function BallPayout({ round }) {
         <tbody>
           {rows.map((r) => {
             const e = edits[r.drawNo] || EMPTY;
-            const asInput = r.source !== 'hunt' || !blank(e.multiplier);
+            const asInput = showsInputs(r);
             const badMulti = !validNumber(e.multiplier);
             const badWin = !validNumber(e.win);
             const matches = huntMatches(r.slotName, bonuses);
@@ -116,7 +122,7 @@ export default function BallPayout({ round }) {
                   {asInput ? (
                     <div className="space-y-1">
                       <input
-                        className={`${inputCls}${badMulti ? ' border-red-destructive' : ''}`}
+                        className={`${inputCls} aria-[invalid=true]:border-red-destructive`}
                         inputMode="decimal"
                         placeholder="multi"
                         aria-label={`Multiplier for ball ${r.drawNo}`}
@@ -125,7 +131,7 @@ export default function BallPayout({ round }) {
                         onChange={(ev) => edit(r.drawNo, { multiplier: ev.target.value })}
                       />
                       <input
-                        className={`${inputCls}${badWin ? ' border-red-destructive' : ''}`}
+                        className={`${inputCls} aria-[invalid=true]:border-red-destructive`}
                         inputMode="decimal"
                         placeholder="win"
                         aria-label={`Win for ball ${r.drawNo}`}

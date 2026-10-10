@@ -177,3 +177,26 @@ test('HuntLink: says so when there are no hunts', () => {
   fireEvent.click(screen.getByRole('button', { name: 'Link hunt' }));
   expect(screen.getByText('No hunts yet.')).toBeTruthy();
 });
+
+test('relinking a hunt clears typed edits and the picked hunt row', () => {
+  const { rerender } = render(<BallPayout round={ROUND} />);
+  fireEvent.change(screen.getByLabelText('Multiplier for ball 2'), { target: { value: '9' } });
+  expect(screen.getByLabelText('Multiplier for ball 2').value).toBe('9');
+  rerender(<BallPayout round={{ ...ROUND, huntId: 'h2' }} />);
+  expect(screen.getByLabelText('Multiplier for ball 2').value).toBe('');
+});
+
+test('an invalid value behind a row that shows the hunt number no longer locks Preview', () => {
+  render(<BallPayout round={ROUND} />);
+  fireEvent.click(screen.getByRole('button', { name: 'Edit ball 1' }));
+  fireEvent.change(screen.getByLabelText('Win for ball 1'), { target: { value: 'abc' } });
+  expect(screen.getByRole('button', { name: 'Preview' }).disabled).toBe(true);
+  fireEvent.change(screen.getByLabelText('Multiplier for ball 1'), { target: { value: '' } });
+  expect(screen.queryByLabelText('Win for ball 1')).toBeNull();
+  expect(screen.getByRole('button', { name: 'Preview' }).disabled).toBe(false);
+});
+
+test('invalid inputs are styled through aria-invalid', () => {
+  render(<BallPayout round={ROUND} />);
+  expect(screen.getByLabelText('Multiplier for ball 2').className).toContain('aria-[invalid=true]:border-red-destructive');
+});

@@ -37,6 +37,13 @@ export async function sendChannelMessage(text, { replyTo } = {}) {
 
   const clipped = text.length > MAX_LEN ? text.slice(0, MAX_LEN - 1) + '…' : text;
 
+  // Local play-tests: `vercel dev` pulls the bot tokens, so CHAT_DRY_RUN=1
+  // logs the line instead of posting it in the real channel.
+  if (process.env.CHAT_DRY_RUN === '1') {
+    console.log(`[chat dry run]${replyTo ? ` (reply to ${replyTo})` : ''} ${clipped}`);
+    return { ok: true, twitchMessageId: null, sentAs: 'dry-run' };
+  }
+
   const senderId = chatSenderId();
   const sentAs = senderId === broadcasterId ? 'broadcaster' : 'bot';
   const accessToken =

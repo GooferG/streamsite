@@ -181,7 +181,6 @@ export function ControlRoomProvider({ children }) {
     ballDrawAnnounce,
     ballResults,
     reveals: broadcast.reveals,
-    revealsBy: broadcast.updatedBy,
     isOwner: !!isOwner,
     dataLost: giveawaysFeed.error || roundsFeed.error || redemptionsFeed.error || ballFeed.error || ballsError,
     dataGaveUp: giveawaysFeed.gaveUp || roundsFeed.gaveUp || redemptionsFeed.gaveUp || ballFeed.gaveUp || ballsError,

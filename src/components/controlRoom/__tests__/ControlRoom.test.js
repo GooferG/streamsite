@@ -240,11 +240,10 @@ test('a non-owner sees where reveals play as text, with no switch', () => {
 
 test('Stage-elsewhere line shows only when stage mode is on and this browser is not playing it', () => {
   const line = /Reveals play on/;
+  // Only the owner can pick Stage, so the line never prints an account email.
   show({ reveals: 'stage', revealsBy: 'owner@test' });
-  expect(screen.getByText("Reveals play on owner@test's Stage — OBS skips them.")).toBeTruthy();
-  document.body.innerHTML = '';
-  show({ reveals: 'stage' });
-  expect(screen.getByText('Reveals play on the Stage browser — OBS skips them.')).toBeTruthy();
+  expect(screen.getByText("Reveals play on the owner's Stage — OBS skips them.")).toBeTruthy();
+  expect(screen.queryByText(/owner@test/)).toBeNull();
   document.body.innerHTML = '';
   show({ reveals: 'stage', prefs: { stage: true, hideLiveBadge: false } });
   expect(screen.queryByText(line)).toBeNull();

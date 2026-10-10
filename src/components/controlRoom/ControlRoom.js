@@ -407,7 +407,7 @@ export default function ControlRoom({ isLive = false }) {
           )}
           {cr.reveals === 'stage' && !cr.prefs.stage && (
             <p className="mb-3 text-xs text-orange-admin font-mono">
-              {cr.revealsBy ? `Reveals play on ${cr.revealsBy}'s Stage — OBS skips them.` : 'Reveals play on the Stage browser — OBS skips them.'}
+              Reveals play on the owner's Stage — OBS skips them.
             </p>
           )}
           {isActive(cr.ballRound) && !isLive && (

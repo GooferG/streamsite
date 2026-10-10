@@ -5,7 +5,7 @@
 export function normName(s) {
   return String(s || '')
     .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .replace(/&/g, ' and ')
     .replace(/[^a-z0-9]+/g, ' ')
@@ -67,9 +67,12 @@ export function resultRows(round, bonuses = [], overrides = {}) {
     if (o && o.multiplier != null) {
       return { ...base, multiplier: o.multiplier, win: o.win ?? null, bet: o.bet ?? null, source: 'manual' };
     }
+    // Opened means the hunt recorded a win (isOpened in hunts/huntStats.js);
+    // an unopened row can carry a 0x placeholder multiplier.
     const multiplier = picked ? num(picked.multiplier) : null;
-    if (multiplier != null) {
-      return { ...base, multiplier, win: num(picked.win), bet: num(picked.bet), source: 'hunt' };
+    const win = picked ? num(picked.win) : null;
+    if (multiplier != null && win != null) {
+      return { ...base, multiplier, win, bet: num(picked.bet), source: 'hunt' };
     }
     return { ...base, multiplier: null, win: null, bet: null, source: null };
   });

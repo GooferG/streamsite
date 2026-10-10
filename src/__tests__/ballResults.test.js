@@ -83,6 +83,8 @@ test('client and server agree', () => {
   const overrides = { 4: { multiplier: 41, win: 41, bet: 1, bonusIndex: null } };
   expect(client.resultRows(ROUND, BONUSES, overrides)).toEqual(server.resultRows(ROUND, BONUSES, overrides));
   expect(client.normName('The Dog House!')).toBe(server.normName('The Dog House!'));
+  const unopened = [{ slot: 'Gates of Olympus', bet: 1, win: null, multiplier: 0 }];
+  expect(client.resultRows(ROUND, unopened)).toEqual(server.resultRows(ROUND, unopened));
 });
 
 test('settledRows reads results off the round', () => {
@@ -92,4 +94,15 @@ test('settledRows reads results off the round', () => {
     [2, null, null],
     [4, 41, 'manual'],
   ]);
+});
+
+describe.each([
+  ['server', server],
+  ['client', client],
+])('%s opened means a win', (_label, m) => {
+  test('multiplier 0 with win null is not a result; a manual multiplier still counts', () => {
+    const bonuses = [{ slot: 'Gates of Olympus', bet: 1, win: null, multiplier: 0 }];
+    expect(m.resultRows(ROUND, bonuses)[0]).toMatchObject({ multiplier: null, source: null, matchCount: 1 });
+    expect(m.resultRows(ROUND, bonuses, { 1: { multiplier: 0, bonusIndex: null } })[0]).toMatchObject({ multiplier: 0, source: 'manual' });
+  });
 });

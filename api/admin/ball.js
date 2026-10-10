@@ -198,6 +198,8 @@ export default async function handler(req, res) {
     if (action === 'draw') {
       const entry = await mutate(ref, async (tx, round) => {
         if (round.status !== 'open') throw new ActionError(400, 'NOT_OPEN');
+        // Read inside the transaction, so a retry doesn't reuse a stale clock.
+        const nowMs = Date.now();
         const last = tsMs(round.lastDrawAt);
         if (last != null && nowMs < last + DRAW_REVEAL_MS) throw new ActionError(409, 'DRAW_BUSY');
         const drum = await tx.get(ref.collection('balls').where('status', '==', 'drum'));
@@ -223,7 +225,7 @@ export default async function handler(req, res) {
         tx.update(ref, { rack: [...rack, next], lastDrawAt: drawnAt });
         return next;
       });
-      return res.status(200).json({ ok: true, entry: { ...entry, drawnAt: nowMs } });
+      return res.status(200).json({ ok: true, entry: { ...entry, drawnAt: entry.drawnAt.toMillis() } });
     }
 
     if (action === 'scratch') {
@@ -234,6 +236,9 @@ export default async function handler(req, res) {
         const i = rack.findIndex((e) => e.drawNo === drawNo);
         if (i === -1) throw new ActionError(400, 'NOT_DRAWN');
         if (rack[i].scratched) throw new ActionError(400, 'ALREADY_SCRATCHED');
+        // Scratching mid-reveal would cut the takeover short and spoil the ball.
+        const drawn = tsMs(rack[i].drawnAt);
+        if (drawn != null && Date.now() < drawn + DRAW_REVEAL_MS) throw new ActionError(409, 'REVEAL_PLAYING');
         const ballRef = ref.collection('balls').doc(rack[i].twitchId);
         const ballSnap = await tx.get(ballRef);
         const next = rack.map((e, j) => (j === i ? { ...e, scratched: true } : e));

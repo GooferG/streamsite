@@ -194,6 +194,17 @@ describe('scratch', () => {
     expect((await call({ action: 'scratch', id: 'r1', drawNo: 9 })).body).toEqual({ error: 'NOT_DRAWN' });
   });
 
+  test('refuses while that draw is still revealing, allows after', async () => {
+    seedRound('r1', { rack: [entry(1, 'a', { drawnAt: ts(NOW - 7999) })] });
+    seedBall('r1', 'a', { status: 'drawn', drawNo: 1 });
+    const early = await call({ action: 'scratch', id: 'r1', drawNo: 1 });
+    expect(early.statusCode).toBe(409);
+    expect(early.body).toEqual({ error: 'REVEAL_PLAYING' });
+    expect(round().rack[0].scratched).toBe(false);
+    Date.now.mockReturnValue(NOW + 1);
+    expect((await call({ action: 'scratch', id: 'r1', drawNo: 1 })).statusCode).toBe(200);
+  });
+
   test('nothing changes on a settled round', async () => {
     seedRound('r1', { status: 'settled', rack: [entry(1, 'a')] });
     expect((await call({ action: 'scratch', id: 'r1', drawNo: 1 })).body).toEqual({ error: 'FINAL' });

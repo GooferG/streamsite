@@ -106,7 +106,7 @@ test('takenSlots: the drum and the rack hold slots; scratches are marked', () =>
 
 test('liveRows, leaderRow, hasResults', () => {
   const round = { id: 'r1', status: 'open', rack: [e(1, { slotName: 'Gates of Olympus' }), e(2, { slotName: 'Sugar Rush' })] };
-  const hunt = { bonuses: [{ slot: 'Gates of Olympus', multiplier: 50 }, { slot: 'Sugar Rush', multiplier: 120 }] };
+  const hunt = { bonuses: [{ slot: 'Gates of Olympus', multiplier: 50, win: 50 }, { slot: 'Sugar Rush', multiplier: 120, win: 120 }] };
   const rows = liveRows(round, hunt);
   expect(rows.map((r) => r.multiplier)).toEqual([50, 120]);
   expect(leaderRow(rows).drawNo).toBe(2);
@@ -192,4 +192,39 @@ test('withScratched merges scratched draws in draw order', () => {
   const rows = [{ drawNo: 1, multiplier: 5 }, { drawNo: 3, multiplier: null }];
   expect(withScratched(round, rows).map((r) => [r.drawNo, !!r.scratched])).toEqual([[1, false], [2, true], [3, false]]);
   expect(withScratched({ rack: [e(1)] }, rows)).toBe(rows);
+});
+
+describe('anchored moments (clock skew)', () => {
+  const local = 5_000_000;
+  const anchored = (drawNo, ms) => ({ draws: new Map([[drawNo, ms]]), settle: null });
+
+  test('an anchored draw plays from its anchor even when drawnAt is 20s in the past', () => {
+    const round = { id: 'r1', rack: [e(1, { drawnAt: at(local - 20_000) })] };
+    expect(drawMoment(round, local + 1000)).toBeNull();
+    expect(drawMoment(round, local + 1000, anchored(1, local))).toMatchObject({ key: 'r1:1', at: local, endsAt: local + DRAW_REVEAL_MS });
+  });
+
+  test('an anchored draw plays even when drawnAt is 9s in the future', () => {
+    const round = { id: 'r1', rack: [e(1, { drawnAt: at(local + 9_000) })] };
+    expect(drawMoment(round, local + 500, anchored(1, local))).toMatchObject({ at: local });
+    expect(drawMoment(round, local + DRAW_REVEAL_MS, anchored(1, local))).toBeNull();
+  });
+
+  test('an unanchored draw up to 10s in the future starts now; further out is null', () => {
+    expect(drawMoment({ id: 'r1', rack: [e(1, { drawnAt: at(local + 5_000) })] }, local)).toMatchObject({ key: 'r1:1' });
+    expect(drawMoment({ id: 'r1', rack: [e(1, { drawnAt: at(local + 15_000) })] }, local)).toBeNull();
+  });
+
+  test('the winner card anchors to the local settle time', () => {
+    const settled = { id: 'r1', status: 'settled', settledAt: at(local - 30_000), winner: { drawNo: 1 } };
+    expect(winnerMoment(settled, local + 1000)).toBeNull();
+    expect(winnerMoment(settled, local + 1000, { draws: new Map(), settle: local })).toMatchObject({ at: local, endsAt: local + WINNER_HOLD_MS });
+    const ahead = { ...settled, settledAt: at(local + 9_000) };
+    expect(winnerMoment(ahead, local + 500, { draws: new Map(), settle: local })).toMatchObject({ at: local });
+  });
+});
+
+test('takenSlots also counts rack entries that are not scratched', () => {
+  const map = takenSlots({ rack: [e(4, { slotId: 's4', displayName: 'D' })] }, []);
+  expect(map.get('s4')).toEqual({ holder: 'D', scratched: false });
 });

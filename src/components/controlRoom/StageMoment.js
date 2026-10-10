@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import { useControlRoom } from '../../contexts/ControlRoomContext';
 import { useGiveawayFeed } from '../../hooks/useGiveawayFeed';
 import { useClock } from '../../hooks/useClock';
+import useMomentAnchors from '../../hooks/useMomentAnchors';
 import { pickKey } from '../../utils/giveaway';
 import { CrtStyles } from '../giveaway/RevealScreen';
 import RevealStage from '../giveaway/RevealStage';
@@ -60,20 +61,21 @@ export default function StageMoment() {
   }, [round]);
 
   const ballRound = cr.ballRound;
+  const anchors = useMomentAnchors(ballRound);
   useEffect(() => {
     const t = Date.now();
-    const draw = ballDrawMoment(ballRound, staged.current.ballDraw, t);
+    const draw = ballDrawMoment(ballRound, staged.current.ballDraw, t, anchors);
     if (draw) {
       staged.current.ballDraw = draw.key;
       setMoment(draw);
       return;
     }
-    const win = ballWinnerMoment(ballRound, staged.current.ballWinner, t);
+    const win = ballWinnerMoment(ballRound, staged.current.ballWinner, t, anchors);
     if (win) {
       staged.current.ballWinner = win.key;
       setMoment(win);
     }
-  }, [ballRound]);
+  }, [ballRound, anchors]);
 
   const over = !!moment && (now >= moment.endsAt || !stillOnStage(moment, giveaway, ballRound));
   useEffect(() => {

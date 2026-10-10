@@ -73,7 +73,7 @@ test('Stage mode: OBS skips the takeover but keeps the corner box', () => {
 test('a linked hunt with results shows the live rack', () => {
   show(
     { ...base, huntId: 'h1', rack: [drawn(NOW - 60_000)] },
-    { hunt: { bonuses: [{ slot: 'Gates of Olympus', multiplier: 412 }] } }
+    { hunt: { bonuses: [{ slot: 'Gates of Olympus', multiplier: 412, win: 412 }] } }
   );
   // RackBoard splits the multiplier into its own span, so match on textContent.
   expect(screen.getByText((_, el) => el.tagName === 'SPAN' && el.textContent === 'Leader @CoolGuy · 412x')).toBeTruthy();

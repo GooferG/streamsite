@@ -13,8 +13,9 @@ export const ACTIVE_STATUSES = ['open', 'closed'];
 // Only fresh draws post on their own; older ones go through Retry.
 export const AUTO_POST_WINDOW_MS = 5 * 60 * 1000;
 export const BALL_PATH = '/gamba/ball';
-// A timestamp up to this far "in the future" is clock skew, not a bug.
-const SKEW_MS = 2000;
+// A moment without a local anchor may start up to this far "in the future"
+// (the server clock ahead of this browser) and still counts as starting now.
+const SKEW_MS = 10000;
 
 export const drawKey = (drawNo) => `d${drawNo}`;
 export const pad2 = (n) => String(n).padStart(2, '0');
@@ -40,19 +41,26 @@ export function latestDraw(round) {
 // The draw takeover to play right now, or null. Timed off drawnAt like the
 // giveaway reveal off rolledAt, so a reload mid-reveal resumes and a reload
 // after it never replays.
-export function drawMoment(round, now) {
+//
+// `anchors` (hooks/useMomentAnchors) holds the local time a live draw or
+// settle arrived: it replaces the server timestamp as the start, so an OBS or
+// Stage clock that is off by more than the reveal can't drop or truncate it.
+export function drawMoment(round, now, anchors) {
   const entry = latestDraw(round);
-  const at = tsMillis(entry && entry.drawnAt);
-  if (!entry || entry.scratched || at == null) return null;
+  if (!entry || entry.scratched) return null;
+  const anchor = anchors && anchors.draws ? anchors.draws.get(entry.drawNo) : null;
+  const at = anchor != null ? anchor : tsMillis(entry.drawnAt);
+  if (at == null) return null;
   const elapsed = now - at;
-  if (elapsed >= DRAW_REVEAL_MS || elapsed < -SKEW_MS) return null;
+  if (elapsed >= DRAW_REVEAL_MS || (anchor == null && elapsed < -SKEW_MS)) return null;
   return { kind: 'draw', key: `${round.id}:${entry.drawNo}`, entry, at, endsAt: at + DRAW_REVEAL_MS };
 }
 
-export function winnerMoment(round, now) {
+export function winnerMoment(round, now, anchors) {
   if (!round || round.status !== 'settled' || !round.winner) return null;
-  const at = tsMillis(round.settledAt);
-  if (at == null || now - at >= WINNER_HOLD_MS || now - at < -SKEW_MS) return null;
+  const anchor = anchors ? anchors.settle : null;
+  const at = anchor != null ? anchor : tsMillis(round.settledAt);
+  if (at == null || now - at >= WINNER_HOLD_MS || (anchor == null && now - at < -SKEW_MS)) return null;
   return { kind: 'winner', key: `${round.id}:winner`, at, endsAt: at + WINNER_HOLD_MS };
 }
 
@@ -79,8 +87,9 @@ export function formatMulti(multiplier) {
   return `${n.toLocaleString('en-US', { maximumFractionDigits: n < 100 ? 2 : 0 })}x`;
 }
 
-// Slots nobody can call right now: every ball in the drum or on the rack,
-// plus scratched draws (blocked for the round).
+// Slots nobody can call right now: every ball in the drum or on the rack
+// (the rack covers a ball whose doc hasn't loaded yet), plus scratched draws
+// (blocked for the round).
 export function takenSlots(round, balls) {
   const out = new Map();
   for (const b of balls || []) {
@@ -88,6 +97,7 @@ export function takenSlots(round, balls) {
   }
   for (const e of (round && round.rack) || []) {
     if (e.scratched) out.set(e.slotId, { holder: who(e), scratched: true });
+    else if (!out.has(e.slotId)) out.set(e.slotId, { holder: who(e), scratched: false });
   }
   return out;
 }

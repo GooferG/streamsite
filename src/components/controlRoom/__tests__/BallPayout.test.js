@@ -29,7 +29,7 @@ const PREVIEW = {
 
 beforeEach(() => {
   useBallHunt.mockReturnValue({
-    hunt: { bonuses: [{ slot: 'Gates of Olympus', multiplier: 412, win: 412, bet: 1 }, { slot: 'Sugar Rush 1000', multiplier: null }] },
+    hunt: { bonuses: [{ slot: 'Gates of Olympus', multiplier: 412, win: 412, bet: 1 }, { slot: 'Sugar Rush 1000', multiplier: null, win: null }] },
     stale: false,
     loading: false,
   });
@@ -119,7 +119,7 @@ test('rows show win and bet; unmatched and unopened rows are told apart', () => 
   expect(screen.getByText('Not opened yet')).toBeTruthy();
   expect(screen.getByLabelText('Win for ball 2')).toBeTruthy();
   unmount();
-  useBallHunt.mockReturnValue({ hunt: { bonuses: [{ slot: 'Gates of Olympus', multiplier: 412 }] }, stale: false, loading: false });
+  useBallHunt.mockReturnValue({ hunt: { bonuses: [{ slot: 'Gates of Olympus', multiplier: 412, win: 412 }] }, stale: false, loading: false });
   render(<BallPayout round={ROUND} />);
   expect(screen.getByText('No hunt row: type it')).toBeTruthy();
   expect(screen.queryByText('Not opened yet')).toBeNull();

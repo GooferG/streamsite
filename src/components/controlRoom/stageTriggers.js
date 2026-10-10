@@ -31,14 +31,14 @@ export function resultsMoment(round, lastId, now) {
 
 // A Goofer Ball draw that just landed: the same takeover the OBS overlay
 // plays, timed off drawnAt, so Stage and OBS are frame-for-frame the same.
-export function ballDrawMoment(round, lastKey, now) {
-  const m = drawMoment(round, now);
+export function ballDrawMoment(round, lastKey, now, anchors) {
+  const m = drawMoment(round, now, anchors);
   if (!m || m.key === lastKey || now - m.at >= STAGE_FRESH_MS) return null;
   return { kind: 'ball-draw', key: m.key, at: m.at, endsAt: m.endsAt, entry: m.entry, round };
 }
 
-export function ballWinnerMoment(round, lastKey, now) {
-  const m = winnerMoment(round, now);
+export function ballWinnerMoment(round, lastKey, now, anchors) {
+  const m = winnerMoment(round, now, anchors);
   if (!m || m.key === lastKey || now - m.at >= STAGE_FRESH_MS) return null;
   return { kind: 'ball-winner', key: m.key, at: m.at, endsAt: m.endsAt, round };
 }

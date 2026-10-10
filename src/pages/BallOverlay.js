@@ -7,6 +7,7 @@ import useBallsFeed from '../hooks/useBallsFeed';
 import useBallHunt from '../hooks/useBallHunt';
 import useBallArrivals from '../hooks/useBallArrivals';
 import useBroadcastSettings from '../hooks/useBroadcastSettings';
+import useMomentAnchors from '../hooks/useMomentAnchors';
 import { useToasts } from '../components/ball/toastQueue';
 import CornerBox from '../components/ball/CornerBox';
 import RackBoard from '../components/ball/RackBoard';
@@ -81,14 +82,15 @@ export default function BallOverlay() {
   // Stage mode: a staff browser plays the full-screen moments; OBS keeps
   // only the corner cards, so nothing plays twice.
   const fullScreen = !liveEnabled || (broadcast.ready && broadcast.reveals !== 'stage');
-  const drawProbe = drawMoment(round, Date.now());
-  const probe = drawProbe || winnerMoment(round, Date.now());
+  const anchors = useMomentAnchors(round);
+  const drawProbe = drawMoment(round, Date.now(), anchors);
+  const probe = drawProbe || winnerMoment(round, Date.now(), anchors);
   // Only the full-screen draw needs frame-accurate time; a winner hold (or a
   // draw in Stage mode) just has to unmount on time.
   const now = useClock({ fast: !!drawProbe && fullScreen, intervalMs: 250, active: !!probe });
   // Gate on the live probe: once the clock stops, `now` is stale and would
   // keep a finished moment on screen forever.
-  const moment = probe ? drawMoment(round, now) || winnerMoment(round, now) : null;
+  const moment = probe ? drawMoment(round, now, anchors) || winnerMoment(round, now, anchors) : null;
 
   let body = null;
   if (moment && fullScreen && moment.kind === 'draw') {

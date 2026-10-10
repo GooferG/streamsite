@@ -25,6 +25,11 @@
 @keyframes gb-rise { from { transform: translateY(0); } to { transform: translateY(-260%); } }
 .gb-cut-out { animation: gb-cut-out 0.5s steps(3) both; }
 @keyframes gb-cut-out { to { opacity: 0; } }
+/* The TV the draw and winner moments play in (BallTv), dimmed like the giveaway reveal. */
+.gb-tv-dim { background: radial-gradient(ellipse at center, theme('colors.black / 62%') 0%, theme('colors.black / 90%') 75%); animation: gb-tv-in 0.35s ease-out both; }
+.gb-tv-dim.gb-cut-out { animation: gb-cut-out 0.5s steps(3) both; }
+@keyframes gb-tv-in { from { opacity: 0; } to { opacity: 1; } }
+.gb-tv { background: theme('colors.black'); border: 2px solid theme('colors.white / 15%'); box-shadow: 0 0 0 6px theme('colors.black / 90%'), 0 30px 80px theme('colors.black / 60%'); }
 .gb-toast-in { animation: gb-toast-in 0.3s ease-out both; }
 @keyframes gb-toast-in { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
 /* OBS overlays don't honour reduced motion (spec); CH 42's root carries gb-site. */

@@ -374,7 +374,7 @@ Goofer Ball is WGOOF Channel 42: a cheap 90s local-TV lottery draw, not a casino
   - The lower third is `onair.winner` over `onair.paper`.
 - **The drum:** canvas balls between the code-drawn glass and the stand. Each ball wears its slot art as a decal. All lettering is real text.
 - **There is no host:** the streamer's webcam is the host.
-- **The OBS overlay** rests in a corner box and takes over the screen only for a draw (8s) and the winner card (12s).
+- **The OBS overlay** rests in a corner box. A draw (8s) and the winner card (12s) play in a TV in the middle of the stream (`BallTv`: 56% of the canvas width, the stream dimmed behind it, the same frame as the giveaway reveal), with the full set rendered at canvas size and scaled into it; the corner box steps aside while one plays.
 - **CH 42 layout:** the set strip is on top. From `lg`, "Call one in" and "Your ball" stack in a 24rem column beside it. On phones the order is strip, Call one in, Your ball, rack, drum list (folded), past draws (folded while a round is live). Below the strip these are regular On Air panels.
 - **No spoilers:** CH 42 and the Gamba hub row hold each draw until its chat line is due (`drawnAt + DRAW_REVEAL_MS + STREAM_DELAY_MS`), and hold a settle for `STREAM_DELAY_MS`. This uses `spoilerSafe` in `src/utils/ball.js` on a `useRevealClock` timer, so the site never runs ahead of the stream.
 - **Scratched draws:** every screen (CH 42 rack, past racks, drum list, overlay rack board and corner chips) shows a scratched draw struck through and labelled "Scratched", in draw order.

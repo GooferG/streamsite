@@ -1,14 +1,15 @@
+import BallTv from './BallTv';
 import ChannelSet from './ChannelSet';
 import BallFace from './BallFace';
 import { formatMulti, prizeText, who } from '../../utils/ball';
 
 const WINNER_FINE = 'Results certified by the Goofer Gaming Commission (one guy). Drawn nightly at 4:20.';
 
-// "Tonight's winning ball": played WINNER_HOLD_MS from settledAt.
+// "Tonight's winning ball": played WINNER_HOLD_MS from settledAt, in the TV.
 export default function WinnerCard({ round }) {
   const w = round.winner;
   return (
-    <div className="fixed inset-0" role="presentation">
+    <BallTv>
       <ChannelSet title={false} bug={false} live={false} fine={WINNER_FINE}>
         <p className="gb-title absolute inset-x-0 top-[7%] text-center font-display text-[clamp(2rem,5vw,5.5rem)] uppercase leading-none">
           Tonight's winning ball
@@ -25,6 +26,6 @@ export default function WinnerCard({ round }) {
       <p className="sr-only" aria-live="polite">
         {`Tonight's winning ball: ${w.slotName} at ${formatMulti(w.multiplier)}, called in by ${who(w)}`}
       </p>
-    </div>
+    </BallTv>
   );
 }

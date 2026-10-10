@@ -79,7 +79,7 @@ export default function BallOverlay() {
   }, []);
 
   const round = data.round;
-  // Stage mode: a staff browser plays the full-screen moments; OBS keeps
+  // Stage mode: a staff browser plays the draw and winner TV moments; OBS keeps
   // only the corner cards, so nothing plays twice.
   const fullScreen = !liveEnabled || (broadcast.ready && broadcast.reveals !== 'stage');
   const anchors = useMomentAnchors(round);

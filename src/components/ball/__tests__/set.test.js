@@ -74,3 +74,37 @@ test('the drum count: empty drum with a known count is 0, unknown count keeps pl
   rerender(<DrawTakeover entry={ENTRY} rack={[ENTRY]} balls={[]} left={null} elapsed={1000} sound={sound()} />);
   expect(getByTestId('rig').getAttribute('data-count')).toBe('24');
 });
+
+describe('the TV the moments play in', () => {
+  const { tvBox } = require('../BallTv');
+
+  test('56% of a 16:9 canvas, the set scaled to fit', () => {
+    const box = tvBox(1920, 1080);
+    expect(box.width).toBeCloseTo(1075.2);
+    expect(box.height).toBeCloseTo(604.8);
+    expect(box.scale).toBeCloseTo(0.56);
+    // The set inside is a full-width 16:9 canvas.
+    expect(box.innerWidth).toBe(1920);
+    expect(box.innerHeight).toBeCloseTo(1080);
+  });
+
+  test('a short, wide window caps the TV by height', () => {
+    const box = tvBox(1920, 600);
+    expect(box.height).toBeCloseTo(540);
+    expect(box.width).toBeCloseTo(960);
+    expect(box.scale).toBeCloseTo(0.5);
+  });
+
+  test('the draw plays inside the TV, static cut included', () => {
+    const { getByTestId } = render(<DrawTakeover entry={ENTRY} rack={[ENTRY]} balls={[]} left={61} elapsed={200} sound={sound()} />);
+    const tv = getByTestId('ball-tv');
+    expect(tv.querySelector('.gb-set')).toBeTruthy();
+    expect(tv.querySelector('.gb-static')).toBeTruthy();
+  });
+
+  test('the winner card plays inside the TV', () => {
+    const round = { prize: { tickets: 200, prize: null }, winner: { ...ENTRY, drawNo: 1, multiplier: 412 } };
+    const { getByTestId } = render(<WinnerCard round={round} />);
+    expect(getByTestId('ball-tv').textContent).toContain("Tonight's winning ball");
+  });
+});

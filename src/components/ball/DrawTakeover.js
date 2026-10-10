@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import BallTv from './BallTv';
 import ChannelSet from './ChannelSet';
 import DrumRig from './DrumRig';
 import BallFace from './BallFace';
@@ -18,8 +19,8 @@ function usePhaseSound(phase, sound) {
   }, [phase, sound]);
 }
 
-// The full-screen draw (spec: Draw takeover, DRAW_REVEAL_MS from drawnAt):
-// static cut in, the blower roars, the ball rides the tube, the close-up spins
+// The draw (spec: Draw takeover, DRAW_REVEAL_MS from drawnAt), played in the
+// TV in the middle of the stream: static cut in, the blower roars, the ball rides the tube, the close-up spins
 // to the slot art and the caller, the lower third holds, cut back out.
 export default function DrawTakeover({ entry, rack = [], balls = [], left = null, elapsed, sound = NO_SOUND }) {
   const phase = drawPhase(elapsed);
@@ -32,7 +33,7 @@ export default function DrawTakeover({ entry, rack = [], balls = [], left = null
   const onRack = (lower ? [...earlier, entry] : earlier).slice(-12);
 
   return (
-    <div className={`fixed inset-0 ${phase === 'out' ? 'gb-cut-out' : ''}`} role="presentation">
+    <BallTv out={phase === 'out'}>
       <ChannelSet>
         <DrumRig
           balls={balls}
@@ -61,6 +62,6 @@ export default function DrawTakeover({ entry, rack = [], balls = [], left = null
       <p className="sr-only" aria-live="polite">
         {`Ball ${entry.drawNo}: ${entry.slotName}, called in by ${who(entry)}`}
       </p>
-    </div>
+    </BallTv>
   );
 }

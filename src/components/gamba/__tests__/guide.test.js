@@ -211,14 +211,16 @@ describe('guideRows', () => {
     expect(r({ round: { status: 'open', prize, rack: [] }, count: 64 })).toMatchObject({
       now: 'Drum open · 64 balls',
       next: 'Top multi wins 200 tickets + $5',
-      lit: true,
+      lit: false,
       live: true,
     });
     expect(r({ round: { status: 'open', prize, rack: [] }, count: null }).now).toBe('Drum open');
+    expect(r({ round: { status: 'open', prize: null, rack: [] }, count: 3 }).next).toBe('Top multi wins bragging rights');
+    expect(r({ round: { status: 'open', prize: { tickets: 0, prize: null }, rack: [] }, count: 3 }).next).toBe('Top multi wins bragging rights');
     expect(r({ round: { status: 'closed', prize, rack: [{ drawNo: 1, scratched: false }, { drawNo: 2, scratched: true }] } })).toMatchObject({
       now: 'Lineup closed · 1 ball drawn',
       next: 'Results after the hunt',
-      lit: true,
+      lit: false,
       live: false,
     });
     expect(r({ round: { status: 'settled', prize, rack: [], winner: { displayName: 'CoolGuy', multiplier: 412 } } })).toMatchObject({

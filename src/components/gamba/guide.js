@@ -131,14 +131,14 @@ function ballRow(ball) {
   if (round && round.status === 'open') {
     return {
       now: ball.count == null ? 'Drum open' : `Drum open · ${plural(ball.count, 'ball', 'balls')}`,
-      next: `Top multi wins ${prizeText(round.prize)}`,
-      lit: true,
+      next: `Top multi wins ${prizeText(round.prize) || 'bragging rights'}`,
+      lit: false,
       live: true,
       tone: null,
     };
   }
   if (round && round.status === 'closed') {
-    return { now: `Lineup closed · ${plural(drawnEntries(round).length, 'ball', 'balls')} drawn`, next: 'Results after the hunt', lit: true, live: false, tone: null };
+    return { now: `Lineup closed · ${plural(drawnEntries(round).length, 'ball', 'balls')} drawn`, next: 'Results after the hunt', lit: false, live: false, tone: null };
   }
   if (round && round.status === 'settled' && round.winner) {
     return { now: `Last winner @${who(round.winner)} · ${formatMulti(round.winner.multiplier)}`, next: 'Next draw on stream', lit: false, live: false, tone: null };

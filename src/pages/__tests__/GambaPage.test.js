@@ -115,6 +115,6 @@ test('changing channels from the tuner: focus lands on the new channel and the n
   expect(screen.getByText('hunts tool')).toBeTruthy();
   expect(pageHeading().textContent).toBe('Gamba · Hunts');
   expect(document.activeElement).toBe(pageHeading());
-  // Leaderboard is the second of five channels: 30%.
-  expect(screen.getByTestId('tuner-needle').style.left).toBe('30%');
+  // Leaderboard is the second of six channels: 25%.
+  expect(screen.getByTestId('tuner-needle').style.left).toBe('25%');
 });

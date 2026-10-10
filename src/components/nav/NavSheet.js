@@ -27,7 +27,7 @@ function SheetRow({ to, code, label, current, now = false, sub = false, onClick 
         sub ? 'pl-9 text-[0.9375rem] font-medium' : 'text-[1.0625rem] font-bold'
       } ${lit ? MENU_ROW_NOW : 'text-onair-ink-2 hover:bg-white/5'}`}
     >
-      <span className={`${MONO} w-8 flex-none text-xs font-bold tracking-[0.15em] ${lit || current ? 'text-onair-signal' : 'text-onair-ink-5'}`}>
+      <span className={`${MONO} w-10 flex-none text-xs font-bold tracking-[0.15em] ${lit || current ? 'text-onair-signal' : 'text-onair-ink-5'}`}>
         {code}
       </span>
       {label}
@@ -218,7 +218,7 @@ export default function NavSheet({ id, open, onClose, isLive, viewerCount, statu
               }}
               className={`flex min-h-11 w-full items-center gap-3 rounded-onair-control px-3 py-2.5 text-left text-[1.0625rem] font-bold text-onair-ink-2 transition-colors duration-150 hover:bg-white/5 motion-reduce:transition-none ${FOCUS}`}
             >
-              <MonitorPlay size={16} aria-hidden="true" className="w-8 flex-none" />
+              <MonitorPlay size={16} aria-hidden="true" className="w-10 flex-none" />
               Control room
               {launcher.giveaway && (
                 <span className={`${MONO} ml-auto inline-flex items-center gap-1.5 text-[0.625rem] tracking-[0.2em] text-onair-signal-light`}>

@@ -86,6 +86,27 @@ describe('scratch lines', () => {
     expect(ballAction).toHaveBeenCalledTimes(1);
     expect(ballAction).toHaveBeenCalledWith({ action: 'announce', id: 'r1', event: 'scratch', drawNo: 1 });
   });
+
+  test('a scratch line still "later" after its retry surfaces TOO_EARLY with a retry', async () => {
+    // This browser's clock runs ahead: the server keeps answering "later".
+    ballAction.mockResolvedValue({ ok: true, status: 200, data: { ok: true, announce: { posted: false, reason: 'later' } } });
+    const scratched = { ...entry(1, 30_000), scratched: true };
+    const round = { id: 'r1', rack: [scratched], announced: { draws: {}, scratches: {} } };
+    const { result } = renderHook(() => useBallDrawAnnounce(round, { armed: true }));
+    await act(async () => {
+      jest.advanceTimersByTime(10);
+    });
+    await act(async () => {
+      jest.advanceTimersByTime(1_600);
+    });
+    expect(ballAction).toHaveBeenCalledTimes(2);
+    expect(result.current.error).toBe('TOO_EARLY');
+    ballAction.mockClear();
+    await act(async () => {
+      result.current.retry();
+    });
+    expect(ballAction).toHaveBeenCalledWith({ action: 'announce', id: 'r1', event: 'scratch', drawNo: 1 });
+  });
 });
 
 test('a TOO_EARLY retry survives a new draw landing', async () => {

@@ -35,7 +35,9 @@ export function useBallDrawAnnounce(round, { armed = true } = {}) {
         retryTimers.current.add(t);
         return;
       }
-      const problem = announceProblem(ok, data);
+      // Still "later" after the retry: the clock is too far ahead to wait out
+      // here, so surface it with a Retry like a draw line's TOO_EARLY.
+      const problem = later ? 'TOO_EARLY' : announceProblem(ok, data);
       setState((s) => {
         const failed = s.roundId === id ? { ...s.failed } : {};
         if (problem) failed[failKey] = problem;

@@ -60,8 +60,8 @@ test('off air: the last winner, no finder, past draws expand', () => {
   expect(screen.getByText("Drum's closed. Next draw whenever the drum opens on stream.")).toBeTruthy();
   expect(screen.queryByLabelText('Search slots')).toBeNull();
   const past = within(screen.getByRole('region', { name: 'Past draws' }));
-  expect(past.getAllByRole('button', { name: /^Rack/ })).toHaveLength(3);
-  fireEvent.click(past.getAllByRole('button', { name: /^Rack/ })[0]);
+  expect(past.getAllByRole('button', { name: /^Show rack/ })).toHaveLength(3);
+  fireEvent.click(past.getAllByRole('button', { name: /^Show rack/ })[0]);
   expect(past.getByText('01 Gates of Olympus 412x')).toBeTruthy();
 });
 
@@ -173,7 +173,7 @@ test('an expanded past rack shows a scratched draw struck through', () => {
   const past = frontFixture('offair', NOW).past.map((r, i) => (i === 0 ? { ...r, rack: r.rack.map((e) => (e.drawNo === 2 ? { ...e, scratched: true } : e)) } : r));
   render(<BallFront {...frontFixture('offair', NOW)} round={past[0]} past={past} onLoadMore={jest.fn()} />);
   const region = within(screen.getByRole('region', { name: 'Past draws' }));
-  fireEvent.click(region.getAllByRole('button', { name: /^Rack/ })[0]);
+  fireEvent.click(region.getAllByRole('button', { name: /^Show rack/ })[0]);
   const chip = region.getByText('02 Wanted Dead or a Wild Scratched');
   expect(chip.className).toContain('line-through');
 });

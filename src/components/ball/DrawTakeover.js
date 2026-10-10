@@ -44,7 +44,7 @@ export default function DrawTakeover({ entry, rack = [], balls = [], left = null
         />
         {shown && <BallFace entry={entry} spinning={phase === 'spin'} className="absolute left-[46%] top-[16%] w-[28%]" />}
         {onRack.length > 0 && (
-          <ol className="absolute bottom-[27%] left-[5%] flex gap-1.5" aria-hidden="true">
+          <ol className="absolute bottom-[27%] left-[37%] flex max-w-[50%] flex-wrap gap-1.5" aria-hidden="true">
             {onRack.map((e) => (
               <li
                 key={e.drawNo}

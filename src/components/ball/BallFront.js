@@ -184,11 +184,11 @@ function PastRow({ round }) {
   const day = dayLabel(round.settledAt);
   return (
     <li className="border-t border-white/5 py-2">
-      <div className="grid grid-cols-[4.5rem_1fr_auto] items-center gap-3">
+      <div className="grid grid-cols-[4.5rem_minmax(0,1fr)_auto] items-center gap-3">
         <span className={`${MONO} text-[0.6875rem] tracking-[0.15em] text-onair-ink-4`}>{day}</span>
-        <span className="min-w-0 truncate text-[0.875rem] font-bold">
-          {w.slotName}
-          <span className="block font-onair-mono text-[0.6875rem] font-normal text-onair-viewer-light">{`@${who(w)} · ${prizeText(round.prize)}`}</span>
+        <span className="min-w-0">
+          <span className="block truncate text-[0.875rem] font-bold">{w.slotName}</span>
+          <span className="block font-onair-mono text-[0.6875rem] text-onair-viewer-light">{`@${who(w)} · ${prizeText(round.prize)}`}</span>
         </span>
         <span className="font-display text-[1.25rem] text-onair-winner-warm">{formatMulti(w.multiplier)}</span>
       </div>
@@ -196,13 +196,13 @@ function PastRow({ round }) {
         type="button"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}
-        className={`${MONO} mt-1 text-[0.625rem] tracking-[0.18em] text-onair-ink-4`}
+        className={`${MONO} mt-1 ml-[5.25rem] text-[0.625rem] tracking-[0.18em] text-onair-ink-4`}
       >
-        {open ? 'Hide rack' : 'Rack'}
+        {open ? 'Hide rack' : 'Show rack'}
         <span className="sr-only">{` ${day} ${w.slotName}`}</span>
       </button>
       {open && (
-        <ul className="mt-1.5 flex flex-wrap gap-1.5">
+        <ul className="ml-[5.25rem] mt-1.5 flex flex-wrap gap-1.5">
           {withScratched(round, settledRows(round)).map((r) => (
             <li key={r.drawNo} className={`${MONO} rounded-full bg-white/5 px-2.5 py-1 text-[0.625rem] tracking-[0.15em] ${r.scratched ? 'text-onair-ink-5 line-through' : 'text-onair-ink-3'}`}>
               {`${pad2(r.drawNo)} ${r.slotName} ${r.scratched ? 'Scratched' : formatMulti(r.multiplier)}`}
@@ -249,15 +249,19 @@ export default function BallFront({ round: rawRound, balls: rawBalls = [], balls
   const active = isActive(round);
   const lastWinner = (round && round.status === 'settled' && round.winner ? round : null) || past.find((r) => r.winner) || null;
   const mine = active && ballsReady && me ? balls.find((b) => b.twitchId === me) : null;
+  const finder = active && round.status === 'open';
+  const side = finder || !!mine;
   return (
     <div className="gb-site space-y-4 font-onair text-onair-ink-1">
-      <SetStrip round={round} balls={active ? balls : []} still={still} lastWinner={lastWinner} ready={ballsReady} roundError={roundError} />
-      {active && round.status === 'open' && (
-        <div className="lg:max-w-[28rem]">
-          <SlotFinder taken={takenSlots(round, balls)} />
-        </div>
-      )}
-      {mine && <YourBall ball={mine} />}
+      <div className={side ? 'grid gap-4 lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start' : undefined}>
+        <SetStrip round={round} balls={active ? balls : []} still={still} lastWinner={lastWinner} ready={ballsReady} roundError={roundError} />
+        {side && (
+          <div className="space-y-4">
+            {finder && <SlotFinder taken={takenSlots(round, balls)} />}
+            {mine && <YourBall ball={mine} />}
+          </div>
+        )}
+      </div>
       {active && (
         <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
           <RackPanel round={round} hunt={hunt} stale={stale} />

@@ -167,3 +167,12 @@ test('rack board counts scratched rows toward the eight-row cap', () => {
   expect(items[7].textContent).toContain('Scratched');
   expect(items[8].textContent).toBe('+2 earlier');
 });
+
+test('dimming never touches a row or chip container: the card stays opaque over the stream', () => {
+  const rack = Array.from({ length: 10 }, (_, i) => ({ drawNo: i + 1, slotName: `Slot ${i + 1}`, displayName: `V${i + 1}`, scratched: i === 9 }));
+  const { unmount } = render(<RackBoard round={{ ...ROUND, rack }} rows={many(9)} />);
+  screen.getAllByRole('listitem').forEach((li) => expect(li.className).not.toMatch(/opacity-/));
+  unmount();
+  render(<CornerBox round={{ ...ROUND, rack: [{ drawNo: 2, slotName: 'X', displayName: 'Y', scratched: true }] }} balls={BALLS} />);
+  expect(screen.getByText('02').closest('li').className).not.toMatch(/opacity-/);
+});

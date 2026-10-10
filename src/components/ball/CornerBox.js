@@ -50,8 +50,9 @@ export default function CornerBox({ round, balls = [], toast = null, position = 
             {drawn.length > 0 && (
               <ol className="mt-1.5 flex flex-wrap gap-1" aria-label="Drawn">
                 {drawn.map((e) => (
-                  <li key={e.drawNo} className={`gb-chip flex h-5 w-5 items-center justify-center rounded-full text-[0.625rem] ${e.scratched ? 'line-through opacity-50' : ''}`} title={e.scratched ? 'Scratched' : undefined}>
-                    {pad2(e.drawNo)}
+                  <li key={e.drawNo} className="gb-chip flex h-5 w-5 items-center justify-center rounded-full text-[0.625rem]" title={e.scratched ? 'Scratched' : undefined}>
+                    {/* Dim the number, not the chip: the ball stays opaque over the stream. */}
+                    <span className={e.scratched ? 'line-through opacity-50' : ''}>{pad2(e.drawNo)}</span>
                   </li>
                 ))}
               </ol>

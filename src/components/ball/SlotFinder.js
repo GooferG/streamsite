@@ -63,7 +63,7 @@ export default function SlotFinder({ taken }) {
         {results.map((s) => {
           const t = taken.get(s.id);
           return (
-            <li key={s.id} className={`grid grid-cols-[1.75rem_1fr_auto] items-center gap-2 py-1.5 ${t ? 'opacity-55' : ''}`}>
+            <li key={s.id} className={`grid grid-cols-[1.75rem_minmax(0,1fr)_auto] items-center gap-2 py-1.5 ${t ? 'opacity-55' : ''}`}>
               {s.thumbnail ? <img src={s.thumbnail} alt="" className="h-5 w-7 rounded-[2px] object-cover" /> : <span className="gb-decal h-5 w-7 rounded-[2px]" />}
               <span className="min-w-0 break-words font-onair-mono text-[0.75rem] font-bold">
                 {s.name}

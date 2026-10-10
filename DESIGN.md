@@ -330,7 +330,7 @@ All values live in `tailwind.config.js` under `onair`. Never copy a hex out of t
 ### Navigation
 
 - **The bar is the TV's bezel.** Fixed, 57px (`NAV_H` in `src/components/nav/navMetrics.js`), bezel gradient with `shadow-onair-bar`, no border.
-- **Channels.** Pages carry codes 01–08 (Home … About), shown as mono chyron labels from `xl`; labels only from `lg`; below `lg` the side sheet. Gamba (04) lists its tools as subchannels `4-0 … 4-4` in the nav; inside `/gamba` they read `CH 00 … CH 04` and `CH 42`.
+- **Channels.** Pages carry codes 01–08 (Home … About), shown as mono chyron labels from `xl`; labels only from `lg`; below `lg` the side sheet. Gamba (04) lists its tools as subchannels `4-0 … 4-4 and 4-42` in the nav; inside `/gamba` they read `CH 00 … CH 04` and `CH 42`.
 - **Active.** Teal text on a faint teal wash (`aria-current="page"`, or `"true"` for a section). No underline.
 - **Power LED and tally.** The LED is set dressing and glows only while live. Live shows the red `StatusLight` tally with the viewer count; off air shows a dim readout with the next scheduled stream. Neither appears until a Twitch poll has succeeded.
 - **Menus** are disclosures (`onAir/Popover`), not `role="menu"`.

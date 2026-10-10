@@ -44,20 +44,25 @@ export default function RackBoard({ round, rows: liveRowsIn = [], stale = false,
         {shown.map((r) => (
           <li
             key={r.drawNo}
-            className={`${ROW} text-onair-paper-ink ${leader && leader.drawNo === r.drawNo ? 'bg-onair-winner-pale' : 'bg-onair-paper'} ${r.scratched ? 'opacity-60' : ''}`}
+            className={`${ROW} text-onair-paper-ink ${leader && leader.drawNo === r.drawNo ? 'bg-onair-winner-pale' : 'bg-onair-paper'}`}
           >
-            <span>{pad2(r.drawNo)}</span>
-            {r.thumb ? <img src={r.thumb} alt="" className="h-5 w-7 rounded-[2px] object-cover" /> : <span className="gb-decal h-5 w-7 rounded-[2px]" />}
-            <span className={`min-w-0 truncate ${r.scratched ? 'line-through' : ''}`}>
+            {/* Dim the content, never the row: the paper card stays opaque over the stream. */}
+            <span className={r.scratched ? 'opacity-60' : ''}>{pad2(r.drawNo)}</span>
+            {r.thumb ? (
+              <img src={r.thumb} alt="" className={`h-5 w-7 rounded-[2px] object-cover ${r.scratched ? 'opacity-60' : ''}`} />
+            ) : (
+              <span className={`gb-decal h-5 w-7 rounded-[2px] ${r.scratched ? 'opacity-60' : ''}`} />
+            )}
+            <span className={`min-w-0 truncate ${r.scratched ? 'line-through opacity-60' : ''}`}>
               {r.slotName}
               <span className="block text-[0.625rem] opacity-70">@{who(r)}</span>
             </span>
-            <span className="font-display text-[1.125rem] normal-case tracking-normal">{r.scratched ? <span className="font-onair-mono text-[0.625rem] uppercase tracking-[0.15em]">Scratched</span> : formatMulti(r.multiplier)}</span>
+            <span className={`font-display text-[1.125rem] normal-case tracking-normal ${r.scratched ? 'opacity-60' : ''}`}>{r.scratched ? <span className="font-onair-mono text-[0.625rem] uppercase tracking-[0.15em]">Scratched</span> : formatMulti(r.multiplier)}</span>
           </li>
         ))}
         {hidden > 0 && (
-          <li className={`${ROW} bg-onair-paper text-onair-paper-ink opacity-70`}>
-            <span className="col-span-4">{`+${hidden} earlier`}</span>
+          <li className={`${ROW} bg-onair-paper text-onair-paper-ink`}>
+            <span className="col-span-4 opacity-70">{`+${hidden} earlier`}</span>
           </li>
         )}
       </ol>

@@ -3,7 +3,7 @@
  * Goofer Ball play-test helper: drops fake viewers' balls into the open
  * round, the same docs a real `!slot` writes (ball + slot claim), so the
  * draw flow can be run without chat. Talks to the real Firestore
- * (firebase-admin creds from .env.local), so every fake viewer's id starts
+ * (firebase-admin creds from .env or .env.local), so every fake viewer's id starts
  * with `seed-` and --clear removes exactly those.
  *
  * Usage:
@@ -28,8 +28,9 @@ const NAMES = [
   'RetriggerRita', 'PaylinePete',
 ];
 
-function loadEnv() {
-  const file = path.join(root, '.env.local');
+// .env.local, then .env (where `vercel dev` reads the server-side vars).
+function loadEnv(name) {
+  const file = path.join(root, name);
   if (!existsSync(file)) return;
   for (const line of readFileSync(file, 'utf8').split(/\r?\n/)) {
     const m = /^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/i.exec(line);
@@ -40,10 +41,11 @@ function loadEnv() {
   }
 }
 
-loadEnv();
+loadEnv('.env.local');
+loadEnv('.env');
 for (const key of ['FIREBASE_PROJECT_ID', 'FIREBASE_CLIENT_EMAIL', 'FIREBASE_PRIVATE_KEY']) {
   if (!process.env[key]) {
-    console.error(`Missing ${key} in .env.local (firebase-admin service account).`);
+    console.error(`Missing ${key} in .env (firebase-admin service account).`);
     process.exit(1);
   }
 }

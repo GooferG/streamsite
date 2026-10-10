@@ -10,5 +10,4 @@ export const SLOT_ALIASES = {
   bonanza: 'Sweet Bonanza',
   sb: 'Sweet Bonanza',
   sbx: 'Sweet Bonanza Xmas',
-  'le bandit': 'Le Bandit',
 };

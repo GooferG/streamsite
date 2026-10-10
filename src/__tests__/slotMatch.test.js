@@ -116,3 +116,34 @@ test('a word that only starts a one-word name does not beat names containing the
   expect(m.kind).toBe('ambiguous');
   expect(m.options.map((s) => s.name)).toEqual(['Book of Dead', 'Dead or Alive', 'Deadwood']);
 });
+
+describe('did-you-mean and duplicates', () => {
+  test('ambiguous options keep only bonus-buy slots; none left means no match', () => {
+    const idx = buildSlotIndex([
+      { rainbetSlug: 'a1', name: 'Big Bass Alpha', bonusBuy: false },
+      { rainbetSlug: 'a2', name: 'Big Bass Beta', bonusBuy: true },
+      { rainbetSlug: 'a3', name: 'Big Bass Gamma', bonusBuy: true },
+    ]);
+    const m = matchSlot(idx, 'big bass');
+    expect(m.kind).toBe('ambiguous');
+    expect(m.options.map((o) => o.id)).toEqual(['a2', 'a3']);
+    const none = buildSlotIndex([
+      { rainbetSlug: 'b1', name: 'Big Bass Alpha', bonusBuy: false },
+      { rainbetSlug: 'b2', name: 'Big Bass Beta', bonusBuy: false },
+    ]);
+    expect(matchSlot(none, 'big bass').kind).toBe('none');
+    expect(matchSlot(none, 'big bass alpha')).toMatchObject({ kind: 'exact', slot: { bonusBuy: false } });
+  });
+
+  test('two rows that normalize alike: the bonus-buy one wins', () => {
+    const idx = buildSlotIndex([
+      { rainbetSlug: 'd1', name: 'Dog House', bonusBuy: false },
+      { rainbetSlug: 'd2', name: 'The Dog House!', bonusBuy: true },
+    ]);
+    expect(matchSlot(idx, 'dog house')).toMatchObject({ kind: 'exact', slot: { id: 'd2' } });
+  });
+
+  test('the file is LF', () => {
+    expect(require('fs').readFileSync(require('path').join(__dirname, '../../api/_lib/slotMatch.js'), 'utf8')).not.toContain('\r');
+  });
+});

@@ -242,3 +242,74 @@ test('a stale index answers at once while the refresh runs in the background', a
   expect(ball('v2').slotName).toBe('Gates of Olympus');
   expect(getSlotCatalog).toHaveBeenCalledTimes(2);
 });
+
+describe('swap throttle', () => {
+  const ts = (ms) => __fake.Timestamp.fromMillis(ms);
+  const seedMine = (updatedAtMs) => {
+    seedBall('v1', { slotId: 'sugar-rush', slotName: 'Sugar Rush', updatedAt: ts(updatedAtMs) });
+    __fake.seed('ball_rounds/r1/claims/sugar-rush', { twitchId: 'v1', scratched: false });
+  };
+
+  test('a swap inside 15s is refused with no writes', async () => {
+    seedOpen();
+    seedMine(NOW - 5000);
+    expect(await run('!slot gates of olympus')).toMatchObject({ outcome: 'SWAP_TOO_SOON', replied: true });
+    expect(replies()).toEqual(['@Viewer1 easy — you just swapped. Wait a few seconds, then try again.']);
+    expect(ball().slotName).toBe('Sugar Rush');
+    expect(claimIds()).toEqual(['sugar-rush']);
+  });
+
+  test('a swap after 15s goes through', async () => {
+    seedOpen();
+    seedMine(NOW - 16_000);
+    expect(await run('!slot gates of olympus')).toMatchObject({ outcome: 'SWAP' });
+    expect(ball().slotName).toBe('Gates of Olympus');
+    expect(claimIds()).toEqual(['gates-of-olympus']);
+  });
+
+  test('a first entry is unaffected', async () => {
+    seedOpen();
+    expect(await run('!slot gates of olympus')).toMatchObject({ outcome: 'NEW' });
+  });
+});
+
+test('a failed follower check says so and still enters nobody', async () => {
+  seedOpen();
+  isFollower.mockResolvedValue(null);
+  expect(await run('!slot sugar rush')).toMatchObject({ outcome: 'FOLLOW_CHECK_FAILED' });
+  expect(replies()).toEqual(["@Viewer1 couldn't check your follow right now — try again in a minute."]);
+  expect(ball()).toBeUndefined();
+});
+
+test('a draw that has not reached its chat line yet reads as still in the drum', async () => {
+  seedOpen();
+  const drawnAt = __fake.Timestamp.fromMillis(NOW - 2000);
+  seedBall('v1', { slotId: 'sugar-rush', slotName: 'Sugar Rush', status: 'drawn', drawNo: 1, updatedAt: drawnAt });
+  await run('!slot');
+  seedBall('v2', { slotId: 'sugar-rush-x', slotName: 'Sugar Rush', status: 'drawn', drawNo: 2, updatedAt: drawnAt });
+  await run('!slot gates of olympus', { chatter_user_id: 'v2' });
+  expect(replies()[0]).toBe('@Viewer1 your ball: Sugar Rush (in the drum)');
+  expect(replies()[1]).toBe("@Viewer1 your ball's locked in: Sugar Rush.");
+  await run('!slot gates of olympus', { chatter_user_id: 'v2' }, NOW + 20_000);
+  expect(replies()[2]).toBe("@Viewer1 your ball's already on the rack: Sugar Rush.");
+});
+
+test('did-you-mean offers only bonus-buy slots', async () => {
+  seedOpen();
+  getSlotCatalog.mockResolvedValue([
+    { rainbetSlug: 'big-bass-bonanza', name: 'Big Bass Bonanza', bonusBuy: true },
+    { rainbetSlug: 'big-bass-nobuy', name: 'Big Bass Classic', bonusBuy: false },
+    { rainbetSlug: 'big-bass-splash', name: 'Big Bass Splash', bonusBuy: true },
+  ]);
+  await run('!slot big bass');
+  expect(replies()).toEqual(['@Viewer1 did you mean 1. Big Bass Splash · 2. Big Bass Bonanza? Type !slot 1-2']);
+});
+
+test('a cold catalogue that never answers gives up after about 3s', async () => {
+  seedOpen();
+  getSlotCatalog.mockReturnValue(new Promise(() => {}));
+  const started = Date.now();
+  expect(await run('!slot gates of olympus')).toMatchObject({ outcome: 'CATALOG_DOWN' });
+  expect(Date.now() - started).toBeGreaterThanOrEqual(2900);
+  expect(ball()).toBeUndefined();
+}, 8000);

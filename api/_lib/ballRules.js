@@ -12,6 +12,13 @@ export const CHOICE_TTL_MS = 5 * 60 * 1000;
 // At most one bot reply per viewer in this window (best effort, per instance).
 export const REPLY_COOLDOWN_MS = 10 * 1000;
 export const BALL_SITE = 'goofer.tv/gamba/ball';
+// A viewer who just entered or swapped can't swap again inside this window
+// (every swap is two writes on the Spark quota).
+export const SWAP_COOLDOWN_MS = 15000;
+// Chat runs ahead of the stream; mirrors STREAM_DELAY_MS in src/utils/giveaway.js.
+// A draw's line posts this long after its reveal, and replies treat the ball
+// as still in the drum until then so they can't spoil it.
+export const STREAM_DELAY_MS = 3000;
 
 export function sanitizeBallPrize(input) {
   const raw = Number(input && input.tickets);
@@ -54,25 +61,53 @@ export const drawKey = (drawNo) => `d${drawNo}`;
 
 // What a !slot call does, given the viewer's ball and the claim on the slot
 // they asked for, both read inside the entry transaction.
-export function entryDecision({ ball, claim, slotId, twitchId }) {
-  if (ball && ball.status === 'drawn') return { code: 'ALREADY_DRAWN', slotName: ball.slotName };
+const tsMillis = (ts) => (ts && typeof ts.toMillis === 'function' ? ts.toMillis() : null);
+
+// A drawn ball's draw time: the draw stamps the ball's updatedAt.
+export function drawLineDueMs(ball) {
+  const at = tsMillis(ball && (ball.drawnAt || ball.updatedAt));
+  return at == null ? null : at + DRAW_REVEAL_MS + STREAM_DELAY_MS;
+}
+
+// True while a drawn ball's reveal and chat line haven't gone out yet.
+export function drawPending(ball, nowMs) {
+  if (!ball || ball.status !== 'drawn' || nowMs == null) return false;
+  const due = drawLineDueMs(ball);
+  return due != null && due > nowMs;
+}
+
+export function entryDecision({ ball, claim, slotId, twitchId, nowMs }) {
+  if (ball && ball.status === 'drawn') return { code: 'ALREADY_DRAWN', slotName: ball.slotName, held: drawPending(ball, nowMs) };
   if (claim && claim.scratched) return { code: 'SCRATCHED' };
   if (claim && claim.twitchId !== twitchId) return { code: 'TAKEN', holder: claim.displayName || null };
   if (ball && ball.status === 'drum') {
     if (ball.slotId === slotId) return { code: 'SAME' };
+    const at = tsMillis(ball.updatedAt);
+    if (nowMs != null && at != null && nowMs - at < SWAP_COOLDOWN_MS) return { code: 'SWAP_TOO_SOON' };
     return { code: 'SWAP', oldSlotId: ball.slotId };
   }
   return { code: 'NEW' };
 }
 
+// Slices by code point so a surrogate pair (emoji) is never split.
 function clip(text, max = 40) {
-  const s = String(text || '');
-  return s.length > max ? `${s.slice(0, max)}…` : s;
+  const chars = Array.from(String(text || ''));
+  return chars.length > max ? `${chars.slice(0, max).join('')}…` : chars.join('');
+}
+
+// What the bot may echo of a viewer's text: no @mentions, links or domains
+// (the bot must not repeat a pasted URL or ping someone).
+function echoable(text) {
+  const kept = String(text || '')
+    .replace(/@/g, '')
+    .split(/\s+/)
+    .filter((t) => t && !t.includes('://') && !/^www\./i.test(t) && !/\S+\.[a-z]{2,}(\/\S*)?/i.test(t));
+  return clip(kept.join(' '));
 }
 
 const STATUS_TEXT = { drum: 'in the drum', drawn: 'on the rack', scratched: 'scratched, call another' };
 
-export function replyText(code, { name, slotName, holder, options = [], query, status } = {}) {
+export function replyText(code, { name, slotName, holder, options = [], query, status, held } = {}) {
   const me = `@${name || 'you'}`;
   switch (code) {
     case 'GUESS':
@@ -80,9 +115,13 @@ export function replyText(code, { name, slotName, holder, options = [], query, s
     case 'SWAP':
       return `${me} swapped to ${slotName}`;
     case 'AMBIGUOUS':
+      if (options.length === 1) return `${me} did you mean ${options[0].name}? Type !slot 1`;
       return `${me} did you mean ${options.map((o, i) => `${i + 1}. ${o.name}`).join(' · ')}? Type !slot 1-${options.length}`;
-    case 'NOT_FOUND':
-      return `${me} couldn't find "${clip(query)}". Exact names: ${BALL_SITE}`;
+    case 'NOT_FOUND': {
+      const echo = echoable(query);
+      if (!echo) return `${me} couldn't find that slot — try the slot finder on ${BALL_SITE}`;
+      return `${me} couldn't find "${echo}". Exact names: ${BALL_SITE}`;
+    }
     case 'NO_BONUS_BUY':
       return `${me} ${slotName} has no bonus buy. Pick another.`;
     case 'TAKEN':
@@ -90,7 +129,13 @@ export function replyText(code, { name, slotName, holder, options = [], query, s
     case 'SCRATCHED':
       return `${me} ${slotName} was scratched tonight. Pick another.`;
     case 'ALREADY_DRAWN':
-      return `${me} your ball's already on the rack: ${slotName}.`;
+      // Until the draw's own line posts, the ball is "held" so a reply can't
+      // beat the reveal.
+      return held ? `${me} your ball's locked in: ${slotName}.` : `${me} your ball's already on the rack: ${slotName}.`;
+    case 'SWAP_TOO_SOON':
+      return `${me} easy — you just swapped. Wait a few seconds, then try again.`;
+    case 'FOLLOW_CHECK_FAILED':
+      return `${me} couldn't check your follow right now — try again in a minute.`;
     case 'NOT_FOLLOWING':
       return `${me} follow the channel to call a slot in.`;
     case 'STATUS':

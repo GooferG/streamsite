@@ -4,6 +4,8 @@
 import {
   ACTIVE_STATUSES,
   DRAW_REVEAL_MS,
+  STREAM_DELAY_MS,
+  SWAP_COOLDOWN_MS,
   ballPrizeLabel,
   drawKey,
   drawLine,
@@ -17,6 +19,7 @@ import {
   scratchLine,
   slotKey,
 } from '../../api/_lib/ballRules.js';
+import { STREAM_DELAY_MS as CLIENT_STREAM_DELAY_MS } from '../utils/giveaway';
 
 test('constants', () => {
   expect(DRAW_REVEAL_MS).toBe(8000);
@@ -70,7 +73,7 @@ describe('entryDecision', () => {
   });
   test('a drawn ball is locked', () => {
     const ball = { status: 'drawn', slotId: 's1', slotName: 'Sugar Rush' };
-    expect(entryDecision({ ball, claim: null, slotId: 's2', twitchId: me })).toEqual({ code: 'ALREADY_DRAWN', slotName: 'Sugar Rush' });
+    expect(entryDecision({ ball, claim: null, slotId: 's2', twitchId: me })).toEqual({ code: 'ALREADY_DRAWN', slotName: 'Sugar Rush', held: false });
   });
   test('someone else holds the slot', () => {
     const claim = { twitchId: 'v2', displayName: 'First', scratched: false };
@@ -126,4 +129,50 @@ test('chat lines', () => {
   expect(resultsLine({ ...round, winner: { ...entry, multiplier: 412 } })).toBe(
     "🎱 Tonight's winning ball: Gates of Olympus at 412x. @CoolGuy wins 200 tickets + $5."
   );
+});
+
+describe('reply hardening', () => {
+  const name = 'Viewer1';
+  const nf = (query) => replyText('NOT_FOUND', { name, query });
+  test('the echo drops @, links and domains', () => {
+    expect(nf('@everyone gates')).toBe('@Viewer1 couldn\'t find "everyone gates". Exact names: goofer.tv/gamba/ball');
+    expect(nf('gates https://evil.com/x')).toBe('@Viewer1 couldn\'t find "gates". Exact names: goofer.tv/gamba/ball');
+    expect(nf('www.evil gates')).toBe('@Viewer1 couldn\'t find "gates". Exact names: goofer.tv/gamba/ball');
+    expect(nf('buy at evil.co/free')).toBe('@Viewer1 couldn\'t find "buy at". Exact names: goofer.tv/gamba/ball');
+    expect(nf('  a   b  ')).toBe('@Viewer1 couldn\'t find "a b". Exact names: goofer.tv/gamba/ball');
+  });
+  test('nothing left to echo uses the no-echo form', () => {
+    expect(nf('evil.com')).toBe("@Viewer1 couldn't find that slot — try the slot finder on goofer.tv/gamba/ball");
+    expect(nf('@')).toBe("@Viewer1 couldn't find that slot — try the slot finder on goofer.tv/gamba/ball");
+  });
+  test('clip never splits a surrogate pair', () => {
+    const out = nf('🎰'.repeat(60));
+    expect(out).toBe(`@Viewer1 couldn't find "${'🎰'.repeat(40)}…". Exact names: goofer.tv/gamba/ball`);
+  });
+  test('a single did-you-mean option is one suggestion', () => {
+    expect(replyText('AMBIGUOUS', { name, options: [{ name: 'Sugar Rush' }] })).toBe('@Viewer1 did you mean Sugar Rush? Type !slot 1');
+  });
+  test('new reply codes', () => {
+    expect(replyText('SWAP_TOO_SOON', { name })).toBe('@Viewer1 easy — you just swapped. Wait a few seconds, then try again.');
+    expect(replyText('FOLLOW_CHECK_FAILED', { name })).toBe("@Viewer1 couldn't check your follow right now — try again in a minute.");
+  });
+});
+
+describe('swap cooldown and held draws', () => {
+  const ts = (ms) => ({ toMillis: () => ms });
+  test('a swap inside the cooldown is refused, after it allowed, a first entry unaffected', () => {
+    const ball = { status: 'drum', slotId: 's1', updatedAt: ts(100000) };
+    const base = { ball, claim: null, slotId: 's2', twitchId: 'me' };
+    expect(entryDecision({ ...base, nowMs: 100000 + SWAP_COOLDOWN_MS - 1 })).toEqual({ code: 'SWAP_TOO_SOON' });
+    expect(entryDecision({ ...base, nowMs: 100000 + SWAP_COOLDOWN_MS })).toEqual({ code: 'SWAP', oldSlotId: 's1' });
+    expect(entryDecision({ ...base, ball: null, nowMs: 100001 })).toEqual({ code: 'NEW' });
+  });
+  test('a drawn ball is held until its line is due', () => {
+    expect(STREAM_DELAY_MS).toBe(3000);
+    expect(STREAM_DELAY_MS).toBe(CLIENT_STREAM_DELAY_MS);
+    const ball = { status: 'drawn', slotName: 'X', updatedAt: ts(50000) };
+    const due = 50000 + DRAW_REVEAL_MS + STREAM_DELAY_MS;
+    expect(entryDecision({ ball, slotId: 's', twitchId: 'me', nowMs: due - 1 }).held).toBe(true);
+    expect(entryDecision({ ball, slotId: 's', twitchId: 'me', nowMs: due }).held).toBe(false);
+  });
 });

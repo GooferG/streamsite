@@ -92,8 +92,13 @@ export function buildSlotIndex(rows, aliases = SLOT_ALIASES) {
   const byNorm = new Map();
   const byFlat = new Map();
   for (const s of slots) {
-    if (!byNorm.has(s.norm)) byNorm.set(s.norm, s);
-    if (!byFlat.has(s.flat)) byFlat.set(s.flat, s);
+    // Two rows that normalize alike: keep the one with a bonus buy.
+    const keep = (map, key) => {
+      const prev = map.get(key);
+      if (!prev || (!prev.bonusBuy && s.bonusBuy)) map.set(key, s);
+    };
+    keep(byNorm, s.norm);
+    keep(byFlat, s.flat);
   }
   const alias = new Map();
   for (const [nick, target] of Object.entries(aliases || {})) {
@@ -141,8 +146,10 @@ export function matchSlot(index, query) {
   if (candidates.length === 1 || (candidates.length > 1 && better(candidates[0], candidates[1]))) {
     return { kind: 'guess', slot: publicSlot(candidates[0].s) };
   }
-  if (candidates.length > 1) {
-    return { kind: 'ambiguous', options: candidates.slice(0, MAX_OPTIONS).map((c) => publicSlot(c.s)) };
+  // Did-you-mean lists only offer slots that can be entered.
+  const offerable = candidates.filter((c) => c.s.bonusBuy);
+  if (candidates.length > 1 && offerable.length) {
+    return { kind: 'ambiguous', options: offerable.slice(0, MAX_OPTIONS).map((c) => publicSlot(c.s)) };
   }
 
   const qGrams = bigrams(flat);
@@ -153,6 +160,7 @@ export function matchSlot(index, query) {
   if (scored.length && scored[0].score >= FUZZY_ACCEPT && (scored.length === 1 || scored[0].score - scored[1].score >= FUZZY_MARGIN)) {
     return { kind: 'guess', slot: publicSlot(scored[0].s) };
   }
-  if (scored.length) return { kind: 'ambiguous', options: scored.slice(0, MAX_OPTIONS).map((x) => publicSlot(x.s)) };
+  const offered = scored.filter((x) => x.s.bonusBuy);
+  if (offered.length) return { kind: 'ambiguous', options: offered.slice(0, MAX_OPTIONS).map((x) => publicSlot(x.s)) };
   return { kind: 'none' };
 }

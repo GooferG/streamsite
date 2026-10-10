@@ -7,10 +7,12 @@ import { getSlotCatalog } from './communityHunts.js';
 import { sendChannelMessage } from './twitchChat.js';
 import { isFollower, rolesFromBadges } from './chatRoles.js';
 import { buildSlotIndex, matchSlot } from './slotMatch.js';
-import { CHOICE_TTL_MS, REPLY_COOLDOWN_MS, entryDecision, replyText, slotKey } from './ballRules.js';
+import { CHOICE_TTL_MS, REPLY_COOLDOWN_MS, drawPending, entryDecision, replyText, slotKey } from './ballRules.js';
 
 const CATALOG_TTL_MS = 6 * 60 * 60 * 1000;
 const CATALOG_RETRY_MS = 60 * 1000;
+// The longest a cold-start !slot waits for the catalogue before CATALOG_DOWN.
+const CATALOG_WAIT_MS = 3000;
 const MAX_QUERY = 80;
 const COOLDOWN_CAP = 5000;
 // Invisible characters 7TV and Chatterino append to a repeated message:
@@ -62,9 +64,17 @@ async function slotIndex(now) {
     }
     return catalog.index;
   }
-  if (catalog.pending) return catalog.pending;
+  if (catalog.pending) return withinWait(catalog.pending);
   if (catalog.failedAt != null && now - catalog.failedAt < CATALOG_RETRY_MS) throw new Error('CATALOG_RETRY_WAIT');
-  return refreshCatalog(now);
+  return withinWait(refreshCatalog(now));
+}
+
+function withinWait(promise) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error('CATALOG_TIMEOUT')), CATALOG_WAIT_MS);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
 }
 
 const silent = (outcome) => ({ handled: true, outcome, replied: false });
@@ -101,8 +111,11 @@ export async function handleSlotCommand(event, { now = Date.now() } = {}) {
   // Followers only by default; mods and VIPs are trusted (the giveaway rule).
   if (round.requireFollow !== false) {
     const roles = rolesFromBadges(event.badges);
-    if (!roles.isMod && !roles.isVip && (await isFollower(twitchId, new Map())) !== true) {
-      return say('NOT_FOLLOWING');
+    if (!roles.isMod && !roles.isVip) {
+      // true | false | null (the check itself failed: fail closed, say so).
+      const following = await isFollower(twitchId, new Map());
+      if (following === null) return say('FOLLOW_CHECK_FAILED');
+      if (following !== true) return say('NOT_FOLLOWING');
     }
   }
 
@@ -111,7 +124,8 @@ export async function handleSlotCommand(event, { now = Date.now() } = {}) {
     const snap = await ballRef.get();
     if (!snap.exists) return say('HOW_TO');
     const mine = snap.data();
-    return say('STATUS', { slotName: mine.slotName, status: mine.status });
+    // A ball whose draw line hasn't posted yet still reads as in the drum.
+    return say('STATUS', { slotName: mine.slotName, status: drawPending(mine, now) ? 'drum' : mine.status });
   }
 
   let slot = null;
@@ -150,7 +164,7 @@ export async function handleSlotCommand(event, { now = Date.now() } = {}) {
     const [ballSnap, claimSnap] = await Promise.all([tx.get(ballRef), tx.get(claimRef)]);
     const current = ballSnap.exists ? ballSnap.data() : null;
     const claim = claimSnap.exists ? claimSnap.data() : null;
-    const d = entryDecision({ ball: current, claim, slotId: slot.id, twitchId });
+    const d = entryDecision({ ball: current, claim, slotId: slot.id, twitchId, nowMs: now });
     if (d.code !== 'NEW' && d.code !== 'SWAP') return d;
     const ts = FieldValue.serverTimestamp();
     if (d.code === 'SWAP') tx.delete(claims.doc(slotKey(current.slotId)));
@@ -179,8 +193,10 @@ export async function handleSlotCommand(event, { now = Date.now() } = {}) {
       return say('TAKEN', { slotName: slot.name, holder: decision.holder });
     case 'SCRATCHED':
       return say('SCRATCHED', { slotName: slot.name });
+    case 'SWAP_TOO_SOON':
+      return say('SWAP_TOO_SOON');
     case 'ALREADY_DRAWN':
-      return say('ALREADY_DRAWN', { slotName: decision.slotName });
+      return say('ALREADY_DRAWN', { slotName: decision.slotName, held: decision.held });
     default:
       return silent(decision.code);
   }

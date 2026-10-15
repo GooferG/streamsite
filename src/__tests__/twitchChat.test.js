@@ -14,6 +14,8 @@ beforeEach(() => {
   process.env.TWITCH_BROADCASTER_ID = 'b1';
   delete process.env.TWITCH_BOT_ID;
   delete process.env.TWITCH_BOT_REFRESH_TOKEN;
+  // CRA's Jest loads .env, and the play-test .env sets CHAT_DRY_RUN=1.
+  delete process.env.CHAT_DRY_RUN;
   getBroadcasterAccessToken.mockResolvedValue('tok');
   helix.mockResolvedValue({ data: [{ is_sent: true, message_id: 'm2' }] });
 });

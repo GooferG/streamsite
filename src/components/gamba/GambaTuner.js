@@ -94,7 +94,7 @@ export default function GambaTuner({ current }) {
             style={{ left: needleLeft(at) }}
           />
         </div>
-        <ul className="hidden gap-1 md:flex">
+        <ul className="hidden gap-1 lg:flex">
           {GAMBA_CHANNELS.map((ch) => {
             const on = ch.id === tuned.id;
             return (
@@ -108,7 +108,7 @@ export default function GambaTuner({ current }) {
                       : 'text-onair-ink-3 hover:bg-white/5 hover:text-onair-ink-1'
                   }`}
                 >
-                  <span className={`${MONO} hidden whitespace-nowrap text-[0.6875rem] font-bold tracking-[0.15em] lg:inline ${on ? 'text-onair-signal' : 'text-onair-ink-5'}`}>
+                  <span className={`${MONO} sr-only whitespace-nowrap text-[0.6875rem] font-bold tracking-[0.15em] xl:not-sr-only ${on ? 'text-onair-signal' : 'text-onair-ink-5'}`}>
                     {channelLabel(ch)}
                   </span>
                   <span className="truncate">{ch.label}</span>
@@ -117,7 +117,7 @@ export default function GambaTuner({ current }) {
             );
           })}
         </ul>
-        <p data-testid="tuner-readout" className="flex items-baseline justify-center gap-2 pb-1 md:hidden">
+        <p data-testid="tuner-readout" className="flex items-baseline justify-center gap-2 pb-1 lg:hidden">
           <span className={`${MONO} text-[0.6875rem] font-bold tracking-[0.15em] text-onair-signal`}>{channelLabel(tuned)}</span>
           <span className="text-[0.9375rem] font-bold text-onair-ink-1">{tuned.label}</span>
           <span className={`${MONO} text-xs tracking-[0.15em] text-onair-ink-5`}>

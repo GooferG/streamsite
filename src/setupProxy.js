@@ -108,6 +108,21 @@ module.exports = function (app) {
     }
   });
 
+  // Goofer Ball staff endpoint, run in this process (it isn't deployed until the
+  // branch ships, and `vercel dev` can't serve this app: vercel.json's catch-all
+  // rewrite answers the dev bundle with index.html). Uses the firebase-admin
+  // vars and CHAT_DRY_RUN that CRA loads from .env / .env.local.
+  app.all('/api/admin/ball', require('express').json(), async (req, res) => {
+    try {
+      const { default: handler } = await import('../api/admin/ball.js');
+      await handler(req, res);
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('[setupProxy] /api/admin/ball failed:', e.message);
+      if (!res.headersSent) res.status(500).json({ error: 'DEV_HANDLER_FAILED', message: e.message });
+    }
+  });
+
   // /api/steam-games needs STEAM_API_KEY (server-only): dev reads the deployed function.
   app.use(
     '/api/steam-games',

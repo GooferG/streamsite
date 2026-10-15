@@ -6,7 +6,7 @@ jest.mock('../../../contexts/ControlRoomContext', () => ({ useControlRoom: jest.
 jest.mock('../ControlRoom', () => () => require('react').createElement('p', null, 'panel body'));
 jest.mock('../StageMoment', () => () => require('react').createElement('p', null, 'stage body'));
 
-const staff = (prefs = {}) => ({ enabled: true, prefs: { stage: false, hideLiveBadge: false, ...prefs } });
+const staff = (prefs = {}, reveals = 'stage') => ({ enabled: true, reveals, prefs: { stage: false, hideLiveBadge: false, ...prefs } });
 
 // Final review M2: the shell hands the control room context to this layer
 // alone; what it renders must match what App.js rendered before.
@@ -30,5 +30,12 @@ test('/admin keeps the badge and gets no panel or stage', () => {
   render(<StaffLayer isLive streamData={null} pathname="/admin/giveaways" />);
   expect(screen.getByText(/goofer live now/i)).toBeTruthy();
   expect(screen.queryByText('panel body')).toBeNull();
+  expect(screen.queryByText('stage body')).toBeNull();
+});
+
+test('a leftover Stage pref plays nothing while the shared switch says OBS', async () => {
+  useControlRoom.mockReturnValue(staff({ stage: true }, 'overlay'));
+  render(<StaffLayer isLive streamData={null} pathname="/gamba/hunts" />);
+  expect(await screen.findByText('panel body')).toBeTruthy();
   expect(screen.queryByText('stage body')).toBeNull();
 });

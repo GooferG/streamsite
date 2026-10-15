@@ -1,0 +1,38 @@
+/* Goofer Ball: the WGOOF Channel 42 set (DESIGN.md §7, Channel 42). Colours
+   come from the onair tokens through theme(); the On Air contract keeps raw
+   colours out of the JS. */
+.gb-set { background: linear-gradient(180deg, theme('colors.onair.wgoof.sky') 0%, theme('colors.onair.wgoof.deep') 62%, theme('colors.onair.wgoof.night') 100%); }
+.gb-burst { background: repeating-conic-gradient(from 0deg at 52% 38%, theme('colors.white / 7%') 0 5deg, transparent 5deg 13deg); }
+.gb-desk { background: linear-gradient(180deg, theme('colors.onair.wgoof.desk'), theme('colors.onair.wgoof.desk-deep')); border-top: 3px solid theme('colors.onair.wgoof.trim'); }
+.gb-title { color: theme('colors.onair.wgoof.title'); text-shadow: 2px 0 theme('colors.onair.loss / 55%'), -2px 0 theme('colors.onair.signal.DEFAULT / 45%'); }
+.gb-multi { text-shadow: 3px 3px 0 theme("colors.onair.winner.ink"); }
+.gb-scan { background: repeating-linear-gradient(0deg, theme('colors.white / 3.5%') 0 1px, transparent 1px 3px); mix-blend-mode: screen; }
+.gb-vig { background: radial-gradient(ellipse at center, transparent 55%, theme('colors.black / 55%') 100%); }
+.gb-ball { background: radial-gradient(circle at 34% 30%, theme('colors.white'), theme('colors.onair.paper.DEFAULT') 45%, theme('colors.onair.wgoof.shade') 100%); box-shadow: 0 18px 40px theme('colors.black / 55%'); }
+.gb-chip { background: radial-gradient(circle at 34% 30%, theme('colors.white'), theme('colors.onair.paper.DEFAULT') 45%, theme('colors.onair.wgoof.shade') 100%); border: 1px solid theme('colors.onair.paper.ink / 35%'); }
+.gb-decal { background: linear-gradient(160deg, theme('colors.onair.viewer.DEFAULT'), theme('colors.onair.viewer.deep')); box-shadow: inset 0 0 0 3px theme('colors.onair.paper.ink / 85%'); }
+.gb-band { border-top: 2px solid theme('colors.onair.paper.ink / 70%'); border-bottom: 2px solid theme('colors.onair.paper.ink / 70%'); }
+.gb-glass { border: 2px solid theme('colors.white / 38%'); background: radial-gradient(circle at 32% 26%, theme('colors.white / 32%'), theme('colors.white / 6%') 30%, theme('colors.white / 1.5%') 62%, theme('colors.white / 7%') 100%); box-shadow: inset 0 0 36px theme('colors.white / 8%'); }
+.gb-glass::after { content: ''; position: absolute; left: 16%; top: 9%; width: 30%; height: 14%; border-radius: 50%; background: theme('colors.white / 28%'); filter: blur(3px); transform: rotate(-28deg); }
+.gb-stand { clip-path: polygon(30% 0, 70% 0, 100% 100%, 0 100%); background: linear-gradient(90deg, theme('colors.onair.wgoof.chrome-deep'), theme('colors.onair.wgoof.chrome') 40%, theme('colors.onair.wgoof.chrome-deep') 100%); }
+.gb-base { background: linear-gradient(180deg, theme('colors.onair.wgoof.blower'), theme('colors.onair.wgoof.blower-deep')); box-shadow: inset 0 2px 0 theme('colors.white / 25%'); }
+.gb-tube { border: 2px solid theme('colors.white / 35%'); border-bottom: none; background: theme('colors.white / 6%'); }
+.gb-static { background: repeating-linear-gradient(0deg, theme('colors.white / 18%') 0 1px, theme('colors.black / 60%') 1px 2px); animation: gb-static 0.12s steps(2) infinite; }
+@keyframes gb-static { to { background-position: 0 3px; } }
+.gb-spin-in { animation: gb-spin-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+@keyframes gb-spin-in { from { transform: scale(0.35) rotate(-200deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.gb-rise { animation: gb-rise 1.1s ease-in both; }
+@keyframes gb-rise { from { transform: translateY(0); } to { transform: translateY(-260%); } }
+.gb-cut-out { animation: gb-cut-out 0.5s steps(3) both; }
+@keyframes gb-cut-out { to { opacity: 0; } }
+/* The TV the draw and winner moments play in (BallTv), dimmed like the giveaway reveal. */
+.gb-tv-dim { background: radial-gradient(ellipse at center, theme('colors.black / 62%') 0%, theme('colors.black / 90%') 75%); animation: gb-tv-in 0.35s ease-out both; }
+.gb-tv-dim.gb-cut-out { animation: gb-cut-out 0.5s steps(3) both; }
+@keyframes gb-tv-in { from { opacity: 0; } to { opacity: 1; } }
+.gb-tv { background: theme('colors.black'); border: 2px solid theme('colors.white / 15%'); box-shadow: 0 0 0 6px theme('colors.black / 90%'), 0 30px 80px theme('colors.black / 60%'); }
+.gb-toast-in { animation: gb-toast-in 0.3s ease-out both; }
+@keyframes gb-toast-in { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+/* OBS overlays don't honour reduced motion (spec); CH 42's root carries gb-site. */
+@media (prefers-reduced-motion: reduce) {
+  .gb-site .gb-spin-in, .gb-site .gb-rise, .gb-site .gb-static, .gb-site .gb-toast-in, .gb-site .gb-cut-out { animation: none; }
+}

@@ -85,6 +85,23 @@ module.exports = {
           ticket: { top: '#2a1d3d', mid: '#231933', bottom: '#17121f' },
           // Goofer Video's label stock and the ink printed on it (DESIGN.md §7, Video store).
           paper: { DEFAULT: '#ece3cf', ink: '#231c17' },
+          // Goofer Ball's WGOOF Channel 42 set (DESIGN.md §7, Channel 42). Only
+          // src/components/ball/ uses these (contract test).
+          wgoof: {
+            sky: '#3d63a3',
+            deep: '#22396b',
+            night: '#152447',
+            desk: '#5a3a22',
+            'desk-deep': '#3b2414',
+            trim: '#8a5a33',
+            title: '#ffe9c2',
+            'title-dim': '#ffd2b0',
+            blower: '#c8452a',
+            'blower-deep': '#8a2a17',
+            shade: '#a99c82',
+            chrome: '#d9dce2',
+            'chrome-deep': '#4a4d55',
+          },
         },
       },
       fontFamily: {

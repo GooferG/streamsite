@@ -5,6 +5,7 @@ import { ControlRoomProvider, useControlRoom } from '../ControlRoomContext';
 import { useAuth } from '../AuthContext';
 import { useDriverLock } from '../../hooks/useDriverLock';
 import { postAction } from '../../components/admin/giveaways/api';
+import { writeReveals } from '../../utils/broadcast';
 
 jest.mock('../AuthContext', () => ({ useAuth: jest.fn() }));
 jest.mock('react-router-dom', () => ({ useLocation: jest.fn() }));
@@ -13,12 +14,14 @@ jest.mock('../../config/firebase', () => ({ db: {} }));
 const mockData = {};
 jest.mock('firebase/firestore', () => ({
   collection: (_db, ...parts) => parts.join('/'),
+  doc: (_db, ...parts) => parts.join('/'),
   where: () => null,
   orderBy: () => null,
   limit: () => null,
   query: (ref) => ref,
   onSnapshot: jest.fn(),
 }));
+jest.mock('../../utils/broadcast', () => ({ writeReveals: jest.fn() }));
 jest.mock('../../components/admin/giveaways/api', () => ({
   postAction: jest.fn(),
   QUIET_ANNOUNCE: ['disabled', 'empty', 'already'],
@@ -39,6 +42,7 @@ beforeEach(() => {
     next({ docs: (mockData[path] || []).map((row) => ({ id: row.id, data: () => row })) });
     return () => {};
   });
+  writeReveals.mockResolvedValue(undefined);
   postAction.mockImplementation(() => Promise.resolve({ ok: true, status: 200, data: {} }));
   Object.keys(mockData).forEach((k) => delete mockData[k]);
   useLocation.mockReturnValue({ pathname: '/' });
@@ -74,7 +78,7 @@ test('staff subscribe to live giveaways, recent rounds and pending redemptions',
   ];
   mockData.hunts = [{ id: 'r1', status: 'locked', acceptPredictions: true }];
   mount();
-  expect(onSnapshot.mock.calls.map(([path]) => path).sort()).toEqual(['giveaways', 'hunts', 'redemptions']);
+  expect(onSnapshot.mock.calls.map(([path]) => path).sort()).toEqual(['ball_rounds', 'giveaways', 'hunts', 'redemptions', 'settings/broadcast']);
   expect(latest.enabled).toBe(true);
   expect(latest.giveaway.id).toBe('g1');
   expect(latest.activeRound.id).toBe('r1');
@@ -227,4 +231,42 @@ test('resize actions store the size, and reset clears it', () => {
   expect(latest.panel).toMatchObject({ rect: { x: 10, y: 80 }, size: { w: 500, h: null }, dockW: 600 });
   act(() => latest.panelActions.resetPosition());
   expect(latest.panel).toMatchObject({ mode: 'float', rect: null, size: null, dockW: null });
+});
+
+test('setReveals writes the shared switch and moves this browser Stage pref with it', () => {
+  mount();
+  act(() => latest.setReveals('stage'));
+  expect(writeReveals).toHaveBeenCalledWith('stage');
+  expect(latest.prefs.stage).toBe(true);
+  act(() => latest.setReveals('overlay'));
+  expect(writeReveals).toHaveBeenLastCalledWith('overlay');
+  expect(latest.prefs.stage).toBe(false);
+});
+
+test('the newest Goofer Ball round is on the context', () => {
+  mockData.ball_rounds = [{ id: 'b1', status: 'open', rack: [] }];
+  mount();
+  expect(latest.ballRound).toMatchObject({ id: 'b1', status: 'open' });
+});
+
+test('a failed reveals write puts this browser Stage pref back and warns', async () => {
+  writeReveals.mockRejectedValue(new Error('denied'));
+  mount();
+  await act(async () => {
+    latest.setReveals('stage');
+  });
+  expect(latest.prefs.stage).toBe(false);
+  expect(latest.warnings.map((w) => w.message)).toEqual(['Could not save where reveals play. Try again.']);
+});
+
+test('a failed balls feed stops saying Reconnecting: dataGaveUp follows ballsError', () => {
+  mockData.ball_rounds = [{ id: 'br1', status: 'open' }];
+  onSnapshot.mockImplementation((path, next, fail) => {
+    if (path === 'ball_rounds/br1/balls') fail(new Error('denied'));
+    else next({ docs: (mockData[path] || []).map((row) => ({ id: row.id, data: () => row })) });
+    return () => {};
+  });
+  mount();
+  expect(latest.dataLost).toBeTruthy();
+  expect(latest.dataGaveUp).toBeTruthy();
 });

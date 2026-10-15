@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Superpowers Brainstorming</title>
+  <style>
+    /*
+     * BRAINSTORM COMPANION FRAME TEMPLATE
+     *
+     * This template provides a consistent frame with:
+     * - OS-aware light/dark theming
+     * - Header branding and connection status
+     * - Scrollable main content area
+     * - CSS helpers for common UI patterns
+     *
+     * Content is injected via placeholder comment in #frame-content.
+     */
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+
+    /* ===== THEME VARIABLES ===== */
+    :root {
+      --bg-primary: #f5f5f7;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #e5e5e7;
+      --border: #d1d1d6;
+      --text-primary: #1d1d1f;
+      --text-secondary: #86868b;
+      --text-tertiary: #aeaeb2;
+      --accent: #0071e3;
+      --accent-hover: #0077ed;
+      --success: #34c759;
+      --warning: #ff9f0a;
+      --error: #ff3b30;
+      --selected-bg: #e8f4fd;
+      --selected-border: #0071e3;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: #1d1d1f;
+        --bg-secondary: #2d2d2f;
+        --bg-tertiary: #3d3d3f;
+        --border: #424245;
+        --text-primary: #f5f5f7;
+        --text-secondary: #86868b;
+        --text-tertiary: #636366;
+        --accent: #0a84ff;
+        --accent-hover: #409cff;
+        --selected-bg: rgba(10, 132, 255, 0.15);
+        --selected-border: #0a84ff;
+      }
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+    }
+
+    /* ===== FRAME STRUCTURE ===== */
+    .brand { display: flex; align-items: center; min-width: 0; overflow: hidden; color: var(--text-secondary); line-height: 1; }
+    .brand a { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; min-width: 0; max-width: 100%; line-height: 1; }
+    .brand-copy { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1; transform: translateY(-1px); }
+    .brand-logo { display: block; height: 1em; width: auto; max-width: 180px; flex-shrink: 0; filter: invert(1); }
+    @media (prefers-color-scheme: dark) {
+      .brand-logo { filter: none; }
+    }
+    .status { font-size: 0.7rem; color: var(--status-color, var(--success)); display: flex; align-items: center; gap: 0.4rem; justify-self: end; white-space: nowrap; line-height: 1; }
+    .status::before { content: ''; width: 6px; height: 6px; background: var(--status-color, var(--success)); border-radius: 50%; }
+
+    .main { flex: 1; overflow-y: auto; }
+    #frame-content { padding: 2rem; min-height: 100%; }
+
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1.5rem;
+      flex-shrink: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 1rem;
+      min-height: 42px;
+    }
+    .header .brand { justify-self: start; width: 100%; font-size: 0.75rem; line-height: 1; }
+    .header .status { grid-column: 2; line-height: 1; }
+    .header span {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    .header .selected-text {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* ===== TYPOGRAPHY ===== */
+    h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+    h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .subtitle { color: var(--text-secondary); margin-bottom: 1.5rem; }
+    .section { margin-bottom: 2rem; }
+    .label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+
+    /* ===== OPTIONS (for A/B/C choices) ===== */
+    .options { display: flex; flex-direction: column; gap: 0.75rem; }
+    .option {
+      background: var(--bg-secondary);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .option:hover { border-color: var(--accent); }
+    .option.selected { background: var(--selected-bg); border-color: var(--selected-border); }
+    .option .letter {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      width: 1.75rem; height: 1.75rem;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 600; font-size: 0.85rem; flex-shrink: 0;
+    }
+    .option.selected .letter { background: var(--accent); color: white; }
+    .option .content { flex: 1; }
+    .option .content h3 { font-size: 0.95rem; margin-bottom: 0.15rem; }
+    .option .content p { color: var(--text-secondary); font-size: 0.85rem; margin: 0; }
+
+    /* ===== CARDS (for showing designs/mockups) ===== */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .card.selected { border-color: var(--selected-border); border-width: 2px; }
+    .card-image { background: var(--bg-tertiary); aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; }
+    .card-body { padding: 1rem; }
+    .card-body h3 { margin-bottom: 0.25rem; }
+    .card-body p { color: var(--text-secondary); font-size: 0.85rem; }
+
+    /* ===== MOCKUP CONTAINER ===== */
+    .mockup {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .mockup-header {
+      background: var(--bg-tertiary);
+      padding: 0.5rem 1rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .mockup-body { padding: 1.5rem; }
+
+    /* ===== SPLIT VIEW (side-by-side comparison) ===== */
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 700px) { .split { grid-template-columns: 1fr; } }
+
+    /* ===== PROS/CONS ===== */
+    .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+    .pros, .cons { background: var(--bg-secondary); border-radius: 8px; padding: 1rem; }
+    .pros h4 { color: var(--success); font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .cons h4 { color: var(--error); font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .pros ul, .cons ul { margin-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); }
+    .pros li, .cons li { margin-bottom: 0.25rem; }
+
+    /* ===== PLACEHOLDER (for mockup areas) ===== */
+    .placeholder {
+      background: var(--bg-tertiary);
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-tertiary);
+    }
+
+    /* ===== INLINE MOCKUP ELEMENTS ===== */
+    .mock-nav { background: var(--accent); color: white; padding: 0.75rem 1rem; display: flex; gap: 1.5rem; font-size: 0.9rem; }
+    .mock-sidebar { background: var(--bg-tertiary); padding: 1rem; min-width: 180px; }
+    .mock-content { padding: 1.5rem; flex: 1; }
+    .mock-button { background: var(--accent); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; }
+    .mock-input { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; width: 100%; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand"><span class="brand-copy">Goofer Ball mockup (approved in brainstorming 2026-10-09)</span></div>
+    <div class="status">Connecting…</div>
+  </div>
+
+  <div class="main">
+    <div id="frame-content">
+      <style>
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Bricolage+Grotesque:wght@400;600;800&family=JetBrains+Mono:wght@500;700&display=swap');
+.gb-scene{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:8px;font-family:'Bricolage Grotesque',system-ui,sans-serif;color:#ece8e1}
+.gb-scene *{box-sizing:border-box}
+.gb-abs{position:absolute}
+.gb-scan{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px);mix-blend-mode:screen}
+.gb-vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55) 100%)}
+.gb-drum{position:absolute;left:7%;top:14%;width:30%;aspect-ratio:1;border-radius:50%}
+.gb-balls{position:absolute;inset:3%;border-radius:50%;overflow:hidden}
+.gb-glass{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,255,255,.38);background:radial-gradient(circle at 32% 26%,rgba(255,255,255,.32),rgba(255,255,255,.06) 30%,rgba(255,255,255,.015) 62%,rgba(255,255,255,.07) 100%);box-shadow:inset 0 0 36px rgba(255,255,255,.08)}
+.gb-glass:after{content:'';position:absolute;left:16%;top:9%;width:30%;height:14%;border-radius:50%;background:rgba(255,255,255,.28);filter:blur(3px);transform:rotate(-28deg)}
+.gb-ball{position:absolute;width:12%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 34% 30%,#fff,#ece3cf 45%,#a99c82 100%);box-shadow:0 1px 2px rgba(0,0,0,.4);animation:gbChurn var(--d) ease-in-out var(--dl) infinite alternate}
+.gb-ball i{position:absolute;inset:26%;border-radius:50%;background:var(--h)}
+@keyframes gbChurn{0%{transform:translate(0,0)}50%{transform:translate(var(--x1),var(--y1))}100%{transform:translate(var(--x2),var(--y2))}}
+.gb-tube{position:absolute;left:21%;top:3.5%;width:2%;height:11%;border:2px solid rgba(255,255,255,.35);border-bottom:none;border-radius:6px 6px 0 0;background:rgba(255,255,255,.06)}
+.gb-tube .gb-ball{position:absolute;left:-2%;top:6%;width:104%;animation:none}
+.gb-stand{position:absolute;left:16%;top:66%;width:12%;height:13%;clip-path:polygon(30% 0,70% 0,100% 100%,0 100%);background:linear-gradient(90deg,#6b6f78,#d9dce2 40%,#8a8e96 60%,#4a4d55)}
+.gb-base{position:absolute;left:11%;top:78%;width:22%;height:7%;border-radius:4px}
+.gb-close{position:absolute;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 32% 28%,#fff,#efe6d2 42%,#b3a68b 100%);box-shadow:0 18px 40px rgba(0,0,0,.55)}
+.gb-decal{position:absolute;left:24%;top:16%;width:50%;aspect-ratio:1;border-radius:50%;overflow:hidden;background:linear-gradient(160deg,#5b3fd6,#2a1a7a 55%,#c9a0ff);box-shadow:inset 0 0 0 3px rgba(35,28,23,.85)}
+.gb-decal span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font:800 0.6rem/1.05 'Bricolage Grotesque';letter-spacing:.04em;color:#fff;text-shadow:0 1px 2px #000;padding:12%}
+.gb-band{position:absolute;left:8%;right:8%;top:68%;padding:3% 0;text-align:center;font:700 0.85rem 'JetBrains Mono',monospace;color:#231c17;transform:rotate(-5deg);border-top:2px solid rgba(35,28,23,.7);border-bottom:2px solid rgba(35,28,23,.7)}
+.gb-num{position:absolute;left:0;right:0;top:4%;text-align:center;font:700 .62rem 'JetBrains Mono';color:#231c17;opacity:.75}
+.gb-host{position:absolute;border:2px dashed rgba(255,255,255,.35);border-radius:10px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4%;font:600 .55rem 'JetBrains Mono';letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.6);text-align:center}
+.gb-host:before{content:'';position:absolute;left:30%;top:14%;width:40%;aspect-ratio:1;border-radius:50%;background:rgba(0,0,0,.35)}
+.gb-host:after{content:'';position:absolute;left:14%;top:44%;width:72%;height:40%;border-radius:40% 40% 6px 6px;background:rgba(0,0,0,.35)}
+.gb-rack{position:absolute;display:flex;gap:6px;align-items:flex-end}
+.gb-rack div{width:22px;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 34% 30%,#fff,#ece3cf 45%,#a99c82 100%);font:700 .5rem 'JetBrains Mono';color:#231c17;display:flex;align-items:center;justify-content:center}
+.gb-fine{position:absolute;font:500 .48rem 'JetBrains Mono';letter-spacing:.08em;opacity:.55}
+.gb-cap{margin:.6rem 0 0;font-size:.85rem;line-height:1.45}
+</style><style>
+.pg{background:#0f0e12;border-radius:10px;padding:14px;font-family:'Bricolage Grotesque',system-ui,sans-serif;color:#ece8e1}
+.pg *{box-sizing:border-box}
+.mono{font-family:'JetBrains Mono',monospace}
+.tuner{display:flex;align-items:center;gap:6px;background:linear-gradient(180deg,#26232c,#141217);border-radius:14px;padding:7px 10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.09)}
+.tuner span{font:700 .55rem 'JetBrains Mono';letter-spacing:.18em;color:#6d6873;padding:3px 7px;border-radius:999px}
+.tuner span.on{color:#1a0a02;background:#ff6a1a}
+.tuner .gap{color:#4a4550;letter-spacing:.3em}
+.setstrip{position:relative;margin-top:12px;border-radius:14px;overflow:hidden;height:250px;background:linear-gradient(180deg,#3d63a3 0%,#22396b 62%,#152447 100%)}
+.setstrip .burst{position:absolute;inset:0;background:repeating-conic-gradient(from 0deg at 30% 40%,rgba(255,255,255,.07) 0 5deg,transparent 5deg 13deg)}
+.setstrip .desk{position:absolute;left:0;right:0;bottom:0;height:22%;background:linear-gradient(180deg,#5a3a22,#3b2414);border-top:3px solid #8a5a33}
+.sdrum{position:absolute;left:4%;top:9%;width:170px;height:170px;border-radius:50%}
+.sstand{position:absolute;left:calc(4% + 62px);top:176px;width:46px;height:30px;clip-path:polygon(30% 0,70% 0,100% 100%,0 100%);background:linear-gradient(90deg,#6b6f78,#d9dce2 40%,#8a8e96 60%,#4a4d55)}
+.sinfo{position:absolute;left:calc(4% + 200px);top:22px;right:40%}
+.sinfo .t{font:400 2.1rem/0.95 Anton,Impact,sans-serif;color:#ffe9c2;text-shadow:2px 0 rgba(255,60,60,.55),-2px 0 rgba(60,220,255,.45)}
+.sinfo .k{font:700 .55rem 'JetBrains Mono';letter-spacing:.28em;color:#ffd2b0;margin-top:4px}
+.sinfo .big{font:400 3rem/1 Anton,Impact,sans-serif;color:#fff;margin-top:14px}
+.sinfo .big small{font:700 .6rem 'JetBrains Mono';letter-spacing:.2em;color:#ffd2b0;margin-left:6px}
+.pill{display:inline-flex;align-items:center;gap:6px;font:700 .55rem 'JetBrains Mono';letter-spacing:.2em;padding:4px 9px;border-radius:999px}
+.prize{display:inline-block;margin-top:10px;background:#ece3cf;color:#231c17;font:700 .62rem 'JetBrains Mono';letter-spacing:.12em;padding:6px 10px}
+.callin{position:absolute;right:3%;top:16px;width:35%;background:#ece3cf;color:#231c17;border-radius:6px;padding:10px;box-shadow:0 10px 24px rgba(0,0,0,.45)}
+.callin h4{margin:0;font:400 1rem Anton,Impact,sans-serif;letter-spacing:.04em}
+.callin .in{margin-top:6px;border:2px solid #231c17;padding:6px 8px;font:600 .72rem 'JetBrains Mono';background:#fff}
+.res{display:grid;grid-template-columns:26px 1fr auto;gap:8px;align-items:center;padding:5px 2px;border-bottom:1px dashed rgba(35,28,23,.25);font:600 .62rem 'JetBrains Mono'}
+.res .th{width:26px;height:20px;border-radius:3px}
+.res .btn{font:700 .52rem 'JetBrains Mono';letter-spacing:.1em;background:#ff6a1a;color:#1a0a02;padding:4px 7px;border-radius:3px;white-space:nowrap}
+.res.taken{opacity:.55}
+.res.taken .btn{background:transparent;color:#231c17;border:1px solid rgba(35,28,23,.5)}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+.panel{background:linear-gradient(180deg,#17151b,#121015);border-radius:18px;padding:12px 14px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 14px 30px rgba(0,0,0,.4)}
+.panel h4{margin:0 0 8px;display:flex;justify-content:space-between;align-items:baseline;font:800 1rem 'Bricolage Grotesque'}
+.panel h4 span{font:700 .52rem 'JetBrains Mono';letter-spacing:.2em;color:#8a8690}
+.search{border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:6px 9px;font:500 .65rem 'JetBrains Mono';color:#8a8690;margin-bottom:8px}
+.ball-row{display:grid;grid-template-columns:20px 1fr auto;gap:8px;align-items:center;padding:5px 4px;border-top:1px solid rgba(255,255,255,.05);font:600 .66rem 'Bricolage Grotesque'}
+.ball-row i{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 34% 30%,#fff,#ece3cf 45%,#a99c82 100%);display:block}
+.ball-row small{font:600 .55rem 'JetBrains Mono';color:#b89cff}
+.ball-row.me{background:rgba(62,224,191,.08);border-radius:8px;box-shadow:inset 0 0 0 1px rgba(62,224,191,.35)}
+.ball-row .mx{font:400 .95rem Anton,Impact,sans-serif;color:#ece8e1}
+.ball-row.lead .mx{color:#ff9a5c}
+.tag{font:700 .48rem 'JetBrains Mono';letter-spacing:.15em;color:#3ee0bf}
+.board{margin-top:12px}
+.board .hd{display:grid;grid-template-columns:90px 1fr 80px 120px 20px;gap:10px;font:700 .5rem 'JetBrains Mono';letter-spacing:.2em;color:#6d6873;padding:0 10px 6px}
+.brow{display:grid;grid-template-columns:90px 1fr 80px 120px 20px;gap:10px;align-items:center;padding:8px 10px;border-top:1px solid rgba(255,255,255,.06);font:600 .7rem 'Bricolage Grotesque'}
+.brow .d{font:600 .6rem 'JetBrains Mono';color:#a7a2ad}
+.brow .mx{font:400 1.05rem Anton,Impact,sans-serif;color:#ff9a5c}
+.brow .pz{font:600 .58rem 'JetBrains Mono';color:#c9c4cf}
+.brow small{display:block;font:600 .55rem 'JetBrains Mono';color:#b89cff}
+.rackx{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px;padding:4px 0 2px}
+.rackx span{font:600 .55rem 'JetBrains Mono';background:rgba(255,255,255,.05);border-radius:999px;padding:3px 8px;color:#c9c4cf}
+.rackx span b{color:#ff9a5c;font-weight:700}
+.note{font-size:.82rem;line-height:1.5;color:#444;margin:.5rem 0 1.2rem}
+.phone{width:300px;background:#0f0e12;border-radius:22px;padding:10px;border:6px solid #26232c}
+.twocol{display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start}
+</style>
+<h2>CH 42 · Goofer Ball on the site (/gamba/ball)</h2>
+<p class="subtitle">A Gamba channel: the tuner skips from 04 to 42. The top is the Channel 42 set as a live strip (the drum fills in real time). Below it the page switches to the On Air dark panels, because it's a utility page. Shown while a drum is open and a hunt is linked.</p>
+<div class="twocol">
+<div class="pg"><div class="tuner"><span>CH 00 HUB</span><span>01</span><span>02</span><span>03</span><span>04</span><span class="gap">· · ·</span><span class="on">CH 42 GOOFER BALL</span></div><div class="setstrip"><div class="burst"></div><div class="desk"></div>
+  <div class="sdrum"><div class="gb-balls" data-n="24"></div><div class="gb-glass"></div></div>
+  <div class="sstand"></div>
+  <div class="sinfo">
+    <div class="t">GOOFER BALL</div><div class="k">WGOOF · CHANNEL 42 · NIGHTLY DRAW</div>
+    <div style="margin-top:10px"><span class="pill" style="background:#d83a1c;color:#fff">● DRUM OPEN</span></div>
+    <div class="big">64<small>BALLS IN THE DRUM · 4 DRAWN</small></div>
+    <div class="prize">TOP MULTI WINS 200 TICKETS + $5</div>
+  </div>
+  <div class="callin"><h4>CALL ONE IN</h4>
+    <div class="in">sugar rush|</div>
+    <div class="res"><div class="th" style="background:linear-gradient(160deg,#ff8a3d,#1a1530)"></div><div>Sugar Rush</div><span class="btn">COPY !slot</span></div>
+    <div class="res taken"><div class="th" style="background:linear-gradient(160deg,#e64b8b,#1a1530)"></div><div>Sugar Rush 1000<br><span style="font-size:.52rem">taken by @sugarfan</span></div><span class="btn">TAKEN</span></div>
+    <div class="res"><div class="th" style="background:linear-gradient(160deg,#5aa9ff,#1a1530)"></div><div>Sugar Rush Xmas</div><span class="btn">COPY !slot</span></div>
+    <div style="font:600 .5rem 'JetBrains Mono';letter-spacing:.08em;margin-top:6px;opacity:.7">ONLY SLOTS WITH A BONUS BUY · PASTE IT IN TWITCH CHAT</div>
+  </div>
+</div><div class="cols">
+  <div class="panel"><h4>In the drum <span>68 CALLED</span></h4><div class="search">find my ball… (signed in? yours is pinned)</div><div class="ball-row"><i></i><div>Sugar Rush 1000<br><small>@sugarfan</small></div><span class="tag" style="color:#ff9a5c">ON THE RACK</span></div><div class="ball-row me"><i></i><div>Wanted Dead or a Wild<br><small>@luizm</small></div><span class="tag">YOUR BALL</span></div><div class="ball-row"><i></i><div>The Dog House<br><small>@pupper</small></div><span class="tag" style="color:#ff9a5c">ON THE RACK</span></div><div class="ball-row"><i></i><div>Big Bass Bonanza<br><small>@nightowl</small></div></div><div class="ball-row"><i></i><div>Zeus vs Hades<br><small>@reelrat</small></div></div></div>
+  <div class="panel"><h4>Tonight's rack <span>LIVE FROM THE HUNT · 60s</span></h4><div class="ball-row lead"><i style="display:flex;align-items:center;justify-content:center;font:700 .45rem JetBrains Mono;color:#231c17">01</i><div>Gates of Olympus<br><small>@coolguy</small></div><span class="mx">412x</span></div><div class="ball-row"><i style="display:flex;align-items:center;justify-content:center;font:700 .45rem JetBrains Mono;color:#231c17">02</i><div>Wanted Dead or a Wild<br><small>@bigwinz</small></div><span class="mx">88x</span></div><div class="ball-row"><i style="display:flex;align-items:center;justify-content:center;font:700 .45rem JetBrains Mono;color:#231c17">03</i><div>The Dog House<br><small>@pupper</small></div><span class="mx">12x</span></div><div class="ball-row"><i style="display:flex;align-items:center;justify-content:center;font:700 .45rem JetBrains Mono;color:#231c17">04</i><div>Sugar Rush 1000<br><small>@sugarfan</small></div><span class="mx">—</span></div></div>
+</div><div class="panel board"><h4>Past draws <span>WINNING BALLS</span></h4>
+  <div class="hd"><span>DATE</span><span>WINNING BALL</span><span>MULTI</span><span>PRIZE</span><span></span></div><div class="brow"><span class="d">OCT 08</span><div>Gates of Olympus<small>@coolguy</small></div><span class="mx">412x</span><span class="pz">200 TIX + $5</span><span style="color:#6d6873">▾</span><div class="rackx"><span>01 Gates of Olympus <b>412x</b></span><span>02 Wanted <b>88x</b></span><span>03 Dog House <b>12x</b></span><span>04 Sugar Rush 1000 <b>41x</b></span><span>05 Zeus vs Hades <b>9x</b></span><span>+ 5 more</span></div></div><div class="brow"><span class="d">OCT 06</span><div>Wanted Dead or a Wild<small>@bigwinz</small></div><span class="mx">96x</span><span class="pz">300 TIX</span><span style="color:#6d6873">▸</span></div><div class="brow"><span class="d">OCT 03</span><div>Sugar Rush 1000<small>@sugarfan</small></div><span class="mx">1,204x</span><span class="pz">200 TIX + $10 BONUS</span><span style="color:#6d6873">▸</span></div></div></div>
+<div><div class="phone"><div class="pg" style="padding:8px;border-radius:12px">
+  <div class="tuner" style="padding:5px 7px"><span>04</span><span class="gap">·</span><span class="on">CH 42 GOOFER BALL</span></div>
+  <div class="setstrip" style="height:150px"><div class="burst"></div><div class="desk"></div>
+    <div class="sdrum" style="width:100px;height:100px;left:6%;top:12%"><div class="gb-balls" data-n="14"></div><div class="gb-glass"></div></div>
+    <div class="sinfo" style="left:130px;top:12px;right:8px"><div class="t" style="font-size:1.25rem">GOOFER BALL</div>
+      <div class="big" style="font-size:1.8rem;margin-top:6px">64<small style="display:block;margin:2px 0 0">IN THE DRUM</small></div>
+      <div class="prize" style="font-size:.48rem;padding:4px 6px">200 TIX + $5</div></div>
+  </div>
+  <div class="panel" style="margin-top:8px;padding:9px"><h4 style="font-size:.85rem">Call one in</h4><div class="search">search slots…</div></div>
+  <div class="panel" style="margin-top:8px;padding:9px"><h4 style="font-size:.85rem">Your ball</h4><div class="ball-row me"><i></i><div>Wanted Dead or a Wild<br><small>in the drum</small></div></div></div>
+  <div class="panel" style="margin-top:8px;padding:9px"><h4 style="font-size:.85rem">Tonight's rack <span>4</span></h4><div class="ball-row lead"><i style="display:flex;align-items:center;justify-content:center;font:700 .45rem JetBrains Mono;color:#231c17">01</i><div>Gates of Olympus<br><small>@coolguy</small></div><span class="mx">412x</span></div><div class="ball-row"><i style="display:flex;align-items:center;justify-content:center;font:700 .45rem JetBrains Mono;color:#231c17">02</i><div>Wanted Dead or a Wild<br><small>@bigwinz</small></div><span class="mx">88x</span></div><div class="ball-row"><i style="display:flex;align-items:center;justify-content:center;font:700 .45rem JetBrains Mono;color:#231c17">03</i><div>The Dog House<br><small>@pupper</small></div><span class="mx">12x</span></div><div class="ball-row"><i style="display:flex;align-items:center;justify-content:center;font:700 .45rem JetBrains Mono;color:#231c17">04</i><div>Sugar Rush 1000<br><small>@sugarfan</small></div><span class="mx">—</span></div></div>
+  <div class="panel" style="margin-top:8px;padding:9px"><h4 style="font-size:.85rem">In the drum · Past draws <span>▸</span></h4></div>
+</div></div><p class="note" style="margin-top:10px">Phone: the set strip shrinks, "Call one in" and "Your ball" come first, then the rack. The drum list and past draws fold away.</p></div>
+</div>
+<p class="note"><b>Off air (no open drum):</b> the strip shows the last winning ball and "Drum's closed. Next draw whenever the drum opens on stream." "Call one in" hides, and Past draws moves up. The Gamba hub's "What's on" gets a row: "CH 42 · Goofer Ball · drum open, 64 balls".</p>
+<script>
+(function(){
+  var seed=7;function r(){seed=(seed*16807)%2147483647;return (seed-1)/2147483646;}
+  var hues=['linear-gradient(160deg,#5b3fd6,#2a1a7a)','linear-gradient(160deg,#ff8a3d,#b03a12)','linear-gradient(160deg,#3ee0bf,#127a66)','linear-gradient(160deg,#e64b8b,#6d1840)','linear-gradient(160deg,#ffd166,#a87a12)','linear-gradient(160deg,#5aa9ff,#1b4f9a)','linear-gradient(160deg,#9be15d,#3d7a17)'];
+  document.querySelectorAll('.gb-balls').forEach(function(box){
+    var n=+box.dataset.n||24;
+    for(var k=0;k<n;k++){
+      var ang=r()*Math.PI*2, rad=Math.sqrt(r())*0.4;
+      var x=50+Math.cos(ang)*rad*100, y=50+Math.abs(Math.sin(ang))*rad*100*0.9 + (r()<0.5?-18*r():6);
+      var b=document.createElement('div');b.className='gb-ball';
+      b.style.left=(x-6)+'%';b.style.top=(Math.min(84,Math.max(4,y))-6)+'%';
+      b.style.setProperty('--h',hues[Math.floor(r()*hues.length)]);
+      b.style.setProperty('--d',(0.9+r()*1.4).toFixed(2)+'s');
+      b.style.setProperty('--dl',(-r()*2).toFixed(2)+'s');
+      ['--x1','--y1','--x2','--y2'].forEach(function(p){b.style.setProperty(p,((r()-0.5)*(p.indexOf('y')>0?70:40)).toFixed(0)+'%');});
+      b.appendChild(document.createElement('i'));box.appendChild(b);
+    }
+  });
+})();
+</script>
+
+    </div>
+  </div>
+
+</body>
+</html>

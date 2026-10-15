@@ -1,6 +1,7 @@
 import { huntMode, huntStats, signedMoney, tabHuntRef, topPrizeText } from '../hunts/huntStats';
 import { formatMoney } from '../../utils/money';
 import { huntTypeLabel, profitLoss } from '../../utils/huntFormat';
+import { drawnEntries, formatMulti, prizeText, who } from '../../utils/ball';
 import { GAMBA_TOOLS, channelLabel } from '../../data/gambaTools';
 
 // Pure derivations for the Gamba guide hub (spec Part 4). Everything here is a
@@ -124,7 +125,28 @@ const STATIC_ROWS = {
   wheel: 'Spin up a random slot to play next.',
 };
 
-export function guideRows({ featured, feature, hunts, leaderboard, resets, roundError = null }) {
+function ballRow(ball) {
+  const round = ball.round;
+  if (round === undefined) return { now: 'Tuning…', next: '—', lit: false, live: false, tone: null };
+  if (round && round.status === 'open') {
+    return {
+      now: ball.count == null ? 'Drum open' : `Drum open · ${plural(ball.count, 'ball', 'balls')}`,
+      next: `Top multi wins ${prizeText(round.prize) || 'bragging rights'}`,
+      lit: false,
+      live: true,
+      tone: null,
+    };
+  }
+  if (round && round.status === 'closed') {
+    return { now: `Lineup closed · ${plural(drawnEntries(round).length, 'ball', 'balls')} drawn`, next: 'Results after the hunt', lit: false, live: false, tone: null };
+  }
+  if (round && round.status === 'settled' && round.winner) {
+    return { now: `Last winner @${who(round.winner)} · ${formatMulti(round.winner.multiplier)}`, next: 'Next draw on stream', lit: false, live: false, tone: null };
+  }
+  return { now: 'Viewer-called buy hunts', next: 'When the drum opens', lit: false, live: false, tone: null };
+}
+
+export function guideRows({ featured, feature, hunts, leaderboard, resets, roundError = null, ball = null }) {
   const lb = leaderboardFacts(leaderboard);
   return GAMBA_TOOLS.map((tool) => {
     const head = { id: tool.id, channel: channelLabel(tool), label: tool.label, path: tool.path };
@@ -132,6 +154,7 @@ export function guideRows({ featured, feature, hunts, leaderboard, resets, round
       return { ...head, now: leaderboardRow(lb, featured), next: resets || '—', lit: false, live: false, tone: null };
     }
     if (tool.id === 'hunts') return { ...head, ...huntsRow(featured, feature, hunts || {}, roundError) };
+    if (tool.id === 'ball') return { ...head, ...ballRow(ball || { round: null }) };
     return { ...head, now: STATIC_ROWS[tool.id], next: 'Any time', lit: false, live: false, tone: null };
   });
 }

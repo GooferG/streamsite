@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Superpowers Brainstorming</title>
+  <style>
+    /*
+     * BRAINSTORM COMPANION FRAME TEMPLATE
+     *
+     * This template provides a consistent frame with:
+     * - OS-aware light/dark theming
+     * - Header branding and connection status
+     * - Scrollable main content area
+     * - CSS helpers for common UI patterns
+     *
+     * Content is injected via placeholder comment in #frame-content.
+     */
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
+
+    /* ===== THEME VARIABLES ===== */
+    :root {
+      --bg-primary: #f5f5f7;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #e5e5e7;
+      --border: #d1d1d6;
+      --text-primary: #1d1d1f;
+      --text-secondary: #86868b;
+      --text-tertiary: #aeaeb2;
+      --accent: #0071e3;
+      --accent-hover: #0077ed;
+      --success: #34c759;
+      --warning: #ff9f0a;
+      --error: #ff3b30;
+      --selected-bg: #e8f4fd;
+      --selected-border: #0071e3;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: #1d1d1f;
+        --bg-secondary: #2d2d2f;
+        --bg-tertiary: #3d3d3f;
+        --border: #424245;
+        --text-primary: #f5f5f7;
+        --text-secondary: #86868b;
+        --text-tertiary: #636366;
+        --accent: #0a84ff;
+        --accent-hover: #409cff;
+        --selected-bg: rgba(10, 132, 255, 0.15);
+        --selected-border: #0a84ff;
+      }
+    }
+
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+    }
+
+    /* ===== FRAME STRUCTURE ===== */
+    .brand { display: flex; align-items: center; min-width: 0; overflow: hidden; color: var(--text-secondary); line-height: 1; }
+    .brand a { color: inherit; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; min-width: 0; max-width: 100%; line-height: 1; }
+    .brand-copy { display: block; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; line-height: 1; transform: translateY(-1px); }
+    .brand-logo { display: block; height: 1em; width: auto; max-width: 180px; flex-shrink: 0; filter: invert(1); }
+    @media (prefers-color-scheme: dark) {
+      .brand-logo { filter: none; }
+    }
+    .status { font-size: 0.7rem; color: var(--status-color, var(--success)); display: flex; align-items: center; gap: 0.4rem; justify-self: end; white-space: nowrap; line-height: 1; }
+    .status::before { content: ''; width: 6px; height: 6px; background: var(--status-color, var(--success)); border-radius: 50%; }
+
+    .main { flex: 1; overflow-y: auto; }
+    #frame-content { padding: 2rem; min-height: 100%; }
+
+    .header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 0.5rem 1.5rem;
+      flex-shrink: 0;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 1rem;
+      min-height: 42px;
+    }
+    .header .brand { justify-self: start; width: 100%; font-size: 0.75rem; line-height: 1; }
+    .header .status { grid-column: 2; line-height: 1; }
+    .header span {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+    .header .selected-text {
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    /* ===== TYPOGRAPHY ===== */
+    h2 { font-size: 1.5rem; font-weight: 600; margin-bottom: 0.5rem; }
+    h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.25rem; }
+    .subtitle { color: var(--text-secondary); margin-bottom: 1.5rem; }
+    .section { margin-bottom: 2rem; }
+    .label { font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; }
+
+    /* ===== OPTIONS (for A/B/C choices) ===== */
+    .options { display: flex; flex-direction: column; gap: 0.75rem; }
+    .option {
+      background: var(--bg-secondary);
+      border: 2px solid var(--border);
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+    .option:hover { border-color: var(--accent); }
+    .option.selected { background: var(--selected-bg); border-color: var(--selected-border); }
+    .option .letter {
+      background: var(--bg-tertiary);
+      color: var(--text-secondary);
+      width: 1.75rem; height: 1.75rem;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 600; font-size: 0.85rem; flex-shrink: 0;
+    }
+    .option.selected .letter { background: var(--accent); color: white; }
+    .option .content { flex: 1; }
+    .option .content h3 { font-size: 0.95rem; margin-bottom: 0.15rem; }
+    .option .content p { color: var(--text-secondary); font-size: 0.85rem; margin: 0; }
+
+    /* ===== CARDS (for showing designs/mockups) ===== */
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; }
+    .card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .card:hover { border-color: var(--accent); transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .card.selected { border-color: var(--selected-border); border-width: 2px; }
+    .card-image { background: var(--bg-tertiary); aspect-ratio: 16/10; display: flex; align-items: center; justify-content: center; }
+    .card-body { padding: 1rem; }
+    .card-body h3 { margin-bottom: 0.25rem; }
+    .card-body p { color: var(--text-secondary); font-size: 0.85rem; }
+
+    /* ===== MOCKUP CONTAINER ===== */
+    .mockup {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .mockup-header {
+      background: var(--bg-tertiary);
+      padding: 0.5rem 1rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .mockup-body { padding: 1.5rem; }
+
+    /* ===== SPLIT VIEW (side-by-side comparison) ===== */
+    .split { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+    @media (max-width: 700px) { .split { grid-template-columns: 1fr; } }
+
+    /* ===== PROS/CONS ===== */
+    .pros-cons { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin: 1rem 0; }
+    .pros, .cons { background: var(--bg-secondary); border-radius: 8px; padding: 1rem; }
+    .pros h4 { color: var(--success); font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .cons h4 { color: var(--error); font-size: 0.85rem; margin-bottom: 0.5rem; }
+    .pros ul, .cons ul { margin-left: 1.25rem; font-size: 0.85rem; color: var(--text-secondary); }
+    .pros li, .cons li { margin-bottom: 0.25rem; }
+
+    /* ===== PLACEHOLDER (for mockup areas) ===== */
+    .placeholder {
+      background: var(--bg-tertiary);
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-tertiary);
+    }
+
+    /* ===== INLINE MOCKUP ELEMENTS ===== */
+    .mock-nav { background: var(--accent); color: white; padding: 0.75rem 1rem; display: flex; gap: 1.5rem; font-size: 0.9rem; }
+    .mock-sidebar { background: var(--bg-tertiary); padding: 1rem; min-width: 180px; }
+    .mock-content { padding: 1.5rem; flex: 1; }
+    .mock-button { background: var(--accent); color: white; border: none; padding: 0.5rem 1rem; border-radius: 6px; font-size: 0.85rem; }
+    .mock-input { background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; padding: 0.5rem; width: 100%; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="brand"><span class="brand-copy">Goofer Ball mockup (approved in brainstorming 2026-10-09)</span></div>
+    <div class="status">Connecting…</div>
+  </div>
+
+  <div class="main">
+    <div id="frame-content">
+      <style>
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Bricolage+Grotesque:wght@400;600;800&family=JetBrains+Mono:wght@500;700&display=swap');
+.gb-scene{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;border-radius:8px;font-family:'Bricolage Grotesque',system-ui,sans-serif;color:#ece8e1}
+.gb-scene *{box-sizing:border-box}
+.gb-abs{position:absolute}
+.gb-scan{position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 1px,transparent 1px 3px);mix-blend-mode:screen}
+.gb-vig{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(0,0,0,.55) 100%)}
+.gb-drum{position:absolute;left:7%;top:14%;width:30%;aspect-ratio:1;border-radius:50%}
+.gb-balls{position:absolute;inset:3%;border-radius:50%;overflow:hidden}
+.gb-glass{position:absolute;inset:0;border-radius:50%;border:2px solid rgba(255,255,255,.38);background:radial-gradient(circle at 32% 26%,rgba(255,255,255,.32),rgba(255,255,255,.06) 30%,rgba(255,255,255,.015) 62%,rgba(255,255,255,.07) 100%);box-shadow:inset 0 0 36px rgba(255,255,255,.08)}
+.gb-glass:after{content:'';position:absolute;left:16%;top:9%;width:30%;height:14%;border-radius:50%;background:rgba(255,255,255,.28);filter:blur(3px);transform:rotate(-28deg)}
+.gb-ball{position:absolute;width:12%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 34% 30%,#fff,#ece3cf 45%,#a99c82 100%);box-shadow:0 1px 2px rgba(0,0,0,.4);animation:gbChurn var(--d) ease-in-out var(--dl) infinite alternate}
+.gb-ball i{position:absolute;inset:26%;border-radius:50%;background:var(--h)}
+@keyframes gbChurn{0%{transform:translate(0,0)}50%{transform:translate(var(--x1),var(--y1))}100%{transform:translate(var(--x2),var(--y2))}}
+.gb-tube{position:absolute;left:21%;top:3.5%;width:2%;height:11%;border:2px solid rgba(255,255,255,.35);border-bottom:none;border-radius:6px 6px 0 0;background:rgba(255,255,255,.06)}
+.gb-tube .gb-ball{position:absolute;left:-2%;top:6%;width:104%;animation:none}
+.gb-stand{position:absolute;left:16%;top:66%;width:12%;height:13%;clip-path:polygon(30% 0,70% 0,100% 100%,0 100%);background:linear-gradient(90deg,#6b6f78,#d9dce2 40%,#8a8e96 60%,#4a4d55)}
+.gb-base{position:absolute;left:11%;top:78%;width:22%;height:7%;border-radius:4px}
+.gb-close{position:absolute;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 32% 28%,#fff,#efe6d2 42%,#b3a68b 100%);box-shadow:0 18px 40px rgba(0,0,0,.55)}
+.gb-decal{position:absolute;left:24%;top:16%;width:50%;aspect-ratio:1;border-radius:50%;overflow:hidden;background:linear-gradient(160deg,#5b3fd6,#2a1a7a 55%,#c9a0ff);box-shadow:inset 0 0 0 3px rgba(35,28,23,.85)}
+.gb-decal span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;font:800 0.6rem/1.05 'Bricolage Grotesque';letter-spacing:.04em;color:#fff;text-shadow:0 1px 2px #000;padding:12%}
+.gb-band{position:absolute;left:8%;right:8%;top:68%;padding:3% 0;text-align:center;font:700 0.85rem 'JetBrains Mono',monospace;color:#231c17;transform:rotate(-5deg);border-top:2px solid rgba(35,28,23,.7);border-bottom:2px solid rgba(35,28,23,.7)}
+.gb-num{position:absolute;left:0;right:0;top:4%;text-align:center;font:700 .62rem 'JetBrains Mono';color:#231c17;opacity:.75}
+.gb-host{position:absolute;border:2px dashed rgba(255,255,255,.35);border-radius:10px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:4%;font:600 .55rem 'JetBrains Mono';letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.6);text-align:center}
+.gb-host:before{content:'';position:absolute;left:30%;top:14%;width:40%;aspect-ratio:1;border-radius:50%;background:rgba(0,0,0,.35)}
+.gb-host:after{content:'';position:absolute;left:14%;top:44%;width:72%;height:40%;border-radius:40% 40% 6px 6px;background:rgba(0,0,0,.35)}
+.gb-rack{position:absolute;display:flex;gap:6px;align-items:flex-end}
+.gb-rack div{width:22px;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 34% 30%,#fff,#ece3cf 45%,#a99c82 100%);font:700 .5rem 'JetBrains Mono';color:#231c17;display:flex;align-items:center;justify-content:center}
+.gb-fine{position:absolute;font:500 .48rem 'JetBrains Mono';letter-spacing:.08em;opacity:.55}
+.gb-cap{margin:.6rem 0 0;font-size:.85rem;line-height:1.45}
+</style><style>
+.ov-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.ov-step{background:#fff;border:1px solid #e3e3e8;border-radius:10px;padding:10px}
+.ov-step h3{margin:.2rem 0 .5rem;font-size:1rem}
+.ov-step p{margin:.5rem 0 0;font-size:.82rem;line-height:1.45;color:#444}
+.ov-game{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 40%,#3b2a55,#120c1c 75%)}
+.ov-reels{position:absolute;left:22%;top:12%;width:56%;height:62%;display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:repeat(3,1fr);gap:5px;opacity:.55}
+.ov-reels div{border-radius:6px;background:linear-gradient(160deg,rgba(255,255,255,.18),rgba(255,255,255,.04))}
+.ov-gametxt{position:absolute;left:0;right:0;top:3.5%;text-align:center;font:600 .5rem 'JetBrains Mono';letter-spacing:.25em;color:rgba(255,255,255,.35)}
+.ov-cam{position:absolute;right:2.5%;bottom:4%;width:20%;aspect-ratio:4/3;border-radius:6px;background:linear-gradient(160deg,#4a4550,#26232c);display:flex;align-items:center;justify-content:center;font:600 .5rem 'JetBrains Mono';letter-spacing:.2em;color:rgba(255,255,255,.5);border:2px solid rgba(255,255,255,.12)}
+.cw{position:absolute;left:2.5%;bottom:4%;width:40%;display:flex;flex-direction:column;box-shadow:0 8px 20px rgba(0,0,0,.5)}
+.cw-head{display:flex;align-items:stretch;font:400 .78rem Anton,Impact,sans-serif;letter-spacing:.05em}
+.cw-head b{font-weight:400;background:#ff6a1a;color:#1a0a02;padding:3px 7px;white-space:nowrap}
+.cw-head span{flex:1;background:#22396b;color:#ffe9c2;padding:3px 7px;font:700 .42rem/2 'JetBrains Mono';letter-spacing:.16em;white-space:nowrap;overflow:hidden}
+.cw-body{display:flex;gap:8px;align-items:center;background:#ece3cf;color:#231c17;padding:6px 8px}
+.cw-drum{position:relative;width:30%;aspect-ratio:1;border-radius:50%;background:linear-gradient(180deg,#3d63a3,#22396b)}
+.cw-drum .gb-balls{inset:5%}
+.cw-txt{flex:1;font:700 .44rem/1.6 'JetBrains Mono';letter-spacing:.08em}
+.cw-txt big{display:block;font:400 1.05rem/1 Anton,Impact,sans-serif;letter-spacing:.02em}
+.cw-rack{display:flex;gap:3px;margin-top:3px}
+.cw-rack i{width:13px;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle at 34% 30%,#fff,#ece3cf 45%,#a99c82 100%);border:1px solid rgba(35,28,23,.35);font:700 .32rem/12px 'JetBrains Mono';font-style:normal;text-align:center}
+.toast{position:absolute;left:2.5%;bottom:40%;display:flex;gap:6px;align-items:center;background:#1a0a02;color:#ffe9c2;border-left:4px solid #ff6a1a;padding:4px 8px;font:700 .46rem 'JetBrains Mono';letter-spacing:.1em;box-shadow:0 6px 14px rgba(0,0,0,.5)}
+.toast em{font-style:normal;color:#ff9a5c}
+.rb{position:absolute;left:2.5%;top:6%;width:42%;box-shadow:0 8px 20px rgba(0,0,0,.5)}
+.rb-row{display:grid;grid-template-columns:14px 18px 1fr auto;gap:6px;align-items:center;background:#ece3cf;color:#231c17;padding:3px 7px;border-top:1px solid rgba(35,28,23,.15);font:700 .44rem 'JetBrains Mono';letter-spacing:.06em}
+.rb-row.lead{background:#ffd2b0}
+.rb-row .th{width:18px;height:14px;border-radius:2px}
+.rb-row .mx{font:400 .72rem Anton,Impact,sans-serif;letter-spacing:.03em}
+.rb-row .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rb-row small{display:block;font:600 .36rem 'JetBrains Mono';opacity:.65}
+.ov-step.selected{outline:3px solid #6b5bd6}
+.gb-logo{position:absolute;right:3.2%;bottom:24%;width:7%;aspect-ratio:1;border-radius:50%;border:2px solid rgba(255,233,194,.55);display:flex;align-items:center;justify-content:center;font:400 1.1rem Anton,Impact,sans-serif;color:rgba(255,233,194,.7);background:rgba(0,0,0,.18)}
+.cw-cmd{display:inline-block;white-space:nowrap;background:#231c17;color:#ece3cf;padding:0 4px;margin-top:2px}
+</style>
+<h2>Goofer Ball on stream: one round, start to finish</h2>
+<p class="subtitle">One OBS browser source over gameplay, like the giveaway overlay. The corner is set with ?pos=bl|br|tl|tr so it never sits on your cam. Only steps 2 and 4 take over the whole screen.</p>
+<div class="ov-grid">
+  <div class="ov-step"><h3>1 · Entries open (resting state)</h3><div class="gb-scene"><div class="ov-game"></div><div class="ov-reels"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div><div class="ov-gametxt">STREAM · SLOT GAMEPLAY</div><div class="ov-cam">WEBCAM</div><div class="cw">
+      <div class="cw-head"><b>GOOFER BALL</b><span>CH 42 · TOP MULTI WINS 200 TIX + $5</span></div>
+      <div class="cw-body"><div class="cw-drum"><div class="gb-balls" data-n="14"></div><div class="gb-glass"></div></div>
+        <div class="cw-txt"><big>64 BALLS</big>IN THE DRUM<br>TYPE <span class="cw-cmd">!slot &lt;slot name&gt;</span>
+        <div class="cw-rack"><i>01</i><i>02</i><i>03</i></div></div></div></div><div class="toast">🎱 <span>@SUGARFAN CALLED <em>SUGAR RUSH 1000</em></span></div><div class="gb-scan"></div></div>
+    <p>A corner box with the mini drum churning, the ball count, the !slot command, the prize and the rack so far. Each new entry drops a ball in and shows a toast with the viewer and slot for about 3s (toasts queue during a rush).</p></div>
+  <div class="ov-step"><h3>2 · Draw takeover (~8s)</h3><div class="gb-scene" style="background:linear-gradient(180deg,#3d63a3 0%,#22396b 62%,#152447 100%)">
+  <div class="gb-abs" style="inset:0;background:repeating-conic-gradient(from 0deg at 52% 38%,rgba(255,255,255,.075) 0 5deg,transparent 5deg 13deg)"></div>
+  <div class="gb-abs" style="left:0;right:0;bottom:0;height:24%;background:linear-gradient(180deg,#5a3a22,#3b2414);border-top:3px solid #8a5a33"></div>
+  <div class="gb-abs" style="right:4%;top:4%;text-align:right"><div style="font:400 1.2rem/0.95 Anton,Impact,sans-serif;color:#ffe9c2;text-shadow:2px 0 rgba(255,60,60,.55),-2px 0 rgba(60,220,255,.45)">GOOFER BALL</div><div style="font:700 .42rem 'JetBrains Mono';letter-spacing:.28em;color:#ffd2b0;margin-top:3px">WGOOF · CHANNEL 42 · NIGHTLY DRAW</div></div>
+  <div class="gb-abs" style="left:4%;top:5%;font:700 .45rem 'JetBrains Mono';letter-spacing:.2em;background:#d83a1c;padding:2px 6px;border-radius:3px">● LIVE 4:20</div>
+  <div class="gb-tube"><div class="gb-ball"></div></div>
+  <div class="gb-drum"><div class="gb-balls" data-n="22"></div><div class="gb-glass"></div></div>
+  <div class="gb-stand"></div><div class="gb-base" style="background:linear-gradient(180deg,#c8452a,#8a2a17)"></div>
+  <div class="gb-close" style="left:46%;top:16%;width:28%"><div class="gb-num">BALL 04</div><div class="gb-decal"><span>SUGAR<br>RUSH 1000</span></div><div class="gb-band" style="font-size:.6rem">@SUGARFAN</div></div>
+  <div class="gb-logo" style="font-size:.85rem">42</div>
+  <div class="gb-rack" style="left:5%;bottom:27%"><div style="width:16px;font-size:.38rem">01</div><div style="width:16px;font-size:.38rem">02</div><div style="width:16px;font-size:.38rem">03</div></div>
+  <div class="gb-abs" style="left:4%;right:4%;bottom:7%;height:14%;display:flex;align-items:stretch">
+    <div style="background:#ff6a1a;color:#1a0a02;display:flex;align-items:center;padding:0 3%;font:400 .85rem Anton,Impact,sans-serif">BALL 04</div>
+    <div style="flex:1;background:#ece3cf;color:#231c17;display:flex;flex-direction:column;justify-content:center;padding:0 3%"><div style="font:400 .9rem/1 Anton,Impact,sans-serif">SUGAR RUSH 1000</div><div style="font:700 .42rem 'JetBrains Mono';letter-spacing:.14em;margin-top:2px">CALLED IN BY @SUGARFAN · 60 BALLS LEFT IN THE DRUM</div></div></div>
+  <div class="gb-scan"></div><div class="gb-vig"></div></div>
+    <p>Static cut to the Channel 42 set. The blower roars, the ball rides the tube, and the close-up spins to the slot art and @viewer. The lower third holds, then it cuts back to step 1 with the new ball on the rack.</p></div>
+  <div class="ov-step" data-choice="live-rack" onclick="toggleSelect(this)" style="cursor:pointer"><h3>3 · Opening the bonuses: live rack (optional, click if you want it)</h3><div class="gb-scene"><div class="ov-game"></div><div class="ov-reels"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div><div class="ov-gametxt">STREAM · SLOT GAMEPLAY</div><div class="ov-cam">WEBCAM</div><div class="rb"><div class="cw-head"><b>TONIGHT'S RACK</b><span>LEADER @COOLGUY · 412x</span></div><div class="rb-row lead"><span>01</span><div class="th" style="background:linear-gradient(160deg,#5b3fd6,#1a1530)"></div><div class="nm">GATES OF OLYMPUS<small>@COOLGUY</small></div><span class="mx">412x</span></div><div class="rb-row"><span>02</span><div class="th" style="background:linear-gradient(160deg,#3ee0bf,#1a1530)"></div><div class="nm">WANTED DEAD OR A WILD<small>@BIGWINZ</small></div><span class="mx">88x</span></div><div class="rb-row"><span>03</span><div class="th" style="background:linear-gradient(160deg,#e64b8b,#1a1530)"></div><div class="nm">THE DOG HOUSE<small>@PUPPER</small></div><span class="mx">12x</span></div><div class="rb-row"><span>04</span><div class="th" style="background:linear-gradient(160deg,#ff8a3d,#1a1530)"></div><div class="nm">SUGAR RUSH 1000<small>@SUGARFAN</small></div><span class="mx">—</span></div><div class="rb-row" style="grid-template-columns:1fr;background:#22396b;color:#ffe9c2">DRUM CLOSED · TOP MULTI WINS 200 TIX + $5</div></div><div class="gb-scan"></div></div>
+    <p>Once the drum is closed, the corner box turns into tonight's rack. Each ball's multiplier fills in as you open its bonus, read from the communityhunts hunt every 60s, and the leader is highlighted, so chat watches the race. This needs the hunt linked when you close the drum instead of at payout.</p></div>
+  <div class="ov-step"><h3>4 · Winner (after you pay out)</h3><div class="gb-scene" style="background:linear-gradient(180deg,#3d63a3 0%,#22396b 62%,#152447 100%)">
+  <div class="gb-abs" style="inset:0;background:repeating-conic-gradient(from 0deg at 50% 45%,rgba(255,255,255,.09) 0 5deg,transparent 5deg 13deg)"></div>
+  <div class="gb-abs" style="left:0;right:0;top:7%;text-align:center;font:400 1.3rem Anton,Impact,sans-serif;letter-spacing:.04em;color:#ffe9c2;text-shadow:2px 0 rgba(255,60,60,.55),-2px 0 rgba(60,220,255,.45)">TONIGHT'S WINNING BALL</div>
+  <div class="gb-close" style="left:13%;top:22%;width:26%"><div class="gb-num">BALL 01</div><div class="gb-decal"><span>GATES OF<br>OLYMPUS</span></div><div class="gb-band" style="font-size:.6rem">@COOLGUY</div></div>
+  <div class="gb-abs" style="left:45%;top:24%;right:5%">
+    <div style="font:400 3.4rem/0.9 Anton,Impact,sans-serif;color:#ff9a5c;text-shadow:3px 3px 0 #1a0a02">412x</div>
+    <div style="font:400 1rem Anton,Impact,sans-serif;margin-top:6px;color:#ffe9c2">GATES OF OLYMPUS</div>
+    <div style="display:inline-block;margin-top:8px;background:#ece3cf;color:#231c17;font:700 .5rem 'JetBrains Mono';letter-spacing:.12em;padding:5px 8px">@COOLGUY WINS 200 TICKETS + $5</div>
+  </div>
+  <div class="gb-abs" style="left:0;right:0;bottom:0;height:18%;background:linear-gradient(180deg,#5a3a22,#3b2414);border-top:3px solid #8a5a33"></div>
+  <div class="gb-fine" style="left:4%;bottom:4%">RESULTS CERTIFIED BY THE GOOFER GAMING COMMISSION (ONE GUY). DRAWN NIGHTLY AT 4:20.</div>
+  <div class="gb-scan"></div><div class="gb-vig"></div></div>
+    <p>Full-screen card with the winning ball, its multiplier and what they won. It plays from the payout time, the same as the giveaway reveal, so OBS reloads stay in sync. The results chat line waits until after this reveal.</p></div>
+</div>
+<script>
+(function(){
+  var seed=7;function r(){seed=(seed*16807)%2147483647;return (seed-1)/2147483646;}
+  var hues=['linear-gradient(160deg,#5b3fd6,#2a1a7a)','linear-gradient(160deg,#ff8a3d,#b03a12)','linear-gradient(160deg,#3ee0bf,#127a66)','linear-gradient(160deg,#e64b8b,#6d1840)','linear-gradient(160deg,#ffd166,#a87a12)','linear-gradient(160deg,#5aa9ff,#1b4f9a)','linear-gradient(160deg,#9be15d,#3d7a17)'];
+  document.querySelectorAll('.gb-balls').forEach(function(box){
+    var n=+box.dataset.n||24;
+    for(var k=0;k<n;k++){
+      var ang=r()*Math.PI*2, rad=Math.sqrt(r())*0.4;
+      var x=50+Math.cos(ang)*rad*100, y=50+Math.abs(Math.sin(ang))*rad*100*0.9 + (r()<0.5?-18*r():6);
+      var b=document.createElement('div');b.className='gb-ball';
+      b.style.left=(x-6)+'%';b.style.top=(Math.min(84,Math.max(4,y))-6)+'%';
+      b.style.setProperty('--h',hues[Math.floor(r()*hues.length)]);
+      b.style.setProperty('--d',(0.9+r()*1.4).toFixed(2)+'s');
+      b.style.setProperty('--dl',(-r()*2).toFixed(2)+'s');
+      ['--x1','--y1','--x2','--y2'].forEach(function(p){b.style.setProperty(p,((r()-0.5)*(p.indexOf('y')>0?70:40)).toFixed(0)+'%');});
+      b.appendChild(document.createElement('i'));box.appendChild(b);
+    }
+  });
+})();
+</script>
+
+    </div>
+  </div>
+
+</body>
+</html>

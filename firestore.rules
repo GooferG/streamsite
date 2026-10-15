@@ -39,7 +39,13 @@ service cloud.firestore {
     // Schedule doc — public read, staff write.
     match /settings/{docId} {
       allow read: if true;
-      allow write: if isStaff();
+      allow write: if isStaff() && docId != 'broadcast';
+    }
+
+    // Where reveals play (OBS or Stage): only the owner flips it.
+    match /settings/broadcast {
+      allow read: if true;
+      allow write: if isOwner();
     }
 
     // Game suggestions — public read, viewer can write only their own doc
@@ -134,6 +140,24 @@ service cloud.firestore {
       match /history/{historyId} {
         allow read: if isStaff();
         allow write: if false;
+      }
+    }
+
+    // Goofer Ball — rounds and balls are public (overlay, CH 42, control
+    // room). Claims and did-you-mean lists are server-only. All writes go
+    // through api/admin/ball.js and the !slot command (firebase-admin).
+    match /ball_rounds/{id} {
+      allow read: if true;
+      allow write: if false;
+      match /balls/{ballId} {
+        allow read: if true;
+        allow write: if false;
+      }
+      match /claims/{claimId} {
+        allow read, write: if false;
+      }
+      match /choices/{twitchId} {
+        allow read, write: if false;
       }
     }
 

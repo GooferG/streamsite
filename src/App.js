@@ -68,6 +68,7 @@ const SuggestPage = lazy(() => import('./pages/SuggestPage'));
 const TermsPage = lazy(() => import('./pages/TermsPage'));
 const SuggestOverlay = lazy(() => import('./pages/SuggestOverlay'));
 const GiveawayOverlay = lazy(() => import('./pages/GiveawayOverlay'));
+const BallOverlay = lazy(() => import('./pages/BallOverlay'));
 const BattlePage = lazy(() => import('./pages/BattlePage'));
 
 // Product/overlay routes render without the brand chrome (footer, brand body
@@ -357,10 +358,18 @@ function StreamingSiteContent() {
 // and nothing opaque behind them.
 function AppShell() {
   const location = useLocation();
-  if (location.pathname === '/giveaway-overlay') {
+  const path = location.pathname.replace(/\/+$/, '') || '/';
+  if (path === '/giveaway-overlay') {
     return (
       <Suspense fallback={null}>
         <GiveawayOverlay />
+      </Suspense>
+    );
+  }
+  if (path === '/ball-overlay') {
+    return (
+      <Suspense fallback={null}>
+        <BallOverlay />
       </Suspense>
     );
   }

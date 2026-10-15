@@ -3,7 +3,7 @@ import { pillCounter, pillState } from './panelStatus';
 
 // The minimized panel: one line of live state, a redemption counter when
 // anything is pending, and a click brings it back.
-export default function Pill({ giveaway, round, warnings, dataLost, redeem, anchor, onOpen }) {
+export default function Pill({ giveaway, round, warnings, dataLost, redeem, ball, anchor, onOpen }) {
   const ticking = giveaway?.status === 'open' && !!giveaway.closesAt;
   const now = useClock({ intervalMs: 1000, active: ticking });
   const { label, tone } = pillState({ giveaway, round, warnings, dataLost, now });
@@ -14,7 +14,7 @@ export default function Pill({ giveaway, round, warnings, dataLost, redeem, anch
       type="button"
       data-control-room=""
       onClick={onOpen}
-      aria-label={`Open control room. ${label}${pending}`}
+      aria-label={`Open control room. ${label}${pending}${ball ? `. ${ball.label.toLowerCase()} in the drum` : ''}`}
       className={`cr-pill cr-pill-in tone-${tone} fixed z-[65]`}
       style={anchor}
     >
@@ -23,6 +23,11 @@ export default function Pill({ giveaway, round, warnings, dataLost, redeem, anch
       {counter && (
         <span className={`cr-pill-count ${counter.pulse ? 'is-pulse' : ''}`} aria-hidden="true">
           {counter.label}
+        </span>
+      )}
+      {ball && (
+        <span className="cr-pill-count" aria-hidden="true">
+          {ball.label}
         </span>
       )}
     </button>

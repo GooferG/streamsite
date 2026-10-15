@@ -3,15 +3,25 @@ import { createPortal } from 'react-dom';
 import { useControlRoom } from '../../contexts/ControlRoomContext';
 import { useGiveawayFeed } from '../../hooks/useGiveawayFeed';
 import { useClock } from '../../hooks/useClock';
+import useMomentAnchors from '../../hooks/useMomentAnchors';
 import { pickKey } from '../../utils/giveaway';
 import { CrtStyles } from '../giveaway/RevealScreen';
 import RevealStage from '../giveaway/RevealStage';
 import PredictionWinnersReveal from '../PredictionWinnersReveal';
-import { giveawayMoment, resultsMoment } from './stageTriggers';
+import DrawTakeover from '../ball/DrawTakeover';
+import WinnerCard from '../ball/WinnerCard';
+import { drumBalls } from '../../utils/ball';
+import { ballDrawMoment, ballWinnerMoment, giveawayMoment, resultsMoment } from './stageTriggers';
 import { MOTION, prefersReducedMotion } from './motion';
 import './controlRoom.css';
 
-function stillOnStage(moment, giveaway) {
+function stillOnStage(moment, giveaway, ballRound) {
+  if (moment && moment.kind === 'ball-draw') {
+    // A scratched or superseded draw leaves the stage; the next one replaces it.
+    const rack = (ballRound && ballRound.rack) || [];
+    const latest = rack[rack.length - 1];
+    return !!ballRound && ballRound.id === moment.round.id && !!latest && latest.drawNo === moment.entry.drawNo && !latest.scratched;
+  }
   if (!moment || moment.kind !== 'giveaway') return true;
   return !!giveaway && pickKey(giveaway) === moment.key && ['rolling', 'playing'].includes(giveaway.status);
 }
@@ -31,9 +41,9 @@ export default function StageMoment() {
   // settle) is never born already leaving just because the previous one was
   // on its way out when it arrived.
   const [leavingKey, setLeavingKey] = useState(null);
-  const staged = useRef({ pick: null, round: null });
+  const staged = useRef({ pick: null, round: null, ballDraw: null, ballWinner: null });
   const leaving = !!moment && leavingKey === moment.key;
-  const now = useClock({ intervalMs: 250, active: !!moment && !leaving });
+  const now = useClock({ intervalMs: moment && moment.kind === 'ball-draw' ? 100 : 250, active: !!moment && !leaving });
   const { setDucked } = cr;
 
   useEffect(() => {
@@ -50,7 +60,24 @@ export default function StageMoment() {
     setMoment(m);
   }, [round]);
 
-  const over = !!moment && (now >= moment.endsAt || !stillOnStage(moment, giveaway));
+  const ballRound = cr.ballRound;
+  const anchors = useMomentAnchors(ballRound);
+  useEffect(() => {
+    const t = Date.now();
+    const draw = ballDrawMoment(ballRound, staged.current.ballDraw, t, anchors);
+    if (draw) {
+      staged.current.ballDraw = draw.key;
+      setMoment(draw);
+      return;
+    }
+    const win = ballWinnerMoment(ballRound, staged.current.ballWinner, t, anchors);
+    if (win) {
+      staged.current.ballWinner = win.key;
+      setMoment(win);
+    }
+  }, [ballRound, anchors]);
+
+  const over = !!moment && (now >= moment.endsAt || !stillOnStage(moment, giveaway, ballRound));
   useEffect(() => {
     if (over && !leaving) setLeavingKey(moment.key);
   }, [over, leaving, moment]);
@@ -121,6 +148,19 @@ export default function StageMoment() {
         </p>
       </>
     );
+  } else if (moment.kind === 'ball-draw') {
+    const drum = drumBalls(cr.balls || []);
+    body = (
+      <DrawTakeover
+        entry={moment.entry}
+        rack={moment.round.rack || []}
+        balls={drum}
+        left={cr.ballsReady ? drum.length : null}
+        elapsed={now - moment.at}
+      />
+    );
+  } else if (moment.kind === 'ball-winner') {
+    body = <WinnerCard round={moment.round} />;
   }
 
   return createPortal(

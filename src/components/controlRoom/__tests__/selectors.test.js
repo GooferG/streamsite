@@ -42,6 +42,7 @@ test('a pick is confirmed once it is in winners', () => {
 test('OBS sources never run the control room; /admin runs it without the panel', () => {
   expect(controlRoomAllowed('/giveaway-overlay')).toBe(false);
   expect(controlRoomAllowed('/suggest-overlay')).toBe(false);
+  expect(controlRoomAllowed('/ball-overlay')).toBe(false);
   expect(controlRoomAllowed('/admin/giveaways')).toBe(true);
   expect(panelAllowed('/admin/giveaways')).toBe(false);
   expect(panelAllowed('/gamba/hunts')).toBe(true);

@@ -1,4 +1,4 @@
-import { pillCounter, pillState, tabLeds, tallies } from '../panelStatus';
+import { ballChip, pillCounter, pillState, tabLeds, tallies } from '../panelStatus';
 
 const NOW = 1_700_000_000_000;
 const at = (ms) => ({ toMillis: () => ms });
@@ -36,8 +36,8 @@ test('warnings or lost data turn the tone red', () => {
 
 test('tallies and tab LEDs', () => {
   expect(tallies({ isLive: true, giveaway: null, activeRound: { status: 'open' } })).toEqual({ live: true, gvw: false, prd: true, red: 0 });
-  expect(tabLeds({ giveaway: null, activeRound: null })).toEqual({ giveaway: 'off', predict: 'off', redeem: 'off' });
-  expect(tabLeds({ giveaway: { status: 'open' }, activeRound: { status: 'locked' } })).toEqual({ giveaway: 'on', predict: 'pulse', redeem: 'off' });
+  expect(tabLeds({ giveaway: null, activeRound: null })).toEqual({ giveaway: 'off', predict: 'off', redeem: 'off', ball: 'off' });
+  expect(tabLeds({ giveaway: { status: 'open' }, activeRound: { status: 'locked' } })).toEqual({ giveaway: 'on', predict: 'pulse', redeem: 'off', ball: 'off' });
   expect(tabLeds({ giveaway: { status: 'rolling', winnerTwitchId: 'tw', winners: [] }, activeRound: null }).giveaway).toBe('pulse');
 });
 
@@ -53,4 +53,14 @@ test('the pill counter shows only when something is pending', () => {
   expect(pillCounter({ pending: 0, unseen: 0 })).toBeNull();
   expect(pillCounter({ pending: 2, unseen: 0 })).toEqual({ label: 'RED 2', pulse: false });
   expect(pillCounter({ pending: 2, unseen: 1 })).toEqual({ label: 'RED 2', pulse: true });
+});
+
+test('the Ball tab LED and the pill chip', () => {
+  expect(tabLeds({ ballRound: { status: 'open' } }).ball).toBe('on');
+  expect(tabLeds({ ballRound: { status: 'closed' } }).ball).toBe('pulse');
+  expect(tabLeds({ ballRound: { status: 'settled' } }).ball).toBe('off');
+  expect(ballChip({ status: 'open' }, [{ status: 'drum' }, { status: 'drawn' }, { status: 'drum' }])).toEqual({ label: 'BALL 2' });
+  expect(ballChip({ status: 'open' }, [], false)).toEqual({ label: 'BALL —' });
+  expect(ballChip({ status: 'closed' }, [])).toBeNull();
+  expect(ballChip(null, null)).toBeNull();
 });

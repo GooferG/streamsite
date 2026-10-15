@@ -7,7 +7,7 @@ export const STORAGE_KEY = 'goofer:control-room';
 const MODES = ['closed', 'pill', 'float', 'dock'];
 const OPEN_MODES = ['float', 'dock'];
 const CORNERS = ['tl', 'tr', 'bl', 'br'];
-const TABS = ['giveaway', 'predict', 'redeem'];
+const TABS = ['giveaway', 'predict', 'redeem', 'ball'];
 const REDEEM_FILTERS = ['all', 'stream', 'payouts'];
 
 export const DEFAULT_STORE = Object.freeze({

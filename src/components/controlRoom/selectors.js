@@ -1,5 +1,5 @@
 export const LIVE_GIVEAWAY_STATUSES = ['open', 'closed', 'rolling', 'playing'];
-export const OVERLAY_PATHS = ['/giveaway-overlay', '/suggest-overlay'];
+export const OVERLAY_PATHS = ['/giveaway-overlay', '/ball-overlay', '/suggest-overlay'];
 const SHOW_ORDER = ['rolling', 'playing', 'open', 'closed'];
 
 // The giveaway the panel shows. `list` is newest first; an older rolling

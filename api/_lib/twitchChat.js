@@ -30,12 +30,19 @@ export function chatSenderId() {
     : process.env.TWITCH_BROADCASTER_ID || null;
 }
 
-export async function sendChannelMessage(text) {
+export async function sendChannelMessage(text, { replyTo } = {}) {
   const broadcasterId = process.env.TWITCH_BROADCASTER_ID;
   if (!broadcasterId) throw new Error('MISSING_TWITCH_BROADCASTER_ID');
   if (!text || !text.trim()) throw new Error('EMPTY_MESSAGE');
 
   const clipped = text.length > MAX_LEN ? text.slice(0, MAX_LEN - 1) + '…' : text;
+
+  // Local play-tests: `vercel dev` pulls the bot tokens, so CHAT_DRY_RUN=1
+  // logs the line instead of posting it in the real channel.
+  if (process.env.CHAT_DRY_RUN === '1') {
+    console.log(`[chat dry run]${replyTo ? ` (reply to ${replyTo})` : ''} ${clipped}`);
+    return { ok: true, twitchMessageId: null, sentAs: 'dry-run' };
+  }
 
   const senderId = chatSenderId();
   const sentAs = senderId === broadcasterId ? 'broadcaster' : 'bot';
@@ -45,6 +52,8 @@ export async function sendChannelMessage(text) {
     broadcaster_id: broadcasterId,
     sender_id: senderId,
     message: clipped,
+    // Threads the line under a viewer's message (the !slot replies).
+    ...(replyTo ? { reply_parent_message_id: replyTo } : {}),
   });
 
   // Twitch returns data[0].is_sent and a drop_reason if filtered.

@@ -32,7 +32,7 @@ export default function StaffLayer({ isLive, streamData, pathname }) {
         </ErrorBoundary>
       )}
 
-      {showPanel && cr.prefs.stage && (
+      {showPanel && cr.prefs.stage && cr.reveals === 'stage' && (
         <ErrorBoundary fallback={null}>
           <Suspense fallback={null}>
             <StageMoment />

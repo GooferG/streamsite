@@ -1,11 +1,16 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { collection, orderBy, query, where, limit as fLimit } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { useAuth } from './AuthContext';
+import useBroadcastSettings from '../hooks/useBroadcastSettings';
+import { writeReveals } from '../utils/broadcast';
 import { useDriverLock } from '../hooks/useDriverLock';
 import useGiveawayClock from '../components/admin/giveaways/useGiveawayClock';
 import useWinnerAnnounce from '../components/admin/giveaways/useWinnerAnnounce';
+import useBallsFeed from '../hooks/useBallsFeed';
+import { isActive } from '../utils/ball';
+import { useBallDrawAnnounce, useBallResultsAnnounce } from '../components/controlRoom/useBallAnnounce';
 import useResultsAnnounce from '../components/admin/predictions/useResultsAnnounce';
 import { useWarnings } from '../components/controlRoom/useWarnings';
 import { useLiveQuery } from '../components/controlRoom/useLiveQuery';
@@ -40,6 +45,7 @@ const giveawaysQuery = () =>
     fLimit(5)
   );
 const roundsQuery = () => query(collection(db, 'hunts'), orderBy('createdAt', 'desc'), fLimit(3));
+const ballRoundsQuery = () => query(collection(db, 'ball_rounds'), orderBy('openedAt', 'desc'), fLimit(1));
 const redemptionsQuery = () =>
   query(
     collection(db, 'redemptions'),
@@ -52,13 +58,21 @@ const redemptionsQuery = () =>
 // route (so /admin and the floating panel share one engine), plus the panel's
 // per-browser state. Timers only fire in the tab that holds the driver lock.
 export function ControlRoomProvider({ children }) {
-  const { isStaff } = useAuth();
+  const { isStaff, isOwner } = useAuth();
   const { pathname } = useLocation();
   const enabled = !!isStaff && controlRoomAllowed(pathname);
 
   const giveawaysFeed = useLiveQuery(giveawaysQuery, enabled);
   const roundsFeed = useLiveQuery(roundsQuery, enabled);
   const redemptionsFeed = useLiveQuery(redemptionsQuery, enabled);
+  const ballFeed = useLiveQuery(ballRoundsQuery, enabled);
+  const ballRound = ballFeed.docs[0] || null;
+  // Balls only while a drum is active: the tab, the pill chip and the draw
+  // guard read them; nothing listens between rounds.
+  const { balls, ready: ballsReady, error: ballsError } = useBallsFeed(ballRound ? ballRound.id : null, {
+    enabled: enabled && isActive(ballRound),
+  });
+  const broadcast = useBroadcastSettings(enabled);
   const giveaways = giveawaysFeed.docs;
   const rounds = roundsFeed.docs;
   const redemptions = redemptionsFeed.docs;
@@ -73,8 +87,12 @@ export function ControlRoomProvider({ children }) {
   const announce = useWinnerAnnounce(currentPick, { armed });
   const latestRound = rounds[0] || null;
   const results = useResultsAnnounce(latestRound, { armed });
+  const ballDrawAnnounce = useBallDrawAnnounce(ballRound, { armed });
+  const ballResults = useBallResultsAnnounce(ballRound, { armed });
 
   const [store, setStore] = useState(readStore);
+  const storeRef = useRef(store);
+  storeRef.current = store;
   // Staff only: viewers never get a localStorage key.
   useEffect(() => {
     if (enabled) writeStore(store);
@@ -120,6 +138,21 @@ export function ControlRoomProvider({ children }) {
     };
   }, []);
   const setStage = useCallback((on) => setStore((s) => ({ ...s, stage: !!on })), []);
+  // The shared reveals switch: OBS or this browser's Stage, never both.
+  const setReveals = useCallback(
+    (mode) => {
+      const next = mode === 'stage' ? 'stage' : 'overlay';
+      const prevStage = storeRef.current.stage;
+      setStore((s) => ({ ...s, stage: next === 'stage' }));
+      Promise.resolve(writeReveals(next)).catch(() => {
+        // The write failed: put this browser's Stage back so it can't play
+        // alongside the OBS overlays.
+        setStore((s) => ({ ...s, stage: prevStage }));
+        pushWarning('Could not save where reveals play. Try again.');
+      });
+    },
+    [pushWarning]
+  );
   const setHideLiveBadge = useCallback((on) => setStore((s) => ({ ...s, hideLiveBadge: !!on })), []);
 
   // The Redeem tab calls this while it's on screen. The mark only moves forward.
@@ -142,8 +175,15 @@ export function ControlRoomProvider({ children }) {
     rounds,
     activeRound: activeRoundOf(rounds),
     latestRound,
-    dataLost: giveawaysFeed.error || roundsFeed.error || redemptionsFeed.error,
-    dataGaveUp: giveawaysFeed.gaveUp || roundsFeed.gaveUp || redemptionsFeed.gaveUp,
+    ballRound,
+    balls,
+    ballsReady,
+    ballDrawAnnounce,
+    ballResults,
+    reveals: broadcast.reveals,
+    isOwner: !!isOwner,
+    dataLost: giveawaysFeed.error || roundsFeed.error || redemptionsFeed.error || ballFeed.error || ballsError,
+    dataGaveUp: giveawaysFeed.gaveUp || roundsFeed.gaveUp || redemptionsFeed.gaveUp || ballFeed.gaveUp || ballsError,
     redemptions,
     redeem: {
       pending: redemptions.length,
@@ -170,6 +210,7 @@ export function ControlRoomProvider({ children }) {
     panelActions,
     prefs: { stage: store.stage, hideLiveBadge: store.hideLiveBadge, redeemFilter: store.redeemFilter },
     setStage,
+    setReveals,
     setHideLiveBadge,
     ducked,
     setDucked,

@@ -1,8 +1,9 @@
 import crypto from 'node:crypto';
 import { adminDb, FieldValue } from '../_lib/firebaseAdmin.js';
-import { getBroadcasterAccessToken, helix } from '../_lib/twitchBroadcasterToken.js';
+import { isFollower, rolesFromBadges } from '../_lib/chatRoles.js';
 import { messageHasKeyword } from '../_lib/giveawayKeyword.js';
 import { markChatted } from '../_lib/watchtimeStore.js';
+import { handleSlotCommand, parseSlotCommand } from '../_lib/slotCommand.js';
 
 // Twitch EventSub webhook receiver.
 //
@@ -17,6 +18,7 @@ import { markChatted } from '../_lib/watchtimeStore.js';
 // For `channel.chat.message`:
 //   0. Mark the chatter in watch_chat/{windowId} so the watch-time tick can
 //      pay the chat bonus (api/cron/watchtime-tick.js).
+//   0b. Messages starting with !slot go to api/_lib/slotCommand.js (Goofer Ball).
 //   1. If giveaway in 'rolling' state and message is from the rolled winner
 //      (or 'playing' and from the winner whose bonus is on stream),
 //      write to giveaways/{id}/winner_messages.
@@ -83,46 +85,6 @@ function computeWeight(user, chatRoles, giveaway) {
   return Math.max(1, Math.floor(total));
 }
 
-// Derive chat roles from the badges array on a channel.chat.message event.
-// Twitch sends e.g. [{ set_id: 'subscriber', id: '12', info: '14' },
-// { set_id: 'vip', id: '1', info: '' }]. We only care about set_id presence.
-function rolesFromBadges(badges) {
-  const sets = new Set((badges || []).map((b) => b?.set_id).filter(Boolean));
-  return {
-    isTwitchSub: sets.has('subscriber') || sets.has('founder'),
-    isVip: sets.has('vip'),
-    isMod: sets.has('moderator') || sets.has('broadcaster'),
-  };
-}
-
-// Check whether a chatter follows the broadcaster. Cached per-invocation to
-// avoid repeated Helix calls when multiple giveaways are open. Returns true
-// if following, false if not, or null when the check could not be performed
-// (missing config / Helix error) so callers can choose how to handle.
-async function isFollower(chatterId, cache) {
-  if (cache.has(chatterId)) return cache.get(chatterId);
-  const broadcasterId = process.env.TWITCH_BROADCASTER_ID;
-  if (!broadcasterId) {
-    cache.set(chatterId, null);
-    return null;
-  }
-  try {
-    const token = await getBroadcasterAccessToken();
-    const r = await helix(
-      'GET',
-      `/channels/followers?broadcaster_id=${broadcasterId}&user_id=${chatterId}`,
-      token
-    );
-    const following = Array.isArray(r?.data) && r.data.length > 0;
-    cache.set(chatterId, following);
-    return following;
-  } catch (err) {
-    console.warn('isFollower check failed', chatterId, err.message);
-    cache.set(chatterId, null);
-    return null;
-  }
-}
-
 function extractMessageText(event) {
   // The chat message event payload nests text on event.message.text;
   // fragments[] may also exist for emote breakdown. We only need the text.
@@ -157,6 +119,16 @@ async function handleChatMessage(event) {
     await markChatted(chatterId, chatterLogin);
   } catch (err) {
     console.warn('markChatted failed', chatterId, err.message);
+  }
+
+  // Goofer Ball: !slot calls a slot into the drum. It has its own try/catch,
+  // so a ball failure never blocks giveaway entries (and the reverse).
+  if (parseSlotCommand(text) !== null) {
+    try {
+      await handleSlotCommand(event);
+    } catch (err) {
+      console.error('slot command failed', err);
+    }
   }
 
   const chatRoles = rolesFromBadges(event.badges);

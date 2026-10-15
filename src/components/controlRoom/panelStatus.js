@@ -1,4 +1,5 @@
 import { formatClock, tsMillis } from '../../utils/giveaway';
+import { drumBalls, isActive } from '../../utils/ball';
 import { pickConfirmed } from './selectors';
 
 const who = (p) => ((p && (p.displayName || p.twitchName)) || 'winner').toUpperCase();
@@ -36,14 +37,23 @@ export function tallies({ isLive, giveaway, activeRound, redeem }) {
 
 // Tab LEDs: off when idle, on while the tool runs, pulsing when it needs you.
 // Redemptions pulse only for orders this browser hasn't had on screen yet.
-export function tabLeds({ giveaway, activeRound, redeem }) {
+export function tabLeds({ giveaway, activeRound, redeem, ballRound }) {
   let gvw = 'off';
   if (giveaway) gvw = giveaway.status === 'rolling' && !pickConfirmed(giveaway) ? 'pulse' : 'on';
   let prd = 'off';
   if (activeRound) prd = activeRound.status === 'locked' ? 'pulse' : 'on';
   let red = 'off';
   if (redeem && redeem.pending > 0) red = redeem.unseen > 0 ? 'pulse' : 'on';
-  return { giveaway: gvw, predict: prd, redeem: red };
+  // A closed drum is waiting on the payout.
+  let ball = 'off';
+  if (isActive(ballRound)) ball = ballRound.status === 'closed' ? 'pulse' : 'on';
+  return { giveaway: gvw, predict: prd, redeem: red, ball };
+}
+
+// The pill's Goofer Ball chip while the drum is open: balls in the drum.
+export function ballChip(ballRound, balls, ready = true) {
+  if (!ballRound || ballRound.status !== 'open') return null;
+  return { label: ready ? `BALL ${drumBalls(balls).length}` : 'BALL —' };
 }
 
 // The pill's redemption chip, or null when nothing is pending.

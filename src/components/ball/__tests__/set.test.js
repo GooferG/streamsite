@@ -1,0 +1,110 @@
+import { render, screen } from '@testing-library/react';
+import DrawTakeover from '../DrawTakeover';
+import WinnerCard from '../WinnerCard';
+import ChannelSet, { FINE_PRINT } from '../ChannelSet';
+
+jest.mock('../DrumRig', () => (props) => <div data-testid="rig" data-count={props.count} />);
+
+beforeEach(() => {
+  jest.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
+});
+
+const ENTRY = { drawNo: 3, slotName: 'Gates of Olympus', thumb: null, displayName: 'CoolGuy', twitchName: 'coolguy' };
+const sound = () => ({ tick: jest.fn(), burst: jest.fn(), land: jest.fn() });
+
+test('the set: title, LIVE 4:20 bug, the 42 station bug and the fine print', () => {
+  render(
+    <div className="relative">
+      <ChannelSet />
+    </div>
+  );
+  expect(screen.getByText('Goofer Ball')).toBeTruthy();
+  expect(screen.getByText('WGOOF · Channel 42 · Nightly draw')).toBeTruthy();
+  expect(screen.getByText('● Live 4:20')).toBeTruthy();
+  expect(screen.getByText('42')).toBeTruthy();
+  expect(FINE_PRINT).toBe('Drawn nightly at 4:20. Supervised by the Goofer Gaming Commission. Odds are odds. Not a real lottery.');
+  expect(screen.getByText(FINE_PRINT)).toBeTruthy();
+});
+
+test('blower phase: drum only, no ball or lower third yet', () => {
+  const s = sound();
+  render(<DrawTakeover entry={ENTRY} rack={[ENTRY]} balls={[]} left={61} elapsed={1000} sound={s} />);
+  expect(screen.queryByText('@CoolGuy')).toBeNull();
+  expect(screen.queryByText(/Called in by/)).toBeNull();
+  expect(s.burst).toHaveBeenCalledWith(1600);
+});
+
+test('hold phase: the ball close-up and the lower third', () => {
+  render(<DrawTakeover entry={ENTRY} rack={[ENTRY]} balls={[]} left={61} elapsed={6000} sound={sound()} />);
+  expect(screen.getByText('@CoolGuy')).toBeTruthy();
+  expect(screen.getAllByText('Ball 03').length).toBeGreaterThan(0);
+  expect(screen.getByText('Called in by @CoolGuy · 61 balls left in the drum')).toBeTruthy();
+  expect(screen.getByText('Ball 3: Gates of Olympus, called in by CoolGuy')).toBeTruthy();
+});
+
+test('spin phase lands the sound; an unknown drum count drops the "left" clause', () => {
+  const s = sound();
+  render(<DrawTakeover entry={ENTRY} rack={[ENTRY]} left={null} elapsed={5800} sound={s} />);
+  expect(screen.getByText('Called in by @CoolGuy')).toBeTruthy();
+  const { rerender } = render(<DrawTakeover entry={ENTRY} rack={[ENTRY]} elapsed={4500} sound={s} />);
+  expect(s.land).toHaveBeenCalled();
+  rerender(<DrawTakeover entry={ENTRY} rack={[ENTRY]} elapsed={8000} sound={s} />);
+});
+
+test('after the reveal it renders nothing', () => {
+  const { container } = render(<DrawTakeover entry={ENTRY} rack={[ENTRY]} elapsed={8000} sound={sound()} />);
+  expect(container.textContent).toBe('');
+});
+
+test('winner card', () => {
+  const round = {
+    prize: { tickets: 200, prize: { kind: 'cash', amount: 5 } },
+    winner: { ...ENTRY, drawNo: 1, multiplier: 412 },
+  };
+  render(<WinnerCard round={round} />);
+  expect(screen.getByText("Tonight's winning ball")).toBeTruthy();
+  expect(screen.getByText('412x')).toBeTruthy();
+  expect(screen.getByText('@CoolGuy wins 200 tickets + $5')).toBeTruthy();
+  expect(screen.getByText('Results certified by the Goofer Gaming Commission (one guy). Drawn nightly at 4:20.')).toBeTruthy();
+});
+
+test('the drum count: empty drum with a known count is 0, unknown count keeps placeholders', () => {
+  const { getByTestId, rerender } = render(<DrawTakeover entry={ENTRY} rack={[ENTRY]} balls={[]} left={0} elapsed={1000} sound={sound()} />);
+  expect(getByTestId('rig').getAttribute('data-count')).toBe('0');
+  rerender(<DrawTakeover entry={ENTRY} rack={[ENTRY]} balls={[]} left={null} elapsed={1000} sound={sound()} />);
+  expect(getByTestId('rig').getAttribute('data-count')).toBe('24');
+});
+
+describe('the TV the moments play in', () => {
+  const { tvBox } = require('../BallTv');
+
+  test('56% of a 16:9 canvas, the set scaled to fit', () => {
+    const box = tvBox(1920, 1080);
+    expect(box.width).toBeCloseTo(1075.2);
+    expect(box.height).toBeCloseTo(604.8);
+    expect(box.scale).toBeCloseTo(0.56);
+    // The set inside is a full-width 16:9 canvas.
+    expect(box.innerWidth).toBe(1920);
+    expect(box.innerHeight).toBeCloseTo(1080);
+  });
+
+  test('a short, wide window caps the TV by height', () => {
+    const box = tvBox(1920, 600);
+    expect(box.height).toBeCloseTo(540);
+    expect(box.width).toBeCloseTo(960);
+    expect(box.scale).toBeCloseTo(0.5);
+  });
+
+  test('the draw plays inside the TV, static cut included', () => {
+    const { getByTestId } = render(<DrawTakeover entry={ENTRY} rack={[ENTRY]} balls={[]} left={61} elapsed={200} sound={sound()} />);
+    const tv = getByTestId('ball-tv');
+    expect(tv.querySelector('.gb-set')).toBeTruthy();
+    expect(tv.querySelector('.gb-static')).toBeTruthy();
+  });
+
+  test('the winner card plays inside the TV', () => {
+    const round = { prize: { tickets: 200, prize: null }, winner: { ...ENTRY, drawNo: 1, multiplier: 412 } };
+    const { getByTestId } = render(<WinnerCard round={round} />);
+    expect(getByTestId('ball-tv').textContent).toContain("Tonight's winning ball");
+  });
+});

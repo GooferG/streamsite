@@ -43,6 +43,23 @@ const LIVE_HUNT = {
   ],
 };
 const LAST_HUNT = { id: 'h8', status: 'archived', huntType: 'community', currency: null, bonusCount: 30, pot: 1800, totalWon: 2175.7, averageMultiple: 72.5, endedAt: '2026-09-30T04:10:00.000Z' };
+const ball = (round, count) => ({ round, count });
+const BALL_PRIZE = { tickets: 200, prize: { kind: 'cash', amount: 5 } };
+const BALL_OPEN = { id: 'fx-ball', status: 'open', prize: BALL_PRIZE, rack: [] };
+const BALL_CLOSED = {
+  id: 'fx-ball',
+  status: 'closed',
+  prize: BALL_PRIZE,
+  rack: [1, 2, 3].map((drawNo) => ({ drawNo, scratched: false })),
+};
+const BALL_SETTLED = {
+  id: 'fx-ball',
+  status: 'settled',
+  prize: BALL_PRIZE,
+  rack: [],
+  winner: { displayName: 'CoolGuy', multiplier: 412 },
+  settledAt: { toMillis: () => NOW - 3 * 86400000 },
+};
 const ROUND = (status) => ({
   id: 'r7',
   title: 'Thursday comm hunt',
@@ -55,9 +72,9 @@ const ROUND = (status) => ({
 });
 
 export const GUIDE_FIXTURES = {
-  live: { now: NOW, leaderboard: BOARD, countdown: COUNTDOWN, hunts: { live: LIVE_HUNT, recent: [LAST_HUNT], loading: false, error: null }, round: ROUND('open') },
-  prehunt: { now: NOW, leaderboard: BOARD, countdown: COUNTDOWN, hunts: { live: null, recent: [LAST_HUNT], loading: false, error: null }, round: ROUND('open') },
-  offair: { now: NOW, leaderboard: BOARD, countdown: COUNTDOWN, hunts: { live: null, recent: [LAST_HUNT], loading: false, error: null }, round: null },
+  live: { now: NOW, leaderboard: BOARD, countdown: COUNTDOWN, hunts: { live: LIVE_HUNT, recent: [LAST_HUNT], loading: false, error: null }, round: ROUND('open'), ball: ball(BALL_OPEN, 64) },
+  prehunt: { now: NOW, leaderboard: BOARD, countdown: COUNTDOWN, hunts: { live: null, recent: [LAST_HUNT], loading: false, error: null }, round: ROUND('open'), ball: ball(BALL_CLOSED) },
+  offair: { now: NOW, leaderboard: BOARD, countdown: COUNTDOWN, hunts: { live: null, recent: [LAST_HUNT], loading: false, error: null }, round: null, ball: ball(BALL_SETTLED) },
   noleaderboard: {
     now: NOW,
     leaderboard: { ...BOARD, players: [], prizePool: 0, error: 'HTTP 502' },

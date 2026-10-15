@@ -1,3 +1,5 @@
+import { spoilerSafe } from '../../../utils/ball';
+import { STREAM_DELAY_MS } from '../../../utils/giveaway';
 import { formatResets, guideRows, huntFeature, leaderboardFacts, pickFeatured, progressModel } from '../guide';
 
 const LIVE_HUNT = {
@@ -130,6 +132,7 @@ describe('guideRows', () => {
       ['hunts', 'CH 02', '/gamba/hunts'],
       ['bonus-battle', 'CH 03', '/gamba/bonus-battle'],
       ['wheel', 'CH 04', '/gamba/wheel'],
+      ['ball', 'CH 42', '/gamba/ball'],
     ]);
   });
 
@@ -198,5 +201,50 @@ describe('guideRows', () => {
     const r = rows({ ...base, featured: 'leaderboard', feature: null });
     expect(r['bonus-battle']).toMatchObject({ now: 'Two bonuses, one winner. Call it.', next: 'Any time', lit: false });
     expect(r.wheel).toMatchObject({ now: 'Spin up a random slot to play next.', next: 'Any time', lit: false });
+  });
+
+  test('the Goofer Ball row', () => {
+    const r = (ball) => rows({ ...base, featured: 'leaderboard', feature: null, ball }).ball;
+    const prize = { tickets: 200, prize: { kind: 'cash', amount: 5 } };
+    expect(r(undefined)).toMatchObject({ now: 'Viewer-called buy hunts', next: 'When the drum opens', lit: false, live: false });
+    expect(r({ round: undefined })).toMatchObject({ now: 'Tuning…', next: '—' });
+    expect(r({ round: { status: 'open', prize, rack: [] }, count: 64 })).toMatchObject({
+      now: 'Drum open · 64 balls',
+      next: 'Top multi wins 200 tickets + $5',
+      lit: false,
+      live: true,
+    });
+    expect(r({ round: { status: 'open', prize, rack: [] }, count: null }).now).toBe('Drum open');
+    expect(r({ round: { status: 'open', prize: null, rack: [] }, count: 3 }).next).toBe('Top multi wins bragging rights');
+    expect(r({ round: { status: 'open', prize: { tickets: 0, prize: null }, rack: [] }, count: 3 }).next).toBe('Top multi wins bragging rights');
+    expect(r({ round: { status: 'closed', prize, rack: [{ drawNo: 1, scratched: false }, { drawNo: 2, scratched: true }] } })).toMatchObject({
+      now: 'Lineup closed · 1 ball drawn',
+      next: 'Results after the hunt',
+      lit: false,
+      live: false,
+    });
+    expect(r({ round: { status: 'settled', prize, rack: [], winner: { displayName: 'CoolGuy', multiplier: 412 } } })).toMatchObject({
+      now: 'Last winner @CoolGuy · 412x',
+      next: 'Next draw on stream',
+    });
+  });
+
+  test('a just-settled round stays "Lineup closed" until its reveal is due', () => {
+    const now = 1_000_000_000_000;
+    const prize = { tickets: 200, prize: null };
+    const round = {
+      id: 'b1',
+      status: 'settled',
+      prize,
+      rack: [],
+      winner: { displayName: 'CoolGuy', multiplier: 412 },
+      settledAt: { toMillis: () => now - 1000 },
+    };
+    const held = spoilerSafe({ round }, now).round;
+    const row = rows({ ...base, featured: 'leaderboard', feature: null, ball: { round: held } }).ball;
+    expect(row.now).toMatch(/^Lineup closed/);
+    expect(row.now).not.toMatch(/Last winner/);
+    const later = spoilerSafe({ round }, now + STREAM_DELAY_MS + 1000).round;
+    expect(rows({ ...base, featured: 'leaderboard', feature: null, ball: { round: later } }).ball.now).toBe('Last winner @CoolGuy · 412x');
   });
 });

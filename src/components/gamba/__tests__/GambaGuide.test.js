@@ -19,7 +19,7 @@ test('live fixture: Hunts holds the monitor and its row is lit', () => {
   view('live');
   expect(screen.getByRole('region', { name: 'Featured channel' }).textContent).toContain('Hunts');
   expect(listings().getByRole('link', { name: /CH 02\s*Hunts/ }).getAttribute('data-lit')).toBe('signal');
-  expect(listings().getAllByRole('link')).toHaveLength(4);
+  expect(listings().getAllByRole('link')).toHaveLength(5);
 });
 
 test('pre-hunt fixture: the question on the monitor', () => {
@@ -43,6 +43,17 @@ test('a failed round read reaches the Hunts row', () => {
     </MemoryRouter>
   );
   expect(listings().getByRole('link', { name: /CH 02\s*Hunts/ }).textContent).toContain('No signal');
+});
+
+test('the Goofer Ball data reaches its row', () => {
+  const ball = { round: { id: 'b1', status: 'open', prize: { tickets: 200, prize: null }, rack: [] }, count: 64 };
+  const data = { ...GUIDE_FIXTURES.offair, ball };
+  render(
+    <MemoryRouter>
+      <GuideView data={data} now={data.now} />
+    </MemoryRouter>
+  );
+  expect(listings().getByRole('link', { name: /CH 42\s*Goofer Ball/ }).textContent).toContain('Drum open · 64 balls');
 });
 
 test('no-leaderboard fixture: No signal on the monitor', () => {

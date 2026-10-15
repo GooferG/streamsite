@@ -5,7 +5,7 @@ import { tsMillis } from '../../utils/giveaway';
 export const QUEUE_CAP = 50;
 export const FILTERS = ['all', 'stream', 'payouts'];
 export const FILTER_LABELS = { all: 'All', stream: 'Stream', payouts: 'Payouts' };
-const PAYOUT_KINDS = ['giveaway', 'prediction'];
+const PAYOUT_KINDS = ['giveaway', 'prediction', 'goofer_ball'];
 
 // Store orders played on stream, prizes owed from giveaways and predictions,
 // or anything else (old docs, future kinds), which only shows under All.
@@ -14,7 +14,7 @@ export function kindGroup(kind) {
   return PAYOUT_KINDS.includes(kind) ? 'payouts' : 'other';
 }
 
-export const kindLabel = (kind) => String(kind || 'item').toUpperCase();
+export const kindLabel = (kind) => String(kind || 'item').replace(/_/g, ' ').toUpperCase();
 
 // Store orders cost tickets; prizes cost nothing, so they show no price.
 export const showsCost = (r) => Number(r && r.cost) > 0;

@@ -6,14 +6,15 @@ const TABS = [
   ['giveaway', 'Giveaway'],
   ['predict', 'Predict'],
   ['redeem', 'Redeem'],
+  ['ball', 'Ball'],
 ];
-const ADMIN_HREF = { giveaway: '/admin/giveaways', predict: '/admin/hunts', redeem: '/admin/redemptions' };
+const ADMIN_HREF = { giveaway: '/admin/giveaways', predict: '/admin/hunts', redeem: '/admin/redemptions', ball: '/gamba/ball' };
 
 function Tally({ on, tone, children }) {
   return <span className={`cr-tally tone-${tone} ${on ? 'is-on' : ''}`}>{children}</span>;
 }
 
-// Top strip (tally lights, Stage switch, menu, window buttons) and the
+// Top strip (tally lights, reveals switch, menu, window buttons) and the
 // hardware-style tabs. The strip is the drag handle.
 export default function PanelChrome({
   tallies,
@@ -21,8 +22,9 @@ export default function PanelChrome({
   leds,
   tab,
   onTab,
-  stage,
-  onStage,
+  reveals,
+  onReveals,
+  canSetReveals,
   hideLiveBadge,
   onHideLiveBadge,
   docked,
@@ -66,15 +68,32 @@ export default function PanelChrome({
           )}
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-1">
-          <button
-            type="button"
-            aria-pressed={stage}
-            onClick={() => onStage(!stage)}
-            title="Play reveals full screen on this browser"
-            className={`cr-switch ${stage ? 'is-on' : ''}`}
-          >
-            Stage
-          </button>
+          {!canSetReveals ? (
+            // Only the owner flips the shared switch; staff just see where
+            // reveals play.
+            <span className="cr-switch is-on" title="Only the owner changes where reveals play">
+              {reveals === 'stage' ? 'Reveals: Stage' : 'Reveals: OBS'}
+            </span>
+          ) : (
+          <div role="radiogroup" aria-label="Reveals play on" className="flex items-center gap-0.5">
+            {[
+              ['overlay', 'OBS', 'Full-screen reveals play in the OBS overlays'],
+              ['stage', 'Stage', 'Full-screen reveals play on this browser; the OBS overlays skip them'],
+            ].map(([mode, label, title]) => (
+              <button
+                key={mode}
+                type="button"
+                role="radio"
+                aria-checked={reveals === mode}
+                title={title}
+                onClick={() => onReveals(mode)}
+                className={`cr-switch ${reveals === mode ? 'is-on' : ''}`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          )}
           {/* Escape is caught here, not on the menu: focus usually stays on
               the trigger, and an uncaught Escape minimizes the whole panel. */}
           <div

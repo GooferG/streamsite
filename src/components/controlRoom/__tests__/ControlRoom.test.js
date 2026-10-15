@@ -70,6 +70,10 @@ function makeCr(overrides = {}) {
     },
     prefs: { stage: false, hideLiveBadge: false },
     setStage: jest.fn(),
+    reveals: 'overlay',
+    revealsBy: null,
+    isOwner: true,
+    setReveals: jest.fn(),
     setHideLiveBadge: jest.fn(),
     ...rest,
   };
@@ -222,10 +226,37 @@ test('a held-down backtick does not keep toggling', () => {
   expect(cr.panelActions.open).not.toHaveBeenCalled();
 });
 
+test('the Stage radio is checked when the shared switch says stage', () => {
+  show({ reveals: 'stage' });
+  expect(screen.getByRole('radio', { name: 'Stage' }).getAttribute('aria-checked')).toBe('true');
+  expect(screen.getByRole('radio', { name: 'OBS' }).getAttribute('aria-checked')).toBe('false');
+});
+
+test('a non-owner sees where reveals play as text, with no switch', () => {
+  show({ isOwner: false, reveals: 'stage', prefs: { stage: true, hideLiveBadge: false } });
+  expect(screen.queryByRole('radio')).toBeNull();
+  expect(screen.getByText('Reveals: Stage')).toBeTruthy();
+});
+
+test('Stage-elsewhere line shows only when stage mode is on and this browser is not playing it', () => {
+  const line = /Reveals play on/;
+  // Only the owner can pick Stage, so the line never prints an account email.
+  show({ reveals: 'stage', revealsBy: 'owner@test' });
+  expect(screen.getByText("Reveals play on the owner's Stage — OBS skips them.")).toBeTruthy();
+  expect(screen.queryByText(/owner@test/)).toBeNull();
+  document.body.innerHTML = '';
+  show({ reveals: 'stage', prefs: { stage: true, hideLiveBadge: false } });
+  expect(screen.queryByText(line)).toBeNull();
+  document.body.innerHTML = '';
+  show({ reveals: 'overlay' });
+  expect(screen.queryByText(line)).toBeNull();
+});
+
 test('header controls call the right actions', () => {
   show();
-  fireEvent.click(screen.getByRole('button', { name: 'Stage' }));
-  expect(cr.setStage).toHaveBeenCalledWith(true);
+  fireEvent.click(screen.getByRole('radio', { name: 'Stage' }));
+  expect(cr.setReveals).toHaveBeenCalledWith('stage');
+  expect(screen.getByRole('radio', { name: 'OBS' }).getAttribute('aria-checked')).toBe('true');
   fireEvent.click(screen.getByRole('button', { name: 'Dock to the right' }));
   expect(cr.panelActions.dock).toHaveBeenCalled();
   fireEvent.click(screen.getByRole('button', { name: 'Panel options' }));
@@ -354,13 +385,13 @@ test('the Redeem tab shows its body', () => {
   expect(screen.getByText('redeem tab body')).toBeTruthy();
 });
 
-test('ArrowLeft from Giveaway wraps to Redeem', () => {
+test('ArrowLeft from Giveaway wraps to Ball', () => {
   show();
   fireEvent.keyDown(screen.getByRole('tab', { name: /giveaway/i }), { key: 'ArrowLeft' });
   act(() => {
     jest.advanceTimersByTime(240);
   });
-  expect(cr.panelActions.setTab).toHaveBeenCalledWith('redeem');
+  expect(cr.panelActions.setTab).toHaveBeenCalledWith('ball');
 });
 
 test('pending redemptions light the RED tally and pulse the Redeem LED while unseen', () => {
